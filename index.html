@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Labora+ | Plataforma Fiscal Global para Riders y Gestores</title>
+    <meta name="description" content="Plataforma fiscal global para repartidores autónomos y gestores: digitalización de facturas y tickets de gasolinera con respaldo fotográfico, control de modelos tributarios (036, 130, 303) y auditoría colaborativa." />
+    <meta property="og:title" content="Labora+ | Plataforma Fiscal Global para Riders y Gestores" />
+    <meta property="og:description" content="Plataforma fiscal global para repartidores autónomos y gestores: digitalización de facturas y tickets de gasolinera con respaldo fotográfico, control de modelos tributarios (036, 130, 303) y auditoría colaborativa." />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['Fraunces', 'Georgia', 'serif'],
+              ghibli: ['Fraunces', 'Georgia', 'serif'],
+              sans: ['Outfit', 'Plus Jakarta Sans', 'Inter', 'sans-serif'],
+            },
+            colors: {
+              ghibli: {
+                forest: 'var(--ghibli-forest, #2E5A44)',
+                deepforest: 'var(--ghibli-deepforest, #213B2F)',
+                moss: 'var(--ghibli-moss, #3B7258)',
+                meadow: 'var(--ghibli-meadow, #4E7A60)',
+                sage: 'var(--ghibli-sage, #5E8271)',
+                softgreen: 'var(--ghibli-softgreen, #EBF3ED)',
+                bordergreen: 'var(--ghibli-bordergreen, #D0E5D7)',
+                clay: 'var(--ghibli-clay, #C96846)',
+                terracotta: 'var(--ghibli-terracotta, #D97757)',
+                warmearth: 'var(--ghibli-warmearth, #FAF3EE)',
+                borderclay: 'var(--ghibli-borderclay, #EAD6C9)',
+                amber: 'var(--ghibli-amber, #D9943B)',
+                gold: 'var(--ghibli-gold, #B87A24)',
+                softamber: 'var(--ghibli-softamber, #FEF7EB)',
+                borderamber: 'var(--ghibli-borderamber, #FDE3B8)',
+                sky: 'var(--ghibli-sky, #3A7596)',
+                slateazure: 'var(--ghibli-slateazure, #4A6D7C)',
+                softblue: 'var(--ghibli-softblue, #F2F7F9)',
+                bordersky: 'var(--ghibli-bordersky, #D5E3E8)',
+                cream: 'var(--ghibli-canvas, #FAF7F2)',
+                parchment: 'var(--ghibli-parchment, #FAF6EE)',
+                card: 'var(--ghibli-card, #FCFAF7)',
+                border: 'var(--ghibli-border-subtle, #EBE3D5)',
+                warmborder: 'var(--ghibli-border, #E8DFC8)',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet Map Resources -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+      :root {
+        --font-primary: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+        --font-serif: 'Fraunces', Georgia, serif;
+        --font-body: 'Outfit', 'Inter', sans-serif;
+        --primary: #2D5A43;
+        --secondary: #1F2937;
+        
+        /* Ghibli Natural Lighting Variables */
+        --ghibli-forest: #2E5A44;
+        --ghibli-deepforest: #213B2F;
+        --ghibli-moss: #3B7258;
+        --ghibli-softgreen: #EBF3ED;
+        --ghibli-bordergreen: #D0E5D7;
+        --ghibli-clay: #C96846;
+        --ghibli-terracotta: #D97757;
+        --ghibli-warmearth: #FAF3EE;
+        --ghibli-borderclay: #EAD6C9;
+        --ghibli-amber: #D9943B;
+        --ghibli-gold: #B87A24;
+        --ghibli-softamber: #FEF7EB;
+        --ghibli-borderamber: #FDE3B8;
+        --ghibli-canvas: #FAF7F2;
+        --ghibli-card: #FCFAF7;
+        --ghibli-parchment: #FAF6EE;
+        --ghibli-border: #E8DFC8;
+        --ghibli-border-subtle: #EBE4D8;
+        --bg-body: var(--ghibli-canvas);
+      }
+      
+      body { 
+        font-family: var(--font-body); 
+        background: var(--ghibli-canvas);
+        color: #292524; /* Stone 800 */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        transition: background-color 0.5s ease;
+      }
+
+      /* Subtle Ghibli ambient lighting layer */
+      .ghibli-ambient-tint {
+        transition: background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease;
+      }
+
+      .font-ghibli {
+        font-family: var(--font-serif);
+      }
+
+      /* Dark Mode Overrides */
+      body.dark {
+        background-color: #0B1120 !important;
+        color: #E2E8F0 !important;
+      }
+      .dark .bg-white { background-color: #1E293B !important; border-color: #334155 !important; }
+      .dark .text-gray-900 { color: #FFFFFF !important; }
+      .dark .text-gray-800 { color: #F1F5F9 !important; }
+      .dark .text-gray-600 { color: #94A3B8 !important; }
+      .dark .text-gray-500 { color: #64748B !important; }
+      .dark .bg-gray-50 { background-color: #0F172A !important; }
+      .dark .border-gray-100, 
+      .dark .border-gray-200 { border-color: #334155 !important; }
+
+      h1, h2, h3, h4, h5, h6, .font-heading {
+        font-family: var(--font-primary);
+        letter-spacing: -0.025em;
+      }
+
+      /* Custom Scrollbar for Enterprise feel */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+      .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+      /* Utilities */
+      .glass-panel {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.5);
+      }
+      
+      /* Card Hover Effects */
+      .hover-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .hover-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+      }
+
+      /* Input Styles Reset */
+      input, select, textarea {
+        font-family: var(--font-body);
+      }
+      
+      /* Map Z-Index Fix */
+      .leaflet-pane { z-index: 10 !important; }
+      .leaflet-top, .leaflet-bottom { z-index: 20 !important; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.4.1",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "zustand": "https://aistudiocdn.com/zustand@^5.0.8"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

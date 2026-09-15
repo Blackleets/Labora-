@@ -1,0 +1,6 @@
+{
+  "name": "Labora+",
+  "description": "Plataforma fiscal global para repartidores autónomos y gestores: digitalización de facturas y tickets de gasolinera con respaldo fotográfico, control de modelos tributarios (036, 130, 303) y auditoría colaborativa.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
