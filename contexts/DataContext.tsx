@@ -1,8 +1,31 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, PropsWithChildren } from 'react';
-import { 
-  User, Income, Expense, Document, UserRole, FiscalSummary, Payment, 
-  Notification, Vehicle, ExpenseCategory, GestorRequirement, TaxDeclaration 
+import React, {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import {
+  Document,
+  Expense,
+  FiscalSummary,
+  GestorRequirement,
+  Income,
+  Notification,
+  Payment,
+  TaxDeclaration,
+  User,
+  UserRole,
+  Vehicle,
 } from '../types';
+import { buildFiscalSnapshot, parseFiscalPeriod } from '../services/fiscalEngine';
+import { getSupabase, isSupabaseConfigured } from '../services/supabaseClient';
+
+type ExpenseReviewStatus = 'pending_review' | 'approved' | 'rejected' | 'needs_fix';
+type DbRow = Record<string, any>;
 
 interface DataContextType {
   currentUser: User | null;
@@ -18,889 +41,852 @@ interface DataContextType {
   privacyMode: boolean;
   darkMode: boolean;
   notifications: Notification[];
+  isLoading: boolean;
+  backendConfigured: boolean;
   togglePrivacyMode: () => void;
   toggleDarkMode: () => void;
-  completeOnboarding: () => void;
-  login: (email: string, role: UserRole) => void;
-  logout: () => void;
-  registerUser: (userData: Partial<User>) => void;
+  completeOnboarding: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  registerUser: (userData: Partial<User>, password: string) => Promise<void>;
   switchUser: (userId: string) => void;
-  updateUserConfig: (platforms: string[], banks: string[]) => void;
-  updateUserFiscalProfile: (profileData: Partial<User>) => void;
-  addIncome: (income: Omit<Income, 'id' | 'userId'>) => void;
-  addIncomes: (incomes: Omit<Income, 'id' | 'userId'>[]) => void;
-  addExpense: (expense: Omit<Expense, 'id' | 'userId'>) => void;
-  addExpenses: (expenses: Omit<Expense, 'id' | 'userId'>[]) => void;
-  updateExpense: (expense: Expense) => void;
-  deleteExpense: (id: string) => void;
-  updateExpenseAudit: (expenseId: string, status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix', gestorNotes?: string) => void;
-  addDocument: (doc: Omit<Document, 'id' | 'userId'>) => void;
-  addPayment: (payment: Omit<Payment, 'id'>) => void;
-  updateVehicle: (vehicleData: Vehicle) => void;
-  addRequirement: (req: Omit<GestorRequirement, 'id' | 'createdAt'>) => void;
-  updateRequirementStatus: (id: string, status: 'pending' | 'submitted' | 'approved', notes?: string, proofUrl?: string) => void;
+  updateUserConfig: (platforms: string[], banks: string[]) => Promise<void>;
+  updateUserFiscalProfile: (profileData: Partial<User>) => Promise<void>;
+  addIncome: (income: Omit<Income, 'id' | 'userId'>) => Promise<void>;
+  addIncomes: (incomes: Omit<Income, 'id' | 'userId'>[]) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id' | 'userId'>) => Promise<void>;
+  addExpenses: (expenses: Omit<Expense, 'id' | 'userId'>[]) => Promise<void>;
+  updateExpense: (expense: Expense) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+  updateExpenseAudit: (expenseId: string, status: ExpenseReviewStatus, gestorNotes?: string) => Promise<void>;
+  addDocument: (doc: Omit<Document, 'id' | 'userId'>) => Promise<void>;
+  addPayment: (payment: Omit<Payment, 'id'>) => Promise<void>;
+  updateVehicle: (vehicleData: Vehicle) => Promise<void>;
+  addRequirement: (req: Omit<GestorRequirement, 'id' | 'createdAt'>) => Promise<void>;
+  updateRequirementStatus: (id: string, status: 'pending' | 'submitted' | 'approved', notes?: string, proofUrl?: string) => Promise<void>;
   fileTaxDeclaration: (declarationId: string, filingRef: string) => void;
   calculateQuarterlyTaxes: (userId: string, quarter: string) => { model130: TaxDeclaration; model303: TaxDeclaration };
   getFiscalSummary: (userId: string) => FiscalSummary;
   getUsersByManager: (managerId: string) => User[];
-  markPaymentAsReceived: (paymentId: string) => void;
+  markPaymentAsReceived: (paymentId: string) => Promise<void>;
   showNotification: (type: 'success' | 'error' | 'info', message: string) => void;
   dismissNotification: (id: string) => void;
   exportData: () => void;
   importData: (jsonData: string) => void;
+  refreshData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Initial Mock Users with realistic fiscal profiles
-const MOCK_RIDERS: User[] = [
-  {
-    id: 'u1',
-    name: 'Alex Rider',
-    email: 'alex@labora.plus',
-    role: UserRole.RIDER,
-    phone: '+34 612 345 678',
-    nif: '48192834K',
-    fiscalRegime: '036_037_directa',
-    iaeCode: '849.5 - Servicios de mensajería y reparto',
-    socialSecurityType: 'tarifa_plana',
-    vehicleType: 'moto',
-    vehiclePlate: '4521 LBR',
-    vehicleFuel: 'gasolina',
-    platforms: ['Uber Eats', 'Glovo', 'Stuart'],
-    banks: ['BBVA', 'Revolut'],
-    managerId: 'm1',
-    countryCode: 'ES'
-  },
-  {
-    id: 'u2',
-    name: 'Carlos Mendoza',
-    email: 'carlos.mendoza@email.com',
-    role: UserRole.RIDER,
-    phone: '+34 689 912 341',
-    nif: '52938102B',
-    fiscalRegime: '036_037_directa',
-    iaeCode: '849.5 - Servicios de mensajería y reparto',
-    socialSecurityType: 'tramos_reales',
-    vehicleType: 'moto',
-    vehiclePlate: '7823 KTP',
-    vehicleFuel: 'gasolina',
-    platforms: ['Glovo', 'Just Eat'],
-    banks: ['Santander'],
-    managerId: 'm1',
-    countryCode: 'ES'
-  },
-  {
-    id: 'u3',
-    name: 'Lucía Méndez',
-    email: 'lucia.delivery@email.com',
-    role: UserRole.RIDER,
-    phone: '+34 644 112 233',
-    nif: '74129845X',
-    fiscalRegime: '036_037_directa',
-    iaeCode: '849.5 - Servicios de mensajería y reparto',
-    socialSecurityType: 'tarifa_plana',
-    vehicleType: 'bici',
-    vehiclePlate: '',
-    vehicleFuel: 'electrico',
-    platforms: ['Uber Eats', 'Amazon Flex'],
-    banks: ['N26'],
-    managerId: 'm1',
-    countryCode: 'ES'
-  }
-];
-
-const MOCK_MANAGER: User = {
-  id: 'm1',
-  name: 'Gestoría Fiscal Pérez & Asociados',
-  companyName: 'Gestoría Pérez Asesores Tributarios S.L.',
-  collegiateNumber: 'COL-MAD-9421',
-  email: 'info@gestoriaperez.com',
-  phone: '+34 910 234 567',
-  nif: 'B-88349210',
-  role: UserRole.MANAGER,
-  platforms: [],
-  banks: ['CaixaBank'],
-  countryCode: 'ES'
+const toUserRole = (membershipRole?: string): UserRole => {
+  if (membershipRole === 'owner' || membershipRole === 'manager') return UserRole.MANAGER;
+  return UserRole.RIDER;
 };
 
-const DEFAULT_VEHICLE: Vehicle = {
-  type: 'moto',
-  model: 'Honda PCX 125 ABS',
-  plate: '4521 LBR',
-  lastMaintenanceDate: '2026-08-10',
-  lastMaintenanceKm: 14500,
-  currentKm: 18200,
-  nextMaintenanceKm: 20000
+const normalizeDate = (value?: string | null) => value ? value.slice(0, 10) : '';
+
+const dataUrlToBlob = (dataUrl: string): Blob => {
+  const [header, payload] = dataUrl.split(',');
+  if (!header || !payload || !header.startsWith('data:')) throw new Error('Formato de evidencia no válido.');
+  const mime = header.match(/^data:([^;]+)/)?.[1] || 'application/octet-stream';
+  const bytes = Uint8Array.from(atob(payload), (char) => char.charCodeAt(0));
+  return new Blob([bytes], { type: mime });
 };
 
-// Initial Realistic Fuel & Operating Expenses with Digital Proof Backups
-const INITIAL_EXPENSES: Expense[] = [
-  {
-    id: 'exp-1',
-    userId: 'u1',
-    category: ExpenseCategory.GASOLINA,
-    merchant: 'Repsol Estación de Servicio',
-    date: '2026-09-14',
-    amount: 45.50,
-    fuelLitres: 28.2,
-    fuelType: 'Gasolina 95',
-    vatRate: 21,
-    vatAmount: 7.90,
-    deductiblePercentage: 100,
-    status: 'approved',
-    gestorNotes: 'Comprobante válido con NIF desglosado. Deducible 100% en IRPF e IVA por vehículo afecto.',
-    notes: 'Llenado de depósito turno tarde/noche fin de semana (Madrid Centro)',
-    invoiceNumber: 'REP-2026-98124',
-    receiptUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" fill="%23FFFFFF"><rect width="400" height="600" fill="%23FFFBEB" stroke="%23D97706" stroke-width="4"/><text x="200" y="50" font-family="monospace" font-size="20" font-weight="bold" fill="%23B45309" text-anchor="middle">REPSOL ESTACIÓN 3421</text><text x="200" y="80" font-family="monospace" font-size="12" fill="%234B5563" text-anchor="middle">NIF: A-78129034 - Av. Principal 44</text><line x1="20" y1="100" x2="380" y2="100" stroke="%23D97706" stroke-dasharray="4"/><text x="40" y="140" font-family="monospace" font-size="14" fill="%231F2937">PRODUCTO: GASOLINA 95 PREMIUM</text><text x="40" y="170" font-family="monospace" font-size="14" fill="%231F2937">LITROS: 28.20 L x 1.613 €/L</text><text x="40" y="200" font-family="monospace" font-size="14" fill="%231F2937">BASE IMPONIBLE: 37.60 €</text><text x="40" y="230" font-family="monospace" font-size="14" fill="%231F2937">I.V.A. (21%): 7.90 €</text><text x="40" y="270" font-family="monospace" font-size="22" font-weight="bold" fill="%23B45309">TOTAL PAGADO: 45.50 €</text><text x="40" y="310" font-family="monospace" font-size="12" fill="%236B7280">MATRÍCULA: 4521 LBR</text><text x="40" y="340" font-family="monospace" font-size="12" fill="%236B7280">FECHA: 2026-09-14 19:42</text><line x1="20" y1="370" x2="380" y2="370" stroke="%23D97706" stroke-dasharray="4"/><text x="200" y="420" font-family="monospace" font-size="14" font-weight="bold" fill="%23059669" text-anchor="middle">VALIDADO POR GESTORÍA PÉREZ</text><text x="200" y="450" font-family="monospace" font-size="12" fill="%234B5563" text-anchor="middle">COPIA ELECTRÓNICA DE SEGURIDAD</text></svg>'
-  },
-  {
-    id: 'exp-2',
-    userId: 'u1',
-    category: ExpenseCategory.GASOLINA,
-    merchant: 'Cepsa (Moeve)',
-    date: '2026-09-10',
-    amount: 42.00,
-    fuelLitres: 26.0,
-    fuelType: 'Gasolina 95',
-    vatRate: 21,
-    vatAmount: 7.29,
-    deductiblePercentage: 100,
-    status: 'pending_review',
-    notes: 'Repostaje antes de iniciar jornada de lluvia',
-    invoiceNumber: 'CEP-8921-A',
-    receiptUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" fill="%23FFFFFF"><rect width="400" height="600" fill="%23FEF2F2" stroke="%23EF4444" stroke-width="4"/><text x="200" y="50" font-family="monospace" font-size="20" font-weight="bold" fill="%23B91C1C" text-anchor="middle">CEPSA MOEVE 128</text><text x="200" y="80" font-family="monospace" font-size="12" fill="%234B5563" text-anchor="middle">NIF: B-81928374 - C/ Alcalá 210</text><line x1="20" y1="100" x2="380" y2="100" stroke="%23EF4444" stroke-dasharray="4"/><text x="40" y="140" font-family="monospace" font-size="14" fill="%231F2937">OPT. STAR 95: 26.00 L</text><text x="40" y="170" font-family="monospace" font-size="14" fill="%231F2937">PRECIO/L: 1.615 €</text><text x="40" y="200" font-family="monospace" font-size="14" fill="%231F2937">BASE: 34.71 € | IVA 21%: 7.29 €</text><text x="40" y="250" font-family="monospace" font-size="22" font-weight="bold" fill="%23DC2626">TOTAL: 42.00 €</text><text x="40" y="290" font-family="monospace" font-size="12" fill="%236B7280">FECHA: 2026-09-10 11:20</text><line x1="20" y1="330" x2="380" y2="330" stroke="%23EF4444" stroke-dasharray="4"/><text x="200" y="380" font-family="monospace" font-size="14" fill="%23D97706" text-anchor="middle">PENDIENTE DE REVISIÓN FISCAL</text></svg>'
-  },
-  {
-    id: 'exp-3',
-    userId: 'u1',
-    category: ExpenseCategory.MANTENIMIENTO,
-    merchant: 'Taller MotoFix Oficial',
-    date: '2026-09-02',
-    amount: 118.00,
-    vatRate: 21,
-    vatAmount: 20.48,
-    deductiblePercentage: 100,
-    status: 'approved',
-    gestorNotes: 'Factura oficial con NIF. Pastillas de freno y cambio de aceite.',
-    notes: 'Revisión y pastillas de freno Honda PCX',
-    invoiceNumber: 'FAC-MF-2026-442'
-  },
-  {
-    id: 'exp-4',
-    userId: 'u1',
-    category: ExpenseCategory.CUOTA_AUTONOMO,
-    merchant: 'Seguridad Social (TGSS - RETA)',
-    date: '2026-08-31',
-    amount: 80.00,
-    vatRate: 0,
-    vatAmount: 0,
-    deductiblePercentage: 100,
-    status: 'approved',
-    gestorNotes: 'Gasto no sujeto a IVA, deducible 100% en IRPF Modelo 130.',
-    notes: 'Cuota reducida autónomo tarifa plana primer año'
-  },
-  {
-    id: 'exp-5',
-    userId: 'u1',
-    category: ExpenseCategory.MOVIL,
-    merchant: 'Vodafone Empresas',
-    date: '2026-09-01',
-    amount: 29.90,
-    vatRate: 21,
-    vatAmount: 5.19,
-    deductiblePercentage: 100,
-    status: 'approved',
-    gestorNotes: 'Línea profesional dedicada a las apps de reparto.',
-    notes: 'Plan ilimitado 5G para navegación y apps de rider'
-  }
-];
-
-// Initial Realistic Incomes from Delivery Platforms
-const INITIAL_INCOMES: Income[] = [
-  {
-    id: 'inc-1',
-    userId: 'u1',
-    platform: 'Uber Eats',
-    date: '2026-09-12',
-    amount: 410.50,
-    retention: 0
-  },
-  {
-    id: 'inc-2',
-    userId: 'u1',
-    platform: 'Glovo',
-    date: '2026-09-05',
-    amount: 385.00,
-    retention: 0
-  },
-  {
-    id: 'inc-3',
-    userId: 'u1',
-    platform: 'Stuart',
-    date: '2026-08-28',
-    amount: 215.20,
-    retention: 0
-  },
-  {
-    id: 'inc-4',
-    userId: 'u1',
-    platform: 'Uber Eats',
-    date: '2026-08-21',
-    amount: 395.00,
-    retention: 0
-  },
-  {
-    id: 'inc-5',
-    userId: 'u1',
-    platform: 'Glovo',
-    date: '2026-08-16',
-    amount: 360.00,
-    retention: 0
-  }
-];
-
-// Initial Requirements between Gestor and Rider
-const INITIAL_REQUIREMENTS: GestorRequirement[] = [
-  {
-    id: 'req-1',
-    managerId: 'm1',
-    managerName: 'Gestoría Fiscal Pérez',
-    riderId: 'u1',
-    riderName: 'Alex Rider',
-    title: 'Ticket de repostaje Cepsa del 10/09 (42,00 €)',
-    description: 'Hemos detectado el movimiento pero falta la foto con buena nitidez para confirmar el CIF de la estación y deducir el IVA.',
-    category: 'fuel_receipt',
-    deadline: '2026-09-22',
-    status: 'pending',
-    createdAt: '2026-09-11',
-    quarter: '3T 2026'
-  },
-  {
-    id: 'req-2',
-    managerId: 'm1',
-    managerName: 'Gestoría Fiscal Pérez',
-    riderId: 'u1',
-    riderName: 'Alex Rider',
-    title: 'Auto-factura Glovo 1ª Quincena Septiembre',
-    description: 'Por favor descarga el PDF emitido en la app de Glovo de la quincena 1-15 y súbelo para cotejar la base imponible.',
-    category: 'platform_invoice',
-    deadline: '2026-09-20',
-    status: 'submitted',
-    submissionNotes: 'Auto-factura subida correctamente a documentos.',
-    createdAt: '2026-09-06',
-    quarter: '3T 2026'
-  },
-  {
-    id: 'req-3',
-    managerId: 'm1',
-    managerName: 'Gestoría Fiscal Pérez',
-    riderId: 'u1',
-    riderName: 'Alex Rider',
-    title: 'Preparación Cierre 3T (Modelo 130 y Modelo 303)',
-    description: 'El plazo de presentación finaliza el 20 de octubre. Revisa los gastos registrados para no dejar ningún ticket de gasolina fuera.',
-    category: 'other',
-    deadline: '2026-10-15',
-    status: 'pending',
-    createdAt: '2026-09-14',
-    quarter: '3T 2026'
-  }
-];
-
-// Initial Official Declarations
-const INITIAL_DECLARATIONS: TaxDeclaration[] = [
-  {
-    id: 'dec-1',
-    userId: 'u1',
-    quarter: '1T 2026',
-    year: 2026,
-    modelType: '130',
-    title: 'Modelo 130 - Pago Fraccionado IRPF 1T',
-    grossIncome: 4250.00,
-    deductibleExpenses: 1120.00,
-    netYield: 3130.00,
-    taxAmount: 626.00,
-    status: 'filed_with_tax_agency',
-    filingReference: 'AEAT-130-2026-881923X',
-    filedAt: '2026-04-18',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-2',
-    userId: 'u1',
-    quarter: '1T 2026',
-    year: 2026,
-    modelType: '303',
-    title: 'Modelo 303 - Autoliquidación IVA 1T',
-    grossIncome: 4250.00,
-    deductibleExpenses: 1120.00,
-    netYield: 3130.00,
-    taxAmount: 185.40,
-    status: 'filed_with_tax_agency',
-    filingReference: 'AEAT-303-2026-773412B',
-    filedAt: '2026-04-18',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-3',
-    userId: 'u1',
-    quarter: '2T 2026',
-    year: 2026,
-    modelType: '130',
-    title: 'Modelo 130 - Pago Fraccionado IRPF 2T',
-    grossIncome: 4680.00,
-    deductibleExpenses: 1240.00,
-    netYield: 3440.00,
-    taxAmount: 688.00,
-    status: 'filed_with_tax_agency',
-    filingReference: 'AEAT-130-2026-990145Y',
-    filedAt: '2026-07-16',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-4',
-    userId: 'u1',
-    quarter: '2T 2026',
-    year: 2026,
-    modelType: '303',
-    title: 'Modelo 303 - Autoliquidación IVA 2T',
-    grossIncome: 4680.00,
-    deductibleExpenses: 1240.00,
-    netYield: 3440.00,
-    taxAmount: 212.80,
-    status: 'filed_with_tax_agency',
-    filingReference: 'AEAT-303-2026-661209C',
-    filedAt: '2026-07-16',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-5',
-    userId: 'u1',
-    quarter: '3T 2026',
-    year: 2026,
-    modelType: '130',
-    title: 'Modelo 130 - Pago Fraccionado IRPF 3T (En Curso)',
-    grossIncome: 1765.70,
-    deductibleExpenses: 315.40,
-    netYield: 1450.30,
-    taxAmount: 290.06,
-    status: 'reviewed_by_gestor',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-6',
-    userId: 'u1',
-    quarter: '3T 2026',
-    year: 2026,
-    modelType: '303',
-    title: 'Modelo 303 - Autoliquidación IVA 3T (En Curso)',
-    grossIncome: 1765.70,
-    deductibleExpenses: 315.40,
-    netYield: 1450.30,
-    taxAmount: 94.20,
-    status: 'reviewed_by_gestor',
-    gestorId: 'm1'
-  }
-];
-
-const generateMockPayments = (): Payment[] => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
-  const fmtDate = (d: number) => `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
-  return [
-    { id: 'p1', platform: 'Uber Eats', amount: 240.50, date: fmtDate(5), status: 'received', estimated: false, domain: 'ubereats.com' },
-    { id: 'p2', platform: 'Glovo', amount: 180.00, date: fmtDate(12), status: 'received', estimated: false, domain: 'glovoapp.com' },
-    { id: 'p3', platform: 'Stuart', amount: 150.00, date: fmtDate(15), status: 'received', estimated: false, domain: 'stuart.com' },
-    { id: 'p4', platform: 'Uber Eats', amount: 225.00, date: fmtDate(19), status: 'pending', estimated: true, domain: 'ubereats.com' },
-    { id: 'p5', platform: 'Glovo', amount: 195.00, date: fmtDate(26), status: 'pending', estimated: true, domain: 'glovoapp.com' },
-    { id: 'p6', platform: 'Just Eat', amount: 130.00, date: fmtDate(28), status: 'pending', estimated: true, domain: 'just-eat.es' },
-  ];
+const sha256 = async (blob: Blob) => {
+  const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
 };
 
-export const DataProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(MOCK_RIDERS[0]);
-  const [users, setUsers] = useState<User[]>([...MOCK_RIDERS, MOCK_MANAGER]);
-  const [incomes, setIncomes] = useState<Income[]>(INITIAL_INCOMES);
-  const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
+const currentQuarter = () => {
+  const now = new Date();
+  return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
+};
+
+export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
+  const backendConfigured = isSupabaseConfigured();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [payments, setPayments] = useState<Payment[]>(generateMockPayments());
-  const [requirements, setRequirements] = useState<GestorRequirement[]>(INITIAL_REQUIREMENTS);
-  const [declarations, setDeclarations] = useState<TaxDeclaration[]>(INITIAL_DECLARATIONS);
-  const [vehicle, setVehicle] = useState<Vehicle | null>(DEFAULT_VEHICLE);
-  const [hasOnboarded, setHasOnboarded] = useState(true);
-  const [privacyMode, setPrivacyMode] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [requirements, setRequirements] = useState<GestorRequirement[]>([]);
+  const [declarations, setDeclarations] = useState<TaxDeclaration[]>([]);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [hasOnboarded, setHasOnboarded] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [privacyMode, setPrivacyMode] = useState(() => localStorage.getItem('labora_pref_privacy') === 'true');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('labora_pref_dark') === 'true');
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const loadData = () => {
-      const storedIncomes = localStorage.getItem('labora_incomes');
-      const storedExpenses = localStorage.getItem('labora_expenses');
-      const storedDocs = localStorage.getItem('labora_docs');
-      const storedOnboarding = localStorage.getItem('labora_onboarding');
-      const storedPayments = localStorage.getItem('labora_payments');
-      const storedRequirements = localStorage.getItem('labora_requirements');
-      const storedDeclarations = localStorage.getItem('labora_declarations');
-      const storedUsers = localStorage.getItem('labora_users');
-      const storedVehicle = localStorage.getItem('labora_vehicle');
-      const storedUser = localStorage.getItem('labora_user');
-      const storedPrivacy = localStorage.getItem('labora_privacy');
-      const storedDarkMode = localStorage.getItem('labora_darkmode');
-
-      if (storedIncomes) setIncomes(JSON.parse(storedIncomes));
-      if (storedExpenses) setExpenses(JSON.parse(storedExpenses));
-      if (storedDocs) setDocuments(JSON.parse(storedDocs));
-      if (storedRequirements) setRequirements(JSON.parse(storedRequirements));
-      if (storedDeclarations) setDeclarations(JSON.parse(storedDeclarations));
-      if (storedPayments) setPayments(JSON.parse(storedPayments));
-      if (storedVehicle) setVehicle(JSON.parse(storedVehicle));
-      if (storedUsers) setUsers(JSON.parse(storedUsers));
-      if (storedOnboarding === 'true') setHasOnboarded(true);
-      if (storedPrivacy === 'true') setPrivacyMode(true);
-      if (storedDarkMode === 'true') {
-        setDarkMode(true);
-        document.body.classList.add('dark');
-      }
-
-      if (storedUser) {
-        const u = JSON.parse(storedUser);
-        setCurrentUser(u);
-      }
-    };
-    loadData();
+  const showNotification = useCallback((type: 'success' | 'error' | 'info', message: string) => {
+    const id = crypto.randomUUID();
+    setNotifications((previous) => [...previous, { id, type, message }]);
+    window.setTimeout(() => setNotifications((previous) => previous.filter((item) => item.id !== id)), 5000);
   }, []);
 
-  // Save to localStorage on change
-  useEffect(() => {
-    if (incomes.length > 0) localStorage.setItem('labora_incomes', JSON.stringify(incomes));
-    if (expenses.length > 0) localStorage.setItem('labora_expenses', JSON.stringify(expenses));
-    if (documents.length > 0) localStorage.setItem('labora_docs', JSON.stringify(documents));
-    if (requirements.length > 0) localStorage.setItem('labora_requirements', JSON.stringify(requirements));
-    if (declarations.length > 0) localStorage.setItem('labora_declarations', JSON.stringify(declarations));
-    if (payments.length > 0) localStorage.setItem('labora_payments', JSON.stringify(payments));
-    if (users.length > 0) localStorage.setItem('labora_users', JSON.stringify(users));
-    if (vehicle) localStorage.setItem('labora_vehicle', JSON.stringify(vehicle));
-    if (currentUser) localStorage.setItem('labora_user', JSON.stringify(currentUser));
-    localStorage.setItem('labora_onboarding', String(hasOnboarded));
-    localStorage.setItem('labora_privacy', String(privacyMode));
-    localStorage.setItem('labora_darkmode', String(darkMode));
-  }, [incomes, expenses, documents, requirements, declarations, payments, users, vehicle, currentUser, hasOnboarded, privacyMode, darkMode]);
+  const dismissNotification = useCallback((id: string) => {
+    setNotifications((previous) => previous.filter((item) => item.id !== id));
+  }, []);
 
-  const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    setNotifications(prev => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 3500);
-  };
-
-  const dismissNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const login = (email: string, role: UserRole) => {
-    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
-    if (found) {
-      setCurrentUser(found);
-      showNotification('success', `Bienvenido, ${found.name}`);
-    } else {
-      const newUser: User = {
-        id: 'usr_' + Date.now(),
-        name: email.split('@')[0],
-        email,
-        role,
-        nif: role === UserRole.RIDER ? '48192834K' : 'B-88349210',
-        fiscalRegime: role === UserRole.RIDER ? '036_037_directa' : undefined,
-        iaeCode: role === UserRole.RIDER ? '849.5 - Servicios de mensajería y reparto' : undefined,
-        socialSecurityType: role === UserRole.RIDER ? 'tarifa_plana' : undefined,
-        vehicleType: role === UserRole.RIDER ? 'moto' : undefined,
-        vehiclePlate: role === UserRole.RIDER ? '4521 LBR' : undefined,
-        vehicleFuel: role === UserRole.RIDER ? 'gasolina' : undefined,
-        companyName: role === UserRole.MANAGER ? `${email.split('@')[0]} Asesoría Fiscal` : undefined,
-        platforms: role === UserRole.RIDER ? ['Uber Eats', 'Glovo'] : [],
-        banks: ['BBVA'],
-        managerId: role === UserRole.RIDER ? 'm1' : undefined,
-        countryCode: 'ES'
-      };
-      setUsers(prev => [...prev, newUser]);
-      setCurrentUser(newUser);
-      showNotification('success', 'Cuenta creada y configurada correctamente');
-    }
-  };
-
-  const registerUser = (userData: Partial<User>) => {
-    const newUser: User = {
-      id: 'usr_' + Date.now(),
-      name: userData.name || 'Usuario',
-      email: userData.email || `usuario_${Date.now()}@labora.plus`,
-      role: userData.role || UserRole.RIDER,
-      phone: userData.phone,
-      nif: userData.nif || 'Sin NIF registrado',
-      fiscalRegime: userData.fiscalRegime || '036_037_directa',
-      iaeCode: userData.iaeCode || '849.5 - Servicios de mensajería y reparto',
-      socialSecurityType: userData.socialSecurityType || 'tarifa_plana',
-      vehicleType: userData.vehicleType || 'moto',
-      vehiclePlate: userData.vehiclePlate || '',
-      vehicleFuel: userData.vehicleFuel || 'gasolina',
-      companyName: userData.companyName,
-      collegiateNumber: userData.collegiateNumber,
-      platforms: userData.platforms || ['Uber Eats'],
-      banks: userData.banks || ['BBVA'],
-      managerId: userData.managerId || (userData.role === UserRole.RIDER ? 'm1' : undefined),
-      countryCode: userData.countryCode || 'ES'
-    };
-
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
-    setHasOnboarded(true);
-    showNotification('success', `¡Registro completado! Bienvenido a Labora+, ${newUser.name}`);
-  };
-
-  const switchUser = (userId: string) => {
-    const target = users.find(u => u.id === userId);
-    if (target) {
-      setCurrentUser(target);
-      showNotification('info', `Cambiado a perfil: ${target.name} (${target.role})`);
-    }
-  };
-
-  const logout = () => {
+  const clearWorkspace = useCallback(() => {
     setCurrentUser(null);
-    localStorage.removeItem('labora_user');
-    showNotification('info', 'Sesión cerrada');
-  };
+    setUsers([]);
+    setIncomes([]);
+    setExpenses([]);
+    setDocuments([]);
+    setPayments([]);
+    setRequirements([]);
+    setDeclarations([]);
+    setVehicle(null);
+    setHasOnboarded(false);
+  }, []);
 
-  const updateUserConfig = (platforms: string[], banks: string[]) => {
-    if (!currentUser) return;
-    const updatedUser = { ...currentUser, platforms, banks };
-    setCurrentUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-    showNotification('success', 'Plataformas actualizadas');
-  };
+  const ensureBootstrapped = useCallback(async (authUser: SupabaseUser) => {
+    const supabase = getSupabase();
+    const { data: memberships, error: membershipError } = await supabase
+      .from('organization_memberships')
+      .select('organization_id,role,status')
+      .eq('user_id', authUser.id)
+      .eq('status', 'active');
+    if (membershipError) throw membershipError;
+    if ((memberships || []).length > 0) return;
 
-  const updateUserFiscalProfile = (profileData: Partial<User>) => {
-    if (!currentUser) return;
-    const updatedUser = { ...currentUser, ...profileData };
-    setCurrentUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-    showNotification('success', 'Perfil fiscal y datos de autónomo actualizados');
-  };
-
-  const completeOnboarding = () => {
-    setHasOnboarded(true);
-    showNotification('success', '¡Configuración completada!');
-  };
-
-  const togglePrivacyMode = () => {
-    setPrivacyMode(prev => {
-      const newVal = !prev;
-      showNotification('info', newVal ? 'Modo Discreto Activado' : 'Modo Discreto Desactivado');
-      return newVal;
+    const accountKind = authUser.user_metadata?.account_kind === 'manager' ? 'manager' : 'rider';
+    const fullName = String(authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Mi espacio');
+    const { error } = await supabase.rpc('labora_bootstrap_account', {
+      account_name: accountKind === 'manager' ? fullName : `Espacio de ${fullName}`,
+      account_kind: accountKind,
     });
-  };
+    if (error) throw error;
+  }, []);
 
-  const toggleDarkMode = () => {
-    setDarkMode(prev => {
-      const newVal = !prev;
-      if (newVal) {
-        document.body.classList.add('dark');
-      } else {
-        document.body.classList.remove('dark');
-      }
-      showNotification('info', newVal ? 'Modo Oscuro Activado' : 'Modo Claro Activado');
-      return newVal;
-    });
-  };
+  const loadWorkspace = useCallback(async (authUser: SupabaseUser) => {
+    const supabase = getSupabase();
+    await ensureBootstrapped(authUser);
 
-  const addIncome = (inc: Omit<Income, 'id' | 'userId'>) => {
-    if (!currentUser) return;
-    const newIncome: Income = {
-      ...inc,
-      id: 'inc_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id
-    };
-    setIncomes(prev => [newIncome, ...prev]);
-    showNotification('success', `Ingreso de ${newIncome.amount}€ registrado desde ${newIncome.platform}`);
-  };
+    const [profileResult, membershipsResult, linksAsManagerResult, linksAsClientResult] = await Promise.all([
+      supabase.from('profiles').select('*').eq('user_id', authUser.id).maybeSingle(),
+      supabase.from('organization_memberships').select('organization_id,role,status').eq('user_id', authUser.id).eq('status', 'active'),
+      supabase.from('manager_client_links').select('id,organization_id,manager_user_id,client_user_id,status').eq('manager_user_id', authUser.id).eq('status', 'active'),
+      supabase.from('manager_client_links').select('id,organization_id,manager_user_id,client_user_id,status').eq('client_user_id', authUser.id).eq('status', 'active'),
+    ]);
 
-  const addIncomes = (incs: Omit<Income, 'id' | 'userId'>[]) => {
-    if (!currentUser) return;
-    const newIncomes = incs.map(inc => ({
-      ...inc,
-      id: 'inc_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id
-    }));
-    setIncomes(prev => [...newIncomes, ...prev]);
-    showNotification('success', `${incs.length} ingresos importados`);
-  };
+    if (profileResult.error) throw profileResult.error;
+    if (membershipsResult.error) throw membershipsResult.error;
+    if (linksAsManagerResult.error) throw linksAsManagerResult.error;
+    if (linksAsClientResult.error) throw linksAsClientResult.error;
 
-  const addExpense = (exp: Omit<Expense, 'id' | 'userId'>) => {
-    if (!currentUser) return;
-    const vatRate = exp.vatRate ?? (exp.category === ExpenseCategory.GASOLINA ? 21 : 21);
-    const vatAmount = exp.vatAmount ?? (vatRate > 0 ? Number(((exp.amount * vatRate) / (100 + vatRate)).toFixed(2)) : 0);
+    const profile = (profileResult.data || {}) as DbRow;
+    const memberships = (membershipsResult.data || []) as DbRow[];
+    const priority = { owner: 0, rider: 1, manager: 2 } as Record<string, number>;
+    const primaryMembership = [...memberships].sort((a, b) => (priority[a.role] ?? 9) - (priority[b.role] ?? 9))[0];
+    const role = toUserRole(primaryMembership?.role);
+    const organizationId = primaryMembership?.organization_id as string | undefined;
 
-    const newExpense: Expense = {
-      ...exp,
-      id: 'exp_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id,
-      status: exp.status || 'pending_review',
-      vatRate,
-      vatAmount,
-      deductiblePercentage: exp.deductiblePercentage ?? 100
-    };
-
-    setExpenses(prev => [newExpense, ...prev]);
-    showNotification('success', `Gasto de ${newExpense.amount}€ registrado con comprobante digitalizado`);
-  };
-
-  const addExpenses = (exps: Omit<Expense, 'id' | 'userId'>[]) => {
-    if (!currentUser) return;
-    const newExpenses = exps.map(exp => ({
-      ...exp,
-      id: 'exp_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id,
-      status: exp.status || 'pending_review'
-    }));
-    setExpenses(prev => [...newExpenses, ...prev]);
-    showNotification('success', `${exps.length} gastos guardados`);
-  };
-
-  const updateExpense = (updatedExpense: Expense) => {
-    setExpenses(prev => prev.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp));
-    showNotification('success', 'Gasto actualizado');
-  };
-
-  const deleteExpense = (id: string) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
-    showNotification('info', 'Gasto eliminado');
-  };
-
-  const updateExpenseAudit = (
-    expenseId: string, 
-    status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix', 
-    gestorNotes?: string
-  ) => {
-    setExpenses(prev => prev.map(exp => {
-      if (exp.id === expenseId) {
-        return {
-          ...exp,
-          status,
-          gestorNotes: gestorNotes !== undefined ? gestorNotes : exp.gestorNotes
-        };
-      }
-      return exp;
-    }));
-
-    const statusLabels: Record<string, string> = {
-      approved: 'Gasto Aprobado y Validado para Hacienda',
-      rejected: 'Gasto Marcado como No Deducible',
-      needs_fix: 'Gasto con Requerimiento de Subsanación',
-      pending_review: 'Gasto en Revisión'
-    };
-
-    showNotification('info', statusLabels[status] || 'Estado de gasto actualizado');
-  };
-
-  const addDocument = (doc: Omit<Document, 'id' | 'userId'>) => {
-    if (!currentUser) return;
-    const newDoc: Document = {
-      ...doc,
-      id: 'doc_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id
-    };
-    setDocuments(prev => [newDoc, ...prev]);
-    showNotification('success', `Documento "${newDoc.name}" archivado con éxito`);
-  };
-
-  const updateVehicle = (vehicleData: Vehicle) => {
-    setVehicle(vehicleData);
-    showNotification('success', 'Datos del vehículo actualizados');
-  };
-
-  const addPayment = (payment: Omit<Payment, 'id'>) => {
-    const newPayment: Payment = {
-      ...payment,
-      id: 'pay_' + Math.random().toString(36).substr(2, 9)
-    };
-    setPayments(prev => [...prev, newPayment]);
-    showNotification('success', 'Pago previsto añadido');
-  };
-
-  const markPaymentAsReceived = (paymentId: string) => {
-    setPayments(prev => prev.map(p => {
-      if (p.id === paymentId) {
-        if (p.status === 'pending' && currentUser) {
-          const newIncome: Income = {
-            id: 'inc_' + Math.random().toString(36).substr(2, 9),
-            userId: currentUser.id,
-            platform: p.platform,
-            amount: p.amount,
-            date: new Date().toISOString().split('T')[0],
-            retention: 0
-          };
-          setIncomes(current => [newIncome, ...current]);
-        }
-        return { ...p, status: 'received', estimated: false };
-      }
-      return p;
-    }));
-    showNotification('success', 'Pago marcado como recibido e ingresado en finanzas');
-  };
-
-  const addRequirement = (req: Omit<GestorRequirement, 'id' | 'createdAt'>) => {
-    const newReq: GestorRequirement = {
-      ...req,
-      id: 'req_' + Math.random().toString(36).substr(2, 9),
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setRequirements(prev => [newReq, ...prev]);
-    showNotification('success', `Requerimiento enviado al rider ${req.riderName}`);
-  };
-
-  const updateRequirementStatus = (
-    id: string, 
-    status: 'pending' | 'submitted' | 'approved', 
-    notes?: string, 
-    proofUrl?: string
-  ) => {
-    setRequirements(prev => prev.map(r => {
-      if (r.id === id) {
-        return {
-          ...r,
-          status,
-          submissionNotes: notes || r.submissionNotes,
-          submissionUrl: proofUrl || r.submissionUrl
-        };
-      }
-      return r;
-    }));
-
-    if (status === 'submitted') {
-      showNotification('success', 'Justificante enviado al gestor para revisión');
-    } else if (status === 'approved') {
-      showNotification('success', 'Requerimiento marcado como resuelto por el gestor');
+    let organizationName = '';
+    if (organizationId) {
+      const { data } = await supabase.from('organizations').select('name').eq('id', organizationId).maybeSingle();
+      organizationName = String((data as DbRow | null)?.name || '');
     }
+
+    const managerLink = ((linksAsClientResult.data || []) as DbRow[])[0];
+    const authenticatedUser: User = {
+      id: authUser.id,
+      name: String(profile.full_name || authUser.email?.split('@')[0] || 'Usuario'),
+      email: authUser.email || '',
+      role,
+      organizationId,
+      phone: profile.phone || undefined,
+      nif: profile.nif || undefined,
+      fiscalRegime: profile.fiscal_regime || undefined,
+      iaeCode: profile.iae_code || undefined,
+      socialSecurityType: profile.social_security_type || undefined,
+      vehicleType: profile.vehicle_type || undefined,
+      vehiclePlate: profile.vehicle_plate || undefined,
+      vehicleFuel: profile.vehicle_fuel || undefined,
+      platforms: Array.isArray(profile.platforms) ? profile.platforms : [],
+      banks: Array.isArray(profile.preferred_banks) ? profile.preferred_banks : [],
+      managerId: managerLink?.manager_user_id,
+      companyName: role === UserRole.MANAGER ? (organizationName || undefined) : undefined,
+      collegiateNumber: profile.professional_id || undefined,
+      countryCode: profile.country_code || 'ES',
+    };
+
+    const linkRows = (linksAsManagerResult.data || []) as DbRow[];
+    const clientIds = linkRows.map((row) => String(row.client_user_id));
+    let clientProfiles: DbRow[] = [];
+    if (role === UserRole.MANAGER && clientIds.length > 0) {
+      const result = await supabase.from('profiles').select('*').in('user_id', clientIds);
+      if (result.error) throw result.error;
+      clientProfiles = (result.data || []) as DbRow[];
+    }
+
+    const clientOrgById = new Map(linkRows.map((row) => [String(row.client_user_id), String(row.organization_id)]));
+    const clientUsers: User[] = clientProfiles.map((row) => ({
+      id: String(row.user_id),
+      name: String(row.full_name || 'Autónomo'),
+      email: String(row.email || ''),
+      role: UserRole.RIDER,
+      organizationId: clientOrgById.get(String(row.user_id)),
+      phone: row.phone || undefined,
+      nif: row.nif || undefined,
+      fiscalRegime: row.fiscal_regime || undefined,
+      iaeCode: row.iae_code || undefined,
+      socialSecurityType: row.social_security_type || undefined,
+      vehicleType: row.vehicle_type || undefined,
+      vehiclePlate: row.vehicle_plate || undefined,
+      vehicleFuel: row.vehicle_fuel || undefined,
+      platforms: Array.isArray(row.platforms) ? row.platforms : [],
+      banks: Array.isArray(row.preferred_banks) ? row.preferred_banks : [],
+      managerId: authUser.id,
+      countryCode: row.country_code || 'ES',
+    }));
+
+    const [incomeResult, expenseResult, reviewResult, documentResult, payoutResult, requirementResult, taxPeriodResult, filingResult] = await Promise.all([
+      supabase.from('incomes').select('*').order('occurred_on', { ascending: false }),
+      supabase.from('expenses').select('*').order('occurred_on', { ascending: false }),
+      supabase.from('expense_reviews').select('*').order('updated_at', { ascending: false }),
+      supabase.from('documents').select('*').order('created_at', { ascending: false }),
+      supabase.from('platform_payouts').select('*').order('paid_on', { ascending: false, nullsFirst: false }),
+      supabase.from('manager_requirements').select('*').order('created_at', { ascending: false }),
+      supabase.from('tax_periods').select('*').order('tax_year', { ascending: false }).order('quarter', { ascending: false }),
+      supabase.from('filing_evidence').select('*').eq('verification_status', 'verified'),
+    ]);
+
+    for (const result of [incomeResult, expenseResult, reviewResult, documentResult, payoutResult, requirementResult, taxPeriodResult, filingResult]) {
+      if (result.error) throw result.error;
+    }
+
+    const documentRows = (documentResult.data || []) as DbRow[];
+    const signedUrlByDocument = new Map<string, string>();
+    await Promise.all(documentRows.map(async (row) => {
+      const path = String(row.storage_path || '');
+      if (!path) return;
+      const { data } = await supabase.storage.from('fiscal-evidence').createSignedUrl(path, 3600);
+      if (data?.signedUrl) signedUrlByDocument.set(String(row.id), data.signedUrl);
+    }));
+
+    const mappedDocuments: Document[] = documentRows.map((row) => ({
+      id: String(row.id),
+      userId: String(row.user_id),
+      type: row.kind === 'tax_filing' ? 'Trimestre' : row.kind === 'registration' ? 'Alta' : row.kind === 'invoice' ? 'Factura' : 'Otro',
+      name: String(row.original_filename || row.kind || 'Documento'),
+      date: normalizeDate(row.document_date || row.created_at),
+      content: signedUrlByDocument.get(String(row.id)),
+    }));
+
+    const reviewByExpense = new Map<string, DbRow>();
+    ((reviewResult.data || []) as DbRow[]).forEach((row) => {
+      if (!reviewByExpense.has(String(row.expense_id))) reviewByExpense.set(String(row.expense_id), row);
+    });
+
+    const mappedExpenses: Expense[] = ((expenseResult.data || []) as DbRow[]).map((row) => {
+      const review = reviewByExpense.get(String(row.id));
+      return {
+        id: String(row.id),
+        userId: String(row.user_id),
+        category: String(row.category),
+        date: normalizeDate(row.occurred_on),
+        amount: Number(row.total_amount || 0),
+        merchant: row.merchant || undefined,
+        vatRate: row.vat_rate === null ? undefined : Number(row.vat_rate),
+        vatAmount: row.vat_amount === null ? undefined : Number(row.vat_amount),
+        receiptUrl: row.source_document_id ? signedUrlByDocument.get(String(row.source_document_id)) : undefined,
+        status: (review?.status || 'pending_review') as ExpenseReviewStatus,
+        gestorNotes: review?.notes || undefined,
+        deductiblePercentage: review ? Number(review.deductible_percent || 0) : 0,
+        notes: row.notes || undefined,
+      };
+    });
+
+    const mappedIncomes: Income[] = ((incomeResult.data || []) as DbRow[]).map((row) => ({
+      id: String(row.id),
+      userId: String(row.user_id),
+      platform: String(row.platform),
+      date: normalizeDate(row.occurred_on),
+      amount: Number(row.gross_amount || 0),
+      retention: Number(row.retention_amount || 0),
+    }));
+
+    const mappedPayments: Payment[] = ((payoutResult.data || []) as DbRow[]).map((row) => ({
+      id: String(row.id),
+      platform: String(row.platform),
+      amount: Number(row.net_amount || 0),
+      date: normalizeDate(row.paid_on || row.period_end || row.created_at),
+      status: row.status === 'paid' ? 'received' : 'pending',
+      estimated: row.status === 'expected',
+    }));
+
+    const nameByUserId = new Map<string, string>([
+      [authenticatedUser.id, authenticatedUser.name],
+      ...clientUsers.map((client) => [client.id, client.name] as [string, string]),
+    ]);
+    const mappedRequirements: GestorRequirement[] = ((requirementResult.data || []) as DbRow[])
+      .filter((row) => row.status !== 'cancelled')
+      .map((row) => ({
+        id: String(row.id),
+        managerId: String(row.manager_user_id),
+        managerName: nameByUserId.get(String(row.manager_user_id)) || 'Gestor',
+        riderId: String(row.client_user_id),
+        riderName: nameByUserId.get(String(row.client_user_id)) || 'Autónomo',
+        title: String(row.title),
+        description: String(row.description || ''),
+        category: row.category,
+        deadline: normalizeDate(row.deadline),
+        status: row.status,
+        submissionNotes: row.submission_notes || undefined,
+        submissionUrl: row.submitted_document_id ? signedUrlByDocument.get(String(row.submitted_document_id)) : undefined,
+        createdAt: normalizeDate(row.created_at),
+        quarter: row.tax_period_label || undefined,
+      }));
+
+    const verifiedFilingByPeriod = new Map<string, DbRow[]>();
+    ((filingResult.data || []) as DbRow[]).forEach((row) => {
+      const list = verifiedFilingByPeriod.get(String(row.tax_period_id)) || [];
+      list.push(row);
+      verifiedFilingByPeriod.set(String(row.tax_period_id), list);
+    });
+    const mappedDeclarations: TaxDeclaration[] = [];
+    ((taxPeriodResult.data || []) as DbRow[]).forEach((row) => {
+      const snapshot = (row.snapshot || {}) as DbRow;
+      const filings = verifiedFilingByPeriod.get(String(row.id)) || [];
+      for (const modelType of ['130', '303'] as const) {
+        const filing = filings.find((item) => item.model_type === modelType);
+        const modelSnapshot = snapshot[`model${modelType}`] || {};
+        mappedDeclarations.push({
+          id: `${row.id}-${modelType}`,
+          userId: String(row.user_id),
+          quarter: `${row.quarter}T ${row.tax_year}`,
+          year: Number(row.tax_year),
+          modelType,
+          title: `Modelo ${modelType}`,
+          grossIncome: Number(snapshot?.quarter?.grossIncome || 0),
+          deductibleExpenses: Number(snapshot?.quarter?.approvedDeductibleExpenses || 0),
+          netYield: Number(snapshot?.yearToDate?.netActivityEstimate || 0),
+          taxAmount: Number(modelSnapshot?.finalAmount ?? modelSnapshot?.provisionalAccruedAmount ?? 0),
+          status: filing ? 'filed_with_tax_agency' : row.status === 'reviewed' ? 'reviewed_by_gestor' : 'draft',
+          filingReference: filing?.reference || undefined,
+          filedAt: filing ? normalizeDate(filing.filed_at) : undefined,
+          gestorId: row.reviewed_by || undefined,
+        });
+      }
+    });
+
+    const vehicleRowHasEnoughEvidence = Boolean(profile.vehicle_model);
+    const mappedVehicle: Vehicle | null = vehicleRowHasEnoughEvidence ? {
+      type: profile.vehicle_type || 'moto',
+      model: String(profile.vehicle_model),
+      plate: profile.vehicle_plate || undefined,
+      lastMaintenanceDate: normalizeDate(profile.last_maintenance_date),
+      lastMaintenanceKm: Number(profile.last_maintenance_km || 0),
+      currentKm: Number(profile.current_km || 0),
+      nextMaintenanceKm: Number(profile.next_maintenance_km || 0),
+    } : null;
+
+    setCurrentUser(authenticatedUser);
+    setUsers(role === UserRole.MANAGER ? [authenticatedUser, ...clientUsers] : [authenticatedUser]);
+    setIncomes(mappedIncomes);
+    setExpenses(mappedExpenses);
+    setDocuments(mappedDocuments);
+    setPayments(mappedPayments);
+    setRequirements(mappedRequirements);
+    setDeclarations(mappedDeclarations);
+    setVehicle(mappedVehicle);
+    setHasOnboarded(Boolean(profile.onboarding_completed));
+  }, [ensureBootstrapped]);
+
+  const refreshData = useCallback(async () => {
+    if (!backendConfigured) return;
+    const supabase = getSupabase();
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (data.session?.user) await loadWorkspace(data.session.user);
+    else clearWorkspace();
+  }, [backendConfigured, clearWorkspace, loadWorkspace]);
+
+  useEffect(() => {
+    document.body.classList.toggle('dark', darkMode);
+    localStorage.setItem('labora_pref_dark', String(darkMode));
+  }, [darkMode]);
+
+  useEffect(() => {
+    localStorage.setItem('labora_pref_privacy', String(privacyMode));
+  }, [privacyMode]);
+
+  useEffect(() => {
+    if (!backendConfigured) {
+      clearWorkspace();
+      setIsLoading(false);
+      return;
+    }
+
+    const supabase = getSupabase();
+    let active = true;
+
+    void (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (active && data.session?.user) await loadWorkspace(data.session.user);
+      } catch (error) {
+        console.error('Labora+ session bootstrap failed:', error);
+        if (active) clearWorkspace();
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    })();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => {
+        if (!active) return;
+        if (!session?.user) {
+          clearWorkspace();
+          return;
+        }
+        void loadWorkspace(session.user).catch((error) => {
+          console.error('Labora+ auth refresh failed:', error);
+          showNotification('error', 'No se pudo cargar tu espacio de trabajo.');
+        });
+      }, 0);
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [backendConfigured, clearWorkspace, loadWorkspace, showNotification]);
+
+  const requireWorkspace = () => {
+    if (!currentUser?.organizationId) throw new Error('No hay un espacio de trabajo activo.');
+    return { userId: currentUser.id, organizationId: currentUser.organizationId };
   };
 
-  const fileTaxDeclaration = (declarationId: string, filingRef: string) => {
-    setDeclarations(prev => prev.map(dec => {
-      if (dec.id === declarationId) {
-        return {
-          ...dec,
-          status: 'filed_with_tax_agency',
-          filingReference: filingRef,
-          filedAt: new Date().toISOString().split('T')[0]
-        };
-      }
-      return dec;
+  const login = async (email: string, password: string) => {
+    if (!backendConfigured) throw new Error('El backend seguro de Labora+ todavía no está configurado.');
+    const supabase = getSupabase();
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) throw error;
+    if (!data.user) throw new Error('No se pudo recuperar la identidad autenticada.');
+    await loadWorkspace(data.user);
+    showNotification('success', 'Sesión iniciada de forma segura.');
+  };
+
+  const registerUser = async (userData: Partial<User>, password: string) => {
+    if (!backendConfigured) throw new Error('El backend seguro de Labora+ todavía no está configurado.');
+    if (!userData.email) throw new Error('El correo es obligatorio.');
+    if (password.length < 8) throw new Error('Usa una contraseña de al menos 8 caracteres.');
+
+    const supabase = getSupabase();
+    const accountKind = userData.role === UserRole.MANAGER ? 'manager' : 'rider';
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email.trim(),
+      password,
+      options: {
+        data: {
+          full_name: userData.name || '',
+          account_kind: accountKind,
+        },
+      },
+    });
+    if (error) throw error;
+    if (!data.user) throw new Error('No se pudo crear la cuenta.');
+
+    if (!data.session) {
+      showNotification('info', 'Cuenta creada. Confirma tu correo y después inicia sesión.');
+      return;
+    }
+
+    await ensureBootstrapped(data.user);
+    const profilePatch = {
+      full_name: userData.name || '',
+      phone: userData.phone || null,
+      country_code: userData.countryCode || 'ES',
+      nif: userData.nif || null,
+      fiscal_regime: userData.fiscalRegime || null,
+      iae_code: userData.iaeCode || null,
+      social_security_type: userData.socialSecurityType || null,
+      vehicle_type: userData.vehicleType || null,
+      vehicle_plate: userData.vehiclePlate || null,
+      vehicle_fuel: userData.vehicleFuel || null,
+      platforms: userData.platforms || [],
+      preferred_banks: userData.banks || [],
+      professional_id: userData.collegiateNumber || null,
+    };
+    const { error: profileError } = await supabase.from('profiles').update(profilePatch).eq('user_id', data.user.id);
+    if (profileError) throw profileError;
+    await loadWorkspace(data.user);
+    showNotification('success', 'Cuenta creada. Tus datos ya están en tu espacio privado.');
+  };
+
+  const logout = async () => {
+    if (backendConfigured) {
+      const { error } = await getSupabase().auth.signOut();
+      if (error) throw error;
+    }
+    clearWorkspace();
+    showNotification('info', 'Sesión cerrada.');
+  };
+
+  const switchUser = (_userId: string) => {
+    showNotification('error', 'Labora+ no permite suplantar la identidad de otro usuario.');
+  };
+
+  const updateUserConfig = async (platforms: string[], banks: string[]) => {
+    if (!currentUser) throw new Error('Inicia sesión para guardar cambios.');
+    const { error } = await getSupabase().from('profiles').update({ platforms, preferred_banks: banks }).eq('user_id', currentUser.id);
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Preferencias de plataformas actualizadas.');
+  };
+
+  const updateUserFiscalProfile = async (profileData: Partial<User>) => {
+    if (!currentUser) throw new Error('Inicia sesión para guardar cambios.');
+    const patch: DbRow = {};
+    if (profileData.name !== undefined) patch.full_name = profileData.name;
+    if (profileData.phone !== undefined) patch.phone = profileData.phone || null;
+    if (profileData.nif !== undefined) patch.nif = profileData.nif || null;
+    if (profileData.fiscalRegime !== undefined) patch.fiscal_regime = profileData.fiscalRegime || null;
+    if (profileData.iaeCode !== undefined) patch.iae_code = profileData.iaeCode || null;
+    if (profileData.socialSecurityType !== undefined) patch.social_security_type = profileData.socialSecurityType || null;
+    if (profileData.vehicleType !== undefined) patch.vehicle_type = profileData.vehicleType || null;
+    if (profileData.vehiclePlate !== undefined) patch.vehicle_plate = profileData.vehiclePlate || null;
+    if (profileData.vehicleFuel !== undefined) patch.vehicle_fuel = profileData.vehicleFuel || null;
+    if (profileData.collegiateNumber !== undefined) patch.professional_id = profileData.collegiateNumber || null;
+    const { error } = await getSupabase().from('profiles').update(patch).eq('user_id', currentUser.id);
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Perfil actualizado.');
+  };
+
+  const completeOnboarding = async () => {
+    if (!currentUser) throw new Error('Inicia sesión para completar el perfil.');
+    const { error } = await getSupabase().from('profiles').update({ onboarding_completed: true }).eq('user_id', currentUser.id);
+    if (error) throw error;
+    setHasOnboarded(true);
+    showNotification('success', 'Configuración completada.');
+  };
+
+  const togglePrivacyMode = () => setPrivacyMode((value) => !value);
+  const toggleDarkMode = () => setDarkMode((value) => !value);
+
+  const addIncome = async (income: Omit<Income, 'id' | 'userId'>) => {
+    const { userId, organizationId } = requireWorkspace();
+    const { error } = await getSupabase().from('incomes').insert({
+      organization_id: organizationId,
+      user_id: userId,
+      platform: income.platform.trim(),
+      occurred_on: income.date,
+      gross_amount: income.amount,
+      retention_amount: income.retention || 0,
+      currency: 'EUR',
+      source_type: 'manual',
+      evidence_status: 'unverified',
+      created_by: userId,
+    });
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Ingreso registrado como dato manual.');
+  };
+
+  const addIncomes = async (items: Omit<Income, 'id' | 'userId'>[]) => {
+    const { userId, organizationId } = requireWorkspace();
+    if (items.length === 0) return;
+    const rows = items.map((income) => ({
+      organization_id: organizationId,
+      user_id: userId,
+      platform: income.platform.trim(),
+      occurred_on: income.date,
+      gross_amount: income.amount,
+      retention_amount: income.retention || 0,
+      currency: 'EUR',
+      source_type: 'manual',
+      evidence_status: 'unverified',
+      created_by: userId,
     }));
-    showNotification('success', `Declaración presentada con justificante AEAT: ${filingRef}`);
+    const { error } = await getSupabase().from('incomes').insert(rows);
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', `${items.length} ingresos registrados.`);
+  };
+
+  const uploadEvidence = async (dataUrl: string, kind: string, documentDate?: string) => {
+    const { userId, organizationId } = requireWorkspace();
+    const supabase = getSupabase();
+    const blob = dataUrlToBlob(dataUrl);
+    const extension = blob.type === 'image/png' ? 'png' : blob.type === 'application/pdf' ? 'pdf' : 'jpg';
+    const filename = `${crypto.randomUUID()}.${extension}`;
+    const storagePath = `${organizationId}/${userId}/${filename}`;
+    const checksum = await sha256(blob);
+
+    const { error: uploadError } = await supabase.storage.from('fiscal-evidence').upload(storagePath, blob, {
+      contentType: blob.type,
+      upsert: false,
+    });
+    if (uploadError) throw uploadError;
+
+    const { data: documentRow, error: documentError } = await supabase.from('documents').insert({
+      organization_id: organizationId,
+      user_id: userId,
+      uploaded_by: userId,
+      kind,
+      storage_path: storagePath,
+      original_filename: `evidencia-${documentDate || new Date().toISOString().slice(0, 10)}.${extension}`,
+      mime_type: blob.type,
+      size_bytes: blob.size,
+      sha256: checksum,
+      document_date: documentDate || null,
+      extraction_status: 'pending',
+    }).select('id').single();
+    if (documentError) {
+      await supabase.storage.from('fiscal-evidence').remove([storagePath]);
+      throw documentError;
+    }
+    return String(documentRow.id);
+  };
+
+  const addExpense = async (expense: Omit<Expense, 'id' | 'userId'>) => {
+    const { userId, organizationId } = requireWorkspace();
+    let sourceDocumentId: string | null = null;
+    if (expense.receiptUrl?.startsWith('data:')) sourceDocumentId = await uploadEvidence(expense.receiptUrl, 'expense_receipt', expense.date);
+    if (!sourceDocumentId) throw new Error('Adjunta una evidencia real antes de registrar el gasto.');
+
+    const { error } = await getSupabase().from('expenses').insert({
+      organization_id: organizationId,
+      user_id: userId,
+      occurred_on: expense.date,
+      merchant: expense.merchant?.trim() || String(expense.category),
+      category: String(expense.category),
+      total_amount: expense.amount,
+      currency: 'EUR',
+      vat_rate: expense.vatRate ?? null,
+      vat_amount: expense.vatAmount ?? null,
+      source_document_id: sourceDocumentId,
+      evidence_status: 'unverified',
+      notes: expense.notes || null,
+      created_by: userId,
+    });
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Gasto guardado con evidencia y pendiente de revisión.');
+  };
+
+  const addExpenses = async (items: Omit<Expense, 'id' | 'userId'>[]) => {
+    for (const expense of items) await addExpense(expense);
+  };
+
+  const updateExpense = async (expense: Expense) => {
+    if (!currentUser || expense.userId !== currentUser.id) throw new Error('Solo puedes corregir tus propios gastos.');
+    const { error } = await getSupabase().from('expenses').update({
+      occurred_on: expense.date,
+      merchant: expense.merchant || String(expense.category),
+      category: String(expense.category),
+      total_amount: expense.amount,
+      vat_rate: expense.vatRate ?? null,
+      vat_amount: expense.vatAmount ?? null,
+      notes: expense.notes || null,
+    }).eq('id', expense.id).eq('user_id', currentUser.id);
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Gasto actualizado.');
+  };
+
+  const deleteExpense = async (id: string) => {
+    if (!currentUser) throw new Error('Inicia sesión.');
+    const { error } = await getSupabase().from('expenses').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) throw error;
+    await refreshData();
+    showNotification('info', 'Gasto eliminado. La auditoría conserva el evento de eliminación.');
+  };
+
+  const updateExpenseAudit = async (expenseId: string, status: ExpenseReviewStatus, gestorNotes?: string) => {
+    if (currentUser?.role !== UserRole.MANAGER) throw new Error('Solo un gestor vinculado puede revisar gastos.');
+    if (status === 'pending_review') throw new Error('La revisión pendiente se obtiene automáticamente cuando todavía no existe decisión del gestor.');
+    const target = expenses.find((expense) => expense.id === expenseId);
+    if (!target) throw new Error('Gasto no encontrado.');
+    const organizationId = users.find((user) => user.id === target.userId)?.organizationId;
+    if (!organizationId) throw new Error('No se pudo resolver el espacio del cliente.');
+
+    const { error } = await getSupabase().from('expense_reviews').upsert({
+      organization_id: organizationId,
+      expense_id: expenseId,
+      manager_user_id: currentUser.id,
+      status,
+      deductible_percent: status === 'approved' ? Math.max(0, Math.min(100, target.deductiblePercentage || 0)) : 0,
+      notes: gestorNotes || null,
+    }, { onConflict: 'expense_id,manager_user_id' });
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Revisión del gasto guardada con trazabilidad.');
+  };
+
+  const addDocument = async (doc: Omit<Document, 'id' | 'userId'>) => {
+    if (!doc.content?.startsWith('data:')) throw new Error('El documento debe contener un archivo real.');
+    await uploadEvidence(doc.content, doc.type === 'Factura' ? 'invoice' : doc.type === 'Alta' ? 'registration' : 'document', doc.date);
+    await refreshData();
+    showNotification('success', 'Documento guardado en almacenamiento privado.');
+  };
+
+  const addPayment = async (payment: Omit<Payment, 'id'>) => {
+    const { userId, organizationId } = requireWorkspace();
+    const { error } = await getSupabase().from('platform_payouts').insert({
+      organization_id: organizationId,
+      user_id: userId,
+      platform: payment.platform,
+      paid_on: payment.status === 'received' ? payment.date : null,
+      period_end: payment.date,
+      net_amount: payment.amount,
+      currency: 'EUR',
+      status: payment.status === 'received' ? 'paid' : 'expected',
+    });
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', payment.status === 'received' ? 'Pago registrado como recibido.' : 'Pago esperado registrado para conciliación.');
+  };
+
+  const markPaymentAsReceived = async (paymentId: string) => {
+    const { error } = await getSupabase().from('platform_payouts').update({ status: 'paid', paid_on: new Date().toISOString().slice(0, 10) }).eq('id', paymentId);
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Pago marcado como recibido. No se ha duplicado como ingreso automáticamente.');
+  };
+
+  const updateVehicle = async (vehicleData: Vehicle) => {
+    if (!currentUser) throw new Error('Inicia sesión.');
+    const { error } = await getSupabase().from('profiles').update({
+      vehicle_type: vehicleData.type,
+      vehicle_plate: vehicleData.plate || null,
+      vehicle_model: vehicleData.model || null,
+      last_maintenance_date: vehicleData.lastMaintenanceDate || null,
+      last_maintenance_km: vehicleData.lastMaintenanceKm || null,
+      current_km: vehicleData.currentKm || null,
+      next_maintenance_km: vehicleData.nextMaintenanceKm || null,
+    }).eq('user_id', currentUser.id);
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Vehículo actualizado.');
+  };
+
+  const addRequirement = async (requirement: Omit<GestorRequirement, 'id' | 'createdAt'>) => {
+    if (currentUser?.role !== UserRole.MANAGER) throw new Error('Solo el gestor puede crear peticiones.');
+    const client = users.find((user) => user.id === requirement.riderId);
+    if (!client?.organizationId) throw new Error('El cliente no está vinculado a un espacio válido.');
+    const { error } = await getSupabase().from('manager_requirements').insert({
+      organization_id: client.organizationId,
+      manager_user_id: currentUser.id,
+      client_user_id: requirement.riderId,
+      title: requirement.title,
+      description: requirement.description,
+      category: requirement.category,
+      deadline: requirement.deadline || null,
+      tax_period_label: requirement.quarter || null,
+      status: 'pending',
+    });
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', 'Petición enviada al autónomo.');
+  };
+
+  const updateRequirementStatus = async (id: string, status: 'pending' | 'submitted' | 'approved', notes?: string, proofUrl?: string) => {
+    if (!currentUser) throw new Error('Inicia sesión.');
+    const requirement = requirements.find((item) => item.id === id);
+    if (!requirement) throw new Error('Petición no encontrada.');
+    let submittedDocumentId: string | null = null;
+    if (status === 'submitted' && proofUrl?.startsWith('data:')) submittedDocumentId = await uploadEvidence(proofUrl, 'requirement_response');
+
+    const patch: DbRow = {
+      status,
+      submission_notes: notes || null,
+    };
+    if (submittedDocumentId) patch.submitted_document_id = submittedDocumentId;
+    if (status === 'submitted') patch.submitted_at = new Date().toISOString();
+    if (status === 'approved') patch.resolved_at = new Date().toISOString();
+    const { error } = await getSupabase().from('manager_requirements').update(patch).eq('id', id);
+    if (error) throw error;
+    await refreshData();
+    showNotification('success', status === 'submitted' ? 'Documento enviado al gestor.' : 'Petición actualizada.');
+  };
+
+  const fileTaxDeclaration = (_declarationId: string, _filingRef: string) => {
+    showNotification('error', 'Labora+ solo mostrará una presentación como verificada cuando exista un justificante real adjunto y validado.');
   };
 
   const calculateQuarterlyTaxes = (userId: string, quarter: string) => {
-    const userIncomes = incomes.filter(i => i.userId === userId);
-    const userExpenses = expenses.filter(e => e.userId === userId && e.status !== 'rejected');
-
-    const totalGross = userIncomes.reduce((s, i) => s + i.amount, 0);
-    const totalDeductible = userExpenses.reduce((s, e) => s + (e.amount * (e.deductiblePercentage ?? 100) / 100), 0);
-    const netYield = Math.max(0, totalGross - totalDeductible);
-    
-    // Model 130: 20% on net yield
-    const model130Tax = Number((netYield * 0.20).toFixed(2));
-
-    // Model 303: VAT output (if applicable, e.g. 21%) - deductible input VAT
-    const deductibleVAT = userExpenses.reduce((s, e) => s + (e.vatAmount || 0), 0);
-    const model303Tax = Number(Math.max(0, (totalGross * 0.21) - deductibleVAT).toFixed(2));
-
-    const model130: TaxDeclaration = {
-      id: `dec_130_${userId}_${quarter}`,
+    const snapshot = buildFiscalSnapshot(incomes, expenses, userId, quarter);
+    const period = parseFiscalPeriod(quarter);
+    const common = {
       userId,
-      quarter,
-      year: new Date().getFullYear(),
-      modelType: '130',
-      title: `Modelo 130 - Pago Fraccionado IRPF (${quarter})`,
-      grossIncome: totalGross,
-      deductibleExpenses: totalDeductible,
-      netYield,
-      taxAmount: model130Tax,
-      status: 'reviewed_by_gestor',
-      gestorId: currentUser?.role === UserRole.MANAGER ? currentUser.id : 'm1'
+      quarter: period.label,
+      year: period.year,
+      grossIncome: snapshot.quarter.grossIncome,
+      deductibleExpenses: snapshot.quarter.approvedDeductibleExpenses,
+      netYield: snapshot.yearToDate.netActivityEstimate,
+      status: 'draft' as const,
     };
-
-    const model303: TaxDeclaration = {
-      id: `dec_303_${userId}_${quarter}`,
-      userId,
-      quarter,
-      year: new Date().getFullYear(),
-      modelType: '303',
-      title: `Modelo 303 - Autoliquidación IVA (${quarter})`,
-      grossIncome: totalGross,
-      deductibleExpenses: totalDeductible,
-      netYield,
-      taxAmount: model303Tax,
-      status: 'reviewed_by_gestor',
-      gestorId: currentUser?.role === UserRole.MANAGER ? currentUser.id : 'm1'
+    return {
+      model130: {
+        id: `estimate-130-${userId}-${period.label}`,
+        ...common,
+        modelType: '130' as const,
+        title: 'Modelo 130 · estimación pendiente de revisión',
+        taxAmount: snapshot.model130.provisionalAccruedAmount,
+      },
+      model303: {
+        id: `estimate-303-${userId}-${period.label}`,
+        ...common,
+        modelType: '303' as const,
+        title: 'Modelo 303 · datos insuficientes para importe final',
+        taxAmount: 0,
+      },
     };
-
-    return { model130, model303 };
   };
 
   const getFiscalSummary = (userId: string): FiscalSummary => {
-    const userIncomes = incomes.filter(i => i.userId === userId);
-    const userExpenses = expenses.filter(e => e.userId === userId && e.status !== 'rejected');
-
-    const totalIncome = userIncomes.reduce((sum, i) => sum + i.amount, 0);
-    const totalExpenses = userExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const netProfit = totalIncome - totalExpenses;
-    
-    const estimatedIRPF = Math.max(0, netProfit * 0.20); 
-
+    const label = currentQuarter();
+    const snapshot = buildFiscalSnapshot(incomes, expenses, userId, label);
+    const totalIncome = snapshot.quarter.grossIncome;
+    const totalExpenses = snapshot.quarter.approvedDeductibleExpenses;
+    const netProfit = Math.max(0, totalIncome - totalExpenses);
     return {
       totalIncome,
       totalExpenses,
       netProfit,
-      estimatedIRPF,
-      quarter: '3T 2026'
+      estimatedIRPF: snapshot.model130.provisionalAccruedAmount,
+      quarter: label,
     };
   };
 
-  const getUsersByManager = (managerId: string): User[] => {
-    return users.filter(u => u.managerId === managerId && u.role === UserRole.RIDER);
-  };
+  const getUsersByManager = (managerId: string) => users.filter((user) => user.role === UserRole.RIDER && user.managerId === managerId);
 
   const exportData = () => {
-    const data = { incomes, expenses, documents, requirements, declarations, vehicle, payments };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    if (!currentUser) return;
+    const safeExpenses = expenses.filter((item) => item.userId === currentUser.id).map(({ receiptUrl, ...item }) => item);
+    const safeDocuments = documents.filter((item) => item.userId === currentUser.id).map(({ content, ...item }) => item);
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      user: { id: currentUser.id, name: currentUser.name, email: currentUser.email },
+      incomes: incomes.filter((item) => item.userId === currentUser.id),
+      expenses: safeExpenses,
+      documents: safeDocuments,
+      payments,
+      requirements: requirements.filter((item) => item.riderId === currentUser.id),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `labora_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showNotification('success', 'Copia de seguridad fiscal descargada');
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `labora-export-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    showNotification('success', 'Exportación creada sin URLs temporales de documentos.');
   };
 
-  const importData = (jsonData: string) => {
-    try {
-      const data = JSON.parse(jsonData);
-      if (data.incomes) setIncomes(data.incomes);
-      if (data.expenses) setExpenses(data.expenses);
-      if (data.documents) setDocuments(data.documents);
-      if (data.requirements) setRequirements(data.requirements);
-      if (data.declarations) setDeclarations(data.declarations);
-      if (data.vehicle) setVehicle(data.vehicle);
-      if (data.payments) setPayments(data.payments);
-      showNotification('success', 'Datos restaurados correctamente');
-    } catch (e) {
-      showNotification('error', 'Archivo de copia de seguridad inválido');
-    }
+  const importData = (_jsonData: string) => {
+    showNotification('info', 'La importación genérica está desactivada. Los datos reales se importarán mediante conectores verificables.');
   };
 
-  const value = {
+  const value = useMemo<DataContextType>(() => ({
     currentUser,
     users,
     incomes,
@@ -914,6 +900,8 @@ export const DataProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
     privacyMode,
     darkMode,
     notifications,
+    isLoading,
+    backendConfigured,
     togglePrivacyMode,
     toggleDarkMode,
     completeOnboarding,
@@ -943,20 +931,19 @@ export const DataProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
     showNotification,
     dismissNotification,
     exportData,
-    importData
-  };
+    importData,
+    refreshData,
+  }), [
+    currentUser, users, incomes, expenses, documents, payments, requirements, declarations, vehicle,
+    hasOnboarded, privacyMode, darkMode, notifications, isLoading, backendConfigured, refreshData,
+    showNotification, dismissNotification,
+  ]);
 
-  return (
-    <DataContext.Provider value={value}>
-      {children}
-    </DataContext.Provider>
-  );
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };
 
 export const useData = () => {
   const context = useContext(DataContext);
-  if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
-  }
+  if (!context) throw new Error('useData must be used within DataProvider');
   return context;
 };
