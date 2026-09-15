@@ -23,7 +23,7 @@ interface MoneyHubProps {
 
 type RealTab = 'expenses' | 'incomes' | 'payments' | 'taxes' | 'docs';
 
-const normalizeTab = (tab?: MoneyHubProps['initialTab']): RealTab => {
+const normalizeTab = (tab?: string): RealTab => {
   if (tab === 'incomes' || tab === 'payments' || tab === 'taxes' || tab === 'docs') return tab;
   return 'expenses';
 };
@@ -33,7 +33,7 @@ const money = (value: number, hidden: boolean) => hidden
   : new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
 
 export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses' }) => {
-  const { currentUser, getFiscalSummary, privacyMode, payments, addPayment, markPaymentAsReceived, showNotification } = useData();
+  const { currentUser, getFiscalSummary, privacyMode, payments } = useData();
   const [activeTab, setActiveTab] = useState<RealTab>(normalizeTab(initialTab));
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
 
