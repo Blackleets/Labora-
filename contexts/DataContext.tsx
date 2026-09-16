@@ -211,7 +211,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       managerId: managerLink?.manager_user_id,
       companyName: role === UserRole.MANAGER ? (organizationName || undefined) : undefined,
       collegiateNumber: profile.professional_id || undefined,
-      countryCode: profile.country_code || 'ES',
+      countryCode: profile.country_code || 'ZZ',
     };
 
     const linkRows = (linksAsManagerResult.data || []) as DbRow[];
@@ -241,7 +241,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       platforms: Array.isArray(row.platforms) ? row.platforms : [],
       banks: Array.isArray(row.preferred_banks) ? row.preferred_banks : [],
       managerId: authUser.id,
-      countryCode: row.country_code || 'ES',
+      countryCode: row.country_code || 'ZZ',
     }));
 
     const [incomeResult, expenseResult, reviewResult, documentResult, payoutResult, requirementResult, taxPeriodResult, filingResult] = await Promise.all([
@@ -480,6 +480,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
     const supabase = getSupabase();
     const accountKind = userData.role === UserRole.MANAGER ? 'manager' : 'rider';
+    const signupCountry = String(userData.countryCode || 'ZZ').trim().toUpperCase();
     const { data, error } = await supabase.auth.signUp({
       email: userData.email.trim(),
       password,
@@ -487,6 +488,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
         data: {
           full_name: userData.name || '',
           account_kind: accountKind,
+          country_code: /^[A-Z]{2}$/.test(signupCountry) ? signupCountry : 'ZZ',
         },
       },
     });
@@ -502,7 +504,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const profilePatch = {
       full_name: userData.name || '',
       phone: userData.phone || null,
-      country_code: userData.countryCode || 'ES',
+      country_code: /^[A-Z]{2}$/.test(signupCountry) ? signupCountry : 'ZZ',
       nif: userData.nif || null,
       fiscal_regime: userData.fiscalRegime || null,
       iae_code: userData.iaeCode || null,
@@ -739,6 +741,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       net_amount: payment.amount,
       currency: 'EUR',
       status: payment.status === 'received' ? 'paid' : 'expected',
+      created_by: userId,
     });
     if (error) throw error;
     await refreshData();
