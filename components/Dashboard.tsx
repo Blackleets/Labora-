@@ -18,6 +18,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { useData } from '../contexts/DataContext';
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { buildFiscalSnapshot } from '../services/fiscalEngine';
+import { FISCAL_POLICY_ES_2026 } from '../services/fiscalPolicyES2026';
 import { getMarketProfile, MarketProfile } from '../modules/country-config/marketProfiles';
 import { GLOBAL_INTEGRATION_CATALOG } from '../modules/integrations/data/catalog';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
@@ -32,6 +33,12 @@ const formatMoney = (value: number, hidden: boolean, market: MarketProfile) => h
   : new Intl.NumberFormat(market.locale, { style: 'currency', currency: market.currency }).format(value);
 
 const getQuarterLabel = (date = new Date()) => `${Math.floor(date.getMonth() / 3) + 1}T ${date.getFullYear()}`;
+const getSupportedFiscalQuarterLabel = (date = new Date()) => {
+  const taxYear = FISCAL_POLICY_ES_2026.taxYear;
+  if (date.getFullYear() < taxYear) return `1T ${taxYear}`;
+  if (date.getFullYear() > taxYear) return `4T ${taxYear}`;
+  return `${Math.floor(date.getMonth() / 3) + 1}T ${taxYear}`;
+};
 const isoLocal = (date: Date) => {
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 10);
@@ -42,28 +49,27 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   const { palette, timeOfDay } = useGhibliAtmosphere();
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
 
-  if (!currentUser) return null;
-
-  const market = getMarketProfile(currentUser.countryCode);
-  const fiscalEnabled = market.fiscalEngineStatus === 'verified';
-  const quarterLabel = getQuarterLabel();
-  const userIncomes = incomes.filter((income) => income.userId === currentUser.id);
-  const userExpenses = expenses.filter((expense) => expense.userId === currentUser.id);
+  const currentUserId = currentUser?.id || '';
+  const market = getMarketProfile(currentUser?.countryCode);
+  const fiscalEnabled = Boolean(currentUser && market.fiscalEngineStatus === 'verified');
+  const quarterLabel = fiscalEnabled ? getSupportedFiscalQuarterLabel() : getQuarterLabel();
+  const userIncomes = incomes.filter((income) => income.userId === currentUserId);
+  const userExpenses = expenses.filter((expense) => expense.userId === currentUserId);
   const totalIncome = userIncomes.reduce((sum, income) => sum + income.amount, 0);
   const totalExpenses = userExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const registeredBalance = totalIncome - totalExpenses;
 
   const fiscalSnapshot = useMemo(
-    () => fiscalEnabled ? buildFiscalSnapshot(incomes, expenses, currentUser.id, quarterLabel) : null,
-    [currentUser.id, expenses, fiscalEnabled, incomes, quarterLabel],
+    () => fiscalEnabled && currentUserId ? buildFiscalSnapshot(incomes, expenses, currentUserId, quarterLabel) : null,
+    [currentUserId, expenses, fiscalEnabled, incomes, quarterLabel],
   );
 
   const pendingPayments = payments.filter((payment) => payment.status === 'pending');
   const pendingPaymentAmount = pendingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   const pendingExpenses = userExpenses.filter((expense) => !expense.status || expense.status === 'pending_review' || expense.status === 'needs_fix');
-  const pendingRequirements = requirements.filter((requirement) => requirement.riderId === currentUser.id && requirement.status === 'pending');
+  const pendingRequirements = requirements.filter((requirement) => requirement.riderId === currentUserId && requirement.status === 'pending');
 
-  const platformCards = currentUser.platforms.slice(0, 6).map((platformName) => {
+  const platformCards = (currentUser?.platforms || []).slice(0, 6).map((platformName) => {
     const normalized = platformName.toLowerCase();
     const integration = GLOBAL_INTEGRATION_CATALOG.find((item) => item.name.toLowerCase() === normalized || item.id.toLowerCase() === normalized);
     return { name: integration?.name || platformName, integration };
@@ -75,8 +81,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       const date = new Date(today);
       date.setDate(today.getDate() - (6 - index));
       const iso = isoLocal(date);
-      const dayIncome = incomes.filter((income) => income.userId === currentUser.id && income.date === iso).reduce((sum, income) => sum + income.amount, 0);
-      const dayExpense = expenses.filter((expense) => expense.userId === currentUser.id && expense.date === iso).reduce((sum, expense) => sum + expense.amount, 0);
+      const dayIncome = incomes.filter((income) => income.userId === currentUserId && income.date === iso).reduce((sum, income) => sum + income.amount, 0);
+      const dayExpense = expenses.filter((expense) => expense.userId === currentUserId && expense.date === iso).reduce((sum, expense) => sum + expense.amount, 0);
       return {
         date: iso,
         label: new Intl.DateTimeFormat(market.locale, { weekday: 'short' }).format(date).replace('.', ''),
@@ -84,7 +90,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         gastos: Number(dayExpense.toFixed(2)),
       };
     });
-  }, [currentUser.id, expenses, incomes, market.locale]);
+  }, [currentUserId, expenses, incomes, market.locale]);
+
+  if (!currentUser) return null;
 
   const chartHasData = chartData.some((day) => day.ingresos > 0 || day.gastos > 0);
   const greeting = timeOfDay === 'dawn' ? 'Buenos días' : timeOfDay === 'midday' ? 'Buen día' : timeOfDay === 'golden_hour' ? 'Buenas tardes' : 'Buenas noches';
@@ -101,7 +109,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             </div>
             <h1 className="font-serif text-3xl font-bold tracking-tight text-[#27352E] sm:text-4xl">{greeting}, {currentUser.name}.</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">
-              Aquí ves únicamente lo que has registrado o aportado. {fiscalEnabled ? 'Las cifras fiscales son estimaciones hasta revisión y nunca significan que algo esté presentado.' : `Labora+ no calcula impuestos de ${market.displayName} todavía; tu espacio funciona como control financiero, documental y de colaboración.`}
+              Aquí ves únicamente lo que has registrado o aportado. {fiscalEnabled ? 'Las referencias fiscales sirven para detectar qué falta; no son importes finales, órdenes de pago ni prueba de presentación.' : `Labora+ no calcula impuestos de ${market.displayName} todavía; tu espacio funciona como control financiero, documental y de colaboración.`}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -116,7 +124,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         <MetricCard icon={Wallet} label="Pagos por conciliar" value={formatMoney(pendingPaymentAmount, privacyMode, market)} helper={pendingPayments.length ? `${pendingPayments.length} pago(s) por confirmar` : 'No hay pagos pendientes registrados'} tone="blue" onClick={() => setView?.('money')} />
         <MetricCard icon={Receipt} label="Evidencias pendientes" value={String(pendingExpenses.length)} helper="El asesor aún no ha cerrado estas revisiones" tone={pendingExpenses.length ? 'amber' : 'green'} onClick={() => setView?.('money')} />
         {fiscalEnabled && fiscalSnapshot ? (
-          <MetricCard icon={PiggyBank} label="Referencia fiscal" value={formatMoney(fiscalSnapshot.model130.provisionalAccruedAmount, privacyMode, market)} helper="Estimación provisional; no presentación" tone="amber" onClick={() => setView?.('tax-declarations')} />
+          <MetricCard icon={PiggyBank} label="Referencia fiscal no accionable" value={formatMoney(fiscalSnapshot.model130.standardRateReferenceAmount, privacyMode, market)} helper={`Regla estándar de trabajo · ${fiscalSnapshot.policyId} · no cuota final`} tone="amber" onClick={() => setView?.('tax-declarations')} />
         ) : (
           <MetricCard icon={Wallet} label="Balance registrado" value={formatMoney(registeredBalance, privacyMode, market)} helper="Ingresos registrados menos gastos registrados" tone={registeredBalance >= 0 ? 'green' : 'amber'} onClick={() => setView?.('money')} />
         )}
@@ -165,7 +173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       <section className="grid gap-4 md:grid-cols-3">
         <ActionCard icon={Fuel} title="Fotografía un ticket" text="Guardamos la evidencia original y cualquier lectura automática queda pendiente de revisión." action="Guardar ticket" onClick={() => setIsGasModalOpen(true)} />
         {fiscalEnabled ? (
-          <ActionCard icon={FileText} title="Revisa el periodo" text="Comprueba qué datos faltan antes del cierre sin confundir una estimación con una presentación." action="Abrir fiscal" onClick={() => setView?.('tax-declarations')} />
+          <ActionCard icon={FileText} title="Revisa el periodo" text="Comprueba qué datos faltan antes del cierre sin confundir una referencia con una cuota final o una presentación." action="Abrir fiscal" onClick={() => setView?.('tax-declarations')} />
         ) : (
           <ActionCard icon={FileText} title="Ordena documentos" text={`Conserva comprobantes y extractos mientras Labora+ prepara soporte fiscal verificado para ${market.displayName}.`} action="Abrir documentos" onClick={() => setView?.('docs')} />
         )}
