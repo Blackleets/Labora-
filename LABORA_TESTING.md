@@ -1,131 +1,53 @@
-# Labora+ — Product QA Runbook
+# Labora+ · QA visual y funcional
 
-## Rama
+Commit objetivo: `7d2abe9764f97ad9d855e356f79739994f97b9ca`
 
-`feat/labora-e2e-ready`
+## Dirección visual
 
-## Objetivo
+Paleta maestra:
+- Verde firma: `#214E3A`
+- Verde secundario: `#2F6B50`
+- Terracota: `#D66C47`
+- Ámbar: `#F1C56B`
+- Marfil: `#F7F3EA`
+- Tinta: `#1E231F`
 
-Validar Labora+ con dos cuentas reales separadas:
+Objetivo: una app calmada, premium y humana, diferenciada de los dashboards SaaS azules y de interfaces fiscales saturadas.
 
-- Autónomo / Rider
-- Gestoría
+## QA Rider
 
-La autenticación, perfiles, vínculo entre ambas partes, identidad, mensajería y sincronización operativa usan Supabase Auth, RLS, Storage y Realtime.
+1. Crear cuenta Rider con foto.
+2. Confirmar que el login/registro se adapta a móvil sin scroll horizontal.
+3. Revisar Inicio: hero verde, acciones rápidas, métricas y avisos.
+4. Abrir menú lateral y comprobar agrupación de navegación.
+5. Probar navegación inferior en móvil y estado activo.
+6. Subir ticket real y revisar OCR, confianza y campos dudosos.
+7. Repetir el mismo ticket exacto: debe bloquear duplicado.
+8. Subir PDF multipágina y repetirlo: debe bloquear duplicado.
+9. Vincular Rider a una Gestoría por correo.
+10. Confirmar mensajes y peticiones entre ambas cuentas.
 
-## 1. Crear Gestoría
+## QA Gestoría
 
-1. Abre la preview.
-2. Pulsa **Crear cuenta**.
-3. Selecciona **Gestoría**.
-4. Introduce nombre, correo y contraseña de al menos 8 caracteres.
-5. En el segundo paso sube un logo o imagen del despacho.
-6. Completa nombre comercial y, si aplica, número de colegiado.
-7. Confirma el correo si Supabase lo solicita.
-8. Inicia sesión.
-9. En **Perfil y ajustes**, copia el correo de la gestoría que aparece en “Vincular clientes”.
+1. Crear cuenta Gestoría con logo.
+2. Vincular un Rider.
+3. Revisar Resumen: cartera, pendientes y cliente activo.
+4. Buscar cliente y cambiar cliente activo.
+5. Validar/corregir un gasto.
+6. Crear petición y confirmar recepción en Rider.
+7. Revisar Modelos sin confundir cálculos estimativos con presentación AEAT.
+8. Confirmar que solo aparecen clientes vinculados mediante `managerId`.
 
-Resultado esperado: la gestoría entra con su propia sesión y no tiene clientes hasta que un autónomo la vincule.
+## Seguridad y verdad de producto
 
-## 2. Crear Autónomo en otro navegador/dispositivo
+- No pedir ni almacenar credenciales bancarias.
+- Banca permanece bloqueada hasta Open Banking PSD2 real.
+- No simular conexiones de plataformas.
+- No fabricar datos OCR si Gemini no está disponible.
+- No marcar un gasto como AEAT solo porque la gestoría lo haya validado.
+- Foto/logo y documentos permanecen en buckets privados.
+- RLS debe aislar Rider y Gestoría correctamente.
 
-1. Usa otro navegador, perfil incógnito o dispositivo.
-2. Crea una cuenta **Autónomo**.
-3. Sube una foto de perfil.
-4. Completa matrícula si quieres.
-5. Confirma el correo si se solicita e inicia sesión.
-6. Abre **Perfil y ajustes**.
-7. En **Mi gestoría**, introduce el correo de la cuenta Gestoría creada en el paso 1.
-8. Pulsa **Vincular**.
+## Criterio de merge
 
-Resultado esperado: el autónomo ve la gestoría vinculada y la gestoría ve a ese autónomo como cliente. Ninguna gestoría debe ver riders no vinculados.
-
-## 3. Probar gastos y justificantes
-
-1. Como Autónomo abre **Ingresos y gastos**.
-2. Escanea una imagen de ticket o añade un gasto manual.
-3. Guarda el movimiento.
-4. Espera unos segundos o abre la app Gestoría.
-5. Como Gestoría entra en **Auditoría** y selecciona el cliente.
-6. Valida o solicita corrección.
-
-Resultado esperado: el gasto se sincroniza mediante Supabase. El estado aprobado debe mostrarse como **Validado · Gestoría**, no como “AEAT”.
-
-Los justificantes se almacenan en el bucket privado `labora-documents`; solo el propietario y su gestoría vinculada tienen acceso según RLS.
-
-## 4. Probar peticiones
-
-1. Como Gestoría crea una nueva petición para el cliente.
-2. Como Autónomo abre **Avisos**.
-3. Responde/sube el justificante disponible en el flujo actual.
-4. Vuelve a Gestoría y revisa la petición.
-
-Resultado esperado: ambas cuentas trabajan sobre el mismo registro remoto y Realtime refresca cambios operativos.
-
-## 5. Probar mensajes en dos dispositivos
-
-1. Como Autónomo abre **Mensajes** y escribe a su gestoría.
-2. Mantén abierta la cuenta Gestoría en otro dispositivo.
-3. Abre **Mensajes**.
-4. Responde desde Gestoría.
-
-Resultado esperado: la conversación se persiste en Supabase `messages` y Realtime refresca los cambios.
-
-## 6. Probar identidad
-
-Comprobar que foto/logo aparece en:
-
-- header;
-- menú lateral;
-- navegación móvil en Perfil/Ajustes;
-- Clientes;
-- Mensajes.
-
-Cambiar la imagen desde **Perfil y ajustes**, guardar y volver a entrar.
-
-## 7. Bancos
-
-La conexión bancaria real está deshabilitada actualmente.
-
-Labora+ NO debe:
-
-- pedir usuario o contraseña bancaria;
-- mostrar una conexión ficticia como activa;
-- simular movimientos de un banco real.
-
-La UI debe indicar **Próximamente / Open Banking**. La futura integración deberá usar un proveedor regulado PSD2, consentimiento explícito y comenzar en modo de solo lectura.
-
-## 8. Plataformas
-
-En Delivery/Movilidad, “Añadir a mi actividad” significa únicamente clasificar qué plataforma usa el autónomo. No significa OAuth ni sincronización automática.
-
-En Bancos/Pagos/Contabilidad los botones deben permanecer deshabilitados hasta que exista una API real.
-
-Los logos se resuelven actualmente a partir del dominio de la marca mediante el resolver de logos. Eso NO se considera todavía una auditoría de assets oficiales. Para afirmar “logo oficial” habrá que sustituir cada fallback por assets locales obtenidos/verificados desde el kit oficial de cada marca.
-
-## 9. Seguridad
-
-- Supabase Auth gestiona las sesiones.
-- Todas las tablas operativas tienen RLS.
-- `labora-identity` y `labora-documents` son buckets privados.
-- El enlace Rider → Gestoría usa una función pública `SECURITY INVOKER`; la operación privilegiada vive en un esquema privado.
-- El Security Advisor de Supabase queda sin avisos después del hardening actual.
-
-## 10. Build
-
-Antes de mergear deben pasar:
-
-- `npm install`
-- `npx tsc --noEmit`
-- `npm run build`
-
-## Límites que siguen abiertos
-
-- Falta una auditoría de logos/brand kits oficiales para todas las marcas del catálogo.
-- El escáner de gastos acepta imágenes; soporte PDF/multipágina y detección de duplicados quedan para la siguiente iteración.
-- No existe todavía una integración bancaria PSD2 real; está intencionadamente bloqueada.
-- Conviene añadir pruebas automáticas E2E con dos cuentas antes de producción.
-
-## Regla de merge
-
-No fusionar a `main` hasta completar el flujo Gestoría → Autónomo → vínculo → gasto/petición → mensaje desde dos sesiones separadas.
+No fusionar a `main` hasta completar QA móvil con dos cuentas reales y confirmar que no hay desbordes, botones muertos, datos simulados ni aislamiento roto entre usuarios.
