@@ -1,8 +1,8 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { ClipboardPaste, Info, Loader2, Sparkles, TrendingUp, X } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { TrendingUp, Sparkles, ClipboardPaste, Loader2, Info, AlertCircle, X } from 'lucide-react';
 import { extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
+import { getMarketProfile } from '../modules/country-config/marketProfiles';
 
 interface IncomeTrackerProps {
   startDate: string;
@@ -10,23 +10,23 @@ interface IncomeTrackerProps {
 }
 
 const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => {
-  const { incomes, addIncome } = useData();
+  const { currentUser, incomes, addIncomes, showNotification, privacyMode } = useData();
+  const market = getMarketProfile(currentUser?.countryCode);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // State for AI explanations
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<Record<string, boolean>>({});
 
-  // Filter incomes based on date props
-  const filteredIncomes = useMemo(() => {
-    return incomes.filter(income => {
-      if (startDate && income.date < startDate) return false;
-      if (endDate && income.date > endDate) return false;
-      return true;
-    });
-  }, [incomes, startDate, endDate]);
+  const filteredIncomes = useMemo(() => incomes.filter((income) => {
+    if (startDate && income.date < startDate) return false;
+    if (endDate && income.date > endDate) return false;
+    return true;
+  }), [incomes, startDate, endDate]);
+
+  const money = (value: number) => privacyMode
+    ? '••••'
+    : new Intl.NumberFormat(market.locale, { style: 'currency', currency: market.currency }).format(value);
 
   const handleAIExtraction = async () => {
     if (!pastedText.trim()) return;
@@ -34,222 +34,76 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     try {
       const extractedData = await extractIncomeFromText(pastedText);
       if (extractedData.length === 0) {
-        alert("No se encontraron ingresos claros en el texto.");
-      } else {
-        extractedData.forEach(item => {
-          addIncome({
-            platform: item.platform,
-            amount: item.amount,
-            date: item.date,
-            retention: item.retention || 0
-          });
-        });
-        alert(`${extractedData.length} ingresos añadidos correctamente.`);
-        setIsPasteModalOpen(false);
-        setPastedText('');
+        showNotification('info', 'No se encontraron ingresos suficientemente claros. No se guardó nada.');
+        return;
       }
+      await addIncomes(extractedData.map((item) => ({
+        platform: item.platform,
+        amount: item.amount,
+        date: item.date,
+        retention: item.retention || 0,
+      })));
+      showNotification('success', `${extractedData.length} ingreso(s) guardados como datos importados no verificados.`);
+      setIsPasteModalOpen(false);
+      setPastedText('');
     } catch (error) {
-      console.error(error);
-      alert("Error al procesar el texto.");
+      showNotification('error', error instanceof Error ? error.message : 'No se pudo procesar el texto.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleAnalyzeRetention = async (id: string, platform: string, amount: number, retention: number) => {
-    if (loadingExplanation[id]) return;
-
-    setLoadingExplanation(prev => ({ ...prev, [id]: true }));
+    if (market.countryCode !== 'ES' || loadingExplanation[id]) return;
+    setLoadingExplanation((previous) => ({ ...previous, [id]: true }));
     try {
       const explanation = await getRetentionExplanation(platform, amount, retention);
-      setExplanations(prev => ({ ...prev, [id]: explanation }));
+      setExplanations((previous) => ({ ...previous, [id]: explanation }));
     } catch (error) {
-      console.error(error);
+      showNotification('error', error instanceof Error ? error.message : 'No se pudo explicar el campo.');
     } finally {
-      setLoadingExplanation(prev => ({ ...prev, [id]: false }));
+      setLoadingExplanation((previous) => ({ ...previous, [id]: false }));
     }
   };
 
+  const total = filteredIncomes.reduce((sum, income) => sum + income.amount, 0);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Ingresos</h2>
-          <p className="text-gray-500">
-            {startDate || endDate 
-              ? `Mostrando ${filteredIncomes.length} resultados filtrados`
-              : 'Registra lo que ganas en cada plataforma'}
-          </p>
-        </div>
-        <button 
-          onClick={() => setIsPasteModalOpen(true)}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 w-full sm:w-auto justify-center"
-        >
-          <Sparkles size={18} />
-          <span>Importar con IA</span>
-        </button>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div><h2 className="font-serif text-xl font-bold text-stone-900">Ingresos registrados</h2><p className="mt-1 text-xs text-stone-500">Registros aportados por ti o extraídos de texto. No equivalen a un cobro bancario conciliado.</p></div>
+        <button onClick={() => setIsPasteModalOpen(true)} className="flex items-center justify-center gap-2 rounded-xl bg-[#3A7596] px-4 py-2.5 text-xs font-bold text-white"><ClipboardPaste className="h-4 w-4" /> Importar texto</button>
       </div>
 
-      {/* Paste Modal */}
-      {isPasteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl p-6 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <ClipboardPaste className="text-purple-600" />
-                Pegar Factura/Email
-                </h3>
-                <button 
-                  onClick={() => setIsPasteModalOpen(false)}
-                  className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-            </div>
-            
-            <p className="text-sm text-gray-500 mb-4">
-              Copia el texto del email de Uber/Glovo o el PDF de la factura y pégalo aquí. La IA extraerá los datos y las retenciones automáticamente.
-            </p>
-            <textarea 
-              className="w-full h-40 p-3 border rounded-xl bg-gray-50 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none transition-all"
-              placeholder="Ej: Resumen de ganancias Uber. Fecha: 2024-03-01. Bruto: 150.50€. IRPF: 3.01€..."
-              value={pastedText}
-              onChange={(e) => setPastedText(e.target.value)}
-            ></textarea>
-            <div className="flex justify-end gap-3 mt-4">
-              <button 
-                onClick={() => setIsPasteModalOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleAIExtraction}
-                disabled={isProcessing || !pastedText.trim()}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-sm font-medium"
-              >
-                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                {isProcessing ? 'Procesando...' : 'Procesar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm">
+        <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EEF5F0] text-[#2E5A44]"><TrendingUp className="h-5 w-5" /></span><div><p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Total del filtro actual</p><p className="font-serif text-xl font-bold text-stone-900">{money(total)}</p></div></div><span className="rounded-full bg-[#F3EFE8] px-2.5 py-1 text-[10px] font-bold text-stone-500">{filteredIncomes.length} registro(s)</span></div>
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Summary Cards */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 md:col-span-3">
-          <div className="flex items-center gap-4 mb-6">
-             <div className="p-3 bg-green-50 rounded-lg text-green-600">
-               <TrendingUp size={24} />
-             </div>
-             <div>
-               <h3 className="text-lg font-semibold">Historial de Ingresos</h3>
-               <p className="text-sm text-gray-500">Todas tus plataformas unificadas</p>
-             </div>
-          </div>
-
+      <section className="overflow-hidden rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] shadow-sm">
+        {filteredIncomes.length === 0 ? (
+          <div className="p-10 text-center text-sm text-stone-500">No hay ingresos registrados en este periodo.</div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="p-4 font-medium text-gray-500 text-sm">Plataforma</th>
-                  <th className="p-4 font-medium text-gray-500 text-sm hidden sm:table-cell">Fecha</th>
-                  <th className="p-4 font-medium text-gray-500 text-sm text-right">Monto Bruto</th>
-                  <th className="p-4 font-medium text-gray-500 text-sm hidden md:table-cell">
-                    <div className="flex items-center gap-1">
-                      Retención <Sparkles size={14} className="text-indigo-500" />
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredIncomes.map((inc) => (
-                  <React.Fragment key={inc.id}>
-                    <tr className="hover:bg-gray-50 transition-colors group">
-                      <td className="p-4">
-                        <div className="font-medium text-gray-900">{inc.platform}</div>
-                        {/* Mobile Date */}
-                        <div className="text-xs text-gray-400 sm:hidden mt-0.5">{inc.date}</div>
-                        {/* Mobile AI Analysis Trigger */}
-                        {inc.retention > 0 && (
-                          <button 
-                            onClick={() => handleAnalyzeRetention(inc.id, inc.platform, inc.amount, inc.retention)}
-                            disabled={loadingExplanation[inc.id]}
-                            className="flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wide text-indigo-600 md:hidden"
-                          >
-                            {loadingExplanation[inc.id] ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                            Analizar Retención
-                          </button>
-                        )}
-                      </td>
-                      <td className="p-4 text-gray-600 hidden sm:table-cell">{inc.date}</td>
-                      <td className="p-4 text-right align-top">
-                        <div className="font-semibold text-green-600">+{inc.amount.toFixed(2)} €</div>
-                        {/* Mobile Retention Display */}
-                        {inc.retention > 0 && (
-                          <div className="text-xs text-red-500 md:hidden font-medium mt-0.5">
-                            -{inc.retention.toFixed(2)} € (Ret)
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-4 hidden md:table-cell">
-                        <div className="flex items-center gap-2">
-                          <span className={`font-medium ${inc.retention > 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                            -{inc.retention.toFixed(2)} €
-                          </span>
-                          {inc.retention > 0 && (
-                            <button 
-                              onClick={() => handleAnalyzeRetention(inc.id, inc.platform, inc.amount, inc.retention)}
-                              disabled={loadingExplanation[inc.id]}
-                              className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                              title="Analizar motivo con IA"
-                            >
-                              {loadingExplanation[inc.id] ? (
-                                <Loader2 size={12} className="animate-spin" />
-                              ) : (
-                                <Sparkles size={12} />
-                              )}
-                              <span>Analizar con IA</span>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                    {/* AI Explanation Row */}
-                    {explanations[inc.id] && (
-                      <tr className="bg-indigo-50/30 animate-in fade-in slide-in-from-top-2">
-                        <td colSpan={4} className="p-4 pt-2 pb-4">
-                          <div className="flex items-start gap-3 bg-white p-3 rounded-lg border border-indigo-100 shadow-sm max-w-2xl mx-auto sm:mx-0">
-                             <div className="p-1 bg-indigo-100 text-indigo-600 rounded-full mt-0.5">
-                               <Info size={14} />
-                             </div>
-                             <div>
-                               <p className="text-xs font-bold text-indigo-800 mb-1">Análisis IA Labora+</p>
-                               <p className="text-sm text-gray-700 leading-relaxed">
-                                 {explanations[inc.id]}
-                               </p>
-                             </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-                 {filteredIncomes.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-gray-400">
-                      {incomes.length > 0 
-                        ? "No se encontraron ingresos en este rango de fechas." 
-                        : "No tienes ingresos registrados."}
-                    </td>
-                  </tr>
-                )}
+            <table className="w-full min-w-[620px] text-left text-sm">
+              <thead className="border-b border-[#E8DFC8] bg-[#F7F3EC] text-[11px] uppercase tracking-wide text-stone-500"><tr><th className="p-4">Plataforma</th><th className="p-4">Fecha</th><th className="p-4 text-right">Importe registrado</th><th className="p-4 text-right">Retención / descuento</th></tr></thead>
+              <tbody className="divide-y divide-[#EEE8DE]">
+                {filteredIncomes.map((income) => <React.Fragment key={income.id}><tr className="bg-white"><td className="p-4 font-semibold text-stone-900">{income.platform}</td><td className="p-4 text-stone-500">{income.date}</td><td className="p-4 text-right font-bold text-[#2E5A44]">{money(income.amount)}</td><td className="p-4 text-right"><div className="flex items-center justify-end gap-2"><span className={income.retention > 0 ? 'font-semibold text-rose-600' : 'text-stone-400'}>{money(income.retention || 0)}</span>{market.countryCode === 'ES' && income.retention > 0 && <button disabled={loadingExplanation[income.id]} onClick={() => void handleAnalyzeRetention(income.id, income.platform, income.amount, income.retention)} className="rounded-lg bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-700">{loadingExplanation[income.id] ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Explicar'}</button>}</div></td></tr>{explanations[income.id] && <tr className="bg-indigo-50/40"><td colSpan={4} className="p-4"><div className="flex gap-2 rounded-xl border border-indigo-100 bg-white p-3 text-xs leading-relaxed text-stone-700"><Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" /><span><strong>Explicación orientativa:</strong> {explanations[income.id]}</span></div></td></tr>}</React.Fragment>)}
               </tbody>
             </table>
           </div>
+        )}
+      </section>
+
+      {isPasteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-6 shadow-2xl">
+            <div className="flex items-start justify-between"><div><div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-[#3A7596]" /><h3 className="font-serif text-lg font-bold text-stone-900">Extraer ingresos de texto</h3></div><p className="mt-2 text-xs leading-relaxed text-stone-500">Pega el texto real de un email, extracto o documento. La IA solo propone filas; si no identifica datos claros, no guarda nada.</p></div><button onClick={() => setIsPasteModalOpen(false)} className="rounded-xl p-2 text-stone-400 hover:bg-stone-100"><X className="h-4 w-4" /></button></div>
+            <textarea value={pastedText} onChange={(event) => setPastedText(event.target.value)} className="mt-4 h-44 w-full resize-none rounded-2xl border border-[#DFD5C6] bg-white p-3 text-sm outline-none focus:border-[#6A917A]" placeholder="Pega aquí el contenido real…" />
+            <div className="mt-3 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-[11px] leading-relaxed text-sky-800">La moneda se deriva del país de tu cuenta en el backend. La importación no confirma que el pago haya llegado a tu banco.</div>
+            <div className="mt-4 flex justify-end gap-2"><button onClick={() => setIsPasteModalOpen(false)} className="rounded-xl px-4 py-2 text-xs font-semibold text-stone-600">Cancelar</button><button disabled={isProcessing || !pastedText.trim()} onClick={() => void handleAIExtraction()} className="flex items-center gap-2 rounded-xl bg-[#3A7596] px-4 py-2.5 text-xs font-bold text-white disabled:opacity-50">{isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{isProcessing ? 'Procesando…' : 'Extraer y guardar'}</button></div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
