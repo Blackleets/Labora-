@@ -8,9 +8,10 @@ const readRepoFile = (path: string) => readFileSync(resolve(here, '..', path), '
 
 describe('Supabase source security contract', () => {
   const baseSchema = readRepoFile('supabase/migrations/20260916090000_baseline_schema.sql');
-  const hardening = readRepoFile('supabase/migrations/20260916090300_security_hardening.sql');
-  const currencyGuard = readRepoFile('supabase/migrations/20260916090200_market_currency_guard.sql');
   const advisorTrust = readRepoFile('supabase/migrations/20260916090100_advisor_trust.sql');
+  const currencyGuard = readRepoFile('supabase/migrations/20260916090200_market_currency_guard.sql');
+  const hardening = readRepoFile('supabase/migrations/20260916090300_security_hardening.sql');
+  const signupCountry = readRepoFile('supabase/migrations/20260916090400_signup_country_integrity.sql');
 
   it('keeps critical public tables behind RLS', () => {
     for (const table of [
@@ -64,6 +65,13 @@ describe('Supabase source security contract', () => {
     expect(currencyGuard).toContain("when 'VE' then 'VES'");
     expect(currencyGuard).toContain("else 'XXX'");
     expect(currencyGuard).not.toContain("else 'USD'");
+  });
+
+  it('preserves the country selected before email confirmation', () => {
+    expect(signupCountry).toContain("new.raw_user_meta_data ->> 'country_code'");
+    expect(signupCountry).toContain("signup_country := 'ZZ'");
+    expect(signupCountry).toContain('insert into public.profiles (user_id, full_name, country_code)');
+    expect(signupCountry).toContain('insert into public.organizations (name, kind, country_code, created_by)');
   });
 
   it('does not let an advisor self-promote trust state', () => {
