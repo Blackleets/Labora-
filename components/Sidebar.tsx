@@ -4,6 +4,7 @@ import {
   Receipt, Settings, Users, Wallet, X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { signOutRemote } from '../services/authWorkspace';
 import { identityImageStore } from '../services/identityImage';
 import { UserRole } from '../types';
 import Logo from './Logo';
@@ -56,6 +57,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
 
   const items = isManager ? managerItems : riderItems;
   const handleNavigate = (view: string) => { setView(view); setIsMobileMenuOpen(false); };
+  const handleLogout = async () => {
+    try { await signOutRemote(); } finally { logout(); window.location.reload(); }
+  };
 
   return (
     <>
@@ -93,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
               <p className="truncate text-[10px] text-stone-500">{currentUser?.email}</p>
             </div>
           </button>
-          <button onClick={logout} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#E3DBD0] bg-white py-2.5 text-xs font-semibold text-stone-600 hover:bg-[#F7F3ED]"><LogOut size={15} /> Cerrar sesión</button>
+          <button onClick={handleLogout} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#E3DBD0] bg-white py-2.5 text-xs font-semibold text-stone-600 hover:bg-[#F7F3ED]"><LogOut size={15} /> Cerrar sesión</button>
         </div>
       </aside>
     </>
