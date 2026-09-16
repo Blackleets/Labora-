@@ -1,4 +1,5 @@
 import { Expense, Income } from '../types';
+import { FISCAL_POLICY_ES_2026 } from './fiscalPolicyES2026';
 
 export interface FiscalPeriod {
   label: string;
@@ -10,6 +11,7 @@ export interface FiscalPeriod {
 }
 
 export interface FiscalSnapshot {
+  policyId: string;
   period: FiscalPeriod;
   quarter: {
     grossIncome: number;
@@ -24,15 +26,18 @@ export interface FiscalSnapshot {
     retentionsRecorded: number;
   };
   model130: {
-    provisionalAccruedAmount: number;
+    provisionalAccruedAmount: null;
+    standardRateReferenceAmount: number;
     finalAmount: null;
-    status: 'requires_gestor_review';
+    status: 'insufficient_required_context';
+    missingInputs: readonly string[];
     explanation: string;
   };
   model303: {
     deductibleInputVatRecorded: number;
     finalAmount: null;
     status: 'insufficient_verified_vat_data';
+    missingInputs: readonly string[];
     explanation: string;
   };
   dataQuality: {
@@ -78,9 +83,12 @@ export const buildFiscalSnapshot = (
   periodLabel: string,
 ): FiscalSnapshot => {
   const period = parseFiscalPeriod(periodLabel);
+  if (period.year !== FISCAL_POLICY_ES_2026.taxYear) {
+    throw new Error(`El motor fiscal activo solo está verificado para ${FISCAL_POLICY_ES_2026.taxYear}.`);
+  }
+
   const userIncomes = incomes.filter((income) => income.userId === userId);
   const userExpenses = expenses.filter((expense) => expense.userId === userId);
-
   const quarterIncomes = userIncomes.filter((income) => isBetween(income.date, period.quarterStart, period.quarterEnd));
   const quarterExpenses = userExpenses.filter((expense) => isBetween(expense.date, period.quarterStart, period.quarterEnd));
   const ytdIncomes = userIncomes.filter((income) => isBetween(income.date, period.yearStart, period.quarterEnd));
@@ -91,28 +99,39 @@ export const buildFiscalSnapshot = (
   const grossYtd = roundMoney(ytdIncomes.reduce((sum, income) => sum + income.amount, 0));
   const approvedYtdExpenses = roundMoney(ytdExpenses.reduce((sum, expense) => sum + deductibleAmount(expense), 0));
   const retentionsYtd = roundMoney(ytdIncomes.reduce((sum, income) => sum + (income.retention || 0), 0));
-  const netActivityEstimate = roundMoney(Math.max(0, grossYtd - approvedYtdExpenses));
+  const netActivityEstimate = roundMoney(grossYtd - approvedYtdExpenses);
 
-  // This is deliberately an accrued prepayment estimate only. Modelo 130 is
-  // cumulative and the final amount can depend on prior instalments and other
-  // adjustments that are not yet represented in the current data model.
-  const provisional130 = roundMoney(Math.max(0, netActivityEstimate * 0.2 - retentionsYtd));
+  // Reference only: AEAT Modelo 130 uses 20% on a positive box 03 under the
+  // standard rule, but the payable amount also depends on prior instalments,
+  // retentions, obligation exceptions and potentially territorial rules.
+  // Therefore this number is NEVER exposed as an actionable tax amount.
+  const standardRateReferenceAmount = roundMoney(
+    Math.max(0, Math.max(0, netActivityEstimate) * FISCAL_POLICY_ES_2026.model130.standardPositiveNetRate - retentionsYtd),
+  );
+
+  // Modelo 303 is period-based. Only input VAT explicitly recorded on approved
+  // expenses inside the selected quarter is summarized here. We deliberately do
+  // not infer output VAT or a final balance from gross income.
   const deductibleInputVat = roundMoney(
-    ytdExpenses
+    quarterExpenses
       .filter((expense) => expense.status === 'approved')
       .reduce((sum, expense) => sum + (expense.vatAmount || 0), 0),
   );
 
-  const pendingExpenseCount = quarterExpenses.filter((expense) => !expense.status || expense.status === 'pending_review' || expense.status === 'needs_fix').length;
+  const pendingExpenseCount = quarterExpenses.filter(
+    (expense) => !expense.status || expense.status === 'pending_review' || expense.status === 'needs_fix',
+  ).length;
   const rejectedExpenseCount = quarterExpenses.filter((expense) => expense.status === 'rejected').length;
   const warnings: string[] = [];
 
-  if (quarterIncomes.length === 0) warnings.push('No hay ingresos verificados registrados para este trimestre.');
+  if (quarterIncomes.length === 0) warnings.push('No hay ingresos registrados para este trimestre.');
   if (pendingExpenseCount > 0) warnings.push(`${pendingExpenseCount} gasto(s) siguen pendientes de revisión y no se han contado como deducibles.`);
-  warnings.push('El importe final del Modelo 130 requiere pagos fraccionados anteriores y revisión del gestor.');
-  warnings.push('El Modelo 303 no se calcula como deuda final hasta registrar IVA repercutido y soportado con evidencia suficiente.');
+  warnings.push('Modelo 130: falta contexto obligatorio para determinar si existe obligación y cuál sería el importe a ingresar.');
+  warnings.push('Modelo 303: no se calcula una deuda final hasta registrar bases/cuotas repercutidas y soportadas con evidencia suficiente.');
+  warnings.push('Vehículos y motocicletas: Labora+ no presupone una deducción automática del 100%; la afectación debe revisarse según el caso.');
 
   return {
+    policyId: FISCAL_POLICY_ES_2026.id,
     period,
     quarter: {
       grossIncome: grossQuarter,
@@ -127,16 +146,19 @@ export const buildFiscalSnapshot = (
       retentionsRecorded: retentionsYtd,
     },
     model130: {
-      provisionalAccruedAmount: provisional130,
+      provisionalAccruedAmount: null,
+      standardRateReferenceAmount,
       finalAmount: null,
-      status: 'requires_gestor_review',
-      explanation: 'Estimación acumulada previa a pagos fraccionados anteriores y ajustes. No equivale a una autoliquidación lista para presentar.',
+      status: 'insufficient_required_context',
+      missingInputs: FISCAL_POLICY_ES_2026.model130.requiredBeforeFinalAmount,
+      explanation: 'Labora+ no muestra una cuota del Modelo 130 como accionable porque faltan datos que la AEAT exige para el cálculo y/o para determinar la obligación de presentarlo.',
     },
     model303: {
       deductibleInputVatRecorded: deductibleInputVat,
       finalAmount: null,
       status: 'insufficient_verified_vat_data',
-      explanation: 'Faltan campos estructurados de IVA repercutido y validación fiscal suficiente para calcular una liquidación final.',
+      missingInputs: FISCAL_POLICY_ES_2026.model303.requiredBeforeFinalAmount,
+      explanation: 'Se resume únicamente el IVA soportado registrado y aprobado dentro del trimestre. No se infiere el IVA repercutido ni una liquidación final a partir de ingresos brutos.',
     },
     dataQuality: {
       hasIncome: quarterIncomes.length > 0,
