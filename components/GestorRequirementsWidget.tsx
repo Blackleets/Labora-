@@ -33,7 +33,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
   const [submissionProof, setSubmissionProof] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const [newRiderId, setNewRiderId] = useState('u1');
+  const [newRiderId, setNewRiderId] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newCategory, setNewCategory] = useState<GestorRequirement['category']>('fuel_receipt');
@@ -44,11 +44,11 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+  const riders = users.filter((user) => user.role === UserRole.RIDER);
+  const effectiveRiderId = newRiderId || riders[0]?.id || '';
 
   const userRequirements = requirements.filter((requirement) => {
-    if (isManager) {
-      return requirement.managerId === currentUser?.id || currentUser?.id === 'm1';
-    }
+    if (isManager) return requirement.managerId === currentUser?.id;
     return requirement.riderId === currentUser?.id;
   });
 
@@ -78,7 +78,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
     updateRequirementStatus(
       selectedReq.id,
       'submitted',
-      submissionNotes || 'Justificante adjuntado por el rider.',
+      submissionNotes || 'Justificante adjuntado.',
       submissionProof || undefined
     );
 
@@ -89,15 +89,16 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
 
   const handleCreateRequirement = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!newTitle.trim()) return;
+    if (!currentUser || !effectiveRiderId || !newTitle.trim()) return;
 
-    const rider = users.find((user) => user.id === newRiderId);
+    const rider = riders.find((user) => user.id === effectiveRiderId);
+    if (!rider) return;
 
     addRequirement({
-      managerId: currentUser?.id || 'm1',
-      managerName: currentUser?.companyName || currentUser?.name || 'Gestoría',
-      riderId: newRiderId,
-      riderName: rider?.name || 'Rider',
+      managerId: currentUser.id,
+      managerName: currentUser.companyName || currentUser.name,
+      riderId: rider.id,
+      riderName: rider.name,
       title: newTitle.trim(),
       description: newDesc.trim(),
       category: newCategory,
@@ -109,6 +110,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
     setShowCreateModal(false);
     setNewTitle('');
     setNewDesc('');
+    setNewRiderId('');
   };
 
   const tabs: Array<{ id: RequirementTab; label: string }> = [
@@ -125,21 +127,21 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
   };
 
   return (
-    <div id="gestor-requirements-widget" className="rounded-3xl border border-[#E2DBD0] bg-white shadow-sm overflow-hidden">
+    <div id="gestor-requirements-widget" className="overflow-hidden rounded-2xl border border-[#E2DBD0] bg-white">
       <div className={`border-b border-[#E9E2D8] bg-[#FBF9F5] ${compact ? 'p-4' : 'p-5'}`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[#EEF3EF] text-[#2E5A44] flex items-center justify-center shrink-0">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF3EF] text-[#2E5A44]">
               <Bell size={18} strokeWidth={2.1} />
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-bold text-stone-900">
-                {isManager ? 'Peticiones a riders' : 'Avisos de tu gestor'}
+                {isManager ? 'Peticiones' : 'Avisos'}
               </h3>
-              <p className="mt-1 text-xs text-stone-500 leading-relaxed">
+              <p className="mt-1 text-xs leading-relaxed text-stone-500">
                 {isManager
-                  ? 'Solicita documentos y revisa las respuestas sin salir del mismo flujo.'
-                  : 'Aquí solo aparece lo que necesita tu atención.'}
+                  ? 'Solicita documentación y revisa las respuestas de tus clientes.'
+                  : 'Documentación o información que necesita tu gestoría.'}
               </p>
             </div>
           </div>
@@ -147,7 +149,8 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
           {isManager && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2E5A44] px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-[#244A37] transition-colors"
+              disabled={riders.length === 0}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2E5A44] px-3.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#244A37] disabled:cursor-not-allowed disabled:opacity-45"
             >
               <Plus size={15} strokeWidth={2.1} />
               Nueva petición
@@ -170,12 +173,12 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
         </div>
       </div>
 
-      <div className="p-3 sm:p-4 space-y-3">
+      <div className="space-y-3 p-3 sm:p-4">
         {filteredRequirements.length === 0 ? (
           <div className="py-10 text-center">
             <CheckCircle2 size={28} className="mx-auto text-[#2E5A44]" strokeWidth={1.8} />
-            <p className="mt-3 text-sm font-bold text-stone-800">Nada pendiente aquí</p>
-            <p className="mt-1 text-xs text-stone-400">Este estado está limpio.</p>
+            <p className="mt-3 text-sm font-bold text-stone-800">Sin elementos</p>
+            <p className="mt-1 text-xs text-stone-400">No hay peticiones en este estado.</p>
           </div>
         ) : (
           filteredRequirements.map((requirement) => {
@@ -186,7 +189,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 w-9 h-9 rounded-xl bg-[#F4F1EB] text-stone-600 flex items-center justify-center shrink-0">
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F4F1EB] text-stone-600">
                         <FileText size={17} strokeWidth={2} />
                       </div>
                       <div className="min-w-0">
@@ -198,7 +201,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
                         </div>
 
                         {requirement.description && (
-                          <p className="mt-2 text-sm text-stone-600 leading-relaxed">{requirement.description}</p>
+                          <p className="mt-2 text-sm leading-relaxed text-stone-600">{requirement.description}</p>
                         )}
 
                         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-stone-400">
@@ -206,7 +209,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
                             <Clock size={13} />
                             {requirement.deadline}
                           </span>
-                          <span>{requirement.quarter || '3T 2026'}</span>
+                          {requirement.quarter && <span>{requirement.quarter}</span>}
                           {isManager && <span>{requirement.riderName}</span>}
                         </div>
 
@@ -223,7 +226,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
                     {!isManager && requirement.status === 'pending' && (
                       <button
                         onClick={() => setSelectedReq(requirement)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-[#C96846] px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-[#B85A39] transition-colors"
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#C96846] px-3.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#B85A39]"
                       >
                         <Upload size={15} strokeWidth={2.1} />
                         Subir justificante
@@ -238,8 +241,8 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
 
                     {isManager && requirement.status === 'submitted' && (
                       <button
-                        onClick={() => updateRequirementStatus(requirement.id, 'approved', 'Revisado y validado por gestoría.')}
-                        className="inline-flex items-center gap-2 rounded-xl bg-[#2E5A44] px-3.5 py-2.5 text-xs font-semibold text-white hover:bg-[#244A37] transition-colors"
+                        onClick={() => updateRequirementStatus(requirement.id, 'approved', 'Revisado por la gestoría.')}
+                        className="inline-flex items-center gap-2 rounded-xl bg-[#2E5A44] px-3.5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#244A37]"
                       >
                         <CheckCircle2 size={15} strokeWidth={2.1} />
                         Aprobar
@@ -255,22 +258,22 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
 
       {selectedReq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm">
-          <form onSubmit={handleResolveRequirement} className="w-full max-w-md rounded-3xl bg-white border border-[#E2DBD0] shadow-2xl overflow-hidden">
+          <form onSubmit={handleResolveRequirement} className="w-full max-w-md overflow-hidden rounded-3xl border border-[#E2DBD0] bg-white shadow-2xl">
             <div className="flex items-start justify-between border-b border-[#E9E2D8] p-5">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#2E5A44]">Responder petición</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#2E5A44]">Responder</p>
                 <h3 className="mt-1 text-lg font-bold text-stone-900">{selectedReq.title}</h3>
               </div>
-              <button type="button" onClick={() => setSelectedReq(null)} className="p-2 rounded-xl text-stone-400 hover:bg-[#F4F1EB]">
+              <button type="button" onClick={() => setSelectedReq(null)} className="rounded-xl p-2 text-stone-400 hover:bg-[#F4F1EB]">
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="space-y-4 p-5">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full rounded-2xl border border-dashed border-[#CFC5B8] bg-[#FBF9F5] p-5 text-center hover:bg-[#F7F3ED] transition-colors"
+                className="w-full rounded-2xl border border-dashed border-[#CFC5B8] bg-[#FBF9F5] p-5 text-center transition-colors hover:bg-[#F7F3ED]"
               >
                 <Upload size={20} className="mx-auto text-[#2E5A44]" />
                 <p className="mt-2 text-sm font-bold text-stone-800">
@@ -290,9 +293,9 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-[#2E5A44] px-4 py-3 text-sm font-semibold text-white hover:bg-[#244A37] transition-colors"
+                className="w-full rounded-xl bg-[#2E5A44] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#244A37]"
               >
-                Enviar al gestor
+                Enviar
               </button>
             </div>
           </form>
@@ -301,43 +304,42 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
 
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/55 p-4 backdrop-blur-sm">
-          <form onSubmit={handleCreateRequirement} className="w-full max-w-lg rounded-3xl bg-white border border-[#E2DBD0] shadow-2xl overflow-hidden">
+          <form onSubmit={handleCreateRequirement} className="w-full max-w-lg overflow-hidden rounded-3xl border border-[#E2DBD0] bg-white shadow-2xl">
             <div className="flex items-start justify-between border-b border-[#E9E2D8] p-5">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#2E5A44]">Gestoría</p>
                 <h3 className="mt-1 text-lg font-bold text-stone-900">Nueva petición</h3>
               </div>
-              <button type="button" onClick={() => setShowCreateModal(false)} className="p-2 rounded-xl text-stone-400 hover:bg-[#F4F1EB]">
+              <button type="button" onClick={() => setShowCreateModal(false)} className="rounded-xl p-2 text-stone-400 hover:bg-[#F4F1EB]">
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="sm:col-span-2 text-xs font-semibold text-stone-600">
-                Rider
+            <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+              <label className="text-xs font-semibold text-stone-600 sm:col-span-2">
+                Cliente
                 <select
-                  value={newRiderId}
+                  value={effectiveRiderId}
                   onChange={(event) => setNewRiderId(event.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-[#DCD4C8] bg-white px-3 py-2.5 text-sm"
                 >
-                  {users.filter((user) => user.role === UserRole.RIDER).map((user) => (
+                  {riders.map((user) => (
                     <option key={user.id} value={user.id}>{user.name}</option>
                   ))}
                 </select>
               </label>
 
-              <label className="sm:col-span-2 text-xs font-semibold text-stone-600">
+              <label className="text-xs font-semibold text-stone-600 sm:col-span-2">
                 Título
                 <input
                   value={newTitle}
                   onChange={(event) => setNewTitle(event.target.value)}
                   required
                   className="mt-1.5 w-full rounded-xl border border-[#DCD4C8] px-3 py-2.5 text-sm"
-                  placeholder="Ej. Ticket de gasolina pendiente"
                 />
               </label>
 
-              <label className="sm:col-span-2 text-xs font-semibold text-stone-600">
+              <label className="text-xs font-semibold text-stone-600 sm:col-span-2">
                 Descripción
                 <textarea
                   value={newDesc}
@@ -376,7 +378,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
                 </select>
               </label>
 
-              <label className="sm:col-span-2 text-xs font-semibold text-stone-600">
+              <label className="text-xs font-semibold text-stone-600 sm:col-span-2">
                 Fecha límite
                 <input
                   type="date"
@@ -388,7 +390,8 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
 
               <button
                 type="submit"
-                className="sm:col-span-2 rounded-xl bg-[#2E5A44] px-4 py-3 text-sm font-semibold text-white hover:bg-[#244A37] transition-colors"
+                disabled={!effectiveRiderId}
+                className="rounded-xl bg-[#2E5A44] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#244A37] disabled:cursor-not-allowed disabled:opacity-45 sm:col-span-2"
               >
                 Crear petición
               </button>
