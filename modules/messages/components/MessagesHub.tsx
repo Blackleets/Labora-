@@ -9,9 +9,23 @@ import { Message } from '../types';
 const ContactImage = ({ user, active = false, size = 'sm' }: { user: User; active?: boolean; size?: 'sm' | 'md' }) => {
   const image = identityImageStore.getForUser(user);
   const manager = user.role === UserRole.MANAGER || user.role === UserRole.ADMIN;
-  const dimensions = size === 'md' ? 'h-10 w-10' : 'h-9 w-9';
-  if (image) return <img src={image} alt={user.name} className={`${dimensions} shrink-0 border border-[#DDD5CA] ${manager ? 'rounded-xl object-contain p-1' : 'rounded-full object-cover'}`} />;
-  return <div className={`flex ${dimensions} shrink-0 items-center justify-center ${manager ? 'rounded-xl' : 'rounded-full'} ${active ? 'bg-[#2E5A44] text-white' : 'bg-[#F0ECE6] text-stone-500'}`}>{manager ? <Building2 size={16} /> : <UserRound size={16} />}</div>;
+  const dimensions = size === 'md' ? 'h-11 w-11' : 'h-9 w-9';
+
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt={user.companyName || user.name}
+        className={`${dimensions} shrink-0 border border-[#DDD5CA] bg-white ${manager ? 'rounded-[13px] object-contain p-1' : 'rounded-full object-cover'}`}
+      />
+    );
+  }
+
+  return (
+    <div className={`flex ${dimensions} shrink-0 items-center justify-center ${manager ? 'rounded-[13px]' : 'rounded-full'} ${active ? 'bg-[#214E3A] text-white' : 'bg-[#F1ECE3] text-stone-500'}`}>
+      {manager ? <Building2 size={16} /> : <UserRound size={16} />}
+    </div>
+  );
 };
 
 export const MessagesHub: React.FC = () => {
@@ -26,9 +40,13 @@ export const MessagesHub: React.FC = () => {
 
   const contacts = useMemo(() => {
     if (!currentUser) return [];
-    if (isManager) return users.filter((user) => user.role === UserRole.RIDER && user.managerId === currentUser.id);
+    if (isManager) {
+      return users.filter((user) => user.role === UserRole.RIDER && user.managerId === currentUser.id);
+    }
     if (!currentUser.managerId) return [];
-    const manager = users.find((user) => (user.role === UserRole.MANAGER || user.role === UserRole.ADMIN) && user.id === currentUser.managerId);
+    const manager = users.find(
+      (user) => (user.role === UserRole.MANAGER || user.role === UserRole.ADMIN) && user.id === currentUser.managerId
+    );
     return manager ? [manager] : [];
   }, [currentUser, users, isManager]);
 
@@ -50,8 +68,13 @@ export const MessagesHub: React.FC = () => {
   }, [loadMessages]);
 
   useEffect(() => {
-    if (!contacts.length) return setSelectedContactId('');
-    if (!contacts.some((contact) => contact.id === selectedContactId)) setSelectedContactId(contacts[0].id);
+    if (!contacts.length) {
+      setSelectedContactId('');
+      return;
+    }
+    if (!contacts.some((contact) => contact.id === selectedContactId)) {
+      setSelectedContactId(contacts[0].id);
+    }
   }, [contacts, selectedContactId]);
 
   const selectedContact = contacts.find((contact) => contact.id === selectedContactId);
@@ -59,7 +82,10 @@ export const MessagesHub: React.FC = () => {
     if (!currentUser || !selectedContactId) return [];
     const term = searchTerm.trim().toLowerCase();
     return messages
-      .filter((message) => (message.senderId === currentUser.id && message.recipientId === selectedContactId) || (message.senderId === selectedContactId && message.recipientId === currentUser.id))
+      .filter((message) =>
+        (message.senderId === currentUser.id && message.recipientId === selectedContactId)
+        || (message.senderId === selectedContactId && message.recipientId === currentUser.id)
+      )
       .filter((message) => !term || message.message.toLowerCase().includes(term))
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }, [messages, currentUser, selectedContactId, searchTerm]);
@@ -94,37 +120,134 @@ export const MessagesHub: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 pb-8">
-      <header><p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Comunicación</p><h1 className="mt-1 text-2xl font-bold text-stone-900">Mensajes</h1><p className="mt-1 text-sm text-stone-500">{isManager ? 'Conversaciones con tus clientes vinculados.' : 'Conversación con tu gestoría vinculada.'}</p></header>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="labora-kicker text-[#789582]">Comunicación privada</p>
+          <h1 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">Mensajes</h1>
+          <p className="mt-1 text-sm text-stone-500">
+            {isManager ? 'Habla únicamente con tus clientes vinculados.' : 'Habla directamente con tu gestoría vinculada.'}
+          </p>
+        </div>
+        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D9E5DD] bg-[#EDF4EF] px-3 py-1.5 text-[10px] font-extrabold text-[#214E3A]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#2F6B50]" /> Supabase · Realtime
+        </div>
+      </header>
 
-      <section className="grid min-h-[520px] overflow-hidden rounded-2xl border border-[#E3DCD2] bg-white lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="border-b border-[#ECE5DB] lg:border-b-0 lg:border-r">
-          <div className="border-b border-[#ECE5DB] p-3"><div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" /><input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar mensajes" className="w-full rounded-xl border border-[#E4DDD3] bg-[#FAF8F4] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#91A799]" /></div></div>
+      <section className="labora-card grid min-h-[560px] overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="border-b border-[#ECE5DB] bg-[#FFFCF7] lg:border-b-0 lg:border-r">
+          <div className="border-b border-[#ECE5DB] p-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar en conversación"
+                className="w-full rounded-[13px] border border-[#E4DDD3] bg-[#F6F2EB] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#789582]"
+              />
+            </div>
+          </div>
+
           <div className="max-h-[220px] overflow-y-auto p-2 lg:max-h-[500px]">
-            {contacts.length === 0 ? <div className="px-3 py-8 text-center"><UserRound size={24} className="mx-auto text-stone-300" /><p className="mt-2 text-xs font-semibold text-stone-500">{isManager ? 'No tienes clientes vinculados.' : 'No tienes gestoría vinculada.'}</p></div> : contacts.map((contact) => {
+            {contacts.length === 0 ? (
+              <div className="px-3 py-10 text-center">
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-[15px] bg-[#F1ECE3] text-stone-400">
+                  <UserRound size={21} />
+                </div>
+                <p className="mt-3 text-xs font-extrabold text-stone-600">
+                  {isManager ? 'No tienes clientes vinculados.' : 'No tienes gestoría vinculada.'}
+                </p>
+                <p className="mt-1 text-[10px] leading-relaxed text-stone-400">
+                  {isManager ? 'Los clientes aparecerán aquí cuando se vinculen a tu correo.' : 'Vincúlala desde Perfil y ajustes.'}
+                </p>
+              </div>
+            ) : contacts.map((contact) => {
               const active = contact.id === selectedContactId;
-              return <button key={contact.id} onClick={() => setSelectedContactId(contact.id)} className={`flex w-full items-center gap-3 rounded-xl p-3 text-left ${active ? 'bg-[#EAF2ED]' : 'hover:bg-[#F7F4EF]'}`}><ContactImage user={contact} active={active} /><div className="min-w-0"><p className="truncate text-xs font-bold text-stone-900">{contact.companyName || contact.name}</p><p className="truncate text-[10px] text-stone-500">{contact.email}</p></div></button>;
+              return (
+                <button
+                  key={contact.id}
+                  onClick={() => setSelectedContactId(contact.id)}
+                  className={`flex w-full items-center gap-3 rounded-[14px] p-3 text-left transition ${active ? 'bg-[#E7F0EA] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.06)]' : 'hover:bg-[#F5F1EA]'}`}
+                >
+                  <ContactImage user={contact} active={active} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-extrabold text-[#1E231F]">{contact.companyName || contact.name}</p>
+                    <p className="mt-0.5 truncate text-[10px] font-medium text-stone-500">{contact.email}</p>
+                  </div>
+                </button>
+              );
             })}
           </div>
         </aside>
 
-        <div className="flex min-h-[420px] min-w-0 flex-col">
-          <div className="flex items-center gap-3 border-b border-[#ECE5DB] px-4 py-3.5">
+        <div className="flex min-h-[430px] min-w-0 flex-col">
+          <div className="flex items-center gap-3 border-b border-[#ECE5DB] bg-[#FFFDF9] px-4 py-3.5">
             {selectedContact && <ContactImage user={selectedContact} size="md" />}
-            <div><p className="text-sm font-bold text-stone-900">{selectedContact?.companyName || selectedContact?.name || 'Mensajes'}</p>{selectedContact && <p className="mt-0.5 text-[11px] text-stone-400">{selectedContact.email}</p>}</div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-extrabold text-[#1E231F]">{selectedContact?.companyName || selectedContact?.name || 'Mensajes'}</p>
+              {selectedContact && (
+                <p className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.08em] text-stone-400">
+                  {selectedContact.role === UserRole.RIDER ? 'Autónomo' : 'Gestoría'} · {selectedContact.email}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-[#FAF8F4] p-4 sm:p-5">
-            {loading ? <div className="flex h-full min-h-[280px] items-center justify-center gap-2 text-xs font-semibold text-stone-400"><Loader2 size={16} className="animate-spin" /> Sincronizando conversación…</div> : !selectedContact ? <Empty icon="select" /> : conversation.length === 0 ? <Empty icon="start" /> : conversation.map((message) => {
+          <div className="labora-soft-grid flex-1 space-y-3 overflow-y-auto bg-[#F8F5EF] p-4 sm:p-5">
+            {loading ? (
+              <div className="flex h-full min-h-[280px] items-center justify-center gap-2 text-xs font-bold text-stone-400">
+                <Loader2 size={16} className="animate-spin" /> Sincronizando conversación…
+              </div>
+            ) : !selectedContact ? (
+              <Empty icon="select" />
+            ) : conversation.length === 0 ? (
+              <Empty icon="start" />
+            ) : conversation.map((message) => {
               const mine = message.senderId === currentUser.id;
-              return <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 sm:max-w-[72%] ${mine ? 'bg-[#2E5A44] text-white' : 'border border-[#E3DDD4] bg-white text-stone-800'}`}><p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.message}</p><div className={`mt-1.5 flex items-center gap-1 text-[9px] ${mine ? 'text-white/65' : 'text-stone-400'}`}><Clock size={9} />{new Date(message.timestamp).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div></div></div>;
+              return (
+                <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[88%] px-3.5 py-2.5 sm:max-w-[72%] ${mine ? 'rounded-[18px_18px_5px_18px] bg-[#214E3A] text-white shadow-sm' : 'rounded-[18px_18px_18px_5px] border border-[#E3DDD4] bg-[#FFFDF9] text-[#1E231F] shadow-sm'}`}>
+                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.message}</p>
+                    <div className={`mt-1.5 flex items-center gap-1 text-[9px] font-medium ${mine ? 'text-white/60' : 'text-stone-400'}`}>
+                      <Clock size={9} />
+                      {new Date(message.timestamp).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              );
             })}
           </div>
 
-          <form onSubmit={handleSend} className="flex gap-2 border-t border-[#ECE5DB] bg-white p-3 sm:p-4"><textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={selectedContact ? 'Escribe un mensaje…' : 'Vincula una gestoría para conversar'} disabled={!selectedContact || sending} rows={2} className="min-w-0 flex-1 resize-none rounded-xl border border-[#DED7CC] px-3 py-2.5 text-sm outline-none focus:border-[#8FA697] disabled:bg-[#F4F1EC]" /><button disabled={!selectedContact || !draft.trim() || sending} className="self-end rounded-xl bg-[#2E5A44] p-3 text-white disabled:opacity-40" aria-label="Enviar mensaje">{sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}</button></form>
+          <form onSubmit={handleSend} className="flex gap-2 border-t border-[#ECE5DB] bg-[#FFFDF9] p-3 sm:p-4">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={selectedContact ? 'Escribe un mensaje…' : 'Vincula una gestoría para conversar'}
+              disabled={!selectedContact || sending}
+              rows={2}
+              className="min-w-0 flex-1 resize-none rounded-[14px] border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582] disabled:bg-[#F4F1EC]"
+            />
+            <button
+              disabled={!selectedContact || !draft.trim() || sending}
+              className="self-end rounded-[14px] bg-[#D66C47] p-3 text-white shadow-sm transition hover:bg-[#BE5838] disabled:opacity-35"
+              aria-label="Enviar mensaje"
+            >
+              {sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
+            </button>
+          </form>
         </div>
       </section>
     </div>
   );
 };
 
-const Empty = ({ icon }: { icon: 'select' | 'start' }) => <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center"><MessageSquare size={30} className="text-stone-300" /><p className="mt-3 text-sm font-semibold text-stone-600">{icon === 'select' ? 'Selecciona un contacto para empezar.' : 'No hay mensajes todavía.'}</p>{icon === 'start' && <p className="mt-1 text-xs text-stone-400">Puedes iniciar la conversación desde aquí.</p>}</div>;
+const Empty = ({ icon }: { icon: 'select' | 'start' }) => (
+  <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center">
+    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A]">
+      <MessageSquare size={23} />
+    </div>
+    <p className="mt-3 text-sm font-extrabold text-stone-600">
+      {icon === 'select' ? 'Selecciona un contacto.' : 'La conversación empieza aquí.'}
+    </p>
+    {icon === 'start' && <p className="mt-1 text-xs text-stone-400">Escribe el primer mensaje cuando lo necesites.</p>}
+  </div>
+);
