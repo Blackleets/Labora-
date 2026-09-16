@@ -16,6 +16,7 @@ import { Expense, User, UserRole } from '../types';
 import { buildFiscalSnapshot } from '../services/fiscalEngine';
 import { getMarketProfile } from '../modules/country-config/marketProfiles';
 import { AdvisorTrustPanel } from './AdvisorTrustPanel';
+import { ExpenseDeductibilityControl } from './ExpenseDeductibilityControl';
 
 interface ManagerDashboardProps {
   setView?: (view: string) => void;
@@ -242,19 +243,20 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = () => {
 
               <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm sm:p-6">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <div><h3 className="flex items-center gap-2 font-serif text-base font-bold text-stone-900"><Receipt className="h-5 w-5 text-[#C96846]" /> Evidencias de gasto</h3><p className="mt-1 text-xs text-stone-500">Revisa la evidencia. La revisión documental y la deducibilidad fiscal son conceptos separados.</p></div>
+                  <div><h3 className="flex items-center gap-2 font-serif text-base font-bold text-stone-900"><Receipt className="h-5 w-5 text-[#C96846]" /> Evidencias de gasto</h3><p className="mt-1 text-xs text-stone-500">Primero se revisa el documento. La deducibilidad fiscal, si procede, se registra después como una evaluación separada y explícita del asesor.</p></div>
                   <span className="rounded-full bg-[#F7F3EC] px-2.5 py-1 text-[11px] font-semibold text-stone-600">{clientExpenses.length} registros</span>
                 </div>
                 <div className="space-y-3">
                   {clientExpenses.length === 0 && <Empty text="Este cliente todavía no ha registrado gastos." />}
                   {clientExpenses.map((expense) => (
                     <div key={expense.id} className="rounded-2xl border border-[#E8DFC8] bg-white p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-stone-900">{expense.merchant || expense.category}</p><Status status={expense.status || 'pending_review'} /></div>
                           <p className="mt-1 text-xs text-stone-500">{expense.date} · {expense.category} · {formatMoney(expense.amount, selectedClient.countryCode)}</p>
                           {expense.receiptUrl ? <p className="mt-1 text-[11px] font-semibold text-[#2E5A44]">Evidencia adjunta</p> : <p className="mt-1 text-[11px] font-semibold text-red-600">Sin evidencia adjunta</p>}
                           {expense.gestorNotes && <p className="mt-2 rounded-xl bg-[#F7F3EC] px-3 py-2 text-xs text-stone-600">{expense.gestorNotes}</p>}
+                          <ExpenseDeductibilityControl expense={expense} clientCountryCode={selectedClient.countryCode} />
                         </div>
                         <div className="flex shrink-0 flex-wrap gap-2">
                           <button onClick={() => void reviewExpense(expense, 'approved')} disabled={!expense.receiptUrl} className="flex items-center gap-1.5 rounded-xl bg-[#EAF4ED] px-3 py-2 text-xs font-semibold text-[#2E5A44] disabled:cursor-not-allowed disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Evidencia revisada</button>
