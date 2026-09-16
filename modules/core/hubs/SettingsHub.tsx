@@ -3,6 +3,7 @@ import { CheckCircle2, Eye, EyeOff, Link2, Moon, Save, ShieldCheck, Sun, UserRou
 import { useData } from '../../../contexts/DataContext';
 import { getSupabase } from '../../../services/supabaseClient';
 import { UserRole } from '../../../types';
+import { AdvisorTrustPanel } from '../../../components/AdvisorTrustPanel';
 
 export const SettingsHub: React.FC = () => {
   const {
@@ -21,6 +22,7 @@ export const SettingsHub: React.FC = () => {
   const [nif, setNif] = useState('');
   const [iaeCode, setIaeCode] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
+  const [professionalId, setProfessionalId] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [linking, setLinking] = useState(false);
@@ -31,6 +33,7 @@ export const SettingsHub: React.FC = () => {
     setNif(currentUser?.nif || '');
     setIaeCode(currentUser?.iaeCode || '');
     setVehiclePlate(currentUser?.vehiclePlate || '');
+    setProfessionalId(currentUser?.collegiateNumber || '');
   }, [currentUser]);
 
   if (!currentUser) return null;
@@ -46,6 +49,7 @@ export const SettingsHub: React.FC = () => {
         nif: nif.trim().toUpperCase(),
         iaeCode: iaeCode.trim(),
         vehiclePlate: vehiclePlate.trim().toUpperCase(),
+        collegiateNumber: professionalId.trim(),
       });
     } catch (error) {
       showNotification('error', error instanceof Error ? error.message : 'No se pudo guardar el perfil.');
@@ -74,15 +78,21 @@ export const SettingsHub: React.FC = () => {
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
       <section className="rounded-3xl border border-[#345947] bg-[#213B2F] p-6 text-white shadow-sm sm:p-8">
-        <div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2D4E3E]"><UserRound className="h-6 w-6" /></div><div><p className="text-xs font-semibold text-[#BFD5C6]">{isManager ? 'Cuenta de gestoría' : 'Cuenta de autónomo'}</p><h1 className="mt-1 font-serif text-2xl font-bold">Perfil y seguridad</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#D3E3D8]">Tus datos pertenecen a tu cuenta autenticada. El rol y los permisos no se cambian desde este formulario.</p></div></div>
+        <div className="flex items-start gap-4"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2D4E3E]"><UserRound className="h-6 w-6" /></div><div><p className="text-xs font-semibold text-[#BFD5C6]">{isManager ? 'Cuenta de gestoría' : 'Cuenta de trabajador'}</p><h1 className="mt-1 font-serif text-2xl font-bold">Perfil y seguridad</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#D3E3D8]">Tus datos pertenecen a tu cuenta autenticada. El rol y los permisos no se cambian desde este formulario.</p></div></div>
       </section>
+
+      {isManager && <AdvisorTrustPanel user={currentUser} />}
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
         <form onSubmit={saveProfile} className="space-y-4 rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm sm:p-6">
-          <div><h2 className="font-serif text-lg font-bold text-stone-900">Mis datos</h2><p className="mt-1 text-xs text-stone-500">Introduce solo información real. Labora+ no rellena NIF, IAE o matrícula por ti.</p></div>
+          <div><h2 className="font-serif text-lg font-bold text-stone-900">Mis datos</h2><p className="mt-1 text-xs text-stone-500">Introduce solo información real. Declarar un número profesional no equivale a que Labora+ lo haya verificado.</p></div>
           <Field label={isManager ? 'Nombre / gestoría' : 'Nombre completo'} value={name} onChange={setName} />
-          <div className="grid gap-3 sm:grid-cols-2"><Field label="Teléfono" value={phone} onChange={setPhone} inputMode="tel" /><Field label="NIF / NIE" value={nif} onChange={setNif} /></div>
-          {!isManager && <div className="grid gap-3 sm:grid-cols-2"><Field label="IAE" value={iaeCode} onChange={setIaeCode} placeholder="Si lo conoces" /><Field label="Matrícula" value={vehiclePlate} onChange={setVehiclePlate} placeholder="Opcional" /></div>}
+          <div className="grid gap-3 sm:grid-cols-2"><Field label="Teléfono" value={phone} onChange={setPhone} inputMode="tel" /><Field label="NIF / identificador fiscal" value={nif} onChange={setNif} /></div>
+          {isManager ? (
+            <Field label="Nº de colegiado, licencia o registro (si existe)" value={professionalId} onChange={setProfessionalId} placeholder="Se guardará como declarado, no verificado" />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2"><Field label="Actividad / epígrafe" value={iaeCode} onChange={setIaeCode} placeholder="Si lo conoces" /><Field label="Matrícula" value={vehiclePlate} onChange={setVehiclePlate} placeholder="Opcional" /></div>
+          )}
           <button disabled={saving} className="flex items-center justify-center gap-2 rounded-xl bg-[#2E5A44] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Guardando…' : 'Guardar cambios'}</button>
         </form>
 
@@ -91,7 +101,7 @@ export const SettingsHub: React.FC = () => {
             <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm">
               <div className="flex items-center gap-2"><Link2 className="h-5 w-5 text-[#3A7596]" /><h2 className="font-serif text-lg font-bold text-stone-900">Mi gestor</h2></div>
               {currentUser.managerId ? (
-                <div className="mt-4 rounded-2xl border border-[#D6E3D9] bg-[#EEF5F0] p-4"><div className="flex items-center gap-2 text-sm font-semibold text-[#2E5A44]"><CheckCircle2 className="h-4 w-4" /> Gestor vinculado</div><p className="mt-1 text-xs leading-relaxed text-stone-600">El gestor solo puede acceder a tu espacio mientras el vínculo esté activo y sus acciones quedan separadas de tus datos originales.</p></div>
+                <div className="mt-4 rounded-2xl border border-[#D6E3D9] bg-[#EEF5F0] p-4"><div className="flex items-center gap-2 text-sm font-semibold text-[#2E5A44]"><CheckCircle2 className="h-4 w-4" /> Gestor vinculado</div><p className="mt-1 text-xs leading-relaxed text-stone-600">El vínculo confirma que tú autorizaste el acceso; no demuestra por sí solo que el profesional esté verificado por Labora+.</p></div>
               ) : (
                 <form onSubmit={acceptInvite} className="mt-4 space-y-3"><p className="text-xs leading-relaxed text-stone-600">Pide a tu gestor el código temporal de Labora+. Al aceptarlo, autorizas el acceso limitado a revisión, documentos, peticiones y mensajes.</p><input value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} maxLength={12} placeholder="CÓDIGO DE 12 CARACTERES" className="w-full rounded-xl border border-[#DFD5C6] bg-white px-3 py-3 text-center font-mono text-sm font-bold uppercase tracking-wider outline-none focus:border-[#6A917A]" /><button disabled={linking || !inviteCode.trim()} className="w-full rounded-xl bg-[#3A7596] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40">{linking ? 'Comprobando…' : 'Vincular mi gestor'}</button></form>
               )}
