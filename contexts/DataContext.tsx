@@ -1,7 +1,17 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, PropsWithChildren } from 'react';
-import { 
-  User, Income, Expense, Document, UserRole, FiscalSummary, Payment, 
-  Notification, Vehicle, ExpenseCategory, GestorRequirement, TaxDeclaration 
+import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  Document,
+  Expense,
+  ExpenseCategory,
+  FiscalSummary,
+  GestorRequirement,
+  Income,
+  Notification,
+  Payment,
+  TaxDeclaration,
+  User,
+  UserRole,
+  Vehicle
 } from '../types';
 
 interface DataContextType {
@@ -33,14 +43,26 @@ interface DataContextType {
   addExpenses: (expenses: Omit<Expense, 'id' | 'userId'>[]) => void;
   updateExpense: (expense: Expense) => void;
   deleteExpense: (id: string) => void;
-  updateExpenseAudit: (expenseId: string, status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix', gestorNotes?: string) => void;
+  updateExpenseAudit: (
+    expenseId: string,
+    status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
+    gestorNotes?: string
+  ) => void;
   addDocument: (doc: Omit<Document, 'id' | 'userId'>) => void;
   addPayment: (payment: Omit<Payment, 'id'>) => void;
   updateVehicle: (vehicleData: Vehicle) => void;
   addRequirement: (req: Omit<GestorRequirement, 'id' | 'createdAt'>) => void;
-  updateRequirementStatus: (id: string, status: 'pending' | 'submitted' | 'approved', notes?: string, proofUrl?: string) => void;
+  updateRequirementStatus: (
+    id: string,
+    status: 'pending' | 'submitted' | 'approved',
+    notes?: string,
+    proofUrl?: string
+  ) => void;
   fileTaxDeclaration: (declarationId: string, filingRef: string) => void;
-  calculateQuarterlyTaxes: (userId: string, quarter: string) => { model130: TaxDeclaration; model303: TaxDeclaration };
+  calculateQuarterlyTaxes: (
+    userId: string,
+    quarter: string
+  ) => { model130: TaxDeclaration; model303: TaxDeclaration };
   getFiscalSummary: (userId: string) => FiscalSummary;
   getUsersByManager: (managerId: string) => User[];
   markPaymentAsReceived: (paymentId: string) => void;
@@ -52,855 +74,448 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Initial Mock Users with realistic fiscal profiles
-const MOCK_RIDERS: User[] = [
-  {
-    id: 'u1',
-    name: 'Alex Rider',
-    email: 'alex@labora.plus',
-    role: UserRole.RIDER,
-    phone: '+34 612 345 678',
-    nif: '48192834K',
-    fiscalRegime: '036_037_directa',
-    iaeCode: '849.5 - Servicios de mensajería y reparto',
-    socialSecurityType: 'tarifa_plana',
-    vehicleType: 'moto',
-    vehiclePlate: '4521 LBR',
-    vehicleFuel: 'gasolina',
-    platforms: ['Uber Eats', 'Glovo', 'Stuart'],
-    banks: ['BBVA', 'Revolut'],
-    managerId: 'm1',
-    countryCode: 'ES'
-  },
-  {
-    id: 'u2',
-    name: 'Carlos Mendoza',
-    email: 'carlos.mendoza@email.com',
-    role: UserRole.RIDER,
-    phone: '+34 689 912 341',
-    nif: '52938102B',
-    fiscalRegime: '036_037_directa',
-    iaeCode: '849.5 - Servicios de mensajería y reparto',
-    socialSecurityType: 'tramos_reales',
-    vehicleType: 'moto',
-    vehiclePlate: '7823 KTP',
-    vehicleFuel: 'gasolina',
-    platforms: ['Glovo', 'Just Eat'],
-    banks: ['Santander'],
-    managerId: 'm1',
-    countryCode: 'ES'
-  },
-  {
-    id: 'u3',
-    name: 'Lucía Méndez',
-    email: 'lucia.delivery@email.com',
-    role: UserRole.RIDER,
-    phone: '+34 644 112 233',
-    nif: '74129845X',
-    fiscalRegime: '036_037_directa',
-    iaeCode: '849.5 - Servicios de mensajería y reparto',
-    socialSecurityType: 'tarifa_plana',
-    vehicleType: 'bici',
-    vehiclePlate: '',
-    vehicleFuel: 'electrico',
-    platforms: ['Uber Eats', 'Amazon Flex'],
-    banks: ['N26'],
-    managerId: 'm1',
-    countryCode: 'ES'
-  }
-];
+const STORAGE = {
+  users: 'labora_users',
+  currentUser: 'labora_user',
+  incomes: 'labora_incomes',
+  expenses: 'labora_expenses',
+  documents: 'labora_docs',
+  payments: 'labora_payments',
+  requirements: 'labora_requirements',
+  declarations: 'labora_declarations',
+  vehicle: 'labora_vehicle',
+  onboarded: 'labora_onboarding',
+  privacy: 'labora_privacy',
+  darkMode: 'labora_darkmode'
+} as const;
 
-const MOCK_MANAGER: User = {
-  id: 'm1',
-  name: 'Gestoría Fiscal Pérez & Asociados',
-  companyName: 'Gestoría Pérez Asesores Tributarios S.L.',
-  collegiateNumber: 'COL-MAD-9421',
-  email: 'info@gestoriaperez.com',
-  phone: '+34 910 234 567',
-  nif: 'B-88349210',
-  role: UserRole.MANAGER,
-  platforms: [],
-  banks: ['CaixaBank'],
-  countryCode: 'ES'
+const parseStored = <T,>(key: string, fallback: T): T => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) as T : fallback;
+  } catch {
+    return fallback;
+  }
 };
 
-const DEFAULT_VEHICLE: Vehicle = {
-  type: 'moto',
-  model: 'Honda PCX 125 ABS',
-  plate: '4521 LBR',
-  lastMaintenanceDate: '2026-08-10',
-  lastMaintenanceKm: 14500,
-  currentKm: 18200,
-  nextMaintenanceKm: 20000
+const createId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const getQuarterRange = (quarter: string) => {
+  const match = quarter.match(/([1-4])T\s+(\d{4})/i);
+  if (!match) return null;
+  const q = Number(match[1]);
+  const year = Number(match[2]);
+  const startMonth = (q - 1) * 3 + 1;
+  const endMonth = startMonth + 2;
+  return { year, startMonth, endMonth };
 };
 
-// Initial Realistic Fuel & Operating Expenses with Digital Proof Backups
-const INITIAL_EXPENSES: Expense[] = [
-  {
-    id: 'exp-1',
-    userId: 'u1',
-    category: ExpenseCategory.GASOLINA,
-    merchant: 'Repsol Estación de Servicio',
-    date: '2026-09-14',
-    amount: 45.50,
-    fuelLitres: 28.2,
-    fuelType: 'Gasolina 95',
-    vatRate: 21,
-    vatAmount: 7.90,
-    deductiblePercentage: 100,
-    status: 'approved',
-    gestorNotes: 'Comprobante válido con NIF desglosado. Deducible 100% en IRPF e IVA por vehículo afecto.',
-    notes: 'Llenado de depósito turno tarde/noche fin de semana (Madrid Centro)',
-    invoiceNumber: 'REP-2026-98124',
-    receiptUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" fill="%23FFFFFF"><rect width="400" height="600" fill="%23FFFBEB" stroke="%23D97706" stroke-width="4"/><text x="200" y="50" font-family="monospace" font-size="20" font-weight="bold" fill="%23B45309" text-anchor="middle">REPSOL ESTACIÓN 3421</text><text x="200" y="80" font-family="monospace" font-size="12" fill="%234B5563" text-anchor="middle">NIF: A-78129034 - Av. Principal 44</text><line x1="20" y1="100" x2="380" y2="100" stroke="%23D97706" stroke-dasharray="4"/><text x="40" y="140" font-family="monospace" font-size="14" fill="%231F2937">PRODUCTO: GASOLINA 95 PREMIUM</text><text x="40" y="170" font-family="monospace" font-size="14" fill="%231F2937">LITROS: 28.20 L x 1.613 €/L</text><text x="40" y="200" font-family="monospace" font-size="14" fill="%231F2937">BASE IMPONIBLE: 37.60 €</text><text x="40" y="230" font-family="monospace" font-size="14" fill="%231F2937">I.V.A. (21%): 7.90 €</text><text x="40" y="270" font-family="monospace" font-size="22" font-weight="bold" fill="%23B45309">TOTAL PAGADO: 45.50 €</text><text x="40" y="310" font-family="monospace" font-size="12" fill="%236B7280">MATRÍCULA: 4521 LBR</text><text x="40" y="340" font-family="monospace" font-size="12" fill="%236B7280">FECHA: 2026-09-14 19:42</text><line x1="20" y1="370" x2="380" y2="370" stroke="%23D97706" stroke-dasharray="4"/><text x="200" y="420" font-family="monospace" font-size="14" font-weight="bold" fill="%23059669" text-anchor="middle">VALIDADO POR GESTORÍA PÉREZ</text><text x="200" y="450" font-family="monospace" font-size="12" fill="%234B5563" text-anchor="middle">COPIA ELECTRÓNICA DE SEGURIDAD</text></svg>'
-  },
-  {
-    id: 'exp-2',
-    userId: 'u1',
-    category: ExpenseCategory.GASOLINA,
-    merchant: 'Cepsa (Moeve)',
-    date: '2026-09-10',
-    amount: 42.00,
-    fuelLitres: 26.0,
-    fuelType: 'Gasolina 95',
-    vatRate: 21,
-    vatAmount: 7.29,
-    deductiblePercentage: 100,
-    status: 'pending_review',
-    notes: 'Repostaje antes de iniciar jornada de lluvia',
-    invoiceNumber: 'CEP-8921-A',
-    receiptUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" fill="%23FFFFFF"><rect width="400" height="600" fill="%23FEF2F2" stroke="%23EF4444" stroke-width="4"/><text x="200" y="50" font-family="monospace" font-size="20" font-weight="bold" fill="%23B91C1C" text-anchor="middle">CEPSA MOEVE 128</text><text x="200" y="80" font-family="monospace" font-size="12" fill="%234B5563" text-anchor="middle">NIF: B-81928374 - C/ Alcalá 210</text><line x1="20" y1="100" x2="380" y2="100" stroke="%23EF4444" stroke-dasharray="4"/><text x="40" y="140" font-family="monospace" font-size="14" fill="%231F2937">OPT. STAR 95: 26.00 L</text><text x="40" y="170" font-family="monospace" font-size="14" fill="%231F2937">PRECIO/L: 1.615 €</text><text x="40" y="200" font-family="monospace" font-size="14" fill="%231F2937">BASE: 34.71 € | IVA 21%: 7.29 €</text><text x="40" y="250" font-family="monospace" font-size="22" font-weight="bold" fill="%23DC2626">TOTAL: 42.00 €</text><text x="40" y="290" font-family="monospace" font-size="12" fill="%236B7280">FECHA: 2026-09-10 11:20</text><line x1="20" y1="330" x2="380" y2="330" stroke="%23EF4444" stroke-dasharray="4"/><text x="200" y="380" font-family="monospace" font-size="14" fill="%23D97706" text-anchor="middle">PENDIENTE DE REVISIÓN FISCAL</text></svg>'
-  },
-  {
-    id: 'exp-3',
-    userId: 'u1',
-    category: ExpenseCategory.MANTENIMIENTO,
-    merchant: 'Taller MotoFix Oficial',
-    date: '2026-09-02',
-    amount: 118.00,
-    vatRate: 21,
-    vatAmount: 20.48,
-    deductiblePercentage: 100,
-    status: 'approved',
-    gestorNotes: 'Factura oficial con NIF. Pastillas de freno y cambio de aceite.',
-    notes: 'Revisión y pastillas de freno Honda PCX',
-    invoiceNumber: 'FAC-MF-2026-442'
-  },
-  {
-    id: 'exp-4',
-    userId: 'u1',
-    category: ExpenseCategory.CUOTA_AUTONOMO,
-    merchant: 'Seguridad Social (TGSS - RETA)',
-    date: '2026-08-31',
-    amount: 80.00,
-    vatRate: 0,
-    vatAmount: 0,
-    deductiblePercentage: 100,
-    status: 'approved',
-    gestorNotes: 'Gasto no sujeto a IVA, deducible 100% en IRPF Modelo 130.',
-    notes: 'Cuota reducida autónomo tarifa plana primer año'
-  },
-  {
-    id: 'exp-5',
-    userId: 'u1',
-    category: ExpenseCategory.MOVIL,
-    merchant: 'Vodafone Empresas',
-    date: '2026-09-01',
-    amount: 29.90,
-    vatRate: 21,
-    vatAmount: 5.19,
-    deductiblePercentage: 100,
-    status: 'approved',
-    gestorNotes: 'Línea profesional dedicada a las apps de reparto.',
-    notes: 'Plan ilimitado 5G para navegación y apps de rider'
-  }
-];
-
-// Initial Realistic Incomes from Delivery Platforms
-const INITIAL_INCOMES: Income[] = [
-  {
-    id: 'inc-1',
-    userId: 'u1',
-    platform: 'Uber Eats',
-    date: '2026-09-12',
-    amount: 410.50,
-    retention: 0
-  },
-  {
-    id: 'inc-2',
-    userId: 'u1',
-    platform: 'Glovo',
-    date: '2026-09-05',
-    amount: 385.00,
-    retention: 0
-  },
-  {
-    id: 'inc-3',
-    userId: 'u1',
-    platform: 'Stuart',
-    date: '2026-08-28',
-    amount: 215.20,
-    retention: 0
-  },
-  {
-    id: 'inc-4',
-    userId: 'u1',
-    platform: 'Uber Eats',
-    date: '2026-08-21',
-    amount: 395.00,
-    retention: 0
-  },
-  {
-    id: 'inc-5',
-    userId: 'u1',
-    platform: 'Glovo',
-    date: '2026-08-16',
-    amount: 360.00,
-    retention: 0
-  }
-];
-
-// Initial Requirements between Gestor and Rider
-const INITIAL_REQUIREMENTS: GestorRequirement[] = [
-  {
-    id: 'req-1',
-    managerId: 'm1',
-    managerName: 'Gestoría Fiscal Pérez',
-    riderId: 'u1',
-    riderName: 'Alex Rider',
-    title: 'Ticket de repostaje Cepsa del 10/09 (42,00 €)',
-    description: 'Hemos detectado el movimiento pero falta la foto con buena nitidez para confirmar el CIF de la estación y deducir el IVA.',
-    category: 'fuel_receipt',
-    deadline: '2026-09-22',
-    status: 'pending',
-    createdAt: '2026-09-11',
-    quarter: '3T 2026'
-  },
-  {
-    id: 'req-2',
-    managerId: 'm1',
-    managerName: 'Gestoría Fiscal Pérez',
-    riderId: 'u1',
-    riderName: 'Alex Rider',
-    title: 'Auto-factura Glovo 1ª Quincena Septiembre',
-    description: 'Por favor descarga el PDF emitido en la app de Glovo de la quincena 1-15 y súbelo para cotejar la base imponible.',
-    category: 'platform_invoice',
-    deadline: '2026-09-20',
-    status: 'submitted',
-    submissionNotes: 'Auto-factura subida correctamente a documentos.',
-    createdAt: '2026-09-06',
-    quarter: '3T 2026'
-  },
-  {
-    id: 'req-3',
-    managerId: 'm1',
-    managerName: 'Gestoría Fiscal Pérez',
-    riderId: 'u1',
-    riderName: 'Alex Rider',
-    title: 'Preparación Cierre 3T (Modelo 130 y Modelo 303)',
-    description: 'El plazo de presentación finaliza el 20 de octubre. Revisa los gastos registrados para no dejar ningún ticket de gasolina fuera.',
-    category: 'other',
-    deadline: '2026-10-15',
-    status: 'pending',
-    createdAt: '2026-09-14',
-    quarter: '3T 2026'
-  }
-];
-
-// Initial Official Declarations
-const INITIAL_DECLARATIONS: TaxDeclaration[] = [
-  {
-    id: 'dec-1',
-    userId: 'u1',
-    quarter: '1T 2026',
-    year: 2026,
-    modelType: '130',
-    title: 'Modelo 130 - Pago Fraccionado IRPF 1T',
-    grossIncome: 4250.00,
-    deductibleExpenses: 1120.00,
-    netYield: 3130.00,
-    taxAmount: 626.00,
-    status: 'filed_with_tax_agency',
-    filingReference: 'AEAT-130-2026-881923X',
-    filedAt: '2026-04-18',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-2',
-    userId: 'u1',
-    quarter: '1T 2026',
-    year: 2026,
-    modelType: '303',
-    title: 'Modelo 303 - Autoliquidación IVA 1T',
-    grossIncome: 4250.00,
-    deductibleExpenses: 1120.00,
-    netYield: 3130.00,
-    taxAmount: 185.40,
-    status: 'filed_with_tax_agency',
-    filingReference: 'AEAT-303-2026-773412B',
-    filedAt: '2026-04-18',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-3',
-    userId: 'u1',
-    quarter: '2T 2026',
-    year: 2026,
-    modelType: '130',
-    title: 'Modelo 130 - Pago Fraccionado IRPF 2T',
-    grossIncome: 4680.00,
-    deductibleExpenses: 1240.00,
-    netYield: 3440.00,
-    taxAmount: 688.00,
-    status: 'filed_with_tax_agency',
-    filingReference: 'AEAT-130-2026-990145Y',
-    filedAt: '2026-07-16',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-4',
-    userId: 'u1',
-    quarter: '2T 2026',
-    year: 2026,
-    modelType: '303',
-    title: 'Modelo 303 - Autoliquidación IVA 2T',
-    grossIncome: 4680.00,
-    deductibleExpenses: 1240.00,
-    netYield: 3440.00,
-    taxAmount: 212.80,
-    status: 'filed_with_tax_agency',
-    filingReference: 'AEAT-303-2026-661209C',
-    filedAt: '2026-07-16',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-5',
-    userId: 'u1',
-    quarter: '3T 2026',
-    year: 2026,
-    modelType: '130',
-    title: 'Modelo 130 - Pago Fraccionado IRPF 3T (En Curso)',
-    grossIncome: 1765.70,
-    deductibleExpenses: 315.40,
-    netYield: 1450.30,
-    taxAmount: 290.06,
-    status: 'reviewed_by_gestor',
-    gestorId: 'm1'
-  },
-  {
-    id: 'dec-6',
-    userId: 'u1',
-    quarter: '3T 2026',
-    year: 2026,
-    modelType: '303',
-    title: 'Modelo 303 - Autoliquidación IVA 3T (En Curso)',
-    grossIncome: 1765.70,
-    deductibleExpenses: 315.40,
-    netYield: 1450.30,
-    taxAmount: 94.20,
-    status: 'reviewed_by_gestor',
-    gestorId: 'm1'
-  }
-];
-
-const generateMockPayments = (): Payment[] => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
-  const fmtDate = (d: number) => `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
-  return [
-    { id: 'p1', platform: 'Uber Eats', amount: 240.50, date: fmtDate(5), status: 'received', estimated: false, domain: 'ubereats.com' },
-    { id: 'p2', platform: 'Glovo', amount: 180.00, date: fmtDate(12), status: 'received', estimated: false, domain: 'glovoapp.com' },
-    { id: 'p3', platform: 'Stuart', amount: 150.00, date: fmtDate(15), status: 'received', estimated: false, domain: 'stuart.com' },
-    { id: 'p4', platform: 'Uber Eats', amount: 225.00, date: fmtDate(19), status: 'pending', estimated: true, domain: 'ubereats.com' },
-    { id: 'p5', platform: 'Glovo', amount: 195.00, date: fmtDate(26), status: 'pending', estimated: true, domain: 'glovoapp.com' },
-    { id: 'p6', platform: 'Just Eat', amount: 130.00, date: fmtDate(28), status: 'pending', estimated: true, domain: 'just-eat.es' },
-  ];
+const dateInQuarter = (date: string, quarter: string) => {
+  const range = getQuarterRange(quarter);
+  if (!range) return true;
+  const [year, month] = date.split('-').map(Number);
+  return year === range.year && month >= range.startMonth && month <= range.endMonth;
 };
 
-export const DataProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(MOCK_RIDERS[0]);
-  const [users, setUsers] = useState<User[]>([...MOCK_RIDERS, MOCK_MANAGER]);
-  const [incomes, setIncomes] = useState<Income[]>(INITIAL_INCOMES);
-  const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [payments, setPayments] = useState<Payment[]>(generateMockPayments());
-  const [requirements, setRequirements] = useState<GestorRequirement[]>(INITIAL_REQUIREMENTS);
-  const [declarations, setDeclarations] = useState<TaxDeclaration[]>(INITIAL_DECLARATIONS);
-  const [vehicle, setVehicle] = useState<Vehicle | null>(DEFAULT_VEHICLE);
-  const [hasOnboarded, setHasOnboarded] = useState(true);
-  const [privacyMode, setPrivacyMode] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(() => parseStored<User | null>(STORAGE.currentUser, null));
+  const [users, setUsers] = useState<User[]>(() => parseStored<User[]>(STORAGE.users, []));
+  const [incomes, setIncomes] = useState<Income[]>(() => parseStored<Income[]>(STORAGE.incomes, []));
+  const [expenses, setExpenses] = useState<Expense[]>(() => parseStored<Expense[]>(STORAGE.expenses, []));
+  const [documents, setDocuments] = useState<Document[]>(() => parseStored<Document[]>(STORAGE.documents, []));
+  const [payments, setPayments] = useState<Payment[]>(() => parseStored<Payment[]>(STORAGE.payments, []));
+  const [requirements, setRequirements] = useState<GestorRequirement[]>(() => parseStored<GestorRequirement[]>(STORAGE.requirements, []));
+  const [declarations, setDeclarations] = useState<TaxDeclaration[]>(() => parseStored<TaxDeclaration[]>(STORAGE.declarations, []));
+  const [vehicle, setVehicle] = useState<Vehicle | null>(() => parseStored<Vehicle | null>(STORAGE.vehicle, null));
+  const [hasOnboarded, setHasOnboarded] = useState(() => localStorage.getItem(STORAGE.onboarded) === 'true');
+  const [privacyMode, setPrivacyMode] = useState(() => localStorage.getItem(STORAGE.privacy) === 'true');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem(STORAGE.darkMode) === 'true');
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // Load from localStorage on mount
   useEffect(() => {
-    const loadData = () => {
-      const storedIncomes = localStorage.getItem('labora_incomes');
-      const storedExpenses = localStorage.getItem('labora_expenses');
-      const storedDocs = localStorage.getItem('labora_docs');
-      const storedOnboarding = localStorage.getItem('labora_onboarding');
-      const storedPayments = localStorage.getItem('labora_payments');
-      const storedRequirements = localStorage.getItem('labora_requirements');
-      const storedDeclarations = localStorage.getItem('labora_declarations');
-      const storedUsers = localStorage.getItem('labora_users');
-      const storedVehicle = localStorage.getItem('labora_vehicle');
-      const storedUser = localStorage.getItem('labora_user');
-      const storedPrivacy = localStorage.getItem('labora_privacy');
-      const storedDarkMode = localStorage.getItem('labora_darkmode');
+    localStorage.setItem(STORAGE.users, JSON.stringify(users));
+    localStorage.setItem(STORAGE.incomes, JSON.stringify(incomes));
+    localStorage.setItem(STORAGE.expenses, JSON.stringify(expenses));
+    localStorage.setItem(STORAGE.documents, JSON.stringify(documents));
+    localStorage.setItem(STORAGE.payments, JSON.stringify(payments));
+    localStorage.setItem(STORAGE.requirements, JSON.stringify(requirements));
+    localStorage.setItem(STORAGE.declarations, JSON.stringify(declarations));
+    localStorage.setItem(STORAGE.onboarded, String(hasOnboarded));
+    localStorage.setItem(STORAGE.privacy, String(privacyMode));
+    localStorage.setItem(STORAGE.darkMode, String(darkMode));
 
-      if (storedIncomes) setIncomes(JSON.parse(storedIncomes));
-      if (storedExpenses) setExpenses(JSON.parse(storedExpenses));
-      if (storedDocs) setDocuments(JSON.parse(storedDocs));
-      if (storedRequirements) setRequirements(JSON.parse(storedRequirements));
-      if (storedDeclarations) setDeclarations(JSON.parse(storedDeclarations));
-      if (storedPayments) setPayments(JSON.parse(storedPayments));
-      if (storedVehicle) setVehicle(JSON.parse(storedVehicle));
-      if (storedUsers) setUsers(JSON.parse(storedUsers));
-      if (storedOnboarding === 'true') setHasOnboarded(true);
-      if (storedPrivacy === 'true') setPrivacyMode(true);
-      if (storedDarkMode === 'true') {
-        setDarkMode(true);
-        document.body.classList.add('dark');
-      }
+    if (vehicle) localStorage.setItem(STORAGE.vehicle, JSON.stringify(vehicle));
+    else localStorage.removeItem(STORAGE.vehicle);
 
-      if (storedUser) {
-        const u = JSON.parse(storedUser);
-        setCurrentUser(u);
-      }
-    };
-    loadData();
-  }, []);
+    if (currentUser) localStorage.setItem(STORAGE.currentUser, JSON.stringify(currentUser));
+    else localStorage.removeItem(STORAGE.currentUser);
+  }, [users, incomes, expenses, documents, payments, requirements, declarations, vehicle, currentUser, hasOnboarded, privacyMode, darkMode]);
 
-  // Save to localStorage on change
   useEffect(() => {
-    if (incomes.length > 0) localStorage.setItem('labora_incomes', JSON.stringify(incomes));
-    if (expenses.length > 0) localStorage.setItem('labora_expenses', JSON.stringify(expenses));
-    if (documents.length > 0) localStorage.setItem('labora_docs', JSON.stringify(documents));
-    if (requirements.length > 0) localStorage.setItem('labora_requirements', JSON.stringify(requirements));
-    if (declarations.length > 0) localStorage.setItem('labora_declarations', JSON.stringify(declarations));
-    if (payments.length > 0) localStorage.setItem('labora_payments', JSON.stringify(payments));
-    if (users.length > 0) localStorage.setItem('labora_users', JSON.stringify(users));
-    if (vehicle) localStorage.setItem('labora_vehicle', JSON.stringify(vehicle));
-    if (currentUser) localStorage.setItem('labora_user', JSON.stringify(currentUser));
-    localStorage.setItem('labora_onboarding', String(hasOnboarded));
-    localStorage.setItem('labora_privacy', String(privacyMode));
-    localStorage.setItem('labora_darkmode', String(darkMode));
-  }, [incomes, expenses, documents, requirements, declarations, payments, users, vehicle, currentUser, hasOnboarded, privacyMode, darkMode]);
+    document.body.classList.toggle('dark', darkMode);
+  }, [darkMode]);
 
   const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    setNotifications(prev => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
+    const id = createId('notice');
+    setNotifications((previous) => [...previous, { id, type, message }]);
+    window.setTimeout(() => {
+      setNotifications((previous) => previous.filter((notification) => notification.id !== id));
     }, 3500);
   };
 
   const dismissNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications((previous) => previous.filter((notification) => notification.id !== id));
   };
 
   const login = (email: string, role: UserRole) => {
-    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
-    if (found) {
-      setCurrentUser(found);
-      showNotification('success', `Bienvenido, ${found.name}`);
-    } else {
-      const newUser: User = {
-        id: 'usr_' + Date.now(),
-        name: email.split('@')[0],
-        email,
-        role,
-        nif: role === UserRole.RIDER ? '48192834K' : 'B-88349210',
-        fiscalRegime: role === UserRole.RIDER ? '036_037_directa' : undefined,
-        iaeCode: role === UserRole.RIDER ? '849.5 - Servicios de mensajería y reparto' : undefined,
-        socialSecurityType: role === UserRole.RIDER ? 'tarifa_plana' : undefined,
-        vehicleType: role === UserRole.RIDER ? 'moto' : undefined,
-        vehiclePlate: role === UserRole.RIDER ? '4521 LBR' : undefined,
-        vehicleFuel: role === UserRole.RIDER ? 'gasolina' : undefined,
-        companyName: role === UserRole.MANAGER ? `${email.split('@')[0]} Asesoría Fiscal` : undefined,
-        platforms: role === UserRole.RIDER ? ['Uber Eats', 'Glovo'] : [],
-        banks: ['BBVA'],
-        managerId: role === UserRole.RIDER ? 'm1' : undefined,
-        countryCode: 'ES'
-      };
-      setUsers(prev => [...prev, newUser]);
-      setCurrentUser(newUser);
-      showNotification('success', 'Cuenta creada y configurada correctamente');
+    const normalized = email.trim().toLowerCase();
+    const account = users.find(
+      (user) => user.email.toLowerCase() === normalized && user.role === role
+    );
+
+    if (!account) {
+      showNotification('error', 'No se ha encontrado esa cuenta.');
+      return;
     }
+
+    setCurrentUser(account);
+    setHasOnboarded(true);
+    showNotification('success', `Bienvenido, ${account.name}`);
   };
 
   const registerUser = (userData: Partial<User>) => {
+    const role = userData.role || UserRole.RIDER;
+    const manager = users.find((user) => user.role === UserRole.MANAGER);
+
     const newUser: User = {
-      id: 'usr_' + Date.now(),
-      name: userData.name || 'Usuario',
-      email: userData.email || `usuario_${Date.now()}@labora.plus`,
-      role: userData.role || UserRole.RIDER,
+      id: createId(role === UserRole.MANAGER ? 'manager' : 'user'),
+      name: userData.name?.trim() || 'Usuario',
+      email: userData.email?.trim().toLowerCase() || `usuario_${Date.now()}@local`,
       phone: userData.phone,
-      nif: userData.nif || 'Sin NIF registrado',
-      fiscalRegime: userData.fiscalRegime || '036_037_directa',
-      iaeCode: userData.iaeCode || '849.5 - Servicios de mensajería y reparto',
-      socialSecurityType: userData.socialSecurityType || 'tarifa_plana',
-      vehicleType: userData.vehicleType || 'moto',
-      vehiclePlate: userData.vehiclePlate || '',
-      vehicleFuel: userData.vehicleFuel || 'gasolina',
+      role,
+      platforms: userData.platforms || [],
+      banks: userData.banks || [],
+      managerId: role === UserRole.RIDER ? (userData.managerId || manager?.id) : undefined,
+      currencyPreference: userData.currencyPreference || 'EUR',
+      notificationSettings: userData.notificationSettings,
+      nif: userData.nif,
+      fiscalRegime: userData.fiscalRegime,
+      iaeCode: userData.iaeCode,
+      socialSecurityType: userData.socialSecurityType,
+      vehicleType: userData.vehicleType,
+      vehiclePlate: userData.vehiclePlate,
+      vehicleFuel: userData.vehicleFuel,
       companyName: userData.companyName,
       collegiateNumber: userData.collegiateNumber,
-      platforms: userData.platforms || ['Uber Eats'],
-      banks: userData.banks || ['BBVA'],
-      managerId: userData.managerId || (userData.role === UserRole.RIDER ? 'm1' : undefined),
-      countryCode: userData.countryCode || 'ES'
+      countryCode: userData.countryCode || 'ES',
+      organizationId: userData.organizationId
     };
 
-    setUsers(prev => [...prev, newUser]);
+    setUsers((previous) => [...previous, newUser]);
     setCurrentUser(newUser);
     setHasOnboarded(true);
-    showNotification('success', `¡Registro completado! Bienvenido a Labora+, ${newUser.name}`);
+    showNotification('success', 'Cuenta creada correctamente.');
   };
 
   const switchUser = (userId: string) => {
-    const target = users.find(u => u.id === userId);
-    if (target) {
-      setCurrentUser(target);
-      showNotification('info', `Cambiado a perfil: ${target.name} (${target.role})`);
-    }
+    const account = users.find((user) => user.id === userId);
+    if (account) setCurrentUser(account);
   };
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('labora_user');
-    showNotification('info', 'Sesión cerrada');
+    showNotification('info', 'Sesión cerrada.');
   };
 
   const updateUserConfig = (platforms: string[], banks: string[]) => {
     if (!currentUser) return;
-    const updatedUser = { ...currentUser, platforms, banks };
-    setCurrentUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-    showNotification('success', 'Plataformas actualizadas');
+    const updated = { ...currentUser, platforms, banks };
+    setCurrentUser(updated);
+    setUsers((previous) => previous.map((user) => user.id === updated.id ? updated : user));
+    showNotification('success', 'Configuración actualizada.');
   };
 
   const updateUserFiscalProfile = (profileData: Partial<User>) => {
     if (!currentUser) return;
-    const updatedUser = { ...currentUser, ...profileData };
-    setCurrentUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-    showNotification('success', 'Perfil fiscal y datos de autónomo actualizados');
+    const updated = { ...currentUser, ...profileData };
+    setCurrentUser(updated);
+    setUsers((previous) => previous.map((user) => user.id === updated.id ? updated : user));
+    showNotification('success', 'Perfil actualizado.');
   };
 
   const completeOnboarding = () => {
     setHasOnboarded(true);
-    showNotification('success', '¡Configuración completada!');
   };
 
-  const togglePrivacyMode = () => {
-    setPrivacyMode(prev => {
-      const newVal = !prev;
-      showNotification('info', newVal ? 'Modo Discreto Activado' : 'Modo Discreto Desactivado');
-      return newVal;
-    });
-  };
+  const togglePrivacyMode = () => setPrivacyMode((value) => !value);
+  const toggleDarkMode = () => setDarkMode((value) => !value);
 
-  const toggleDarkMode = () => {
-    setDarkMode(prev => {
-      const newVal = !prev;
-      if (newVal) {
-        document.body.classList.add('dark');
-      } else {
-        document.body.classList.remove('dark');
-      }
-      showNotification('info', newVal ? 'Modo Oscuro Activado' : 'Modo Claro Activado');
-      return newVal;
-    });
-  };
-
-  const addIncome = (inc: Omit<Income, 'id' | 'userId'>) => {
+  const addIncome = (income: Omit<Income, 'id' | 'userId'>) => {
     if (!currentUser) return;
-    const newIncome: Income = {
-      ...inc,
-      id: 'inc_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id
-    };
-    setIncomes(prev => [newIncome, ...prev]);
-    showNotification('success', `Ingreso de ${newIncome.amount}€ registrado desde ${newIncome.platform}`);
+    const newIncome: Income = { ...income, id: createId('income'), userId: currentUser.id };
+    setIncomes((previous) => [newIncome, ...previous]);
+    showNotification('success', 'Ingreso registrado.');
   };
 
-  const addIncomes = (incs: Omit<Income, 'id' | 'userId'>[]) => {
+  const addIncomes = (items: Omit<Income, 'id' | 'userId'>[]) => {
     if (!currentUser) return;
-    const newIncomes = incs.map(inc => ({
-      ...inc,
-      id: 'inc_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id
-    }));
-    setIncomes(prev => [...newIncomes, ...prev]);
-    showNotification('success', `${incs.length} ingresos importados`);
+    const newItems = items.map((income) => ({ ...income, id: createId('income'), userId: currentUser.id }));
+    setIncomes((previous) => [...newItems, ...previous]);
+    showNotification('success', `${newItems.length} ingresos importados.`);
   };
 
-  const addExpense = (exp: Omit<Expense, 'id' | 'userId'>) => {
+  const addExpense = (expense: Omit<Expense, 'id' | 'userId'>) => {
     if (!currentUser) return;
-    const vatRate = exp.vatRate ?? (exp.category === ExpenseCategory.GASOLINA ? 21 : 21);
-    const vatAmount = exp.vatAmount ?? (vatRate > 0 ? Number(((exp.amount * vatRate) / (100 + vatRate)).toFixed(2)) : 0);
-
+    const vatRate = expense.vatRate ?? 21;
+    const vatAmount = expense.vatAmount ?? (vatRate > 0 ? Number(((expense.amount * vatRate) / (100 + vatRate)).toFixed(2)) : 0);
     const newExpense: Expense = {
-      ...exp,
-      id: 'exp_' + Math.random().toString(36).substr(2, 9),
+      ...expense,
+      id: createId('expense'),
       userId: currentUser.id,
-      status: exp.status || 'pending_review',
+      status: expense.status || 'pending_review',
       vatRate,
       vatAmount,
-      deductiblePercentage: exp.deductiblePercentage ?? 100
+      deductiblePercentage: expense.deductiblePercentage ?? 100
     };
-
-    setExpenses(prev => [newExpense, ...prev]);
-    showNotification('success', `Gasto de ${newExpense.amount}€ registrado con comprobante digitalizado`);
+    setExpenses((previous) => [newExpense, ...previous]);
+    showNotification('success', 'Gasto registrado.');
   };
 
-  const addExpenses = (exps: Omit<Expense, 'id' | 'userId'>[]) => {
+  const addExpenses = (items: Omit<Expense, 'id' | 'userId'>[]) => {
     if (!currentUser) return;
-    const newExpenses = exps.map(exp => ({
-      ...exp,
-      id: 'exp_' + Math.random().toString(36).substr(2, 9),
+    const newItems = items.map((expense) => ({
+      ...expense,
+      id: createId('expense'),
       userId: currentUser.id,
-      status: exp.status || 'pending_review'
+      status: expense.status || 'pending_review' as const
     }));
-    setExpenses(prev => [...newExpenses, ...prev]);
-    showNotification('success', `${exps.length} gastos guardados`);
+    setExpenses((previous) => [...newItems, ...previous]);
+    showNotification('success', `${newItems.length} gastos importados.`);
   };
 
-  const updateExpense = (updatedExpense: Expense) => {
-    setExpenses(prev => prev.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp));
-    showNotification('success', 'Gasto actualizado');
+  const updateExpense = (expense: Expense) => {
+    setExpenses((previous) => previous.map((item) => item.id === expense.id ? expense : item));
+    showNotification('success', 'Gasto actualizado.');
   };
 
   const deleteExpense = (id: string) => {
-    setExpenses(prev => prev.filter(e => e.id !== id));
-    showNotification('info', 'Gasto eliminado');
+    setExpenses((previous) => previous.filter((expense) => expense.id !== id));
+    showNotification('info', 'Gasto eliminado.');
   };
 
   const updateExpenseAudit = (
-    expenseId: string, 
-    status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix', 
+    expenseId: string,
+    status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
     gestorNotes?: string
   ) => {
-    setExpenses(prev => prev.map(exp => {
-      if (exp.id === expenseId) {
-        return {
-          ...exp,
-          status,
-          gestorNotes: gestorNotes !== undefined ? gestorNotes : exp.gestorNotes
-        };
-      }
-      return exp;
-    }));
-
-    const statusLabels: Record<string, string> = {
-      approved: 'Gasto Aprobado y Validado para Hacienda',
-      rejected: 'Gasto Marcado como No Deducible',
-      needs_fix: 'Gasto con Requerimiento de Subsanación',
-      pending_review: 'Gasto en Revisión'
-    };
-
-    showNotification('info', statusLabels[status] || 'Estado de gasto actualizado');
+    setExpenses((previous) => previous.map((expense) =>
+      expense.id === expenseId ? { ...expense, status, gestorNotes: gestorNotes ?? expense.gestorNotes } : expense
+    ));
+    showNotification('success', 'Estado de auditoría actualizado.');
   };
 
   const addDocument = (doc: Omit<Document, 'id' | 'userId'>) => {
     if (!currentUser) return;
-    const newDoc: Document = {
-      ...doc,
-      id: 'doc_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id
-    };
-    setDocuments(prev => [newDoc, ...prev]);
-    showNotification('success', `Documento "${newDoc.name}" archivado con éxito`);
+    const newDocument: Document = { ...doc, id: createId('document'), userId: currentUser.id };
+    setDocuments((previous) => [newDocument, ...previous]);
+    showNotification('success', 'Documento guardado.');
+  };
+
+  const addPayment = (payment: Omit<Payment, 'id'>) => {
+    setPayments((previous) => [{ ...payment, id: createId('payment') }, ...previous]);
   };
 
   const updateVehicle = (vehicleData: Vehicle) => {
     setVehicle(vehicleData);
-    showNotification('success', 'Datos del vehículo actualizados');
+    showNotification('success', 'Vehículo actualizado.');
   };
 
-  const addPayment = (payment: Omit<Payment, 'id'>) => {
-    const newPayment: Payment = {
-      ...payment,
-      id: 'pay_' + Math.random().toString(36).substr(2, 9)
-    };
-    setPayments(prev => [...prev, newPayment]);
-    showNotification('success', 'Pago previsto añadido');
-  };
-
-  const markPaymentAsReceived = (paymentId: string) => {
-    setPayments(prev => prev.map(p => {
-      if (p.id === paymentId) {
-        if (p.status === 'pending' && currentUser) {
-          const newIncome: Income = {
-            id: 'inc_' + Math.random().toString(36).substr(2, 9),
-            userId: currentUser.id,
-            platform: p.platform,
-            amount: p.amount,
-            date: new Date().toISOString().split('T')[0],
-            retention: 0
-          };
-          setIncomes(current => [newIncome, ...current]);
-        }
-        return { ...p, status: 'received', estimated: false };
-      }
-      return p;
-    }));
-    showNotification('success', 'Pago marcado como recibido e ingresado en finanzas');
-  };
-
-  const addRequirement = (req: Omit<GestorRequirement, 'id' | 'createdAt'>) => {
-    const newReq: GestorRequirement = {
-      ...req,
-      id: 'req_' + Math.random().toString(36).substr(2, 9),
+  const addRequirement = (requirement: Omit<GestorRequirement, 'id' | 'createdAt'>) => {
+    const newRequirement: GestorRequirement = {
+      ...requirement,
+      id: createId('requirement'),
       createdAt: new Date().toISOString().split('T')[0]
     };
-    setRequirements(prev => [newReq, ...prev]);
-    showNotification('success', `Requerimiento enviado al rider ${req.riderName}`);
+    setRequirements((previous) => [newRequirement, ...previous]);
+    showNotification('success', 'Petición enviada.');
   };
 
   const updateRequirementStatus = (
-    id: string, 
-    status: 'pending' | 'submitted' | 'approved', 
-    notes?: string, 
+    id: string,
+    status: 'pending' | 'submitted' | 'approved',
+    notes?: string,
     proofUrl?: string
   ) => {
-    setRequirements(prev => prev.map(r => {
-      if (r.id === id) {
-        return {
-          ...r,
-          status,
-          submissionNotes: notes || r.submissionNotes,
-          submissionUrl: proofUrl || r.submissionUrl
-        };
-      }
-      return r;
-    }));
-
-    if (status === 'submitted') {
-      showNotification('success', 'Justificante enviado al gestor para revisión');
-    } else if (status === 'approved') {
-      showNotification('success', 'Requerimiento marcado como resuelto por el gestor');
-    }
-  };
-
-  const fileTaxDeclaration = (declarationId: string, filingRef: string) => {
-    setDeclarations(prev => prev.map(dec => {
-      if (dec.id === declarationId) {
-        return {
-          ...dec,
-          status: 'filed_with_tax_agency',
-          filingReference: filingRef,
-          filedAt: new Date().toISOString().split('T')[0]
-        };
-      }
-      return dec;
-    }));
-    showNotification('success', `Declaración presentada con justificante AEAT: ${filingRef}`);
+    setRequirements((previous) => previous.map((requirement) =>
+      requirement.id === id
+        ? {
+            ...requirement,
+            status,
+            submissionNotes: notes ?? requirement.submissionNotes,
+            submissionUrl: proofUrl ?? requirement.submissionUrl
+          }
+        : requirement
+    ));
+    showNotification('success', 'Petición actualizada.');
   };
 
   const calculateQuarterlyTaxes = (userId: string, quarter: string) => {
-    const userIncomes = incomes.filter(i => i.userId === userId);
-    const userExpenses = expenses.filter(e => e.userId === userId && e.status !== 'rejected');
+    const quarterIncomes = incomes.filter((income) => income.userId === userId && dateInQuarter(income.date, quarter));
+    const quarterExpenses = expenses.filter((expense) =>
+      expense.userId === userId && expense.status !== 'rejected' && dateInQuarter(expense.date, quarter)
+    );
 
-    const totalGross = userIncomes.reduce((s, i) => s + i.amount, 0);
-    const totalDeductible = userExpenses.reduce((s, e) => s + (e.amount * (e.deductiblePercentage ?? 100) / 100), 0);
-    const netYield = Math.max(0, totalGross - totalDeductible);
-    
-    // Model 130: 20% on net yield
-    const model130Tax = Number((netYield * 0.20).toFixed(2));
+    const grossIncome = quarterIncomes.reduce((sum, income) => sum + income.amount, 0);
+    const deductibleExpenses = quarterExpenses.reduce(
+      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 100) / 100),
+      0
+    );
+    const netYield = Math.max(0, grossIncome - deductibleExpenses);
+    const deductibleVat = quarterExpenses.reduce(
+      (sum, expense) => sum + (expense.vatAmount || 0) * ((expense.deductiblePercentage ?? 100) / 100),
+      0
+    );
+    const estimatedOutputVat = grossIncome * 0.21;
 
-    // Model 303: VAT output (if applicable, e.g. 21%) - deductible input VAT
-    const deductibleVAT = userExpenses.reduce((s, e) => s + (e.vatAmount || 0), 0);
-    const model303Tax = Number(Math.max(0, (totalGross * 0.21) - deductibleVAT).toFixed(2));
+    const existing130 = declarations.find(
+      (declaration) => declaration.userId === userId && declaration.quarter === quarter && declaration.modelType === '130'
+    );
+    const existing303 = declarations.find(
+      (declaration) => declaration.userId === userId && declaration.quarter === quarter && declaration.modelType === '303'
+    );
+    const year = getQuarterRange(quarter)?.year || new Date().getFullYear();
 
-    const model130: TaxDeclaration = {
-      id: `dec_130_${userId}_${quarter}`,
+    const model130: TaxDeclaration = existing130 || {
+      id: `calc_130_${userId}_${quarter.replace(/\s/g, '_')}`,
       userId,
       quarter,
-      year: new Date().getFullYear(),
+      year,
       modelType: '130',
-      title: `Modelo 130 - Pago Fraccionado IRPF (${quarter})`,
-      grossIncome: totalGross,
-      deductibleExpenses: totalDeductible,
+      title: `Modelo 130 · ${quarter}`,
+      grossIncome,
+      deductibleExpenses,
       netYield,
-      taxAmount: model130Tax,
-      status: 'reviewed_by_gestor',
-      gestorId: currentUser?.role === UserRole.MANAGER ? currentUser.id : 'm1'
+      taxAmount: Number((netYield * 0.2).toFixed(2)),
+      status: 'draft'
     };
 
-    const model303: TaxDeclaration = {
-      id: `dec_303_${userId}_${quarter}`,
+    const model303: TaxDeclaration = existing303 || {
+      id: `calc_303_${userId}_${quarter.replace(/\s/g, '_')}`,
       userId,
       quarter,
-      year: new Date().getFullYear(),
+      year,
       modelType: '303',
-      title: `Modelo 303 - Autoliquidación IVA (${quarter})`,
-      grossIncome: totalGross,
-      deductibleExpenses: totalDeductible,
+      title: `Modelo 303 · ${quarter}`,
+      grossIncome,
+      deductibleExpenses,
       netYield,
-      taxAmount: model303Tax,
-      status: 'reviewed_by_gestor',
-      gestorId: currentUser?.role === UserRole.MANAGER ? currentUser.id : 'm1'
+      taxAmount: Number(Math.max(0, estimatedOutputVat - deductibleVat).toFixed(2)),
+      status: 'draft'
     };
 
     return { model130, model303 };
   };
 
-  const getFiscalSummary = (userId: string): FiscalSummary => {
-    const userIncomes = incomes.filter(i => i.userId === userId);
-    const userExpenses = expenses.filter(e => e.userId === userId && e.status !== 'rejected');
+  const fileTaxDeclaration = (declarationId: string, filingRef: string) => {
+    setDeclarations((previous) => previous.map((declaration) =>
+      declaration.id === declarationId
+        ? {
+            ...declaration,
+            status: 'filed_with_tax_agency',
+            filingReference: filingRef,
+            filedAt: new Date().toISOString().split('T')[0],
+            gestorId: currentUser?.id
+          }
+        : declaration
+    ));
+    showNotification('success', 'Referencia de presentación registrada.');
+  };
 
-    const totalIncome = userIncomes.reduce((sum, i) => sum + i.amount, 0);
-    const totalExpenses = userExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const netProfit = totalIncome - totalExpenses;
-    
-    const estimatedIRPF = Math.max(0, netProfit * 0.20); 
+  const getFiscalSummary = (userId: string): FiscalSummary => {
+    const userIncomes = incomes.filter((income) => income.userId === userId);
+    const userExpenses = expenses.filter((expense) => expense.userId === userId && expense.status !== 'rejected');
+    const totalIncome = userIncomes.reduce((sum, income) => sum + income.amount, 0);
+    const totalExpenses = userExpenses.reduce(
+      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 100) / 100),
+      0
+    );
+    const netProfit = Math.max(0, totalIncome - totalExpenses);
 
     return {
       totalIncome,
       totalExpenses,
       netProfit,
-      estimatedIRPF,
+      estimatedIRPF: Number((netProfit * 0.2).toFixed(2)),
       quarter: '3T 2026'
     };
   };
 
-  const getUsersByManager = (managerId: string): User[] => {
-    return users.filter(u => u.managerId === managerId && u.role === UserRole.RIDER);
+  const getUsersByManager = (managerId: string) => users.filter(
+    (user) => user.role === UserRole.RIDER && user.managerId === managerId
+  );
+
+  const markPaymentAsReceived = (paymentId: string) => {
+    const payment = payments.find((item) => item.id === paymentId);
+    if (!payment || payment.status === 'received') return;
+
+    setPayments((previous) => previous.map((item) =>
+      item.id === paymentId ? { ...item, status: 'received', estimated: false } : item
+    ));
+
+    if (currentUser?.role === UserRole.RIDER) {
+      const income: Income = {
+        id: createId('income'),
+        userId: currentUser.id,
+        platform: payment.platform,
+        date: new Date().toISOString().split('T')[0],
+        amount: payment.amount,
+        retention: 0
+      };
+      setIncomes((previous) => [income, ...previous]);
+    }
   };
 
   const exportData = () => {
-    const data = { incomes, expenses, documents, requirements, declarations, vehicle, payments };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const payload = JSON.stringify({
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      users,
+      incomes,
+      expenses,
+      documents,
+      payments,
+      requirements,
+      declarations,
+      vehicle
+    }, null, 2);
+
+    const blob = new Blob([payload], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `labora_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showNotification('success', 'Copia de seguridad fiscal descargada');
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `labora-backup-${new Date().toISOString().split('T')[0]}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   };
 
   const importData = (jsonData: string) => {
     try {
-      const data = JSON.parse(jsonData);
-      if (data.incomes) setIncomes(data.incomes);
-      if (data.expenses) setExpenses(data.expenses);
-      if (data.documents) setDocuments(data.documents);
-      if (data.requirements) setRequirements(data.requirements);
-      if (data.declarations) setDeclarations(data.declarations);
-      if (data.vehicle) setVehicle(data.vehicle);
-      if (data.payments) setPayments(data.payments);
-      showNotification('success', 'Datos restaurados correctamente');
-    } catch (e) {
-      showNotification('error', 'Archivo de copia de seguridad inválido');
+      const payload = JSON.parse(jsonData);
+      if (Array.isArray(payload.users)) setUsers(payload.users);
+      if (Array.isArray(payload.incomes)) setIncomes(payload.incomes);
+      if (Array.isArray(payload.expenses)) setExpenses(payload.expenses);
+      if (Array.isArray(payload.documents)) setDocuments(payload.documents);
+      if (Array.isArray(payload.payments)) setPayments(payload.payments);
+      if (Array.isArray(payload.requirements)) setRequirements(payload.requirements);
+      if (Array.isArray(payload.declarations)) setDeclarations(payload.declarations);
+      if (payload.vehicle) setVehicle(payload.vehicle);
+      showNotification('success', 'Datos importados.');
+    } catch {
+      showNotification('error', 'El archivo no contiene un backup válido de Labora+.');
     }
   };
 
-  const value = {
+  const value = useMemo<DataContextType>(() => ({
     currentUser,
     users,
     incomes,
@@ -944,19 +559,27 @@ export const DataProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
     dismissNotification,
     exportData,
     importData
-  };
+  }), [
+    currentUser,
+    users,
+    incomes,
+    expenses,
+    documents,
+    payments,
+    requirements,
+    declarations,
+    vehicle,
+    hasOnboarded,
+    privacyMode,
+    darkMode,
+    notifications
+  ]);
 
-  return (
-    <DataContext.Provider value={value}>
-      {children}
-    </DataContext.Provider>
-  );
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };
 
 export const useData = () => {
   const context = useContext(DataContext);
-  if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
-  }
+  if (!context) throw new Error('useData must be used within DataProvider');
   return context;
 };
