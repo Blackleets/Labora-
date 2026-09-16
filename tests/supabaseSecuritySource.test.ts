@@ -12,6 +12,7 @@ describe('Supabase source security contract', () => {
   const currencyGuard = readRepoFile('supabase/migrations/20260916090200_market_currency_guard.sql');
   const hardening = readRepoFile('supabase/migrations/20260916090300_security_hardening.sql');
   const signupCountry = readRepoFile('supabase/migrations/20260916090400_signup_country_integrity.sql');
+  const requirementStateMachine = readRepoFile('supabase/migrations/20260916090600_requirement_state_machine.sql');
 
   it('keeps critical public tables behind RLS', () => {
     for (const table of [
@@ -54,11 +55,24 @@ describe('Supabase source security contract', () => {
     }
   });
 
-  it('enforces evidence-backed requirement transitions in the database', () => {
-    expect(hardening).toContain("old.status <> 'pending' or new.status <> 'submitted'");
-    expect(hardening).toContain('submitted requirement requires evidence');
-    expect(hardening).toContain("old.status <> 'submitted' or new.status <> 'approved'");
-    expect(hardening).toContain('new.submission_notes := old.submission_notes;');
+  it('enforces evidence-backed requirement submission in the database', () => {
+    expect(requirementStateMachine).toContain("old.status <> 'pending' or new.status <> 'submitted'");
+    expect(requirementStateMachine).toContain('submitted requirement requires evidence');
+    expect(requirementStateMachine).toContain('submission evidence does not belong to client workspace');
+  });
+
+  it('makes requirement resolution terminal and manager-controlled', () => {
+    expect(requirementStateMachine).toContain("old.status in ('approved', 'cancelled')");
+    expect(requirementStateMachine).toContain("if resolution not in ('approved','cancelled')");
+    expect(requirementStateMachine).toContain("manager may approve only a submitted requirement");
+    expect(requirementStateMachine).toContain("manager may cancel only an open requirement");
+    expect(requirementStateMachine).not.toContain("resolution not in ('approved','cancelled','pending')");
+  });
+
+  it('preserves client submission evidence during manager resolution', () => {
+    expect(requirementStateMachine).toContain('new.submitted_document_id := old.submitted_document_id;');
+    expect(requirementStateMachine).toContain('new.submission_notes := old.submission_notes;');
+    expect(requirementStateMachine).toContain('new.submitted_at := old.submitted_at;');
   });
 
   it('fails closed for unknown currencies and includes Venezuela', () => {
