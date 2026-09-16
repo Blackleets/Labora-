@@ -15,6 +15,7 @@ import IncomeTracker from '../../../components/IncomeTracker';
 import { TaxDeclarationsViewer } from '../../../components/TaxDeclarationsViewer';
 import Documents from '../../../components/Documents';
 import { GasStationCaptureModal } from '../../../components/GasStationCaptureModal';
+import { getMarketProfile, MarketProfile } from '../../country-config/marketProfiles';
 
 interface MoneyHubProps {
   initialTab?: 'expenses' | 'incomes' | 'payments' | 'taxes' | 'docs' | 'payroll' | 'banking';
@@ -23,24 +24,39 @@ interface MoneyHubProps {
 
 type RealTab = 'expenses' | 'incomes' | 'payments' | 'taxes' | 'docs';
 
-const normalizeTab = (tab?: string): RealTab => {
+const normalizeTab = (tab: string | undefined, fiscalEnabled: boolean): RealTab => {
+  if (tab === 'taxes' && !fiscalEnabled) return 'docs';
   if (tab === 'incomes' || tab === 'payments' || tab === 'taxes' || tab === 'docs') return tab;
   return 'expenses';
 };
 
-const money = (value: number, hidden: boolean) => hidden
+const money = (value: number, hidden: boolean, market: MarketProfile) => hidden
   ? '••••'
-  : new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
+  : new Intl.NumberFormat(market.locale, { style: 'currency', currency: market.currency }).format(value);
+
+const currentPeriod = () => {
+  const now = new Date();
+  return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
+};
 
 export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses' }) => {
-  const { currentUser, getFiscalSummary, privacyMode, payments } = useData();
-  const [activeTab, setActiveTab] = useState<RealTab>(normalizeTab(initialTab));
+  const { currentUser, getFiscalSummary, privacyMode, payments, incomes, expenses } = useData();
+  const market = getMarketProfile(currentUser?.countryCode);
+  const fiscalEnabled = market.fiscalEngineStatus === 'verified';
+  const [activeTab, setActiveTab] = useState<RealTab>(normalizeTab(initialTab, fiscalEnabled));
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
 
-  useEffect(() => setActiveTab(normalizeTab(initialTab)), [initialTab]);
+  useEffect(() => setActiveTab(normalizeTab(initialTab, fiscalEnabled)), [initialTab, fiscalEnabled]);
 
   if (!currentUser) return null;
-  const summary = getFiscalSummary(currentUser.id);
+
+  const userIncomes = incomes.filter((item) => item.userId === currentUser.id);
+  const userExpenses = expenses.filter((item) => item.userId === currentUser.id);
+  const registeredIncome = userIncomes.reduce((sum, item) => sum + item.amount, 0);
+  const registeredExpenses = userExpenses.reduce((sum, item) => sum + item.amount, 0);
+  const simpleBalance = registeredIncome - registeredExpenses;
+  const fiscalSummary = fiscalEnabled ? getFiscalSummary(currentUser.id) : null;
+
   const pendingPayments = payments.filter((payment) => payment.status === 'pending');
   const receivedPayments = payments.filter((payment) => payment.status === 'received');
   const pendingAmount = pendingPayments.reduce((sum, payment) => sum + payment.amount, 0);
@@ -51,7 +67,7 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses' }) =
     { id: 'incomes', label: 'Ingresos', icon: TrendingUp },
     { id: 'expenses', label: 'Gastos y tickets', icon: Receipt },
     { id: 'docs', label: 'Documentos', icon: FileText },
-    { id: 'taxes', label: 'Fiscal', icon: Scale },
+    ...(fiscalEnabled ? [{ id: 'taxes' as const, label: 'Fiscal', icon: Scale }] : []),
   ];
 
   return (
@@ -59,18 +75,27 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses' }) =
       <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#D6E3D9] bg-[#EEF5F0] px-3 py-1 text-xs font-semibold text-[#2E5A44]"><Wallet className="h-3.5 w-3.5" /> Mi dinero · {summary.quarter}</div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#D6E3D9] bg-[#EEF5F0] px-3 py-1 text-xs font-semibold text-[#2E5A44]"><Wallet className="h-3.5 w-3.5" /> Mi dinero · {currentPeriod()} · {market.currency}</div>
             <h1 className="font-serif text-2xl font-bold text-stone-900">Entender lo que cobras sin mezclarlo con lo que esperabas cobrar</h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-stone-600">Un pago esperado, un ingreso registrado y un movimiento bancario son cosas distintas. Labora+ los mantiene separados hasta que exista evidencia para conciliarlos.</p>
+            {!fiscalEnabled && (
+              <div className="mt-3 max-w-3xl rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs leading-relaxed text-sky-800">
+                <strong>{market.displayName}:</strong> aquí mostramos control financiero y documental. No calculamos impuestos locales hasta que exista un motor fiscal verificado para este país.
+              </div>
+            )}
           </div>
           <button onClick={() => setIsGasModalOpen(true)} className="flex items-center justify-center gap-2 rounded-xl bg-[#C96846] px-4 py-2.5 text-xs font-semibold text-white shadow-sm"><Fuel className="h-4 w-4" /> Guardar ticket</button>
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Summary label="Ingresos registrados" value={money(summary.totalIncome, privacyMode)} helper="Datos cargados para el trimestre" />
-          <Summary label="Cobros recibidos" value={money(receivedAmount, privacyMode)} helper={`${receivedPayments.length} pago(s) marcados como recibidos`} />
-          <Summary label="Por conciliar" value={money(pendingAmount, privacyMode)} helper={`${pendingPayments.length} pago(s) esperados`} warning={pendingPayments.length > 0} />
-          <Summary label="Referencia IRPF" value={money(summary.estimatedIRPF, privacyMode)} helper="Estimación, no autoliquidación" warning />
+          <Summary label="Ingresos registrados" value={money(registeredIncome, privacyMode, market)} helper="Registros aportados a Labora+" />
+          <Summary label="Cobros recibidos" value={money(receivedAmount, privacyMode, market)} helper={`${receivedPayments.length} pago(s) marcados como recibidos`} />
+          <Summary label="Por conciliar" value={money(pendingAmount, privacyMode, market)} helper={`${pendingPayments.length} pago(s) esperados`} warning={pendingPayments.length > 0} />
+          {fiscalEnabled && fiscalSummary ? (
+            <Summary label="Referencia fiscal" value={money(fiscalSummary.estimatedIRPF, privacyMode, market)} helper="Estimación provisional, no presentación" warning />
+          ) : (
+            <Summary label="Balance registrado" value={money(simpleBalance, privacyMode, market)} helper={`${money(registeredExpenses, privacyMode, market)} en gastos registrados`} />
+          )}
         </div>
       </section>
 
@@ -81,20 +106,20 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses' }) =
         })}
       </nav>
 
-      {activeTab === 'payments' && <PaymentsPanel />}
+      {activeTab === 'payments' && <PaymentsPanel market={market} />}
       {activeTab === 'incomes' && <IncomeTracker startDate="" endDate="" />}
       {activeTab === 'expenses' && <ExpenseTracker startDate="" endDate="" />}
       {activeTab === 'docs' && <Documents />}
-      {activeTab === 'taxes' && <TaxDeclarationsViewer />}
+      {activeTab === 'taxes' && fiscalEnabled && <TaxDeclarationsViewer />}
 
       <GasStationCaptureModal isOpen={isGasModalOpen} onClose={() => setIsGasModalOpen(false)} />
     </div>
   );
 };
 
-const PaymentsPanel: React.FC = () => {
-  const { payments, addPayment, markPaymentAsReceived, privacyMode, showNotification } = useData();
-  const [platform, setPlatform] = useState('Uber Eats');
+const PaymentsPanel: React.FC<{ market: MarketProfile }> = ({ market }) => {
+  const { currentUser, payments, addPayment, markPaymentAsReceived, privacyMode, showNotification } = useData();
+  const [platform, setPlatform] = useState(currentUser?.platforms[0] || '');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState('');
   const [status, setStatus] = useState<'pending' | 'received'>('pending');
@@ -132,9 +157,9 @@ const PaymentsPanel: React.FC = () => {
     <div className="grid gap-5 lg:grid-cols-[.78fr_1.22fr]">
       <form onSubmit={submit} className="h-fit space-y-4 rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm">
         <div><h2 className="font-serif text-lg font-bold text-stone-900">Registrar un cobro</h2><p className="mt-1 text-xs leading-relaxed text-stone-500">Úsalo para anotar lo que una plataforma dice que te pagará o lo que ya has confirmado que recibiste. No crea un ingreso fiscal duplicado.</p></div>
-        <label className="block text-xs font-semibold text-stone-700">Plataforma<input value={platform} onChange={(event) => setPlatform(event.target.value)} className="mt-1 w-full rounded-xl border border-[#DFD5C6] bg-white px-3 py-2.5 text-sm" placeholder="Uber Eats" /></label>
+        <label className="block text-xs font-semibold text-stone-700">Plataforma<input value={platform} onChange={(event) => setPlatform(event.target.value)} className="mt-1 w-full rounded-xl border border-[#DFD5C6] bg-white px-3 py-2.5 text-sm" placeholder="Nombre de la plataforma" /></label>
         <div className="grid grid-cols-2 gap-3">
-          <label className="text-xs font-semibold text-stone-700">Importe (€)<input type="number" min="0" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} className="mt-1 w-full rounded-xl border border-[#DFD5C6] bg-white px-3 py-2.5 text-sm" /></label>
+          <label className="text-xs font-semibold text-stone-700">Importe ({market.currencySymbol})<input type="number" min="0" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} className="mt-1 w-full rounded-xl border border-[#DFD5C6] bg-white px-3 py-2.5 text-sm" /></label>
           <label className="text-xs font-semibold text-stone-700">Fecha<input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="mt-1 w-full rounded-xl border border-[#DFD5C6] bg-white px-3 py-2.5 text-sm" /></label>
         </div>
         <div className="grid grid-cols-2 gap-2 rounded-2xl bg-[#F2EDE4] p-1.5">
@@ -148,7 +173,7 @@ const PaymentsPanel: React.FC = () => {
         <div className="mb-4"><h2 className="font-serif text-lg font-bold text-stone-900">Historial de cobros</h2><p className="mt-1 text-xs text-stone-500">“Recibido” significa que tú lo confirmaste; la conciliación bancaria automática se activará solo cuando exista una integración real.</p></div>
         <div className="space-y-3">
           {sorted.length === 0 && <div className="rounded-2xl border border-dashed border-[#DFD5C6] p-8 text-center text-xs text-stone-500">Todavía no has registrado cobros de plataformas.</div>}
-          {sorted.map((payment) => <div key={payment.id} className="flex flex-col gap-3 rounded-2xl border border-[#E8DFC8] bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="font-semibold text-stone-900">{payment.platform}</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${payment.status === 'received' ? 'bg-[#EAF4ED] text-[#2E5A44]' : 'bg-amber-50 text-amber-800'}`}>{payment.status === 'received' ? 'RECIBIDO' : 'ESPERADO'}</span></div><p className="mt-1 text-xs text-stone-500">{payment.date} · {money(payment.amount, privacyMode)}</p></div>{payment.status === 'pending' && <button onClick={() => void confirmReceived(payment.id)} className="flex items-center justify-center gap-2 rounded-xl border border-[#CFE0D3] bg-[#EEF5F0] px-3 py-2 text-xs font-semibold text-[#2E5A44]"><CheckCircle2 className="h-4 w-4" /> Confirmar recibido</button>}</div>)}
+          {sorted.map((payment) => <div key={payment.id} className="flex flex-col gap-3 rounded-2xl border border-[#E8DFC8] bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div><div className="flex items-center gap-2"><p className="font-semibold text-stone-900">{payment.platform}</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${payment.status === 'received' ? 'bg-[#EAF4ED] text-[#2E5A44]' : 'bg-amber-50 text-amber-800'}`}>{payment.status === 'received' ? 'RECIBIDO' : 'ESPERADO'}</span></div><p className="mt-1 text-xs text-stone-500">{payment.date} · {money(payment.amount, privacyMode, market)}</p></div>{payment.status === 'pending' && <button onClick={() => void confirmReceived(payment.id)} className="flex items-center justify-center gap-2 rounded-xl border border-[#CFE0D3] bg-[#EEF5F0] px-3 py-2 text-xs font-semibold text-[#2E5A44]"><CheckCircle2 className="h-4 w-4" /> Confirmar recibido</button>}</div>)}
         </div>
       </section>
     </div>
