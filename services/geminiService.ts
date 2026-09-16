@@ -68,9 +68,9 @@ export const analyzeReceipt = async (base64Image: string): Promise<ReceiptAnalys
 };
 
 /**
- * Fiscal assistant. The server is responsible for grounding the answer in
- * versioned fiscal rules and official sources. The browser contains no tax
- * fallback that can masquerade as verified advice.
+ * Fiscal assistant. Spain 2026 is the only fiscal policy currently verified.
+ * Missing/unsupported country context must fail closed instead of silently
+ * inheriting Spanish tax guidance.
  */
 export const getFiscalAdvice = async (
   history: { role: 'user' | 'model'; text: string }[],
@@ -78,10 +78,19 @@ export const getFiscalAdvice = async (
   countryConfig?: CountryConfig,
 ): Promise<string> => {
   if (!newMessage.trim()) throw new Error('Escribe una consulta fiscal.');
+  const countryCode = countryConfig?.country_code?.trim().toUpperCase();
+  if (!countryCode) {
+    throw new LaboraAIUnavailableError('Selecciona tu país antes de usar el asistente fiscal.');
+  }
+  if (countryCode !== 'ES') {
+    throw new LaboraAIUnavailableError('El asistente fiscal verificado está disponible actualmente solo para España. Puedes seguir usando Labora+ para control financiero, evidencias y asesoría humana.');
+  }
+
   const result = await callSecureAI<{ text: string }>('fiscal_advice', {
     history,
     newMessage,
-    countryCode: countryConfig?.country_code || 'ES',
+    countryCode,
+    fiscalPolicyVersion: 'es-2026-v1',
   });
   return result.text;
 };
