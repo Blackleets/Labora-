@@ -1,260 +1,164 @@
-
-import React, { useState, useMemo } from 'react';
-import { useCountry } from '../../../contexts/CountryContext';
+import React, { useMemo, useState } from 'react';
+import { Check, Globe2, Package, Car, Plus, Search, ShieldCheck, Upload, WifiOff } from 'lucide-react';
 import { useData } from '../../../contexts/DataContext';
-import { IntegrationCategory, IntegrationDef } from '../../../types';
 import { useIntegrations } from '../hooks/useIntegrations';
+import { LaboraIntegration } from '../data/catalog';
+import { MARKET_PROFILES, getMarketProfile } from '../../country-config/marketProfiles';
 import LogoResolver from '../../../components/LogoResolver';
-import { Plug, Check, Plus, Search, Filter, Globe, Package, Car, Building2, CreditCard, FileText, Settings, ExternalLink, Loader2 } from 'lucide-react';
 
 export const IntegrationCatalog: React.FC = () => {
-  const { selectedCountry, countries, selectCountry } = useCountry();
   const { currentUser, showNotification, updateUserConfig } = useData();
-  
+  const [countryCode, setCountryCode] = useState(currentUser?.countryCode || 'ES');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCat, setSelectedCat] = useState<IntegrationCategory | 'all'>('all');
-  const [installingId, setInstallingId] = useState<string | null>(null);
-  
-  // Custom hook brings data sorted by ranking and filtered by country
-  const { integrations } = useIntegrations({
-    countryCode: selectedCountry.country_code,
-    category: selectedCat
-  });
+  const [category, setCategory] = useState<'all' | 'delivery' | 'mobility'>('all');
+  const [customPlatform, setCustomPlatform] = useState('');
+  const [savingId, setSavingId] = useState<string | null>(null);
 
-  const categories: { id: IntegrationCategory | 'all', label: string, icon: any }[] = [
-    { id: 'all', label: 'Todas', icon: Filter },
-    { id: 'delivery', label: 'Delivery', icon: Package },
-    { id: 'mobility', label: 'Movilidad', icon: Car },
-    { id: 'banking', label: 'Bancos', icon: Building2 },
-    { id: 'payments', label: 'Pagos', icon: CreditCard },
-    { id: 'accounting', label: 'Contabilidad', icon: FileText },
-  ];
+  const market = getMarketProfile(countryCode);
+  const { integrations } = useIntegrations({ countryCode, category });
 
-  // Client-side search filtering
   const filtered = useMemo(() => {
-    return integrations.filter(i => 
-      i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      i.category.toLowerCase().includes(searchTerm.toLowerCase())
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return integrations;
+    return integrations.filter((item) =>
+      item.name.toLowerCase().includes(query) ||
+      item.description?.toLowerCase().includes(query),
     );
   }, [integrations, searchTerm]);
 
-  // Check if integration is already active for the current user
-  const isInstalled = (integration: IntegrationDef) => {
-    if (!currentUser) return false;
-    
-    // Normalize checking against user arrays
-    const userPlatforms = (currentUser.platforms || []).map(p => p.toLowerCase());
-    const userBanks = (currentUser.banks || []).map(b => b.toLowerCase());
-    
-    // Check by ID or Name (handling different naming conventions)
-    const idMatch = userPlatforms.includes(integration.id.toLowerCase()) || userBanks.includes(integration.id.toLowerCase());
-    const nameMatch = userPlatforms.includes(integration.name.toLowerCase()) || userBanks.includes(integration.name.toLowerCase());
-    
-    // Special check for mock data consistency
-    if (integration.id === 'uber' && userPlatforms.includes('uber eats')) return true;
-    
-    return idMatch || nameMatch;
-  };
+  if (!currentUser) return null;
 
-  const handleInstall = async (integration: IntegrationDef) => {
-    if (!currentUser) return;
-    setInstallingId(integration.id);
+  const normalizedPlatforms = currentUser.platforms.map((platform) => platform.toLowerCase());
+  const isAdded = (integration: LaboraIntegration) =>
+    normalizedPlatforms.includes(integration.name.toLowerCase()) ||
+    normalizedPlatforms.includes(integration.id.toLowerCase());
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
+  const addPlatform = async (integration: LaboraIntegration) => {
+    if (isAdded(integration)) return;
+    setSavingId(integration.id);
     try {
-      let newPlatforms = [...currentUser.platforms];
-      let newBanks = [...(currentUser.banks || [])];
-
-      if (['delivery', 'mobility'].includes(integration.category)) {
-        if (!newPlatforms.includes(integration.name)) newPlatforms.push(integration.name);
-      } else if (integration.category === 'banking') {
-        if (!newBanks.includes(integration.name)) newBanks.push(integration.name);
-      } else {
-        // Fallback for other categories
-        if (!newPlatforms.includes(integration.name)) newPlatforms.push(integration.name);
-      }
-
-      updateUserConfig(newPlatforms, newBanks);
-      showNotification('success', `Se ha conectado ${integration.name} correctamente.`);
+      await updateUserConfig([...currentUser.platforms, integration.name], currentUser.banks || []);
+      showNotification('success', `${integration.name} añadida. Los datos seguirán necesitando evidencia real.`);
     } catch (error) {
-      showNotification('error', 'Error al conectar la integración.');
+      showNotification('error', error instanceof Error ? error.message : 'No se pudo guardar la plataforma.');
     } finally {
-      setInstallingId(null);
+      setSavingId(null);
     }
   };
 
-  const handleConfigure = (integration: IntegrationDef) => {
-    showNotification('info', `Abriendo configuración de ${integration.name}...`);
-    // Logic to open specific settings modal would go here
+  const addCustomPlatform = async () => {
+    const name = customPlatform.trim();
+    if (!name) return;
+    if (normalizedPlatforms.includes(name.toLowerCase())) {
+      showNotification('info', 'Esa plataforma ya está en tu espacio.');
+      return;
+    }
+    try {
+      await updateUserConfig([...currentUser.platforms, name], currentUser.banks || []);
+      setCustomPlatform('');
+      showNotification('success', `${name} añadida como plataforma personalizada.`);
+    } catch (error) {
+      showNotification('error', error instanceof Error ? error.message : 'No se pudo guardar la plataforma.');
+    }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-      
-      {/* Header & Controls */}
-      <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+    <div className="mx-auto max-w-7xl space-y-6 pb-16">
+      <section className="overflow-hidden rounded-[2rem] border border-[#DCD3C5] bg-[#FCFAF7] shadow-sm">
+        <div className="grid gap-6 p-6 md:grid-cols-[1fr_auto] md:items-end md:p-8">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Plug className="text-blue-600" size={24} /> Marketplace Global
-            </h2>
-            <p className="text-slate-500 mt-1 text-sm">
-              Explora {integrations.length} integraciones disponibles para <span className="font-bold text-slate-800">{selectedCountry.display_name}</span>.
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#CFE0D3] bg-[#EDF5EF] px-3 py-1.5 text-xs font-bold text-[#2E5A44]">
+              <Globe2 className="h-4 w-4" /> Plataformas de trabajo
+            </div>
+            <h1 className="font-serif text-3xl font-bold text-stone-900">Tus apps, sin fingir conexiones</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">
+              Añade las plataformas con las que trabajas. Hasta que exista una API verificada, Labora+ importa únicamente comprobantes, extractos, capturas o documentos aportados por ti.
             </p>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-             <div className="relative group flex-1 md:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar app, banco..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none w-full transition-all"
-                />
-             </div>
-             
-             {/* Country Quick Switcher */}
-             <select 
-               value={selectedCountry.country_code}
-               onChange={(e) => selectCountry(e.target.value)}
-               className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-             >
-               {countries.map(c => (
-                 <option key={c.country_code} value={c.country_code}>{c.country_code} - {c.display_name}</option>
-               ))}
-             </select>
+
+          <div className="min-w-[220px]">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Explorar mercado</label>
+            <select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} className="w-full rounded-xl border border-[#DCD3C5] bg-white px-3 py-2.5 text-sm font-semibold text-stone-800 outline-none focus:border-[#6A917A]">
+              {MARKET_PROFILES.map((profile) => <option key={profile.countryCode} value={profile.countryCode}>{profile.displayName}</option>)}
+            </select>
           </div>
         </div>
 
-        {/* Categories Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCat(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
-                selectedCat === cat.id 
-                  ? 'bg-slate-900 text-white shadow-lg' 
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <cat.icon size={16} />
-              {cat.label}
-            </button>
-          ))}
+        <div className="grid gap-3 border-t border-[#E8E0D4] bg-[#F7F3EC] p-4 sm:grid-cols-3 md:px-8">
+          <Info label="Modo en este país" value={market.productMode === 'fiscal_guided' ? 'Fiscalidad guiada + control financiero' : 'Control financiero + gestor'} />
+          <Info label="Fiscalidad local" value={market.fiscalEngineStatus === 'verified' ? 'Motor habilitado' : 'No activada hasta verificar reglas'} />
+          <Info label="Datos" value="Solo evidencia real o registro manual explícito" />
         </div>
-      </div>
+      </section>
 
-      {/* Grid */}
-      {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-           {filtered.map(int => {
-              const installed = isInstalled(int);
-              const isInstalling = installingId === int.id;
+      <section className="rounded-[1.75rem] border border-[#E0D8CC] bg-white p-4 shadow-sm md:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex gap-2 overflow-x-auto">
+            <FilterButton active={category === 'all'} onClick={() => setCategory('all')} label="Todas" icon={<Globe2 className="h-4 w-4" />} />
+            <FilterButton active={category === 'delivery'} onClick={() => setCategory('delivery')} label="Delivery" icon={<Package className="h-4 w-4" />} />
+            <FilterButton active={category === 'mobility'} onClick={() => setCategory('mobility')} label="Movilidad" icon={<Car className="h-4 w-4" />} />
+          </div>
+          <div className="relative w-full lg:max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+            <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Buscar Uber, Glovo, Rappi…" className="w-full rounded-xl border border-stone-200 bg-[#FBFAF8] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#6A917A]" />
+          </div>
+        </div>
+      </section>
 
-              return (
-                <div key={int.id} className={`bg-white p-5 rounded-[24px] border transition-all hover:-translate-y-1 group flex flex-col justify-between h-full ${installed ? 'border-green-200 shadow-sm' : 'border-slate-200 shadow-sm hover:shadow-md'}`}>
-                   
-                   <div>
-                     <div className="flex justify-between items-start mb-4">
-                        <LogoResolver 
-                          id={int.id} 
-                          name={int.name} 
-                          domain={int.domain} 
-                          category={int.category} 
-                          size="lg"
-                          className="shadow-sm"
-                        />
-                        
-                        {int.ranking > 95 && !installed && (
-                          <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-yellow-100 flex items-center gap-1">
-                            Popular
-                          </span>
-                        )}
-                        {installed && (
-                          <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                            <Check size={14} strokeWidth={3} />
-                          </div>
-                        )}
-                     </div>
-                     
-                     <h3 className="font-bold text-lg text-slate-900 mb-1 leading-tight">{int.name}</h3>
-                     
-                     <div className="flex flex-wrap gap-2 mb-3">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                          {int.category}
-                        </span>
-                        {int.supported_countries.length === 0 ? (
-                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 flex items-center gap-1">
-                            <Globe size={10} /> Global
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-slate-400 px-1 py-1">
-                            {int.supported_countries.length > 3 ? `${int.supported_countries.slice(0,3).join(', ')}...` : int.supported_countries.join(', ')}
-                          </span>
-                        )}
-                     </div>
-                     
-                     <p className="text-xs text-slate-500 line-clamp-2 min-h-[2.5em] leading-relaxed">
-                       {int.description || `Integración oficial con ${int.name} para sincronización de datos automática y conciliación.`}
-                     </p>
-                   </div>
-                   
-                   <div className="mt-5 pt-4 border-t border-slate-50">
-                      {installed ? (
-                         <div className="flex gap-2">
-                           <button 
-                             className="flex-1 py-2.5 bg-green-50 text-green-700 border border-green-100 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-default"
-                           >
-                              Conectado
-                           </button>
-                           <button 
-                             onClick={() => handleConfigure(int)}
-                             className="w-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
-                             title="Configurar"
-                           >
-                             <Settings size={16} />
-                           </button>
-                         </div>
-                      ) : (
-                         <button 
-                           onClick={() => handleInstall(int)}
-                           disabled={isInstalling}
-                           className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-slate-200 group-hover:shadow-blue-500/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                         >
-                            {isInstalling ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <>
-                                <Plus size={16} /> Conectar
-                              </>
-                            )}
-                         </button>
-                      )}
-                   </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {filtered.map((integration) => {
+          const added = isAdded(integration);
+          return (
+            <article key={integration.id} className="flex min-h-[270px] flex-col justify-between rounded-[1.75rem] border border-[#E2D9CD] bg-[#FCFAF7] p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div>
+                <div className="flex items-start justify-between gap-4">
+                  <LogoResolver id={integration.id} name={integration.name} domain={integration.domain} category={integration.category} size="lg" />
+                  {added ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700"><Check className="h-3 w-3" /> En mi espacio</span>
+                  ) : (
+                    <span className="rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-bold text-stone-500">{integration.category === 'delivery' ? 'Delivery' : 'Movilidad'}</span>
+                  )}
                 </div>
-              );
-           })}
+
+                <h2 className="mt-4 font-serif text-xl font-bold text-stone-900">{integration.name}</h2>
+                <p className="mt-1.5 text-xs leading-relaxed text-stone-600">{integration.description}</p>
+
+                <div className="mt-4 space-y-2 rounded-2xl border border-[#E8E0D4] bg-white/70 p-3 text-[11px] text-stone-600">
+                  <div className="flex items-center gap-2"><Upload className="h-3.5 w-3.5 text-[#2E5A44]" /><span><strong>Entrada:</strong> comprobantes y documentos reales</span></div>
+                  <div className="flex items-center gap-2"><WifiOff className="h-3.5 w-3.5 text-amber-600" /><span><strong>API:</strong> no se presenta como conectada</span></div>
+                  <div className="flex items-start gap-2"><ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2E5A44]" /><span>{integration.availabilityNote}</span></div>
+                </div>
+              </div>
+
+              <button disabled={added || savingId === integration.id} onClick={() => void addPlatform(integration)} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2E5A44] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#244A37] disabled:cursor-default disabled:bg-[#DCE8DF] disabled:text-[#557262]">
+                {added ? <><Check className="h-4 w-4" /> Añadida</> : <><Plus className="h-4 w-4" /> {savingId === integration.id ? 'Guardando…' : 'Añadir a mi espacio'}</>}
+              </button>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="rounded-[1.75rem] border border-dashed border-[#BFCDBF] bg-[#F3F7F2] p-5 md:p-6">
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+          <div>
+            <h2 className="font-serif text-lg font-bold text-[#233E30]">¿Tu plataforma no aparece?</h2>
+            <p className="mt-1 text-xs leading-relaxed text-[#5B7163]">Añádela por nombre. Así Labora+ puede funcionar en cualquier país sin fingir que conocemos todas las apps locales.</p>
+            <input value={customPlatform} onChange={(event) => setCustomPlatform(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void addCustomPlatform(); }} placeholder="Ej. plataforma local de reparto" className="mt-3 w-full rounded-xl border border-[#C9D7CB] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#6A917A]" />
+          </div>
+          <button onClick={() => void addCustomPlatform()} className="flex items-center justify-center gap-2 rounded-xl bg-[#233E30] px-5 py-3 text-xs font-bold text-white"><Plus className="h-4 w-4" /> Añadir plataforma</button>
         </div>
-      ) : (
-        <div className="text-center py-20 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
-           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
-             <Search size={32} />
-           </div>
-           <h3 className="text-lg font-bold text-slate-700">No se encontraron resultados</h3>
-           <p className="text-slate-500 text-sm mt-1">Prueba con otra categoría o término de búsqueda.</p>
-           <button 
-             onClick={() => { setSearchTerm(''); setSelectedCat('all'); }}
-             className="mt-4 text-blue-600 font-bold text-sm hover:underline"
-           >
-             Limpiar filtros
-           </button>
-        </div>
-      )}
+      </section>
     </div>
   );
 };
+
+const FilterButton: React.FC<{ active: boolean; onClick: () => void; label: string; icon: React.ReactNode }> = ({ active, onClick, label, icon }) => (
+  <button onClick={onClick} className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${active ? 'bg-[#233E30] text-white' : 'border border-stone-200 bg-white text-stone-600 hover:bg-stone-50'}`}>{icon}{label}</button>
+);
+
+const Info: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="rounded-xl border border-[#E4DDD2] bg-white/70 px-3 py-2.5">
+    <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400">{label}</p>
+    <p className="mt-0.5 text-xs font-semibold text-stone-700">{value}</p>
+  </div>
+);
