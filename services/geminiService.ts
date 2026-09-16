@@ -26,27 +26,19 @@ export type ReceiptAnalysis = {
   uncertainFields: string[];
 };
 
-/**
- * OCR for a real receipt image. This function is fail-closed: it never fabricates
- * merchant, date, amount or tax data when the model is unavailable or uncertain.
- */
-export const analyzeReceipt = async (base64Image: string): Promise<ReceiptAnalysis> => {
+export const analyzeReceipt = async (base64Image: string, mimeType = 'image/jpeg'): Promise<ReceiptAnalysis> => {
   const ai = getAIClient();
   if (!ai) throw new Error('OCR_NOT_CONFIGURED');
 
   const categoryList = Object.values(ExpenseCategory).join(", ");
+  const supportedMimeType = ['image/jpeg', 'image/png', 'image/webp'].includes(mimeType) ? mimeType : 'image/jpeg';
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: {
         parts: [
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: base64Image,
-            },
-          },
+          { inlineData: { mimeType: supportedMimeType, data: base64Image } },
           {
             text: `Actúa exclusivamente como OCR contable. Analiza SOLO lo que sea visible en este ticket o factura y no inventes datos.
 
@@ -66,8 +58,8 @@ Reglas estrictas:
 3. No sustituyas un comercio ilegible por una marca conocida.
 4. Un valor dudoso debe marcarse en uncertainFields.
 5. Responde únicamente con JSON.`
-          },
-        ],
+          }
+        ]
       },
       config: {
         responseMimeType: "application/json",
@@ -114,10 +106,6 @@ Reglas estrictas:
   }
 };
 
-/**
- * Chat with the Fiscal Assistant.
- * Responses are informational and should not be represented as a filed return or binding tax advice.
- */
 export const getFiscalAdvice = async (
   history: { role: 'user' | 'model', text: string }[],
   newMessage: string,
@@ -139,7 +127,6 @@ export const getFiscalAdvice = async (
       },
       history: history.map((item) => ({ role: item.role, parts: [{ text: item.text }] }))
     });
-
     const result = await chat.sendMessage({ message: newMessage });
     return result.text || "No se ha obtenido respuesta del modelo.";
   } catch (error) {
@@ -148,9 +135,6 @@ export const getFiscalAdvice = async (
   }
 };
 
-/**
- * Extract real income data from text. No model means no fabricated rows.
- */
 export const extractIncomeFromText = async (textData: string): Promise<{ platform: string; amount: number; date: string; retention: number }[]> => {
   const ai = getAIClient();
   if (!ai) throw new Error('INCOME_EXTRACTION_NOT_CONFIGURED');
@@ -176,7 +160,6 @@ export const extractIncomeFromText = async (textData: string): Promise<{ platfor
         }
       }
     });
-
     const text = response.text;
     if (!text) return [];
     const rows = JSON.parse(text) as { platform: string; amount: number; date: string; retention: number }[];
