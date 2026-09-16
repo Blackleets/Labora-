@@ -13,6 +13,7 @@ describe('Supabase source security contract', () => {
   const hardening = readRepoFile('supabase/migrations/20260916090300_security_hardening.sql');
   const signupCountry = readRepoFile('supabase/migrations/20260916090400_signup_country_integrity.sql');
   const requirementStateMachine = readRepoFile('supabase/migrations/20260916090600_requirement_state_machine.sql');
+  const deductibilityReview = readRepoFile('supabase/migrations/20260916090700_expense_deductibility_review.sql');
 
   it('keeps critical public tables behind RLS', () => {
     for (const table of [
@@ -64,8 +65,8 @@ describe('Supabase source security contract', () => {
   it('makes requirement resolution terminal and manager-controlled', () => {
     expect(requirementStateMachine).toContain("old.status in ('approved', 'cancelled')");
     expect(requirementStateMachine).toContain("if resolution not in ('approved','cancelled')");
-    expect(requirementStateMachine).toContain("manager may approve only a submitted requirement");
-    expect(requirementStateMachine).toContain("manager may cancel only an open requirement");
+    expect(requirementStateMachine).toContain('manager may approve only a submitted requirement');
+    expect(requirementStateMachine).toContain('manager may cancel only an open requirement');
     expect(requirementStateMachine).not.toContain("resolution not in ('approved','cancelled','pending')");
   });
 
@@ -73,6 +74,20 @@ describe('Supabase source security contract', () => {
     expect(requirementStateMachine).toContain('new.submitted_document_id := old.submitted_document_id;');
     expect(requirementStateMachine).toContain('new.submission_notes := old.submission_notes;');
     expect(requirementStateMachine).toContain('new.submitted_at := old.submitted_at;');
+  });
+
+  it('separates documentary approval from fiscal deductibility', () => {
+    expect(deductibilityReview).toContain('deductibility_assessed boolean not null default false');
+    expect(deductibilityReview).toContain("if not new.deductibility_assessed then");
+    expect(deductibilityReview).toContain('new.deductible_percent := 0;');
+    expect(deductibilityReview).toContain('new.deductibility_basis := null;');
+  });
+
+  it('allows explicit deductibility assessment only for Spain and requires a basis', () => {
+    expect(deductibilityReview).toContain("if owner_country <> 'ES' then");
+    expect(deductibilityReview).toContain('fiscal deductibility assessment is not enabled for this market');
+    expect(deductibilityReview).toContain('deductibility basis is required for an assessed percentage');
+    expect(deductibilityReview).toContain('deductible percent must be between 0 and 100');
   });
 
   it('fails closed for unknown currencies and includes Venezuela', () => {
