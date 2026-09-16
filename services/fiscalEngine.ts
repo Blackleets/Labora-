@@ -26,7 +26,7 @@ export interface FiscalSnapshot {
     retentionsRecorded: number;
   };
   model130: {
-    provisionalAccruedAmount: null;
+    provisionalAccruedAmount: number;
     standardRateReferenceAmount: number;
     finalAmount: null;
     status: 'insufficient_required_context';
@@ -104,7 +104,7 @@ export const buildFiscalSnapshot = (
   // Reference only: AEAT Modelo 130 uses 20% on a positive box 03 under the
   // standard rule, but the payable amount also depends on prior instalments,
   // retentions, obligation exceptions and potentially territorial rules.
-  // Therefore this number is NEVER exposed as an actionable tax amount.
+  // It MUST NOT be presented as the amount to file or pay.
   const standardRateReferenceAmount = roundMoney(
     Math.max(0, Math.max(0, netActivityEstimate) * FISCAL_POLICY_ES_2026.model130.standardPositiveNetRate - retentionsYtd),
   );
@@ -126,7 +126,7 @@ export const buildFiscalSnapshot = (
 
   if (quarterIncomes.length === 0) warnings.push('No hay ingresos registrados para este trimestre.');
   if (pendingExpenseCount > 0) warnings.push(`${pendingExpenseCount} gasto(s) siguen pendientes de revisión y no se han contado como deducibles.`);
-  warnings.push('Modelo 130: falta contexto obligatorio para determinar si existe obligación y cuál sería el importe a ingresar.');
+  warnings.push('Modelo 130: la referencia estándar no determina obligación ni importe final; faltan pagos anteriores, situación de retenciones y circunstancias personales/territoriales.');
   warnings.push('Modelo 303: no se calcula una deuda final hasta registrar bases/cuotas repercutidas y soportadas con evidencia suficiente.');
   warnings.push('Vehículos y motocicletas: Labora+ no presupone una deducción automática del 100%; la afectación debe revisarse según el caso.');
 
@@ -146,12 +146,12 @@ export const buildFiscalSnapshot = (
       retentionsRecorded: retentionsYtd,
     },
     model130: {
-      provisionalAccruedAmount: null,
+      provisionalAccruedAmount: standardRateReferenceAmount,
       standardRateReferenceAmount,
       finalAmount: null,
       status: 'insufficient_required_context',
       missingInputs: FISCAL_POLICY_ES_2026.model130.requiredBeforeFinalAmount,
-      explanation: 'Labora+ no muestra una cuota del Modelo 130 como accionable porque faltan datos que la AEAT exige para el cálculo y/o para determinar la obligación de presentarlo.',
+      explanation: 'Referencia matemática bajo la regla estándar del 20% sobre rendimiento neto positivo, menos retenciones registradas. No determina obligación, cuota final ni cantidad a presentar.',
     },
     model303: {
       deductibleInputVatRecorded: deductibleInputVat,
