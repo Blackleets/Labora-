@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   FileText,
   Fuel,
+  Globe2,
   Leaf,
   PiggyBank,
   Receipt,
@@ -17,15 +18,18 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { useData } from '../contexts/DataContext';
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { buildFiscalSnapshot } from '../services/fiscalEngine';
+import { getMarketProfile, MarketProfile } from '../modules/country-config/marketProfiles';
+import { GLOBAL_INTEGRATION_CATALOG } from '../modules/integrations/data/catalog';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
+import LogoResolver from './LogoResolver';
 
 interface DashboardProps {
   setView?: (view: string) => void;
 }
 
-const money = (value: number, hidden: boolean) => hidden
+const formatMoney = (value: number, hidden: boolean, market: MarketProfile) => hidden
   ? '••••'
-  : new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
+  : new Intl.NumberFormat(market.locale, { style: 'currency', currency: market.currency }).format(value);
 
 const getQuarterLabel = (date = new Date()) => `${Math.floor(date.getMonth() / 3) + 1}T ${date.getFullYear()}`;
 const isoLocal = (date: Date) => {
@@ -40,20 +44,30 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
   if (!currentUser) return null;
 
+  const market = getMarketProfile(currentUser.countryCode);
+  const fiscalEnabled = market.fiscalEngineStatus === 'verified';
   const quarterLabel = getQuarterLabel();
-  const snapshot = useMemo(
-    () => buildFiscalSnapshot(incomes, expenses, currentUser.id, quarterLabel),
-    [currentUser.id, expenses, incomes, quarterLabel],
+  const userIncomes = incomes.filter((income) => income.userId === currentUser.id);
+  const userExpenses = expenses.filter((expense) => expense.userId === currentUser.id);
+  const totalIncome = userIncomes.reduce((sum, income) => sum + income.amount, 0);
+  const totalExpenses = userExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const registeredBalance = totalIncome - totalExpenses;
+
+  const fiscalSnapshot = useMemo(
+    () => fiscalEnabled ? buildFiscalSnapshot(incomes, expenses, currentUser.id, quarterLabel) : null,
+    [currentUser.id, expenses, fiscalEnabled, incomes, quarterLabel],
   );
 
   const pendingPayments = payments.filter((payment) => payment.status === 'pending');
   const pendingPaymentAmount = pendingPayments.reduce((sum, payment) => sum + payment.amount, 0);
-  const pendingExpenses = expenses.filter(
-    (expense) => expense.userId === currentUser.id && (!expense.status || expense.status === 'pending_review' || expense.status === 'needs_fix'),
-  );
-  const pendingRequirements = requirements.filter(
-    (requirement) => requirement.riderId === currentUser.id && requirement.status === 'pending',
-  );
+  const pendingExpenses = userExpenses.filter((expense) => !expense.status || expense.status === 'pending_review' || expense.status === 'needs_fix');
+  const pendingRequirements = requirements.filter((requirement) => requirement.riderId === currentUser.id && requirement.status === 'pending');
+
+  const platformCards = currentUser.platforms.slice(0, 6).map((platformName) => {
+    const normalized = platformName.toLowerCase();
+    const integration = GLOBAL_INTEGRATION_CATALOG.find((item) => item.name.toLowerCase() === normalized || item.id.toLowerCase() === normalized);
+    return { name: integration?.name || platformName, integration };
+  });
 
   const chartData = useMemo(() => {
     const today = new Date();
@@ -61,29 +75,19 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       const date = new Date(today);
       date.setDate(today.getDate() - (6 - index));
       const iso = isoLocal(date);
-      const dayIncome = incomes
-        .filter((income) => income.userId === currentUser.id && income.date === iso)
-        .reduce((sum, income) => sum + income.amount, 0);
-      const dayExpense = expenses
-        .filter((expense) => expense.userId === currentUser.id && expense.date === iso)
-        .reduce((sum, expense) => sum + expense.amount, 0);
+      const dayIncome = incomes.filter((income) => income.userId === currentUser.id && income.date === iso).reduce((sum, income) => sum + income.amount, 0);
+      const dayExpense = expenses.filter((expense) => expense.userId === currentUser.id && expense.date === iso).reduce((sum, expense) => sum + expense.amount, 0);
       return {
         date: iso,
-        label: new Intl.DateTimeFormat('es-ES', { weekday: 'short' }).format(date).replace('.', ''),
+        label: new Intl.DateTimeFormat(market.locale, { weekday: 'short' }).format(date).replace('.', ''),
         ingresos: Number(dayIncome.toFixed(2)),
         gastos: Number(dayExpense.toFixed(2)),
       };
     });
-  }, [currentUser.id, expenses, incomes]);
+  }, [currentUser.id, expenses, incomes, market.locale]);
 
   const chartHasData = chartData.some((day) => day.ingresos > 0 || day.gastos > 0);
-  const greeting = timeOfDay === 'dawn'
-    ? 'Buenos días'
-    : timeOfDay === 'midday'
-      ? 'Buen día'
-      : timeOfDay === 'golden_hour'
-        ? 'Buenas tardes'
-        : 'Buenas noches';
+  const greeting = timeOfDay === 'dawn' ? 'Buenos días' : timeOfDay === 'midday' ? 'Buen día' : timeOfDay === 'golden_hour' ? 'Buenas tardes' : 'Buenas noches';
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-12">
@@ -91,75 +95,81 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full opacity-50 blur-3xl" style={{ backgroundColor: palette.sunGlow }} />
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#C9D9CC] bg-[#EDF4EF] px-3 py-1 text-xs font-semibold text-[#2E5A44]">
-              <Leaf className="h-3.5 w-3.5" /> {quarterLabel} · datos reales registrados
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#C9D9CC] bg-[#EDF4EF] px-3 py-1 text-xs font-semibold text-[#2E5A44]"><Leaf className="h-3.5 w-3.5" /> {quarterLabel} · datos registrados</span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#D8E5EA] bg-[#EEF4F7] px-3 py-1 text-xs font-semibold text-[#3A7596]"><Globe2 className="h-3.5 w-3.5" /> {market.displayName} · {market.currency}</span>
             </div>
             <h1 className="font-serif text-3xl font-bold tracking-tight text-[#27352E] sm:text-4xl">{greeting}, {currentUser.name}.</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">
-              Aquí ves lo que Labora+ puede demostrar con tus registros. Los gastos pendientes no se cuentan como deducibles y ningún impuesto se considera presentado sin justificante verificado.
+              Aquí ves únicamente lo que has registrado o aportado. {fiscalEnabled ? 'Las cifras fiscales son estimaciones hasta revisión y nunca significan que algo esté presentado.' : `Labora+ no calcula impuestos de ${market.displayName} todavía; tu espacio funciona como control financiero, documental y de colaboración.`}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setIsGasModalOpen(true)} className="flex items-center gap-2 rounded-xl bg-[#C96846] px-4 py-2.5 text-xs font-semibold text-white shadow-sm">
-              <Fuel className="h-4 w-4" /> Guardar ticket
-            </button>
-            <button onClick={() => setView?.('gestor-requirements')} className="flex items-center gap-2 rounded-xl border border-[#D8D0C1] bg-white/80 px-4 py-2.5 text-xs font-semibold text-stone-700">
-              <Bell className="h-4 w-4" /> Ver mi gestor
-            </button>
+            <button onClick={() => setIsGasModalOpen(true)} className="flex items-center gap-2 rounded-xl bg-[#C96846] px-4 py-2.5 text-xs font-semibold text-white shadow-sm"><Fuel className="h-4 w-4" /> Guardar ticket</button>
+            <button onClick={() => setView?.('gestor-requirements')} className="flex items-center gap-2 rounded-xl border border-[#D8D0C1] bg-white/80 px-4 py-2.5 text-xs font-semibold text-stone-700"><Bell className="h-4 w-4" /> Mi gestor</button>
           </div>
         </div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={TrendingUp} label="Ingresos registrados" value={money(snapshot.quarter.grossIncome, privacyMode)} helper={`${quarterLabel} · no equivale a saldo bancario`} tone="green" onClick={() => setView?.('money')} />
-        <MetricCard icon={Wallet} label="Pagos por conciliar" value={money(pendingPaymentAmount, privacyMode)} helper={pendingPayments.length ? `${pendingPayments.length} pago(s) aún no confirmados` : 'No hay pagos pendientes registrados'} tone="blue" onClick={() => setView?.('money')} />
-        <MetricCard icon={Receipt} label="Gastos pendientes" value={String(pendingExpenses.length)} helper="No se cuentan como deducibles hasta revisión" tone={pendingExpenses.length ? 'amber' : 'green'} onClick={() => setView?.('money')} />
-        <MetricCard icon={PiggyBank} label="Referencia IRPF" value={money(snapshot.model130.provisionalAccruedAmount, privacyMode)} helper="Estimación acumulada; requiere revisión del gestor" tone="amber" onClick={() => setView?.('tax-declarations')} />
+        <MetricCard icon={TrendingUp} label="Ingresos registrados" value={formatMoney(totalIncome, privacyMode, market)} helper="No equivale a saldo bancario" tone="green" onClick={() => setView?.('money')} />
+        <MetricCard icon={Wallet} label="Pagos por conciliar" value={formatMoney(pendingPaymentAmount, privacyMode, market)} helper={pendingPayments.length ? `${pendingPayments.length} pago(s) por confirmar` : 'No hay pagos pendientes registrados'} tone="blue" onClick={() => setView?.('money')} />
+        <MetricCard icon={Receipt} label="Evidencias pendientes" value={String(pendingExpenses.length)} helper="El asesor aún no ha cerrado estas revisiones" tone={pendingExpenses.length ? 'amber' : 'green'} onClick={() => setView?.('money')} />
+        {fiscalEnabled && fiscalSnapshot ? (
+          <MetricCard icon={PiggyBank} label="Referencia fiscal" value={formatMoney(fiscalSnapshot.model130.provisionalAccruedAmount, privacyMode, market)} helper="Estimación provisional; no presentación" tone="amber" onClick={() => setView?.('tax-declarations')} />
+        ) : (
+          <MetricCard icon={Wallet} label="Balance registrado" value={formatMoney(registeredBalance, privacyMode, market)} helper="Ingresos registrados menos gastos registrados" tone={registeredBalance >= 0 ? 'green' : 'amber'} onClick={() => setView?.('money')} />
+        )}
+      </section>
+
+      <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div><h2 className="font-serif text-lg font-bold text-stone-900">Mis plataformas</h2><p className="mt-1 text-xs text-stone-500">Son las apps que declaraste usar. “Añadida” no significa API conectada.</p></div>
+          <button onClick={() => setView?.('integrations')} className="flex items-center gap-1.5 text-xs font-bold text-[#2E5A44]">Gestionar plataformas <ArrowRight className="h-3.5 w-3.5" /></button>
+        </div>
+        {platformCards.length === 0 ? (
+          <button onClick={() => setView?.('integrations')} className="mt-4 w-full rounded-2xl border border-dashed border-[#CFD8CF] bg-[#F5F8F4] p-5 text-center text-xs font-semibold text-[#52705E]">Añade Uber Eats, Glovo, Rappi, DoorDash o cualquier plataforma local</button>
+        ) : (
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+            {platformCards.map(({ name, integration }) => (
+              <div key={name} className="flex min-w-[150px] items-center gap-3 rounded-2xl border border-[#E4DDD2] bg-white p-3">
+                <LogoResolver id={integration?.id || name.toLowerCase().replace(/\s+/g, '_')} name={name} domain={integration?.domain} category={integration?.category || 'delivery'} size="sm" />
+                <div className="min-w-0"><p className="truncate text-xs font-black text-stone-800">{name}</p><p className="mt-0.5 text-[9px] font-bold uppercase tracking-wide text-stone-400">Añadida</p></div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.45fr_.85fr]">
         <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm sm:p-6">
-          <div className="mb-5 flex items-start justify-between gap-3">
-            <div><h2 className="font-serif text-lg font-bold text-stone-900">Últimos 7 días registrados</h2><p className="mt-1 text-xs text-stone-500">Ingresos y gastos cargados en Labora+. No se generan datos para rellenar la gráfica.</p></div>
-            <ShieldCheck className="h-5 w-5 text-[#2E5A44]" />
-          </div>
+          <div className="mb-5 flex items-start justify-between gap-3"><div><h2 className="font-serif text-lg font-bold text-stone-900">Últimos 7 días registrados</h2><p className="mt-1 text-xs text-stone-500">La gráfica queda vacía si tú no has aportado movimientos.</p></div><ShieldCheck className="h-5 w-5 text-[#2E5A44]" /></div>
           {chartHasData ? (
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE3D6" />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#a8a29e' }} />
-                  <Tooltip content={<ChartTooltip hidden={privacyMode} />} cursor={{ fill: '#F5F1E9' }} />
-                  <Bar dataKey="ingresos" name="Ingresos" fill="#3B7258" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="gastos" name="Gastos" fill="#C96846" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState title="Todavía no hay movimientos esta semana" text="Cuando registres cobros o gastos reales aparecerán aquí." action="Registrar movimientos" onClick={() => setView?.('money')} />
-          )}
+            <div className="h-64 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EAE3D6" /><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#78716c' }} /><YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#a8a29e' }} /><Tooltip content={<ChartTooltip hidden={privacyMode} market={market} />} cursor={{ fill: '#F5F1E9' }} /><Bar dataKey="ingresos" name="Ingresos" fill="#3B7258" radius={[6, 6, 0, 0]} /><Bar dataKey="gastos" name="Gastos" fill="#C96846" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div>
+          ) : <EmptyState title="Todavía no hay movimientos esta semana" text="Cuando registres cobros o gastos reales aparecerán aquí." action="Registrar movimientos" onClick={() => setView?.('money')} />}
         </section>
 
         <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm sm:p-6">
-          <div className="flex items-center justify-between"><div><h2 className="font-serif text-lg font-bold text-stone-900">Mi gestor</h2><p className="mt-1 text-xs text-stone-500">Lo que necesita de ti, explicado sin WhatsApp perdido.</p></div><Bell className="h-5 w-5 text-[#3A7596]" /></div>
+          <div className="flex items-center justify-between"><div><h2 className="font-serif text-lg font-bold text-stone-900">Mi gestor</h2><p className="mt-1 text-xs text-stone-500">Peticiones claras, sin capturas perdidas en WhatsApp.</p></div><Bell className="h-5 w-5 text-[#3A7596]" /></div>
           <div className="mt-4 space-y-3">
             {pendingRequirements.length === 0 ? (
               <div className="rounded-2xl border border-[#D6E3D9] bg-[#EEF5F0] p-4"><div className="flex items-center gap-2 text-sm font-semibold text-[#2E5A44]"><CheckCircle2 className="h-4 w-4" /> No tienes peticiones pendientes</div><p className="mt-1 text-xs text-stone-600">Si tu gestor solicita un documento, aparecerá aquí con fecha y explicación.</p></div>
             ) : pendingRequirements.slice(0, 3).map((requirement) => (
-              <button key={requirement.id} onClick={() => setView?.('gestor-requirements')} className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left transition hover:bg-amber-100/60">
-                <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-stone-900">{requirement.title}</p><p className="mt-1 line-clamp-2 text-xs leading-relaxed text-stone-600">{requirement.description || 'Tu gestor necesita este documento para continuar la revisión.'}</p>{requirement.deadline && <p className="mt-2 text-[11px] font-semibold text-amber-800">Fecha límite: {new Intl.DateTimeFormat('es-ES').format(new Date(`${requirement.deadline}T12:00:00`))}</p>}</div><ArrowRight className="h-4 w-4 shrink-0 text-stone-400" /></div>
-              </button>
+              <button key={requirement.id} onClick={() => setView?.('gestor-requirements')} className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left transition hover:bg-amber-100/60"><div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-stone-900">{requirement.title}</p><p className="mt-1 line-clamp-2 text-xs leading-relaxed text-stone-600">{requirement.description || 'Tu gestor necesita este documento para continuar la revisión.'}</p>{requirement.deadline && <p className="mt-2 text-[11px] font-semibold text-amber-800">Fecha límite: {new Intl.DateTimeFormat(market.locale).format(new Date(`${requirement.deadline}T12:00:00`))}</p>}</div><ArrowRight className="h-4 w-4 shrink-0 text-stone-400" /></div></button>
             ))}
           </div>
-          <button onClick={() => setView?.('gestor-requirements')} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#DFD5C6] bg-white px-3 py-2.5 text-xs font-semibold text-stone-700">Abrir conversación con mi gestor <ArrowRight className="h-3.5 w-3.5" /></button>
+          <button onClick={() => setView?.('gestor-requirements')} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#DFD5C6] bg-white px-3 py-2.5 text-xs font-semibold text-stone-700">Abrir espacio con mi gestor <ArrowRight className="h-3.5 w-3.5" /></button>
         </section>
       </div>
 
       <section className="grid gap-4 md:grid-cols-3">
         <ActionCard icon={Fuel} title="Fotografía un ticket" text="Guardamos la evidencia original y cualquier lectura automática queda pendiente de revisión." action="Guardar ticket" onClick={() => setIsGasModalOpen(true)} />
-        <ActionCard icon={FileText} title="Revisa el trimestre" text="Mira qué datos faltan antes de que llegue el cierre y evita sorpresas con tu gestor." action="Abrir fiscal" onClick={() => setView?.('tax-declarations')} />
-        <ActionCard icon={Wallet} title="Ordena tus cobros" text="Registra o concilia pagos de plataformas sin confundir un pago esperado con dinero recibido." action="Abrir dinero" onClick={() => setView?.('money')} />
+        {fiscalEnabled ? (
+          <ActionCard icon={FileText} title="Revisa el periodo" text="Comprueba qué datos faltan antes del cierre sin confundir una estimación con una presentación." action="Abrir fiscal" onClick={() => setView?.('tax-declarations')} />
+        ) : (
+          <ActionCard icon={FileText} title="Ordena documentos" text={`Conserva comprobantes y extractos mientras Labora+ prepara soporte fiscal verificado para ${market.displayName}.`} action="Abrir documentos" onClick={() => setView?.('docs')} />
+        )}
+        <ActionCard icon={Wallet} title="Ordena tus cobros" text="Registra pagos esperados y recibidos sin convertirlos automáticamente en otra cosa." action="Abrir dinero" onClick={() => setView?.('money')} />
       </section>
 
       <GasStationCaptureModal isOpen={isGasModalOpen} onClose={() => setIsGasModalOpen(false)} />
@@ -176,9 +186,9 @@ const ActionCard: React.FC<{ icon: React.ComponentType<{ className?: string }>; 
 
 const EmptyState: React.FC<{ title: string; text: string; action: string; onClick: () => void }> = ({ title, text, action, onClick }) => <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-[#DFD5C6] bg-[#F9F6F0] px-6 text-center"><TrendingUp className="h-7 w-7 text-[#91A99A]" /><h3 className="mt-3 font-serif font-bold text-stone-900">{title}</h3><p className="mt-1 max-w-sm text-xs text-stone-500">{text}</p><button onClick={onClick} className="mt-4 rounded-xl bg-[#2E5A44] px-3.5 py-2 text-xs font-semibold text-white">{action}</button></div>;
 
-const ChartTooltip: React.FC<any> = ({ active, payload, label, hidden }) => {
+const ChartTooltip: React.FC<any> = ({ active, payload, label, hidden, market }) => {
   if (!active || !payload?.length) return null;
-  return <div className="rounded-xl border border-[#E3DBD0] bg-[#FCFAF7] p-3 text-xs shadow-lg"><p className="mb-2 font-serif font-bold text-stone-800">{label}</p>{payload.map((item: any) => <div key={item.dataKey} className="flex min-w-36 items-center justify-between gap-4 py-0.5"><span className="text-stone-500">{item.name}</span><span className="font-semibold text-stone-900">{money(Number(item.value), hidden)}</span></div>)}</div>;
+  return <div className="min-w-[150px] rounded-xl border border-[#E8DFC8] bg-white p-3 shadow-lg"><p className="mb-2 text-xs font-bold text-stone-700">{label}</p>{payload.map((item: any) => <div key={item.dataKey} className="flex items-center justify-between gap-4 text-[11px]"><span className="capitalize text-stone-500">{item.name}</span><strong>{formatMoney(Number(item.value || 0), hidden, market)}</strong></div>)}</div>;
 };
 
 export default Dashboard;
