@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Eye, EyeOff, Link2, Moon, Save, ShieldCheck, Sun, UserRound } from 'lucide-react';
+import { CheckCircle2, Eye, EyeOff, Link2, Moon, Save, ShieldCheck, Sun, Unlink, UserRound } from 'lucide-react';
 import { useData } from '../../../contexts/DataContext';
 import { getSupabase } from '../../../services/supabaseClient';
 import { UserRole } from '../../../types';
@@ -27,6 +27,7 @@ export const SettingsHub: React.FC = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
 
   useEffect(() => {
     setName(currentUser?.name || '');
@@ -76,6 +77,35 @@ export const SettingsHub: React.FC = () => {
     }
   };
 
+  const revokeManagerAccess = async () => {
+    if (!currentUser.managerId || unlinking) return;
+    const confirmed = window.confirm('¿Quieres revocar el acceso de este gestor? Dejará de poder ver tus datos, documentos y mensajes protegidos por el vínculo activo.');
+    if (!confirmed) return;
+
+    setUnlinking(true);
+    try {
+      const supabase = getSupabase();
+      const { data, error: linkError } = await supabase
+        .from('manager_client_links')
+        .select('id')
+        .eq('client_user_id', currentUser.id)
+        .eq('manager_user_id', currentUser.managerId)
+        .eq('status', 'active')
+        .maybeSingle();
+      if (linkError) throw linkError;
+      if (!data?.id) throw new Error('No se encontró un vínculo activo para revocar.');
+
+      const { error } = await supabase.rpc('labora_revoke_manager_link', { link_id: data.id });
+      if (error) throw error;
+      await refreshData();
+      showNotification('success', 'Acceso del gestor revocado.');
+    } catch (error) {
+      showNotification('error', error instanceof Error ? error.message : 'No se pudo revocar el acceso del gestor.');
+    } finally {
+      setUnlinking(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
       <section className="rounded-3xl border border-[#345947] bg-[#213B2F] p-6 text-white shadow-sm sm:p-8">
@@ -103,7 +133,11 @@ export const SettingsHub: React.FC = () => {
             <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm">
               <div className="flex items-center gap-2"><Link2 className="h-5 w-5 text-[#3A7596]" /><h2 className="font-serif text-lg font-bold text-stone-900">Mi gestor</h2></div>
               {currentUser.managerId ? (
-                <div className="mt-4 rounded-2xl border border-[#D6E3D9] bg-[#EEF5F0] p-4"><div className="flex items-center gap-2 text-sm font-semibold text-[#2E5A44]"><CheckCircle2 className="h-4 w-4" /> Gestor vinculado</div><p className="mt-1 text-xs leading-relaxed text-stone-600">El vínculo confirma que tú autorizaste el acceso; no demuestra por sí solo que el profesional esté verificado por Labora+.</p></div>
+                <div className="mt-4 rounded-2xl border border-[#D6E3D9] bg-[#EEF5F0] p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[#2E5A44]"><CheckCircle2 className="h-4 w-4" /> Gestor vinculado</div>
+                  <p className="mt-1 text-xs leading-relaxed text-stone-600">El vínculo confirma que tú autorizaste el acceso; no demuestra por sí solo que el profesional esté verificado por Labora+.</p>
+                  <button type="button" disabled={unlinking} onClick={() => void revokeManagerAccess()} className="mt-3 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 disabled:opacity-50"><Unlink className="h-3.5 w-3.5" />{unlinking ? 'Revocando…' : 'Revocar acceso del gestor'}</button>
+                </div>
               ) : (
                 <form onSubmit={acceptInvite} className="mt-4 space-y-3"><p className="text-xs leading-relaxed text-stone-600">Pide a tu gestor el código temporal de Labora+. Al aceptarlo, autorizas el acceso limitado a revisión, documentos, peticiones y mensajes.</p><input value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} maxLength={12} placeholder="CÓDIGO DE 12 CARACTERES" className="w-full rounded-xl border border-[#DFD5C6] bg-white px-3 py-3 text-center font-mono text-sm font-bold uppercase tracking-wider outline-none focus:border-[#6A917A]" /><button disabled={linking || !inviteCode.trim()} className="w-full rounded-xl bg-[#3A7596] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40">{linking ? 'Comprobando…' : 'Vincular mi gestor'}</button></form>
               )}
