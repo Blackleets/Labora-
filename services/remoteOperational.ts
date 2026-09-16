@@ -110,7 +110,11 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     type: row.type,
     name: row.name,
     date: row.document_date,
-    content: await signedDocumentUrl(row.content)
+    content: await signedDocumentUrl(row.content),
+    mimeType: row.mime_type || undefined,
+    sizeBytes: row.size_bytes == null ? undefined : numberValue(row.size_bytes),
+    contentHash: row.content_hash || undefined,
+    pageCount: row.page_count == null ? undefined : numberValue(row.page_count)
   })));
 
   const declarations: TaxDeclaration[] = (declarationsResult.data || []).map((row: any) => ({
@@ -212,10 +216,17 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
         type: item.type,
         name: item.name,
         document_date: item.date,
-        ...(contentPath ? { content: contentPath } : {})
+        ...(contentPath ? { content: contentPath } : {}),
+        mime_type: item.mimeType || null,
+        size_bytes: item.sizeBytes ?? null,
+        content_hash: item.contentHash || null,
+        page_count: item.pageCount ?? null
       });
     }
-    if (ownDocuments.length) await supabase.from('documents').upsert(ownDocuments);
+    if (ownDocuments.length) {
+      const { error } = await supabase.from('documents').upsert(ownDocuments);
+      if (error) throw error;
+    }
 
     const ownPayments = payments.map((item) => ({
       id: item.id,
@@ -281,5 +292,41 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     };
     if (declaration.userId === currentUser.id) await supabase.from('tax_declarations').upsert(payload);
     else if (isManager) await supabase.from('tax_declarations').update(payload).eq('id', declaration.id);
+  }
+};
+
+export const deleteRemoteExpense = async (expenseId: string) => {
+  const { data, error: readError } = await supabase
+    .from('expenses')
+    .select('receipt_url')
+    .eq('id', expenseId)
+    .maybeSingle();
+  if (readError) throw readError;
+
+  const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+  if (error) throw error;
+
+  const path = data?.receipt_url as string | undefined;
+  if (path && !path.startsWith('http')) {
+    const { error: storageError } = await supabase.storage.from('labora-documents').remove([path]);
+    if (storageError) console.warn('No se pudo borrar el justificante huérfano.', storageError);
+  }
+};
+
+export const deleteRemoteDocument = async (documentId: string) => {
+  const { data, error: readError } = await supabase
+    .from('documents')
+    .select('content')
+    .eq('id', documentId)
+    .maybeSingle();
+  if (readError) throw readError;
+
+  const { error } = await supabase.from('documents').delete().eq('id', documentId);
+  if (error) throw error;
+
+  const path = data?.content as string | undefined;
+  if (path && !path.startsWith('http')) {
+    const { error: storageError } = await supabase.storage.from('labora-documents').remove([path]);
+    if (storageError) console.warn('No se pudo borrar el archivo huérfano.', storageError);
   }
 };
