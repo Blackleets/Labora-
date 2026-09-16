@@ -1,19 +1,23 @@
-import React, { useState } from 'react';
-import { ArrowRight, Bike, Briefcase, Leaf, Lock, Mail, ShieldCheck, User as UserIcon } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ArrowRight, Bike, Briefcase, Globe2, Leaf, Lock, Mail, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { UserRole } from '../types';
+import { MARKET_PROFILES, getMarketProfile } from '../modules/country-config/marketProfiles';
 import Logo from './Logo';
 
 const Login: React.FC = () => {
   const { login, registerUser, backendConfigured, showNotification } = useData();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [role, setRole] = useState<UserRole>(UserRole.RIDER);
+  const [countryCode, setCountryCode] = useState('ES');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const market = useMemo(() => getMarketProfile(countryCode), [countryCode]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -27,7 +31,7 @@ const Login: React.FC = () => {
       return;
     }
     if (mode === 'register' && !name.trim()) {
-      setError(role === UserRole.MANAGER ? 'Indica el nombre de la gestoría.' : 'Indica tu nombre.');
+      setError(role === UserRole.MANAGER ? 'Indica el nombre de tu despacho o tu nombre profesional.' : 'Indica tu nombre.');
       return;
     }
     if (mode === 'register' && password !== confirmPassword) {
@@ -46,7 +50,7 @@ const Login: React.FC = () => {
           role,
           platforms: [],
           banks: [],
-          countryCode: 'ES',
+          countryCode,
           companyName: role === UserRole.MANAGER ? name.trim() : undefined,
         }, password);
       }
@@ -69,18 +73,18 @@ const Login: React.FC = () => {
       <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.05fr_.95fr]">
         <section className="hidden p-8 lg:block">
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#BFD0C3] bg-[#EAF2EB] px-3 py-1.5 text-xs font-semibold text-[#2E5A44]">
-            <Leaf className="h-4 w-4" /> Menos caos entre autónomo y gestor
+            <Leaf className="h-4 w-4" /> Menos caos entre trabajador y asesor
           </div>
           <h1 className="max-w-2xl font-serif text-5xl font-bold leading-[1.05] text-[#1E3329]">
             Lo que cobras, lo que gastas y lo que tu gestor necesita, en un solo sitio.
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-stone-600">
-            Labora+ convierte tickets, pagos y peticiones fiscales en un flujo sencillo. Cada dato importante conserva su origen y las revisiones del gestor quedan separadas de los datos aportados por el autónomo.
+            Labora+ organiza plataformas, cobros, gastos, documentos y conversaciones. En los países donde todavía no existe un motor fiscal verificado, la app sigue funcionando como centro financiero y documental sin inventar obligaciones tributarias.
           </p>
           <div className="mt-8 grid max-w-2xl grid-cols-3 gap-3">
-            <Value icon={Bike} title="Autónomo" text="Controla cobros y documentos." />
-            <Value icon={Briefcase} title="Gestor" text="Revisa solo lo que requiere atención." />
-            <Value icon={ShieldCheck} title="Evidencia" text="Sin justificante, no hay hecho fiscal." />
+            <Value icon={Bike} title="Trabajo" text="Controla cobros y gastos, seas autónomo o independiente." />
+            <Value icon={Briefcase} title="Asesor" text="Revisa excepciones y pide documentos sin suplantarte." />
+            <Value icon={ShieldCheck} title="Evidencia" text="Sin justificante, no hay hecho fiscal verificado." />
           </div>
         </section>
 
@@ -91,7 +95,7 @@ const Login: React.FC = () => {
               {mode === 'login' ? 'Vuelve a tu espacio' : 'Crea tu espacio Labora+'}
             </h2>
             <p className="mt-1 text-sm text-stone-500">
-              {mode === 'login' ? 'Tu perfil decide qué puedes ver; no existe acceso demo ni cambio de identidad.' : 'Empieza con lo mínimo. Los datos fiscales se completan después, con calma.'}
+              {mode === 'login' ? 'Tu identidad decide qué puedes ver; no existe acceso demo ni cambio de identidad.' : 'Elige tu país. Labora+ solo activa fiscalidad local cuando las reglas están verificadas.'}
             </p>
           </div>
 
@@ -104,15 +108,36 @@ const Login: React.FC = () => {
             )}
 
             {mode === 'register' && (
-              <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl bg-[#F1ECE3] p-1.5">
-                <button type="button" onClick={() => setRole(UserRole.RIDER)} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold ${role === UserRole.RIDER ? 'bg-white text-[#2E5A44] shadow-sm' : 'text-stone-500'}`}><Bike className="h-4 w-4" /> Soy autónomo</button>
-                <button type="button" onClick={() => setRole(UserRole.MANAGER)} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold ${role === UserRole.MANAGER ? 'bg-white text-[#2E5A44] shadow-sm' : 'text-stone-500'}`}><Briefcase className="h-4 w-4" /> Soy gestor</button>
+              <div className="mb-5 space-y-3">
+                <div className="grid grid-cols-2 gap-2 rounded-2xl bg-[#F1ECE3] p-1.5">
+                  <button type="button" onClick={() => setRole(UserRole.RIDER)} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold ${role === UserRole.RIDER ? 'bg-white text-[#2E5A44] shadow-sm' : 'text-stone-500'}`}><Bike className="h-4 w-4" /> Trabajo por mi cuenta</button>
+                  <button type="button" onClick={() => setRole(UserRole.MANAGER)} className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold ${role === UserRole.MANAGER ? 'bg-white text-[#2E5A44] shadow-sm' : 'text-stone-500'}`}><Briefcase className="h-4 w-4" /> Soy gestor / asesor</button>
+                </div>
+
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-500"><Globe2 className="h-3.5 w-3.5" /> País principal</span>
+                  <select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} className="w-full rounded-xl border border-[#DFD5C6] bg-white px-3 py-3 text-sm outline-none transition focus:border-[#6A917A] focus:ring-2 focus:ring-[#DCE9DE]">
+                    {MARKET_PROFILES.map((profile) => <option key={profile.countryCode} value={profile.countryCode}>{profile.displayName}</option>)}
+                  </select>
+                </label>
+
+                <div className={`rounded-xl border px-3 py-2.5 text-xs ${market.fiscalEngineStatus === 'verified' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-sky-200 bg-sky-50 text-sky-800'}`}>
+                  <p className="font-bold">{market.displayName}: {market.productMode === 'fiscal_guided' ? 'control financiero + fiscalidad guiada' : 'control financiero + documentos + asesor'}</p>
+                  <p className="mt-1 leading-relaxed">{market.fiscalEngineStatus === 'verified' ? 'El motor fiscal local puede mostrar estimaciones siempre separadas de una presentación oficial.' : 'La fiscalidad local no se calculará hasta disponer de reglas verificadas y versionadas.'}</p>
+                </div>
+
+                {role === UserRole.MANAGER && (
+                  <div className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-xs text-violet-800">
+                    <p className="font-bold">Registrarte como gestor no significa estar verificado.</p>
+                    <p className="mt-1 leading-relaxed">Tu identidad, negocio y acreditación profesional —cuando exista en tu país— se comprobarán por separado antes de mostrar un distintivo de confianza.</p>
+                  </div>
+                )}
               </div>
             )}
 
             <form onSubmit={submit} className="space-y-4">
               {mode === 'register' && (
-                <Field icon={UserIcon} type="text" value={name} onChange={setName} placeholder={role === UserRole.MANAGER ? 'Nombre de tu gestoría' : 'Tu nombre completo'} autoComplete="name" />
+                <Field icon={UserIcon} type="text" value={name} onChange={setName} placeholder={role === UserRole.MANAGER ? 'Nombre profesional o del despacho' : 'Tu nombre completo'} autoComplete="name" />
               )}
               <Field icon={Mail} type="email" value={email} onChange={setEmail} placeholder="tu@email.com" autoComplete="email" />
               <Field icon={Lock} type="password" value={password} onChange={setPassword} placeholder="Contraseña" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
