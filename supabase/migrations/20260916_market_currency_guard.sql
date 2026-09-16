@@ -1,13 +1,15 @@
 -- Currency integrity guard for Labora+.
 -- The browser is not authoritative for the currency of a financial row.
 -- Currency is derived from the account owner's profile country on every write.
+-- Unknown markets fail closed to ISO 4217 XXX instead of guessing USD/EUR.
 
 create or replace function public.labora_currency_for_country(country_code text)
 returns text
 language sql
 immutable
+set search_path = ''
 as $$
-  select case upper(coalesce(country_code, 'ES'))
+  select case upper(coalesce(country_code, ''))
     when 'ES' then 'EUR'
     when 'PT' then 'EUR'
     when 'FR' then 'EUR'
@@ -30,6 +32,7 @@ as $$
     when 'CA' then 'CAD'
     when 'MX' then 'MXN'
     when 'CO' then 'COP'
+    when 'VE' then 'VES'
     when 'AR' then 'ARS'
     when 'CL' then 'CLP'
     when 'PE' then 'PEN'
@@ -43,7 +46,7 @@ as $$
     when 'AE' then 'AED'
     when 'JP' then 'JPY'
     when 'IN' then 'INR'
-    else 'USD'
+    else 'XXX'
   end;
 $$;
 
@@ -51,7 +54,7 @@ create or replace function public.labora_apply_profile_currency()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   profile_country text;
