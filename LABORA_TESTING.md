@@ -1,113 +1,120 @@
-# Labora+ — E2E Test Runbook
+# Labora+ — Product QA Runbook
 
-## Estado de esta rama
+## Rama
 
-Rama: `feat/labora-e2e-ready`
+`feat/labora-e2e-ready`
 
-Objetivo: validar de punta a punta la experiencia de las dos partes principales de Labora+ sin tocar producción:
+## Objetivo
 
-- Rider / autónomo
-- Gestor / asesoría
+Validar Labora+ con dos cuentas reales separadas:
 
-La aplicación compila con TypeScript y Vite mediante GitHub Actions.
+- Autónomo / Rider
+- Gestoría
 
-## Alcance de la prueba
+La autenticación, perfiles, vínculo entre ambas partes, identidad, mensajería y sincronización operativa usan Supabase Auth, RLS, Storage y Realtime.
 
-Este MVP permite probar en un mismo navegador el flujo compartido Rider ↔ Gestor. Los estados se conservan en `localStorage`, por lo que al cambiar de perfil ambos lados ven el mismo conjunto de datos.
+## 1. Crear Gestoría
 
-Esta rama NO representa todavía un sistema multiusuario de producción entre dispositivos distintos. Para eso harán falta autenticación real y persistencia remota.
+1. Abre la preview.
+2. Pulsa **Crear cuenta**.
+3. Selecciona **Gestoría**.
+4. Introduce nombre, correo y contraseña de al menos 8 caracteres.
+5. En el segundo paso sube un logo o imagen del despacho.
+6. Completa nombre comercial y, si aplica, número de colegiado.
+7. Confirma el correo si Supabase lo solicita.
+8. Inicia sesión.
+9. En **Perfil y ajustes**, copia el correo de la gestoría que aparece en “Vincular clientes”.
 
-## Prueba crítica A — Gestor solicita documentación
+Resultado esperado: la gestoría entra con su propia sesión y no tiene clientes hasta que un autónomo la vincule.
 
-1. Abre Labora+.
-2. Cambia al perfil **Gestor** desde el selector superior o lateral.
-3. Entra en **Peticiones a Riders**.
-4. Pulsa **Nuevo Requerimiento**.
-5. Selecciona un Rider, escribe título, descripción, categoría y fecha límite.
-6. Guarda la petición.
-7. Confirma que aparece con estado **Pendiente**.
+## 2. Crear Autónomo en otro navegador/dispositivo
 
-Resultado esperado: el requerimiento queda guardado y asociado al Rider elegido.
+1. Usa otro navegador, perfil incógnito o dispositivo.
+2. Crea una cuenta **Autónomo**.
+3. Sube una foto de perfil.
+4. Completa matrícula si quieres.
+5. Confirma el correo si se solicita e inicia sesión.
+6. Abre **Perfil y ajustes**.
+7. En **Mi gestoría**, introduce el correo de la cuenta Gestoría creada en el paso 1.
+8. Pulsa **Vincular**.
 
-## Prueba crítica B — Rider responde con justificante
+Resultado esperado: el autónomo ve la gestoría vinculada y la gestoría ve a ese autónomo como cliente. Ninguna gestoría debe ver riders no vinculados.
 
-1. Cambia al perfil **Rider**.
-2. Entra en **Avisos de mi Gestor**.
-3. Localiza la petición creada en la prueba A.
-4. Pulsa **Subir Justificante**.
-5. Adjunta un archivo de prueba y añade una nota.
-6. Envía la subsanación.
+## 3. Probar gastos y justificantes
 
-Resultado esperado: la petición cambia a **En Revisión del Gestor** y conserva nota/justificante.
+1. Como Autónomo abre **Ingresos y gastos**.
+2. Escanea una imagen de ticket o añade un gasto manual.
+3. Guarda el movimiento.
+4. Espera unos segundos o abre la app Gestoría.
+5. Como Gestoría entra en **Auditoría** y selecciona el cliente.
+6. Valida o solicita corrección.
 
-## Prueba crítica C — Gestor valida
+Resultado esperado: el gasto se sincroniza mediante Supabase. El estado aprobado debe mostrarse como **Validado · Gestoría**, no como “AEAT”.
 
-1. Cambia de nuevo al perfil **Gestor**.
-2. Entra en **Peticiones a Riders** → **Enviados**.
-3. Localiza la petición respondida.
-4. Pulsa **Aprobar y Archivar**.
+Los justificantes se almacenan en el bucket privado `labora-documents`; solo el propietario y su gestoría vinculada tienen acceso según RLS.
 
-Resultado esperado: la petición pasa a **Resuelto / Auditado**.
+## 4. Probar peticiones
 
-## Prueba crítica D — Mensajería en ambas direcciones
+1. Como Gestoría crea una nueva petición para el cliente.
+2. Como Autónomo abre **Avisos**.
+3. Responde/sube el justificante disponible en el flujo actual.
+4. Vuelve a Gestoría y revisa la petición.
 
-1. Como **Rider**, abre **Mensajes con mi Gestor**.
-2. Envía un mensaje al gestor asignado.
-3. Cambia a **Gestor**.
-4. Abre **Comunicaciones** y selecciona ese Rider.
-5. Confirma que aparece el mensaje y responde.
-6. Vuelve al perfil Rider y abre de nuevo la conversación.
+Resultado esperado: ambas cuentas trabajan sobre el mismo registro remoto.
 
-Resultado esperado: ambos perfiles ven el mismo hilo y cada mensaje identifica remitente y destinatario.
+## 5. Probar mensajes en dos dispositivos
 
-## Prueba crítica E — Finanzas y revisión fiscal
+1. Como Autónomo abre **Mensajes** y escribe a su gestoría.
+2. Mantén abierta la cuenta Gestoría en otro dispositivo.
+3. Abre **Mensajes**.
+4. Responde desde Gestoría.
 
-### Rider
+Resultado esperado: la conversación se persiste en Supabase `messages` y Realtime refresca los cambios.
 
-1. Abre **Gastos & Ingresos**.
-2. Registra o revisa un gasto/ticket.
-3. Abre **Modelos AEAT (130/303)**.
-4. Comprueba que la vista carga sin errores y permite revisar el trimestre.
+## 6. Probar identidad
 
-### Gestor
+Comprobar que foto/logo aparece en:
 
-1. Cambia a **Gestor**.
-2. Abre **Auditoría & Facturación**.
-3. Revisa los gastos del Rider.
-4. Abre **Modelos AEAT (130/303)**.
+- header;
+- menú lateral;
+- navegación móvil en Perfil/Ajustes;
+- Clientes;
+- Mensajes.
 
-Resultado esperado: las dos vistas consumen el mismo estado fiscal de demostración y no rompen la navegación.
+Cambiar la imagen desde **Perfil y ajustes**, guardar y volver a entrar.
 
-## Prueba crítica F — Persistencia local
+## 7. Bancos
 
-1. Realiza al menos una petición, un mensaje o un cambio de estado.
-2. Recarga la página.
-3. Vuelve al mismo perfil.
+La conexión bancaria real está deshabilitada actualmente.
 
-Resultado esperado: el cambio continúa visible porque el MVP persiste los datos demo en `localStorage`.
+Labora+ NO debe:
 
-## Criterios de PASS
+- pedir usuario o contraseña bancaria;
+- mostrar una conexión ficticia como activa;
+- simular movimientos de un banco real.
 
-La rama se considera lista para evaluación manual cuando:
+La UI debe indicar **Próximamente / Open Banking**. La futura integración deberá usar un proveedor regulado PSD2, consentimiento explícito y comenzar en modo de solo lectura.
 
-- TypeScript pasa sin errores.
-- `vite build` termina correctamente.
-- Gestor puede crear una petición.
-- Rider puede recibirla y enviar justificante.
-- Gestor puede aprobarla.
-- Rider y Gestor pueden intercambiar mensajes internos.
-- El cambio de perfil no pierde el estado compartido.
-- Modelos AEAT y finanzas cargan sin romper la aplicación.
-- No se habilita ninguna acción que pretenda ser una presentación real ante AEAT.
+## 8. Plataformas
 
-## Límites conocidos antes de producción
+En Delivery/Movilidad, “Añadir a mi actividad” significa únicamente clasificar qué plataforma usa el autónomo. No significa OAuth ni sincronización automática.
 
-- La autenticación actual es de demostración, no autenticación segura de producción.
-- Los datos compartidos viven en el navegador; dos teléfonos distintos todavía no sincronizan entre sí.
-- La mensajería es local al entorno demo; no es tiempo real entre dispositivos.
-- El asistente Gemini funciona con fallback si no hay clave configurada; no debe colocarse una clave privada sensible directamente en el cliente.
-- Los cálculos y textos fiscales deben tratarse como apoyo de preparación y validarse con normativa vigente y un profesional antes de uso real.
+En Bancos/Pagos/Contabilidad los botones deben permanecer deshabilitados hasta que exista una API real.
 
-## Recomendación para probar
+## 9. Build
 
-Usar esta rama y realizar las pruebas A → F en orden antes de fusionar a `main` o conectar un despliegue público.
+Antes de mergear deben pasar:
+
+- `npm install`
+- `npx tsc --noEmit`
+- `npm run build`
+
+## Límites que siguen abiertos
+
+- Los logos de terceros se resuelven actualmente por dominio mediante un proveedor de logos/fallback; todavía no existe un paquete local auditado de brand assets oficiales para todas las marcas.
+- El escáner de gastos acepta imágenes; soporte PDF/multipágina y detección de duplicados quedan para la siguiente iteración.
+- No existe todavía una integración bancaria PSD2 real; está intencionadamente bloqueada.
+
+## Regla de merge
+
+No fusionar a `main` hasta completar el flujo Gestoría → Autónomo → vínculo → gasto/petición → mensaje desde dos sesiones separadas.
