@@ -14,18 +14,19 @@ import ExpenseTracker from '../../../components/ExpenseTracker';
 import IncomeTracker from '../../../components/IncomeTracker';
 import { TaxOverview } from '../../../components/TaxOverview';
 import Documents from '../../../components/Documents';
-import { PayrollDashboard } from '../../payroll/components/PayrollDashboard';
 import { BankingConnect } from '../../banking-connect/BankingConnect';
 
+type MoneyTab = 'expenses' | 'incomes' | 'taxes' | 'docs' | 'banking';
+
 interface MoneyHubProps {
-  initialTab?: 'expenses' | 'incomes' | 'taxes' | 'docs' | 'payroll' | 'banking';
+  initialTab?: MoneyTab;
   setView?: (view: string) => void;
 }
 
 export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', setView }) => {
   const { currentUser, users, getFiscalSummary, privacyMode, incomes, expenses } = useData();
   const { selectedCountry } = useCountry();
-  const [activeTab, setActiveTab] = useState<'expenses' | 'incomes' | 'taxes' | 'docs' | 'payroll' | 'banking'>(initialTab);
+  const [activeTab, setActiveTab] = useState<MoneyTab>(initialTab);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -46,10 +47,12 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
         .map((user) => user.id)
     );
     const scopedIncomes = incomes.filter((income) => linkedIds.has(income.userId));
-    const scopedExpenses = expenses.filter((expense) => linkedIds.has(expense.userId) && expense.status !== 'rejected');
+    const scopedExpenses = expenses.filter(
+      (expense) => linkedIds.has(expense.userId) && expense.status !== 'rejected'
+    );
     const totalIncome = scopedIncomes.reduce((sum, income) => sum + income.amount, 0);
     const totalExpenses = scopedExpenses.reduce(
-      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 100) / 100),
+      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
       0
     );
     const netProfit = Math.max(0, totalIncome - totalExpenses);
@@ -72,65 +75,69 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
     });
   };
 
-  const tabs = [
-    { id: 'expenses', label: isManager ? 'Auditoría' : 'Gastos', icon: Receipt },
-    { id: 'incomes', label: 'Ingresos', icon: TrendingUp },
-    { id: 'taxes', label: 'Fiscal', icon: Scale },
-    { id: 'docs', label: 'Documentos', icon: FileText },
-    { id: 'payroll', label: 'Liquidaciones', icon: Wallet },
-    { id: 'banking', label: 'Banca', icon: Building }
-  ] as const;
+  const tabs = useMemo(() => {
+    const base = [
+      { id: 'expenses' as const, label: isManager ? 'Auditoría' : 'Gastos', icon: Receipt },
+      { id: 'incomes' as const, label: 'Ingresos', icon: TrendingUp },
+      { id: 'taxes' as const, label: 'Fiscal', icon: Scale },
+      { id: 'docs' as const, label: 'Documentos', icon: FileText }
+    ];
+    return isManager ? base : [...base, { id: 'banking' as const, label: 'Banca', icon: Building }];
+  }, [isManager]);
+
+  useEffect(() => {
+    if (isManager && activeTab === 'banking') setActiveTab('expenses');
+  }, [isManager, activeTab]);
 
   return (
-    <div id="money-hub-workspace" className="space-y-4 min-w-0 animate-in fade-in duration-200">
-      <section className="rounded-2xl border border-[#E5DED3] bg-white p-4 sm:p-5 min-w-0">
-        <div className="flex items-start justify-between gap-3">
+    <div id="money-hub-workspace" className="min-w-0 space-y-4 animate-in fade-in duration-200">
+      <section className="labora-card overflow-hidden">
+        <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#2E5A44]">
-              {isManager ? 'Gestoría · cartera vinculada' : 'Actividad registrada'}
+            <p className="labora-kicker text-[#789582]">
+              {isManager ? 'Cartera vinculada' : 'Actividad registrada'}
             </p>
-            <h1 className="mt-1 text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">
-              {isManager ? 'Auditoría fiscal' : 'Dinero y fiscalidad'}
+            <h1 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">
+              {isManager ? 'Auditoría y fiscalidad' : 'Tu dinero, sin ruido'}
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-stone-500 leading-relaxed max-w-2xl">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
               {isManager
-                ? 'Revisa únicamente los tickets, ingresos y documentación de tus clientes vinculados.'
-                : 'Controla ingresos, gastos y documentación desde un único lugar.'}
+                ? 'Ingresos, gastos validados, documentación y cálculos de tus clientes vinculados.'
+                : 'Registra movimientos, guarda justificantes y prepara la información que revisará tu gestoría.'}
             </p>
           </div>
-          <div className="shrink-0 w-10 h-10 rounded-xl bg-[#EDF4EF] text-[#2E5A44] flex items-center justify-center">
-            <Wallet size={19} />
+
+          <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A] lg:h-14 lg:w-14">
+            <Wallet size={22} />
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button onClick={() => setActiveTab('incomes')} className="rounded-xl bg-[#FAF8F4] border border-[#EAE4DA] p-3 text-left min-w-0">
-            <p className="text-[10px] font-semibold text-stone-400">Ingresos</p>
-            <p className="mt-1 text-base font-bold text-stone-900 truncate">{formatCurrency(summary.totalIncome)}</p>
-          </button>
-          <button onClick={() => setActiveTab('expenses')} className="rounded-xl bg-[#FAF8F4] border border-[#EAE4DA] p-3 text-left min-w-0">
-            <p className="text-[10px] font-semibold text-stone-400">Gastos</p>
-            <p className="mt-1 text-base font-bold text-stone-900 truncate">{formatCurrency(summary.totalExpenses)}</p>
-          </button>
-          <div className="rounded-xl bg-[#F2F7F4] border border-[#DDE8E1] p-3 min-w-0">
-            <p className="text-[10px] font-semibold text-[#5E7A69]">Neto</p>
-            <p className="mt-1 text-base font-bold text-[#2E5A44] truncate">{formatCurrency(summary.netProfit)}</p>
-          </div>
-          <button onClick={() => setActiveTab('taxes')} className="rounded-xl bg-[#FFF8EC] border border-[#EEE0C4] p-3 text-left min-w-0">
-            <p className="text-[10px] font-semibold text-[#8A6B35]">Reserva IRPF orientativa</p>
-            <p className="mt-1 text-base font-bold text-[#75551F] truncate">{formatCurrency(summary.estimatedIRPF)}</p>
-          </button>
+        <div className="labora-divider" />
+
+        <div className="grid grid-cols-2 gap-px bg-[#EAE3D9] sm:grid-cols-4">
+          <MetricButton label="Ingresos" value={formatCurrency(summary.totalIncome)} onClick={() => setActiveTab('incomes')} />
+          <MetricButton label={isManager ? 'Gastos validados' : 'Gastos'} value={formatCurrency(summary.totalExpenses)} onClick={() => setActiveTab('expenses')} accent="clay" />
+          <MetricButton label="Neto" value={formatCurrency(summary.netProfit)} onClick={() => setActiveTab('taxes')} accent="green" />
+          <MetricButton label="IRPF orientativo" value={formatCurrency(summary.estimatedIRPF)} onClick={() => setActiveTab('taxes')} accent="amber" />
         </div>
       </section>
 
-      <nav className="rounded-2xl border border-[#E5DED3] bg-white p-1.5 overflow-x-auto custom-scrollbar">
-        <div className="flex items-center gap-1 min-w-max">
+      <nav className="labora-card overflow-x-auto p-1.5 custom-scrollbar">
+        <div className="flex min-w-max items-center gap-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`h-9 px-3 rounded-xl inline-flex items-center gap-1.5 text-xs font-bold whitespace-nowrap transition-colors ${active ? 'bg-[#2E5A44] text-white' : 'text-stone-500 hover:bg-[#F5F1EA] hover:text-stone-800'}`}>
-                <Icon size={14} strokeWidth={2} />
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-[12px] px-3.5 text-xs font-extrabold transition ${
+                  active
+                    ? 'bg-[#214E3A] text-white shadow-sm'
+                    : 'text-stone-500 hover:bg-[#F3EFE8] hover:text-[#1E231F]'
+                }`}
+              >
+                <Icon size={14} strokeWidth={2.2} />
                 {tab.label}
               </button>
             );
@@ -143,9 +150,35 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
         {activeTab === 'incomes' && <IncomeTracker startDate="" endDate="" />}
         {activeTab === 'taxes' && <TaxOverview setView={setView} />}
         {activeTab === 'docs' && <Documents />}
-        {activeTab === 'payroll' && <PayrollDashboard />}
-        {activeTab === 'banking' && <BankingConnect />}
+        {activeTab === 'banking' && !isManager && <BankingConnect />}
       </div>
     </div>
+  );
+};
+
+const MetricButton = ({
+  label,
+  value,
+  onClick,
+  accent = 'neutral'
+}: {
+  label: string;
+  value: string;
+  onClick: () => void;
+  accent?: 'neutral' | 'green' | 'clay' | 'amber';
+}) => {
+  const valueClass = accent === 'green'
+    ? 'text-[#214E3A]'
+    : accent === 'clay'
+      ? 'text-[#B95635]'
+      : accent === 'amber'
+        ? 'text-[#8A641E]'
+        : 'text-[#1E231F]';
+
+  return (
+    <button onClick={onClick} className="min-w-0 bg-[#FFFDF9] p-3.5 text-left transition hover:bg-[#FAF7F1] sm:p-4">
+      <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-stone-400">{label}</p>
+      <p className={`mt-1 truncate text-base font-extrabold tracking-[-0.03em] sm:text-lg ${valueClass}`}>{value}</p>
+    </button>
   );
 };
