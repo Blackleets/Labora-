@@ -75,6 +75,11 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     date: row.date,
     amount: numberValue(row.amount),
     receiptUrl: await signedDocumentUrl(row.receipt_url),
+    receiptHash: row.receipt_hash || undefined,
+    receiptMimeType: row.receipt_mime_type || undefined,
+    ocrConfidence: row.ocr_confidence == null ? undefined : numberValue(row.ocr_confidence),
+    ocrNeedsReview: row.ocr_needs_review == null ? undefined : Boolean(row.ocr_needs_review),
+    ocrUncertainFields: Array.isArray(row.ocr_uncertain_fields) ? row.ocr_uncertain_fields : undefined,
     notes: row.notes || undefined,
     isRecurring: Boolean(row.is_recurring),
     vatRate: row.vat_rate == null ? undefined : numberValue(row.vat_rate),
@@ -232,7 +237,7 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     }));
     if (ownIncomes.length) await supabase.from('incomes').upsert(ownIncomes);
 
-    const ownExpenses = [] as any[];
+    const ownExpenses: any[] = [];
     for (const item of ownExpenseItems) {
       let receiptPath: string | undefined;
       if (item.receiptUrl?.startsWith('data:')) {
@@ -246,6 +251,11 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
         date: item.date,
         amount: item.amount,
         ...(receiptPath ? { receipt_url: receiptPath } : {}),
+        receipt_hash: item.receiptHash || null,
+        receipt_mime_type: item.receiptMimeType || null,
+        ocr_confidence: item.ocrConfidence ?? null,
+        ocr_needs_review: item.ocrNeedsReview ?? true,
+        ocr_uncertain_fields: item.ocrUncertainFields || null,
         notes: item.notes || null,
         is_recurring: Boolean(item.isRecurring),
         vat_rate: item.vatRate ?? null,
@@ -258,9 +268,12 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
         invoice_number: item.invoiceNumber || null
       });
     }
-    if (ownExpenses.length) await supabase.from('expenses').upsert(ownExpenses);
+    if (ownExpenses.length) {
+      const { error } = await supabase.from('expenses').upsert(ownExpenses);
+      if (error) throw error;
+    }
 
-    const ownDocuments = [] as any[];
+    const ownDocuments: any[] = [];
     for (const item of ownDocumentItems) {
       let contentPath: string | undefined;
       if (item.content?.startsWith('data:')) {
