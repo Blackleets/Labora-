@@ -43,16 +43,14 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ se
   const [selectedQuarter, setSelectedQuarter] = useState(defaultQuarter);
   const [selectedClientId, setSelectedClientId] = useState('');
 
-  if (!currentUser) return null;
-
-  const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
+  const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const eligibleClients = isManager
     ? users.filter((user) => user.role === UserRole.RIDER && user.countryCode === 'ES')
     : [];
 
   const rider = isManager
     ? eligibleClients.find((user) => user.id === selectedClientId) || null
-    : currentUser.countryCode === 'ES' ? currentUser : null;
+    : currentUser?.countryCode === 'ES' ? currentUser : null;
 
   const riderId = rider?.id || '';
   const snapshot = useMemo(
@@ -66,6 +64,8 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ se
   const quarterIncomes = snapshot ? incomes.filter(
     (income) => income.userId === riderId && income.date >= snapshot.period.quarterStart && income.date <= snapshot.period.quarterEnd,
   ) : [];
+
+  if (!currentUser) return null;
 
   const exportExpenseDraft = () => {
     if (!snapshot || !rider) return;
