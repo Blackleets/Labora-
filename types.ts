@@ -217,6 +217,11 @@ export interface Expense {
   date: string;
   amount: number;
   receiptUrl?: string;
+  receiptHash?: string;
+  receiptMimeType?: string;
+  ocrConfidence?: number;
+  ocrNeedsReview?: boolean;
+  ocrUncertainFields?: string[];
   notes?: string;
   isRecurring?: boolean;
   merchant?: string;
