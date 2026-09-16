@@ -1,548 +1,438 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { 
-  FileText, Download, Eye, Calendar, MoreVertical, Folder, Upload, 
-  FileBarChart, Printer, Share2, X, CheckCircle, Shield, Fuel, 
-  Trash2, Plus, ArrowUpRight 
+import React, { useMemo, useRef, useState } from 'react';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  Download,
+  Eye,
+  FileBarChart,
+  FileText,
+  Folder,
+  Fuel,
+  Hash,
+  Loader2,
+  Printer,
+  ShieldCheck,
+  Trash2,
+  Upload,
+  UserRound,
+  X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { User, Document as UserDoc } from '../types';
+import { deleteRemoteDocument } from '../services/remoteOperational';
+import { Document as UserDocument, UserRole } from '../types';
+
+type DisplayItem = {
+  id: string;
+  source: 'document' | 'expense' | 'tax';
+  sourceUserId: string;
+  ownerName: string;
+  name: string;
+  category: 'Factura' | 'Trimestre' | 'Alta' | 'Gasolina' | 'Otro';
+  date: string;
+  fileType: 'PDF' | 'IMG' | 'FILE';
+  mimeType?: string;
+  sizeBytes?: number;
+  content?: string;
+  badge?: { label: string; tone: 'green' | 'amber' | 'stone' };
+};
+
+type PendingUpload = {
+  name: string;
+  dataUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+  contentHash: string;
+};
+
+const ALLOWED_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
+const MAX_FILE_BYTES = 15 * 1024 * 1024;
+
+const bytesLabel = (value?: number) => {
+  if (value == null) return 'Tamaño no disponible';
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(0)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const hashBuffer = async (buffer: ArrayBuffer) => {
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+};
+
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('No se pudo leer el archivo.'));
+  reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo.'));
+  reader.readAsDataURL(file);
+});
+
+const fileTypeFor = (mimeType?: string, name?: string): DisplayItem['fileType'] => {
+  if (mimeType === 'application/pdf' || name?.toLowerCase().endsWith('.pdf')) return 'PDF';
+  if (mimeType?.startsWith('image/')) return 'IMG';
+  return 'FILE';
+};
 
 export const Documents: React.FC = () => {
-  const { 
-    documents, expenses, declarations, currentUser, getFiscalSummary, 
-    addDocument, showNotification 
+  const {
+    documents,
+    expenses,
+    declarations,
+    currentUser,
+    users,
+    getFiscalSummary,
+    addDocument,
+    showNotification
   } = useData();
 
-  const [isGeneratingReport, setIsGeneratingReport] = useState<boolean>(false);
-  const [reportQuarter, setReportQuarter] = useState<string>('3T 2026');
-  const [selectedFilter, setSelectedFilter] = useState<string>('all');
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
-  const [previewDoc, setPreviewDoc] = useState<{ name: string; type: string; content?: string; date: string } | null>(null);
-
-  // Upload Form State
-  const [docName, setDocName] = useState<string>('');
-  const [docType, setDocType] = useState<'Factura' | 'Trimestre' | 'Alta' | 'Otro'>('Factura');
-  const [docFileBase64, setDocFileBase64] = useState<string>('');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'receipts' | 'taxes' | 'legal'>('all');
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isReadingFile, setIsReadingFile] = useState(false);
+  const [docName, setDocName] = useState('');
+  const [docType, setDocType] = useState<UserDocument['type']>('Factura');
+  const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(null);
+  const [preview, setPreview] = useState<DisplayItem | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const summary = useMemo(() => {
-    if (currentUser) return getFiscalSummary(currentUser.id);
-    return { totalIncome: 0, totalExpenses: 0, netProfit: 0, estimatedIRPF: 0, quarter: '3T 2026' };
-  }, [currentUser, getFiscalSummary]);
+  const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+  const linkedIds = useMemo(() => new Set(
+    users.filter((user) => user.role === UserRole.RIDER && user.managerId === currentUser?.id).map((user) => user.id)
+  ), [users, currentUser?.id]);
+  const userName = useMemo(() => new Map(users.map((user) => [user.id, user.name])), [users]);
 
-  // Combined documents: user custom docs + expenses with receipts + filed declarations
-  const riderId = currentUser?.id || 'u1';
-  const userExpensesWithReceipt = expenses.filter(e => (e.userId === riderId || !e.userId) && e.receiptUrl);
-  const userFiledDeclarations = declarations.filter(d => (d.userId === riderId || !d.userId) && d.status === 'filed_with_tax_agency');
+  const canSeeUser = (userId: string) => Boolean(
+    currentUser && (userId === currentUser.id || (isManager && linkedIds.has(userId)))
+  );
 
-  // Map to unified display items
-  const allItems = useMemo(() => {
-    const list: Array<{
-      id: string;
-      name: string;
-      category: 'Factura' | 'Trimestre' | 'Alta' | 'Gasolina' | 'Otro';
-      date: string;
-      size: string;
-      fileType: string;
-      content?: string;
-      isOfficial?: boolean;
-    }> = [];
+  const visibleDocuments = documents.filter((item) => canSeeUser(item.userId));
+  const visibleExpenses = expenses.filter((item) => canSeeUser(item.userId) && item.receiptUrl);
+  const visibleDeclarations = declarations.filter((item) => canSeeUser(item.userId) && item.status === 'filed_with_tax_agency');
 
-    // User docs
-    documents.forEach(d => {
+  const allItems = useMemo<DisplayItem[]>(() => {
+    const list: DisplayItem[] = [];
+
+    visibleDocuments.forEach((document) => {
       list.push({
-        id: d.id,
-        name: d.name,
-        category: d.type,
-        date: d.date,
-        size: '1.2 MB',
-        fileType: 'PDF',
-        content: d.content
+        id: document.id,
+        source: 'document',
+        sourceUserId: document.userId,
+        ownerName: userName.get(document.userId) || currentUser?.name || 'Usuario',
+        name: document.name,
+        category: document.type,
+        date: document.date,
+        fileType: fileTypeFor(document.mimeType, document.name),
+        mimeType: document.mimeType,
+        sizeBytes: document.sizeBytes,
+        content: document.content,
+        badge: document.contentHash ? { label: 'Hash SHA-256 guardado', tone: 'stone' } : undefined
       });
     });
 
-    // Receipts from gas station & expenses
-    userExpensesWithReceipt.forEach(e => {
+    visibleExpenses.forEach((expense) => {
       list.push({
-        id: e.id,
-        name: `Ticket_${e.merchant || 'Gasolinera'}_${e.date}.jpg`,
-        category: 'Gasolina',
-        date: e.date,
-        size: '850 KB',
+        id: expense.id,
+        source: 'expense',
+        sourceUserId: expense.userId,
+        ownerName: userName.get(expense.userId) || currentUser?.name || 'Usuario',
+        name: `Ticket_${expense.merchant || expense.category}_${expense.date}.jpg`,
+        category: expense.category === 'Gasolina' ? 'Gasolina' : 'Factura',
+        date: expense.date,
         fileType: 'IMG',
-        content: e.receiptUrl,
-        isOfficial: e.status === 'approved'
+        mimeType: 'image/jpeg',
+        content: expense.receiptUrl,
+        badge: expense.status === 'approved'
+          ? { label: 'Validado por gestoría', tone: 'green' }
+          : { label: 'Pendiente de revisión', tone: 'amber' }
       });
     });
 
-    // Tax declarations
-    userFiledDeclarations.forEach(d => {
+    visibleDeclarations.forEach((declaration) => {
       list.push({
-        id: d.id,
-        name: `Justificante_AEAT_Mod_${d.modelType}_${d.quarter}.pdf`,
+        id: declaration.id,
+        source: 'tax',
+        sourceUserId: declaration.userId,
+        ownerName: userName.get(declaration.userId) || currentUser?.name || 'Usuario',
+        name: `Modelo_${declaration.modelType}_${declaration.quarter}`,
         category: 'Trimestre',
-        date: d.filedAt || d.dueDate,
-        size: '540 KB',
-        fileType: 'PDF',
-        isOfficial: true
+        date: declaration.filedAt || `${declaration.year}-01-01`,
+        fileType: 'FILE',
+        badge: declaration.filingReference
+          ? { label: 'Referencia AEAT registrada', tone: 'green' }
+          : { label: 'Marcado como presentado', tone: 'stone' }
       });
     });
 
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [documents, userExpensesWithReceipt, userFiledDeclarations]);
+  }, [visibleDocuments, visibleExpenses, visibleDeclarations, userName, currentUser?.name]);
 
   const filteredItems = useMemo(() => {
     if (selectedFilter === 'all') return allItems;
-    if (selectedFilter === 'receipts') return allItems.filter(i => i.category === 'Gasolina' || i.category === 'Factura');
-    if (selectedFilter === 'taxes') return allItems.filter(i => i.category === 'Trimestre');
-    if (selectedFilter === 'legal') return allItems.filter(i => i.category === 'Alta' || i.category === 'Otro');
-    return allItems;
+    if (selectedFilter === 'receipts') return allItems.filter((item) => item.category === 'Gasolina' || item.category === 'Factura');
+    if (selectedFilter === 'taxes') return allItems.filter((item) => item.category === 'Trimestre');
+    return allItems.filter((item) => item.category === 'Alta' || item.category === 'Otro');
   }, [allItems, selectedFilter]);
 
-  const categories = [
-    { id: 'all', name: 'Todos los Archivos', count: allItems.length, color: 'bg-slate-100 text-slate-700' },
-    { id: 'receipts', name: 'Tickets y Gastos', count: allItems.filter(i => i.category === 'Gasolina' || i.category === 'Factura').length, color: 'bg-amber-100 text-amber-700' },
-    { id: 'taxes', name: 'Modelos AEAT', count: allItems.filter(i => i.category === 'Trimestre').length, color: 'bg-blue-100 text-blue-700' },
-    { id: 'legal', name: 'Legal y Censal 036', count: allItems.filter(i => i.category === 'Alta' || i.category === 'Otro').length, color: 'bg-purple-100 text-purple-700' },
-  ];
+  const summary = useMemo(() => currentUser && !isManager
+    ? getFiscalSummary(currentUser.id)
+    : null, [currentUser, isManager, getFiscalSummary]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !currentUser) return;
 
-  const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!docName) {
-      setDocName(file.name.replace(/\.[^/.]+$/, ''));
+    if (!ALLOWED_TYPES.has(file.type)) {
+      showNotification('error', 'Formato no admitido. Usa PDF, JPG, PNG o WebP.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      showNotification('error', 'El archivo supera el límite de 15 MB.');
+      event.target.value = '';
+      return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setDocFileBase64(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    setIsReadingFile(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const contentHash = await hashBuffer(buffer);
+      const duplicate = documents.some((document) => document.userId === currentUser.id && document.contentHash === contentHash);
+      if (duplicate) {
+        setPendingUpload(null);
+        showNotification('error', 'Este archivo ya existe en tu expediente.');
+        return;
+      }
+
+      const dataUrl = await readFileAsDataUrl(file);
+      setPendingUpload({
+        name: file.name,
+        dataUrl,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        contentHash
+      });
+      if (!docName.trim()) setDocName(file.name);
+      showNotification('success', file.type === 'application/pdf' ? 'PDF cargado. Se conservarán todas sus páginas.' : 'Archivo cargado.');
+    } catch (error) {
+      console.error(error);
+      showNotification('error', 'No se pudo preparar el archivo.');
+    } finally {
+      setIsReadingFile(false);
+      event.target.value = '';
+    }
   };
 
-  const handleSaveDocument = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!docName.trim()) {
-      showNotification('error', 'Indica un nombre para el archivo');
+  const handleSaveDocument = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!currentUser || isManager) return;
+    if (!docName.trim() || !pendingUpload) {
+      showNotification('error', 'Selecciona un archivo y confirma su nombre.');
+      return;
+    }
+
+    const duplicate = documents.some((document) =>
+      document.userId === currentUser.id && document.contentHash === pendingUpload.contentHash
+    );
+    if (duplicate) {
+      showNotification('error', 'Este archivo ya existe en tu expediente.');
       return;
     }
 
     addDocument({
-      name: docName.trim() + (docName.endsWith('.pdf') ? '' : '.pdf'),
+      name: docName.trim(),
       type: docType,
       date: new Date().toISOString().split('T')[0],
-      content: docFileBase64 || undefined
+      content: pendingUpload.dataUrl,
+      mimeType: pendingUpload.mimeType,
+      sizeBytes: pendingUpload.sizeBytes,
+      contentHash: pendingUpload.contentHash
     });
 
     setDocName('');
-    setDocFileBase64('');
-    setIsUploadModalOpen(false);
+    setPendingUpload(null);
+    setIsUploadOpen(false);
   };
 
-  const handleDownloadItem = (item: typeof allItems[0]) => {
-    if (item.content) {
-      const a = document.createElement('a');
-      a.href = item.content;
-      a.download = item.name;
-      a.click();
-      showNotification('success', `Descargado: ${item.name}`);
-    } else {
-      // Generate synthetic receipt text
-      const content = `LABORA+ EXPEDIENTE FISCAL\nDocumento: ${item.name}\nFecha: ${item.date}\nTitular: ${currentUser?.name}\nEstado: Validez oficial garantizada`;
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = item.name;
-      a.click();
-      showNotification('success', `Descargado: ${item.name}`);
+  const handleDownload = (item: DisplayItem) => {
+    if (!item.content) {
+      showNotification('info', 'No hay un archivo adjunto descargable para este registro.');
+      return;
+    }
+    const anchor = window.document.createElement('a');
+    anchor.href = item.content;
+    anchor.download = item.name;
+    anchor.target = '_blank';
+    anchor.rel = 'noopener';
+    anchor.click();
+  };
+
+  const handleDelete = async (item: DisplayItem) => {
+    if (!currentUser || item.source !== 'document' || item.sourceUserId !== currentUser.id || isManager) return;
+    if (!window.confirm(`¿Eliminar “${item.name}” del expediente?`)) return;
+
+    setDeletingId(item.id);
+    try {
+      await deleteRemoteDocument(item.id);
+      const remaining = documents.filter((document) => document.id !== item.id);
+      localStorage.setItem('labora_docs', JSON.stringify(remaining));
+      showNotification('success', 'Documento eliminado del expediente y del almacenamiento privado.');
+      window.setTimeout(() => window.location.reload(), 250);
+    } catch (error) {
+      console.error(error);
+      showNotification('error', 'No se pudo eliminar el documento.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
+  const badgeClass = (tone: DisplayItem['badge'] extends { tone: infer T } ? T : never) => {
+    if (tone === 'green') return 'border-[#CFE7D7] bg-[#ECF7F0] text-[#24613F]';
+    if (tone === 'amber') return 'border-[#ECD9A8] bg-[#FFF8E8] text-[#855D1E]';
+    return 'border-[#E3DDD4] bg-[#F5F2ED] text-stone-600';
+  };
+
+  const filters = [
+    ['all', 'Todos', allItems.length],
+    ['receipts', 'Tickets y facturas', allItems.filter((item) => item.category === 'Gasolina' || item.category === 'Factura').length],
+    ['taxes', 'Fiscal', allItems.filter((item) => item.category === 'Trimestre').length],
+    ['legal', 'Legal y censal', allItems.filter((item) => item.category === 'Alta' || item.category === 'Otro').length]
+  ] as const;
+
   return (
-    <div id="documents-screen" className="space-y-8 pb-20 lg:pb-0 animate-in fade-in duration-300">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="mx-auto max-w-6xl space-y-5 pb-20 lg:pb-8">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Expediente Fiscal Digital</h2>
-          <p className="text-slate-500 text-sm mt-0.5">Archivo permanente de tickets de combustible, facturas y justificantes de Hacienda</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Documentación</p>
+          <h1 className="mt-1 text-2xl font-bold text-stone-900">Expediente fiscal</h1>
+          <p className="mt-1 max-w-2xl text-sm text-stone-500">Documentos y justificantes almacenados en el espacio privado de Labora+. La app distingue revisión de gestoría de presentación oficial.</p>
         </div>
-        <div className="flex flex-wrap gap-2.5">
-          <button 
-            onClick={() => setIsGeneratingReport(true)}
-            className="bg-white text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
-          >
-            <FileBarChart size={16} className="text-blue-600" />
-            <span>Generar Informe Fiscal</span>
-          </button>
-          <button 
-            onClick={() => setIsUploadModalOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-sm hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2"
-          >
-            <Upload size={16} />
-            <span>Subir Documento</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Categories Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => setSelectedFilter(cat.id)}
-            className={`p-5 rounded-2xl border text-left transition-all group ${
-              selectedFilter === cat.id
-                ? 'bg-blue-50/70 border-blue-500 shadow-sm ring-1 ring-blue-500'
-                : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
-            }`}
-          >
-            <div className={`w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center mb-3 group-hover:scale-105 transition-transform`}>
-              <Folder size={20} />
-            </div>
-            <h3 className="font-bold text-slate-800 text-sm">{cat.name}</h3>
-            <p className="text-xs text-slate-500 mt-0.5">{cat.count} archivos registrados</p>
-          </button>
-        ))}
-      </div>
-
-      {/* Files List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <FileText size={18} className="text-blue-600" />
-            <span>Archivos y Comprobantes Digitales</span>
-            <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
-              {filteredItems.length}
-            </span>
-          </h3>
-          <span className="text-xs text-slate-400">Archivado en la nube con valor probatorio</span>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          {filteredItems.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 space-y-2">
-              <Folder className="w-10 h-10 mx-auto text-slate-300 stroke-1" />
-              <p className="text-sm font-medium text-slate-600">No hay documentos en esta categoría</p>
-              <p className="text-xs text-slate-400">Puedes cargar tickets de gasolina con foto o subir contratos y facturas.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {filteredItems.map((doc) => (
-                <div key={doc.id} className="p-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors">
-                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                      doc.category === 'Gasolina'
-                        ? 'bg-amber-100 text-amber-800'
-                        : doc.category === 'Trimestre'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-purple-100 text-purple-800'
-                    }`}>
-                      {doc.category === 'Gasolina' ? <Fuel className="w-5 h-5" /> : doc.fileType}
-                    </div>
-                    <div className="min-w-0 truncate">
-                      <div className="flex items-center space-x-2">
-                        <h4 className="font-bold text-slate-800 text-sm truncate">{doc.name}</h4>
-                        {doc.isOfficial && (
-                          <span className="px-2 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded flex items-center space-x-1 shrink-0">
-                            <CheckCircle className="w-3 h-3" />
-                            <span>Validado AEAT</span>
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
-                        <span className="flex items-center gap-1"><Calendar size={12} /> {doc.date}</span>
-                        <span>{doc.size}</span>
-                        <span className="text-slate-300">•</span>
-                        <span className="font-medium text-slate-500">{doc.category}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0 ml-3">
-                    <button 
-                      onClick={() => setPreviewDoc(doc)}
-                      className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Previsualizar"
-                    >
-                      <Eye size={17} />
-                    </button>
-                    <button 
-                      onClick={() => handleDownloadItem(doc)}
-                      className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Descargar"
-                    >
-                      <Download size={17} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="flex gap-2">
+          {!isManager && (
+            <button onClick={() => setIsReportOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-[#DDD6CC] bg-white px-3.5 py-2.5 text-xs font-bold text-stone-600 hover:bg-[#F7F4EF]"><FileBarChart size={15} /> Resumen</button>
+          )}
+          {!isManager && (
+            <button onClick={() => setIsUploadOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#2E5A44] px-3.5 py-2.5 text-xs font-bold text-white hover:bg-[#244936]"><Upload size={15} /> Subir documento</button>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Modal: Subir Documento */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-slate-100 shadow-2xl animate-in zoom-in-95">
-            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Upload size={18} className="text-blue-600" />
-                Subir Archivo al Expediente
-              </h3>
-              <button 
-                onClick={() => setIsUploadModalOpen(false)}
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
-              >
-                <X size={18} />
-              </button>
-            </div>
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {filters.map(([id, label, count]) => (
+          <button key={id} onClick={() => setSelectedFilter(id)} className={`rounded-xl border p-3 text-left transition ${selectedFilter === id ? 'border-[#9DB5A6] bg-[#EEF4F0]' : 'border-[#E4DDD3] bg-white hover:bg-[#FAF8F4]'}`}>
+            <p className="text-xs font-bold text-stone-800">{label}</p>
+            <p className="mt-1 text-[11px] text-stone-400">{count} registros</p>
+          </button>
+        ))}
+      </section>
 
-            <form onSubmit={handleSaveDocument} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre del Archivo</label>
-                <input
-                  type="text"
-                  placeholder="Ej. Factura Compra Mochila Térmica"
-                  value={docName}
-                  onChange={(e) => setDocName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  required
-                />
-              </div>
+      <section className="overflow-hidden rounded-2xl border border-[#E3DCD2] bg-white">
+        <div className="flex items-center justify-between gap-3 border-b border-[#EEE7DD] px-4 py-3.5">
+          <div className="flex items-center gap-2"><Folder size={17} className="text-[#2E5A44]" /><h2 className="text-sm font-bold text-stone-900">Archivos y justificantes</h2></div>
+          <span className="hidden text-[11px] text-stone-400 sm:inline">Bucket privado + RLS</span>
+        </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Tipo de Documento</label>
-                <select
-                  value={docType}
-                  onChange={(e) => setDocType(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                >
-                  <option value="Factura">Factura de Gasto Deducible</option>
-                  <option value="Trimestre">Modelo Trimestral (130 / 303)</option>
-                  <option value="Alta">Documento de Alta Censal / 036 / RETA</option>
-                  <option value="Otro">Otro Comprobante / Seguro</option>
-                </select>
-              </div>
-
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-blue-400 transition-colors">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileUploadChange}
-                  className="hidden"
-                  accept="image/*,.pdf,.doc,.docx"
-                />
-                <div className="space-y-2">
-                  <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
-                    <Upload size={20} />
-                  </div>
-                  <p className="text-xs font-bold text-slate-800">
-                    {docFileBase64 ? 'Archivo cargado con éxito' : 'Selecciona un archivo PDF o imagen'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg"
-                  >
-                    Examinar dispositivo
-                  </button>
+        {filteredItems.length === 0 ? (
+          <div className="px-4 py-14 text-center"><Folder size={30} className="mx-auto text-stone-300" /><p className="mt-3 text-sm font-semibold text-stone-600">No hay documentos en esta categoría.</p></div>
+        ) : (
+          <div className="divide-y divide-[#EEE7DD]">
+            {filteredItems.map((item) => (
+              <article key={`${item.source}-${item.id}`} className="flex items-center gap-3 p-4 hover:bg-[#FCFAF7]">
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${item.category === 'Gasolina' ? 'bg-[#FFF4E7] text-[#A65E2E]' : item.fileType === 'PDF' ? 'bg-[#FDEEEB] text-[#A54B40]' : 'bg-[#EEF4F0] text-[#2E5A44]'}`}>
+                  {item.category === 'Gasolina' ? <Fuel size={18} /> : <FileText size={18} />}
                 </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="max-w-full truncate text-sm font-bold text-stone-900">{item.name}</p>
+                    {item.badge && <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${badgeClass(item.badge.tone)}`}><CheckCircle2 size={10} />{item.badge.label}</span>}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-stone-400">
+                    <span className="inline-flex items-center gap-1"><Calendar size={11} />{item.date}</span>
+                    <span>{item.fileType}</span>
+                    {item.sizeBytes != null && <span>{bytesLabel(item.sizeBytes)}</span>}
+                    {isManager && <span className="inline-flex items-center gap-1"><UserRound size={11} />{item.ownerName}</span>}
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <button onClick={() => setPreview(item)} className="rounded-lg p-2 text-stone-400 hover:bg-[#F2EFE9] hover:text-[#2E5A44]" title="Previsualizar"><Eye size={16} /></button>
+                  <button onClick={() => handleDownload(item)} disabled={!item.content} className="rounded-lg p-2 text-stone-400 hover:bg-[#F2EFE9] hover:text-[#2E5A44] disabled:cursor-not-allowed disabled:opacity-30" title="Descargar"><Download size={16} /></button>
+                  {!isManager && item.source === 'document' && item.sourceUserId === currentUser?.id && (
+                    <button onClick={() => void handleDelete(item)} disabled={deletingId === item.id} className="rounded-lg p-2 text-stone-300 hover:bg-[#FFF0EC] hover:text-[#A34F42] disabled:opacity-40" title="Eliminar">{deletingId === item.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}</button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {!isManager && (
+        <section className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-[#E3DCD2] bg-white p-3.5"><div className="flex items-center gap-2 text-xs font-bold text-stone-700"><ShieldCheck size={15} className="text-[#2E5A44]" /> Privado</div><p className="mt-1 text-[11px] leading-relaxed text-stone-500">Los archivos se guardan en un bucket privado y el acceso se controla con RLS.</p></div>
+          <div className="rounded-xl border border-[#E3DCD2] bg-white p-3.5"><div className="flex items-center gap-2 text-xs font-bold text-stone-700"><Hash size={15} className="text-[#2E5A44]" /> Anti-duplicados</div><p className="mt-1 text-[11px] leading-relaxed text-stone-500">Los archivos nuevos se identifican con SHA-256 para bloquear copias idénticas.</p></div>
+          <div className="rounded-xl border border-[#E3DCD2] bg-white p-3.5"><div className="flex items-center gap-2 text-xs font-bold text-stone-700"><FileText size={15} className="text-[#2E5A44]" /> PDF multipágina</div><p className="mt-1 text-[11px] leading-relaxed text-stone-500">Un PDF se conserva completo; la previsualización permite recorrer todas sus páginas.</p></div>
+        </section>
+      )}
+
+      {isUploadOpen && !isManager && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/55 p-3 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-lg rounded-t-3xl border border-[#E2DAD0] bg-[#FCFAF7] p-5 shadow-2xl sm:rounded-3xl">
+            <div className="flex items-start justify-between gap-3"><div><h3 className="text-lg font-bold text-stone-900">Subir documento</h3><p className="mt-1 text-xs text-stone-500">PDF, JPG, PNG o WebP · máximo 15 MB.</p></div><button onClick={() => setIsUploadOpen(false)} className="rounded-xl border border-[#E4DDD3] bg-white p-2 text-stone-400"><X size={17} /></button></div>
+
+            <form onSubmit={handleSaveDocument} className="mt-5 space-y-4">
+              <input ref={fileInputRef} type="file" className="hidden" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => void handleFileSelect(event)} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isReadingFile} className="flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D9D1C6] bg-white px-4 py-7 text-center hover:border-[#91AA9A] disabled:opacity-60">
+                {isReadingFile ? <Loader2 size={24} className="animate-spin text-[#2E5A44]" /> : <Upload size={24} className="text-[#2E5A44]" />}
+                <p className="mt-2 text-sm font-bold text-stone-800">{pendingUpload ? pendingUpload.name : 'Seleccionar archivo'}</p>
+                <p className="mt-1 text-[11px] text-stone-400">{pendingUpload ? `${bytesLabel(pendingUpload.sizeBytes)} · SHA-256 calculado` : 'Los PDF multipágina se conservan completos.'}</p>
+              </button>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label><span className="mb-1.5 block text-[11px] font-bold text-stone-500">Nombre</span><input value={docName} onChange={(event) => setDocName(event.target.value)} className="w-full rounded-xl border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8EA796]" /></label>
+                <label><span className="mb-1.5 block text-[11px] font-bold text-stone-500">Tipo</span><select value={docType} onChange={(event) => setDocType(event.target.value as UserDocument['type'])} className="w-full rounded-xl border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none"><option value="Factura">Factura</option><option value="Trimestre">Fiscal / trimestre</option><option value="Alta">Alta / censal</option><option value="Otro">Otro</option></select></label>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsUploadModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm"
-                >
-                  Guardar en Expediente
-                </button>
-              </div>
+              <div className="flex gap-2 pt-1"><button type="button" onClick={() => setIsUploadOpen(false)} className="flex-1 rounded-xl border border-[#DDD4C8] bg-white py-2.5 text-xs font-bold text-stone-600">Cancelar</button><button type="submit" disabled={!pendingUpload || !docName.trim()} className="flex-1 rounded-xl bg-[#2E5A44] py-2.5 text-xs font-bold text-white disabled:opacity-40">Guardar</button></div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal: Previsualización de Documento / Ticket */}
-      {previewDoc && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-100 shadow-2xl space-y-4">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">{previewDoc.name}</h3>
-                <p className="text-xs text-slate-500">Registrado el {previewDoc.date}</p>
-              </div>
-              <button 
-                onClick={() => setPreviewDoc(null)}
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="min-h-[220px] max-h-[380px] overflow-auto flex items-center justify-center bg-slate-50 rounded-xl p-4 border border-slate-200">
-              {previewDoc.content ? (
-                <img 
-                  src={previewDoc.content} 
-                  alt={previewDoc.name} 
-                  className="max-h-[350px] object-contain rounded-lg shadow-sm"
-                />
+      {preview && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/70 p-3 backdrop-blur-sm" onClick={() => setPreview(null)}>
+          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-4 py-3"><div className="min-w-0"><p className="truncate text-sm font-bold text-stone-900">{preview.name}</p><p className="mt-0.5 text-[10px] text-stone-400">{preview.date} · {preview.ownerName}</p></div><button onClick={() => setPreview(null)} className="rounded-lg p-2 text-stone-400 hover:bg-stone-100"><X size={17} /></button></div>
+            <div className="min-h-[420px] flex-1 bg-[#F4F1EC] p-3">
+              {!preview.content ? (
+                <div className="flex h-[420px] flex-col items-center justify-center text-center"><AlertTriangle size={28} className="text-stone-300" /><p className="mt-3 text-sm font-semibold text-stone-600">Este registro no incluye un archivo adjunto.</p><p className="mt-1 text-xs text-stone-400">Conservamos únicamente sus datos y, cuando existe, la referencia de presentación.</p></div>
+              ) : preview.fileType === 'PDF' ? (
+                <iframe src={preview.content} title={preview.name} className="h-[70vh] w-full rounded-xl bg-white" />
               ) : (
-                <div className="text-center p-6 space-y-2">
-                  <FileText className="w-12 h-12 text-blue-600 mx-auto" />
-                  <p className="text-sm font-bold text-slate-800">Documento Oficial Certificado</p>
-                  <p className="text-xs text-slate-500">Hash SHA-256 verificado por el gestor contable.</p>
-                </div>
+                <div className="flex h-[70vh] items-center justify-center"><img src={preview.content} alt={preview.name} className="max-h-full max-w-full rounded-xl object-contain" /></div>
               )}
-            </div>
-
-            <div className="flex justify-between items-center pt-2">
-              <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                <Shield className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Copia electrónica válida ante inspección</span>
-              </span>
-              <button
-                onClick={() => handleDownloadItem(previewDoc as any)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg flex items-center gap-1.5"
-              >
-                <Download size={14} />
-                <span>Descargar</span>
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal: Report Generation Modal */}
-      {isGeneratingReport && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[24px] w-full max-w-3xl shadow-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-10 duration-300">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-[24px]">
-               <div>
-                 <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                   <FileBarChart className="text-[#2D6CDF]" />
-                   Informe Trimestral de IRPF e IVA
-                 </h3>
-                 <p className="text-sm text-gray-500">Liquidación oficial estimada para Hacienda (Modelos 130 y 303)</p>
-               </div>
-               <button onClick={() => setIsGeneratingReport(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                 <X size={20} className="text-gray-500" />
-               </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-8 bg-white">
-               <div className="border border-gray-200 p-8 rounded-xl max-w-2xl mx-auto shadow-[0_0_40px_-15px_rgba(0,0,0,0.1)]" id="printable-area">
-                  <div className="flex justify-between items-start mb-8 border-b border-gray-100 pb-6">
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900">LABORA+</h1>
-                      <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mt-1">Expediente Fiscal Oficial</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-gray-600">Borrador Informativo</p>
-                      <p className="text-xs text-gray-400">{new Date().toLocaleDateString()}</p>
-                    </div>
-                  </div>
-
-                  {/* User Info */}
-                  <div className="grid grid-cols-2 gap-8 mb-8">
-                     <div>
-                        <p className="text-xs text-gray-400 uppercase font-bold mb-1">Contribuyente</p>
-                        <p className="font-bold text-gray-800">{currentUser?.name}</p>
-                        <p className="text-sm text-gray-600">{currentUser?.email}</p>
-                        <p className="text-sm text-gray-600">NIF: {currentUser?.nif || '48192834K'}</p>
-                        <p className="text-sm text-gray-600">Epígrafe IAE: {currentUser?.iaeCode || '849.5'}</p>
-                     </div>
-                     <div className="text-right">
-                        <p className="text-xs text-gray-400 uppercase font-bold mb-1">Periodo</p>
-                        <p className="font-bold text-gray-800 text-lg">{reportQuarter}</p>
-                        <p className="text-sm text-gray-600">Estimación Directa Simplificada</p>
-                     </div>
-                  </div>
-
-                  {/* Table */}
-                  <div className="mb-8">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b-2 border-gray-100">
-                          <th className="text-left py-2 font-bold text-gray-600">Concepto</th>
-                          <th className="text-right py-2 font-bold text-gray-600">Importe</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        <tr>
-                          <td className="py-3 text-gray-700">01. Ingresos de explotación computables</td>
-                          <td className="py-3 text-right font-mono font-medium">{summary.totalIncome.toFixed(2)} €</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 text-gray-700">02. Gastos deducibles con justificante</td>
-                          <td className="py-3 text-right font-mono font-medium text-red-500">-{summary.totalExpenses.toFixed(2)} €</td>
-                        </tr>
-                        <tr className="bg-gray-50 font-bold">
-                          <td className="py-3 pl-2 text-gray-900">03. Rendimiento Neto (01 - 02)</td>
-                          <td className="py-3 pr-2 text-right font-mono text-gray-900">{summary.netProfit.toFixed(2)} €</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 text-gray-700">04. Pago fraccionado IRPF (20% s/ 03)</td>
-                          <td className="py-3 text-right font-mono font-bold text-blue-600">{summary.estimatedIRPF.toFixed(2)} €</td>
-                        </tr>
-                        <tr className="border-t-2 border-gray-900 text-lg">
-                          <td className="py-4 font-bold text-gray-900">TOTAL ESTIMADO MODELO 130</td>
-                          <td className="py-4 text-right font-bold font-mono text-gray-900">{summary.estimatedIRPF.toFixed(2)} €</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Disclaimer */}
-                  <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
-                    <p className="text-xs text-amber-800 text-center leading-relaxed">
-                      <strong>Aviso de Auditoría:</strong> Los gastos reflejados en este informe están respaldados por los tickets y fotos almacenados en tu cuenta de Labora+, listos para ser verificados por tu gestor antes de su presentación en la AEAT.
-                    </p>
-                  </div>
-               </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center rounded-b-[24px]">
-               <div className="text-xs text-gray-500 font-medium">
-                 Generado el {new Date().toLocaleString()}
-               </div>
-               <div className="flex gap-3">
-                 <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors text-gray-700">
-                   <Printer size={16} /> Imprimir / PDF
-                 </button>
-                 <button 
-                   onClick={() => {
-                     showNotification('success', 'Borrador enviado a tu gestor para validación');
-                     setIsGeneratingReport(false);
-                   }}
-                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm"
-                 >
-                   <Share2 size={16} /> Validar con Gestor
-                 </button>
-               </div>
-            </div>
+      {isReportOpen && summary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-3 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">Resumen informativo</p><h3 className="mt-1 text-lg font-bold text-stone-900">Situación fiscal estimada</h3></div><button onClick={() => setIsReportOpen(false)} className="rounded-lg p-2 text-stone-400 hover:bg-stone-100"><X size={17} /></button></div>
+            <div className="mt-5 grid grid-cols-2 gap-2"><Metric label="Ingresos registrados" value={summary.totalIncome} /><Metric label="Gastos computados" value={summary.totalExpenses} /><Metric label="Neto estimado" value={summary.netProfit} /><Metric label="Reserva IRPF orientativa" value={summary.estimatedIRPF} /></div>
+            <div className="mt-4 rounded-xl border border-[#F0DFC1] bg-[#FFF8EC] p-3 text-[11px] leading-relaxed text-[#805F2B]">Este resumen es orientativo. No equivale a una autoliquidación presentada ni sustituye la revisión de la gestoría o de la AEAT.</div>
+            <div className="mt-4 flex items-center justify-between gap-3"><div className="text-[10px] text-stone-400">NIF: {currentUser?.nif || 'No informado'} · IAE: {currentUser?.iaeCode || 'No informado'}</div><button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-xl border border-[#DDD5CA] bg-white px-3 py-2 text-xs font-bold text-stone-600"><Printer size={14} /> Imprimir</button></div>
           </div>
         </div>
       )}
     </div>
   );
 };
+
+const Metric = ({ label, value }: { label: string; value: number }) => (
+  <div className="rounded-xl border border-[#E7E0D6] bg-[#FAF8F4] p-3"><p className="text-[10px] font-semibold text-stone-400">{label}</p><p className="mt-1 text-base font-bold text-stone-900">{value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p></div>
+);
 
 export default Documents;
