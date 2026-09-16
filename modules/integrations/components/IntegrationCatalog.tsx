@@ -1,259 +1,128 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Building2, Check, CreditCard, FileText, Filter, Globe, Package, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import LogoResolver from '../../../components/LogoResolver';
 import { useCountry } from '../../../contexts/CountryContext';
 import { useData } from '../../../contexts/DataContext';
 import { IntegrationCategory, IntegrationDef } from '../../../types';
 import { useIntegrations } from '../hooks/useIntegrations';
-import LogoResolver from '../../../components/LogoResolver';
-import { Plug, Check, Plus, Search, Filter, Globe, Package, Car, Building2, CreditCard, FileText, Settings, ExternalLink, Loader2 } from 'lucide-react';
 
 export const IntegrationCatalog: React.FC = () => {
-  const { selectedCountry, countries, selectCountry } = useCountry();
+  const { selectedCountry } = useCountry();
   const { currentUser, showNotification, updateUserConfig } = useData();
-  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCat, setSelectedCat] = useState<IntegrationCategory | 'all'>('all');
-  const [installingId, setInstallingId] = useState<string | null>(null);
-  
-  // Custom hook brings data sorted by ranking and filtered by country
+
   const { integrations } = useIntegrations({
     countryCode: selectedCountry.country_code,
     category: selectedCat
   });
 
-  const categories: { id: IntegrationCategory | 'all', label: string, icon: any }[] = [
+  const categories: { id: IntegrationCategory | 'all'; label: string; icon: any }[] = [
     { id: 'all', label: 'Todas', icon: Filter },
     { id: 'delivery', label: 'Delivery', icon: Package },
-    { id: 'mobility', label: 'Movilidad', icon: Car },
+    { id: 'mobility', label: 'Movilidad', icon: SlidersHorizontal },
     { id: 'banking', label: 'Bancos', icon: Building2 },
     { id: 'payments', label: 'Pagos', icon: CreditCard },
-    { id: 'accounting', label: 'Contabilidad', icon: FileText },
+    { id: 'accounting', label: 'Contabilidad', icon: FileText }
   ];
 
-  // Client-side search filtering
-  const filtered = useMemo(() => {
-    return integrations.filter(i => 
-      i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      i.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [integrations, searchTerm]);
+  const filtered = useMemo(() => integrations.filter((integration) =>
+    integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    integration.category.toLowerCase().includes(searchTerm.toLowerCase())
+  ), [integrations, searchTerm]);
 
-  // Check if integration is already active for the current user
-  const isInstalled = (integration: IntegrationDef) => {
-    if (!currentUser) return false;
-    
-    // Normalize checking against user arrays
-    const userPlatforms = (currentUser.platforms || []).map(p => p.toLowerCase());
-    const userBanks = (currentUser.banks || []).map(b => b.toLowerCase());
-    
-    // Check by ID or Name (handling different naming conventions)
-    const idMatch = userPlatforms.includes(integration.id.toLowerCase()) || userBanks.includes(integration.id.toLowerCase());
-    const nameMatch = userPlatforms.includes(integration.name.toLowerCase()) || userBanks.includes(integration.name.toLowerCase());
-    
-    // Special check for mock data consistency
-    if (integration.id === 'uber' && userPlatforms.includes('uber eats')) return true;
-    
-    return idMatch || nameMatch;
+  const isAdded = (integration: IntegrationDef) => {
+    if (!currentUser || !['delivery', 'mobility'].includes(integration.category)) return false;
+    const platforms = (currentUser.platforms || []).map((item) => item.toLowerCase());
+    return platforms.includes(integration.id.toLowerCase()) || platforms.includes(integration.name.toLowerCase());
   };
 
-  const handleInstall = async (integration: IntegrationDef) => {
-    if (!currentUser) return;
-    setInstallingId(integration.id);
+  const handleAddPlatform = (integration: IntegrationDef) => {
+    if (!currentUser || !['delivery', 'mobility'].includes(integration.category)) return;
+    const current = currentUser.platforms || [];
+    if (isAdded(integration)) return;
+    updateUserConfig([...current, integration.name], currentUser.banks || []);
+    showNotification('success', `${integration.name} añadida a tu actividad.`);
+  };
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    try {
-      let newPlatforms = [...currentUser.platforms];
-      let newBanks = [...(currentUser.banks || [])];
-
-      if (['delivery', 'mobility'].includes(integration.category)) {
-        if (!newPlatforms.includes(integration.name)) newPlatforms.push(integration.name);
-      } else if (integration.category === 'banking') {
-        if (!newBanks.includes(integration.name)) newBanks.push(integration.name);
-      } else {
-        // Fallback for other categories
-        if (!newPlatforms.includes(integration.name)) newPlatforms.push(integration.name);
-      }
-
-      updateUserConfig(newPlatforms, newBanks);
-      showNotification('success', `Se ha conectado ${integration.name} correctamente.`);
-    } catch (error) {
-      showNotification('error', 'Error al conectar la integración.');
-    } finally {
-      setInstallingId(null);
+  const descriptionFor = (integration: IntegrationDef) => {
+    if (integration.category === 'banking') {
+      return 'La conexión de movimientos se habilitará únicamente mediante Open Banking regulado bajo PSD2.';
     }
-  };
-
-  const handleConfigure = (integration: IntegrationDef) => {
-    showNotification('info', `Abriendo configuración de ${integration.name}...`);
-    // Logic to open specific settings modal would go here
+    if (integration.category === 'delivery' || integration.category === 'mobility') {
+      return 'Añádela a tu perfil para clasificar tu actividad e ingresos. La sincronización automática todavía no está habilitada.';
+    }
+    return 'Integración API prevista. Labora+ no marcará este servicio como conectado hasta que exista una autorización real.';
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-      
-      {/* Header & Controls */}
-      <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Plug className="text-blue-600" size={24} /> Marketplace Global
-            </h2>
-            <p className="text-slate-500 mt-1 text-sm">
-              Explora {integrations.length} integraciones disponibles para <span className="font-bold text-slate-800">{selectedCountry.display_name}</span>.
-            </p>
+    <div className="mx-auto max-w-6xl space-y-5 pb-10">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Actividad</p>
+        <h1 className="mt-1 text-2xl font-bold text-stone-900">Plataformas y servicios</h1>
+        <p className="mt-1 max-w-2xl text-sm text-stone-500">Selecciona las plataformas que utilizas. Solo mostramos como conectada una integración cuando existe una autorización real.</p>
+      </header>
+
+      <section className="rounded-2xl border border-[#E3DCD2] bg-white p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative min-w-0 flex-1 sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
+            <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar plataforma o servicio" className="w-full rounded-xl border border-[#E2DBD1] bg-[#FAF8F4] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#9BB3A4]" />
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-             <div className="relative group flex-1 md:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar app, banco..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none w-full transition-all"
-                />
-             </div>
-             
-             {/* Country Quick Switcher */}
-             <select 
-               value={selectedCountry.country_code}
-               onChange={(e) => selectCountry(e.target.value)}
-               className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-             >
-               {countries.map(c => (
-                 <option key={c.country_code} value={c.country_code}>{c.country_code} - {c.display_name}</option>
-               ))}
-             </select>
-          </div>
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-stone-400"><Globe size={13} /> {selectedCountry.display_name}</span>
         </div>
 
-        {/* Categories Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCat(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
-                selectedCat === cat.id 
-                  ? 'bg-slate-900 text-white shadow-lg' 
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <cat.icon size={16} />
-              {cat.label}
-            </button>
-          ))}
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          {categories.map((category) => {
+            const Icon = category.icon;
+            return (
+              <button key={category.id} onClick={() => setSelectedCat(category.id)} className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${selectedCat === category.id ? 'bg-[#2E5A44] text-white' : 'border border-[#E3DCD2] bg-white text-stone-500'}`}>
+                <Icon size={14} /> {category.label}
+              </button>
+            );
+          })}
         </div>
-      </div>
+      </section>
 
-      {/* Grid */}
-      {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-           {filtered.map(int => {
-              const installed = isInstalled(int);
-              const isInstalling = installingId === int.id;
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((integration) => {
+          const added = isAdded(integration);
+          const selectable = integration.category === 'delivery' || integration.category === 'mobility';
+          const banking = integration.category === 'banking';
 
-              return (
-                <div key={int.id} className={`bg-white p-5 rounded-[24px] border transition-all hover:-translate-y-1 group flex flex-col justify-between h-full ${installed ? 'border-green-200 shadow-sm' : 'border-slate-200 shadow-sm hover:shadow-md'}`}>
-                   
-                   <div>
-                     <div className="flex justify-between items-start mb-4">
-                        <LogoResolver 
-                          id={int.id} 
-                          name={int.name} 
-                          domain={int.domain} 
-                          category={int.category} 
-                          size="lg"
-                          className="shadow-sm"
-                        />
-                        
-                        {int.ranking > 95 && !installed && (
-                          <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-yellow-100 flex items-center gap-1">
-                            Popular
-                          </span>
-                        )}
-                        {installed && (
-                          <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                            <Check size={14} strokeWidth={3} />
-                          </div>
-                        )}
-                     </div>
-                     
-                     <h3 className="font-bold text-lg text-slate-900 mb-1 leading-tight">{int.name}</h3>
-                     
-                     <div className="flex flex-wrap gap-2 mb-3">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                          {int.category}
-                        </span>
-                        {int.supported_countries.length === 0 ? (
-                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 flex items-center gap-1">
-                            <Globe size={10} /> Global
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-slate-400 px-1 py-1">
-                            {int.supported_countries.length > 3 ? `${int.supported_countries.slice(0,3).join(', ')}...` : int.supported_countries.join(', ')}
-                          </span>
-                        )}
-                     </div>
-                     
-                     <p className="text-xs text-slate-500 line-clamp-2 min-h-[2.5em] leading-relaxed">
-                       {int.description || `Integración oficial con ${int.name} para sincronización de datos automática y conciliación.`}
-                     </p>
-                   </div>
-                   
-                   <div className="mt-5 pt-4 border-t border-slate-50">
-                      {installed ? (
-                         <div className="flex gap-2">
-                           <button 
-                             className="flex-1 py-2.5 bg-green-50 text-green-700 border border-green-100 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-default"
-                           >
-                              Conectado
-                           </button>
-                           <button 
-                             onClick={() => handleConfigure(int)}
-                             className="w-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
-                             title="Configurar"
-                           >
-                             <Settings size={16} />
-                           </button>
-                         </div>
-                      ) : (
-                         <button 
-                           onClick={() => handleInstall(int)}
-                           disabled={isInstalling}
-                           className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-slate-200 group-hover:shadow-blue-500/20 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                         >
-                            {isInstalling ? (
-                              <Loader2 size={16} className="animate-spin" />
-                            ) : (
-                              <>
-                                <Plus size={16} /> Conectar
-                              </>
-                            )}
-                         </button>
-                      )}
-                   </div>
-                </div>
-              );
-           })}
-        </div>
-      ) : (
-        <div className="text-center py-20 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
-           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm">
-             <Search size={32} />
-           </div>
-           <h3 className="text-lg font-bold text-slate-700">No se encontraron resultados</h3>
-           <p className="text-slate-500 text-sm mt-1">Prueba con otra categoría o término de búsqueda.</p>
-           <button 
-             onClick={() => { setSearchTerm(''); setSelectedCat('all'); }}
-             className="mt-4 text-blue-600 font-bold text-sm hover:underline"
-           >
-             Limpiar filtros
-           </button>
-        </div>
+          return (
+            <article key={integration.id} className="flex min-h-[220px] flex-col rounded-2xl border border-[#E3DCD2] bg-white p-4">
+              <div className="flex items-start justify-between gap-3">
+                <LogoResolver id={integration.id} name={integration.name} domain={integration.domain} category={integration.category} size="md" />
+                {added ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF2ED] px-2.5 py-1 text-[10px] font-bold text-[#245338]"><Check size={11} /> En mi actividad</span>
+                ) : banking ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F5F2ED] px-2.5 py-1 text-[10px] font-bold text-stone-500"><ShieldCheck size={11} /> Open Banking</span>
+                ) : null}
+              </div>
+
+              <h2 className="mt-4 text-base font-bold text-stone-900">{integration.name}</h2>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-stone-400">{integration.category}</p>
+              <p className="mt-3 flex-1 text-xs leading-relaxed text-stone-500">{descriptionFor(integration)}</p>
+
+              <div className="mt-4 border-t border-[#EEE7DD] pt-3">
+                {selectable ? (
+                  <button disabled={added} onClick={() => handleAddPlatform(integration)} className={`w-full rounded-xl py-2.5 text-xs font-bold transition ${added ? 'cursor-default bg-[#F2F6F3] text-[#2E5A44]' : 'bg-[#2E5A44] text-white hover:bg-[#244936]'}`}>
+                    {added ? 'Añadida' : 'Añadir a mi actividad'}
+                  </button>
+                ) : (
+                  <button disabled className="w-full cursor-not-allowed rounded-xl border border-[#E6DFD5] bg-[#F8F5F0] py-2.5 text-xs font-bold text-stone-400">
+                    {banking ? 'Conexión segura próximamente' : 'API próximamente'}
+                  </button>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </section>
+
+      {filtered.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-[#DDD5CA] bg-white py-12 text-center text-sm text-stone-400">No hay resultados para esta búsqueda.</div>
       )}
     </div>
   );
