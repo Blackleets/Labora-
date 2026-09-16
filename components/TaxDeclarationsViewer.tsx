@@ -1,558 +1,200 @@
-import React, { useState } from 'react';
-import { 
-  FileCheck, Shield, AlertCircle, Calendar, Download, CheckCircle, 
-  ExternalLink, ArrowUpRight, Scale, Clock, FileText, ChevronRight,
-  FileSpreadsheet, X, Building2, UserCheck, Printer
+import React, { useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  Info,
+  Scale,
+  ShieldCheck,
+  UserRound,
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { SPANISH_TAX_MODELS } from '../modules/delivery/data/platforms';
 import { UserRole } from '../types';
+import { buildFiscalSnapshot } from '../services/fiscalEngine';
 
 interface TaxDeclarationsViewerProps {
   setView?: (view: string) => void;
 }
 
+const money = (value: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
+
+const downloadCsv = (filename: string, rows: string[][]) => {
+  const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  const content = rows.map((row) => row.map(escape).join(',')).join('\n');
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+};
+
+const SUPPORTED_FISCAL_YEAR = 2026;
+const today = new Date();
+const defaultQuarterNumber = today.getFullYear() === SUPPORTED_FISCAL_YEAR
+  ? Math.floor(today.getMonth() / 3) + 1
+  : 4;
+const defaultQuarter = `${defaultQuarterNumber}T ${SUPPORTED_FISCAL_YEAR}`;
+
 export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ setView }) => {
-  const { 
-    currentUser, declarations, expenses, incomes, calculateQuarterlyTaxes, 
-    fileTaxDeclaration, showNotification 
-  } = useData();
+  const { currentUser, users, incomes, expenses, showNotification } = useData();
+  const [selectedQuarter, setSelectedQuarter] = useState(defaultQuarter);
+  const [selectedClientId, setSelectedClientId] = useState('');
 
-  const [selectedQuarter, setSelectedQuarter] = useState<string>('3T 2026');
-  const [filingModalDec, setFilingModalDec] = useState<any | null>(null);
-  const [customCsvRef, setCustomCsvRef] = useState<string>('');
-  const [show036Modal, setShow036Modal] = useState<boolean>(false);
+  const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+  const eligibleClients = isManager
+    ? users.filter((user) => user.role === UserRole.RIDER && user.countryCode === 'ES')
+    : [];
 
-  const isManager = currentUser?.role === UserRole.MANAGER;
-  const riderId = currentUser?.role === UserRole.RIDER ? currentUser.id : 'u1';
+  const rider = isManager
+    ? eligibleClients.find((user) => user.id === selectedClientId) || null
+    : currentUser?.countryCode === 'ES' ? currentUser : null;
 
-  // Quarterly calculation
-  const { model130: currentCalc130, model303: currentCalc303 } = calculateQuarterlyTaxes(riderId, selectedQuarter);
+  const riderId = rider?.id || '';
+  const snapshot = useMemo(
+    () => riderId ? buildFiscalSnapshot(incomes, expenses, riderId, selectedQuarter) : null,
+    [incomes, expenses, riderId, selectedQuarter],
+  );
 
-  const userDeclarations = declarations.filter(d => d.userId === riderId);
+  const quarterExpenses = snapshot ? expenses.filter(
+    (expense) => expense.userId === riderId && expense.date >= snapshot.period.quarterStart && expense.date <= snapshot.period.quarterEnd,
+  ) : [];
+  const quarterIncomes = snapshot ? incomes.filter(
+    (income) => income.userId === riderId && income.date >= snapshot.period.quarterStart && income.date <= snapshot.period.quarterEnd,
+  ) : [];
 
-  const handleFileDeclaration = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!filingModalDec) return;
+  if (!currentUser) return null;
 
-    const ref = customCsvRef.trim() || `AEAT-${filingModalDec.modelType}-2026-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    fileTaxDeclaration(filingModalDec.id, ref);
-    setFilingModalDec(null);
-    setCustomCsvRef('');
+  const exportExpenseDraft = () => {
+    if (!snapshot || !rider) return;
+    const rows = [
+      ['BORRADOR INTERNO - NO PRESENTADO ANTE AEAT'],
+      ['Titular', rider.name],
+      ['Periodo', selectedQuarter],
+      ['Motor fiscal', snapshot.policyId],
+      [],
+      ['Fecha', 'Proveedor', 'Categoría', 'Importe', 'IVA registrado', 'Deducibilidad revisada', 'Estado', 'Evidencia'],
+      ...quarterExpenses.map((expense) => [
+        expense.date,
+        expense.merchant || '',
+        String(expense.category),
+        expense.amount.toFixed(2),
+        (expense.vatAmount || 0).toFixed(2),
+        `${expense.deductiblePercentage || 0}%`,
+        expense.status || 'pending_review',
+        expense.receiptUrl ? 'SI' : 'NO',
+      ]),
+    ];
+    downloadCsv(`Labora_Borrador_Gastos_${selectedQuarter.replace(' ', '_')}.csv`, rows);
+    showNotification('success', 'Borrador de gastos exportado. No es un justificante de presentación.');
   };
 
-  const handleDownloadProof = (dec: any) => {
-    const proofText = `
-======================================================
-AGENCIA ESTATAL DE ADMINISTRACIÓN TRIBUTARIA (AEAT)
-DOCUMENTO JUSTIFICANTE DE PRESENTACIÓN TELEMÁTICA
-======================================================
-MODELO: ${dec.modelType} - ${dec.title}
-EJERCICIO: 2026 | PERIODO: ${dec.quarter}
-TITULAR: ${currentUser?.name}
-NIF/NIE: ${currentUser?.nif || '48192834K'}
-EPÍGRAFE IAE: ${currentUser?.iaeCode || '849.5 - Servicios de mensajería y recadería'}
-RÉGIMEN: Estimación Directa Simplificada
-
-DATOS ECONÓMICOS DECLARADOS:
-- Ingresos íntegros computables: ${dec.grossIncome.toFixed(2)} €
-- Gastos fiscalmente deducibles: ${dec.deductibleExpenses.toFixed(2)} €
-- Rendimiento neto de la actividad: ${dec.netYield.toFixed(2)} €
-- Liquidación a ingresar: ${dec.taxAmount.toFixed(2)} €
-
-CÓDIGO SEGURO DE VERIFICACIÓN (CSV): ${dec.filingReference || 'AEAT-OFFICIAL-VERIFIED'}
-FECHA DE PRESENTACIÓN: ${dec.filedAt || new Date().toISOString().split('T')[0]}
-GESTOR RESPONSABLE: Gestoría Fiscal Pérez S.L. (Col. 9421)
-======================================================
-`;
-    const blob = new Blob([proofText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Justificante_${dec.modelType}_${dec.quarter}.txt`;
-    a.click();
-    showNotification('success', `Justificante oficial de ${dec.title} descargado`);
+  const exportIncomeDraft = () => {
+    if (!snapshot || !rider) return;
+    const rows = [
+      ['BORRADOR INTERNO - NO PRESENTADO ANTE AEAT'],
+      ['Titular', rider.name],
+      ['Periodo', selectedQuarter],
+      ['Motor fiscal', snapshot.policyId],
+      [],
+      ['Fecha', 'Plataforma', 'Importe registrado', 'Retención registrada'],
+      ...quarterIncomes.map((income) => [income.date, income.platform, income.amount.toFixed(2), (income.retention || 0).toFixed(2)]),
+    ];
+    downloadCsv(`Labora_Borrador_Ingresos_${selectedQuarter.replace(' ', '_')}.csv`, rows);
+    showNotification('success', 'Borrador de ingresos exportado. Revisa los datos con tu gestor.');
   };
 
-  // Export official Spanish "Libro Registro de Facturas Recibidas y Gastos" (AEAT Orden HAC/773/2019)
-  const handleExportLibroGastos = () => {
-    const userExpenses = expenses.filter(e => e.userId === riderId || !e.userId);
-    const csvHeader = 'FECHA,NUMERO_TICKET_FACTURA,PROVEEDOR,CATEGORIA,BASE_IMPONIBLE,TIPO_IVA,CUOTA_IVA,TOTAL_GASTO,ESTADO_GESTORIA,FOTO_RESPALDO\n';
-    const csvRows = userExpenses.map(e => {
-      const total = e.amount;
-      const vatRate = e.vatRate || 21;
-      const base = (total / (1 + vatRate / 100)).toFixed(2);
-      const cuota = (total - parseFloat(base)).toFixed(2);
-      const status = e.status === 'approved' ? 'VALIDADO_AEAT' : (e.status === 'rejected' ? 'RECHAZADO' : 'PENDIENTE_REVISION');
-      const hasPhoto = e.receiptUrl ? 'SI_DIGITALIZADO' : 'SIN_FOTO';
-      const merchant = `"${(e.merchant || e.notes || 'Proveedor').replace(/"/g, '""')}"`;
-      return `${e.date},${e.invoiceNumber || 'TICK-SN'},${merchant},${e.category},${base},${vatRate}%,${cuota},${total.toFixed(2)},${status},${hasPhoto}`;
-    }).join('\n');
-
-    const blob = new Blob([csvHeader + csvRows], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Libro_Registro_Gastos_AEAT_${selectedQuarter.replace(' ', '_')}.csv`;
-    a.click();
-    showNotification('success', 'Libro de Facturas y Gastos descargado en CSV oficial para Hacienda');
-  };
-
-  // Export official "Libro Registro de Ventas e Ingresos"
-  const handleExportLibroIngresos = () => {
-    const userIncomes = incomes.filter(i => i.userId === riderId || !i.userId);
-    const csvHeader = 'FECHA,PLATAFORMA_CLIENTE,IMPORTE_BRUTO,RETENCION_IRPF,IMPORTE_NETO,CONCEPTO\n';
-    const csvRows = userIncomes.map(i => {
-      const merchant = `"${(i.platform || 'Plataforma').replace(/"/g, '""')}"`;
-      const notes = `"${(i.notes || 'Reparto a domicilio').replace(/"/g, '""')}"`;
-      return `${i.date},${merchant},${i.amount.toFixed(2)},${(i.retention || 0).toFixed(2)},${((i.amount) - (i.retention || 0)).toFixed(2)},${notes}`;
-    }).join('\n');
-
-    const blob = new Blob([csvHeader + csvRows], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Libro_Registro_Ingresos_AEAT_${selectedQuarter.replace(' ', '_')}.csv`;
-    a.click();
-    showNotification('success', 'Libro de Ingresos descargado en CSV oficial');
-  };
+  if (!rider || !snapshot) {
+    return (
+      <div className="space-y-6">
+        {setView && <button onClick={() => setView('dashboard')} className="text-xs font-bold text-[#2E5A44] hover:underline">← Volver al panel</button>}
+        <section className="rounded-3xl border border-[#345947] bg-[#213B2F] p-6 text-white shadow-sm sm:p-8">
+          <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 text-[#BFD5C6]" /><div><h1 className="font-serif text-2xl font-bold">Centro fiscal España</h1><p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#D3E3D8]">Este módulo solo opera sobre perfiles España, cubre actualmente el ejercicio {SUPPORTED_FISCAL_YEAR} y nunca elige un cliente por ti.</p></div></div>
+        </section>
+        {isManager ? (
+          <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-6 shadow-sm">
+            <div className="flex items-center gap-2"><UserRound className="h-5 w-5 text-[#2E5A44]" /><h2 className="font-serif text-lg font-bold text-stone-900">Selecciona explícitamente un cliente de España</h2></div>
+            <p className="mt-2 text-xs leading-relaxed text-stone-500">Labora+ no abrirá automáticamente el primer expediente de tu cartera.</p>
+            {eligibleClients.length === 0 ? (
+              <div className="mt-5 rounded-2xl border border-dashed border-[#DFD5C6] p-8 text-center text-xs text-stone-500">No tienes clientes de España vinculados con fiscalidad guiada disponible.</div>
+            ) : (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {eligibleClients.map((client) => (
+                  <button key={client.id} onClick={() => setSelectedClientId(client.id)} className="rounded-2xl border border-[#E4DDD2] bg-white p-4 text-left transition hover:border-[#94B5A1] hover:bg-[#F2F7F3]"><p className="font-serif text-sm font-bold text-stone-900">{client.name}</p><p className="mt-1 text-[11px] text-stone-500">{client.nif || 'NIF pendiente'}{client.platforms.length ? ` · ${client.platforms.join(' · ')}` : ''}</p><span className="mt-3 inline-flex rounded-full bg-[#EDF5EF] px-2 py-1 text-[10px] font-bold text-[#2E5A44]">Abrir expediente fiscal</span></button>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className="rounded-3xl border border-sky-200 bg-sky-50 p-6 text-sm text-sky-800">La fiscalidad guiada de este build está limitada a España. Tu cuenta conserva finanzas, documentos y colaboración con asesor sin generar conclusiones fiscales locales.</section>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div id="tax-declarations-viewer" className="space-y-6 animate-in fade-in duration-300">
-      {setView && (
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setView('dashboard')}
-            className="text-xs font-serif font-bold text-[#2E5A44] hover:text-[#1F3D2E] flex items-center space-x-1"
-          >
-            <span>← Volver al Panel</span>
-          </button>
-          <div className="flex items-center space-x-2 text-xs font-serif">
-            <button
-              onClick={() => setView('money')}
-              className="text-stone-600 hover:text-stone-900 font-semibold hover:underline"
-            >
-              Auditar Gastos
-            </button>
-            <span className="text-stone-300">•</span>
-            <button
-              onClick={() => setView('gestor-requirements')}
-              className="text-stone-600 hover:text-stone-900 font-semibold hover:underline"
-            >
-              Avisos del Gestor
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {setView && <button onClick={() => setView('dashboard')} className="text-xs font-bold text-[#2E5A44] hover:underline">← Volver al panel</button>}
 
-      {/* Top Banner: Fiscal Situation (036 / 037 + RETA) */}
-      <div className="bg-[#213B2F] text-white rounded-3xl p-6 shadow-sm border border-[#345947]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center space-x-2">
-              <span className="px-3 py-1 bg-[#2F5241] text-[#D8EADB] text-xs font-serif font-semibold rounded-full border border-[#48735E] flex items-center space-x-1">
-                <CheckCircle className="w-3.5 h-3.5 text-[#A3D9B1]" />
-                <span>Situación Censal AEAT: ALTA ACTIVA</span>
-              </span>
-              <button 
-                onClick={() => setShow036Modal(true)}
-                className="px-3 py-1 bg-[#FAF7F2] hover:bg-white text-stone-800 text-xs font-serif font-semibold rounded-full border border-[#E8DFC8] flex items-center space-x-1 transition-colors"
-              >
-                <FileText className="w-3 h-3 text-[#C96846]" />
-                <span>Ver Modelo 036 / 037</span>
-              </button>
-            </div>
-            <h2 className="text-xl font-serif font-bold tracking-tight text-white">
-              Cumplimiento Tributario de Autónomos
-            </h2>
-            <p className="text-[#D3E3D8] text-xs max-w-2xl leading-relaxed">
-              Epígrafe IAE: <strong className="text-white">{currentUser?.iaeCode || '849.5 (Mensajería, recadería y reparto)'}</strong> • Régimen IRPF: <strong className="text-white">Estimación Directa Simplificada</strong> • Seguridad Social: <strong className="text-white">Tarifa Plana RETA (80€/mes)</strong>
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleExportLibroGastos}
-              className="px-3.5 py-2 bg-[#2D4E3E] hover:bg-[#39634F] text-[#F3EFE6] text-xs font-serif font-semibold rounded-xl border border-[#416854] flex items-center space-x-1.5 transition-colors shadow-sm"
-              title="Descargar Libro de Gastos y Facturas para Hacienda en CSV"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-[#FAD082]" />
-              <span>Libro Gastos (AEAT)</span>
-            </button>
-            <button
-              onClick={handleExportLibroIngresos}
-              className="px-3.5 py-2 bg-[#2D4E3E] hover:bg-[#39634F] text-[#F3EFE6] text-xs font-serif font-semibold rounded-xl border border-[#416854] flex items-center space-x-1.5 transition-colors shadow-sm"
-              title="Descargar Libro de Ingresos de plataformas en CSV"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-[#A3D9B1]" />
-              <span>Libro Ingresos</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Model Overview Catalog */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-serif font-bold uppercase tracking-wider text-stone-700 flex items-center space-x-2">
-            <Scale className="w-4 h-4 text-[#2E5A44]" />
-            <span>Modelos Tributarios Oficiales (Hacienda España)</span>
-          </h3>
-          <span className="text-xs font-serif text-stone-500">Calculados automáticamente con tus ingresos y tickets</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {SPANISH_TAX_MODELS.map((model) => (
-            <div
-              key={model.code}
-              className="bg-[#FCFAF7] rounded-2xl p-4 border border-[#E8DFC8] shadow-sm flex flex-col justify-between hover:border-[#2E5A44] transition-colors"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="px-2.5 py-0.5 bg-[#EBF3ED] text-[#245338] text-xs font-mono font-bold rounded-lg border border-[#D0E5D7]">
-                    Modelo {model.code}
-                  </span>
-                  <span className="text-[11px] font-serif font-semibold text-stone-600 bg-[#F2EDE4] px-2.5 py-0.5 rounded-full border border-[#E5DEC9]">
-                    {model.frequency}
-                  </span>
-                </div>
-                <h4 className="font-serif font-bold text-sm text-stone-900 mb-1">{model.title}</h4>
-                <p className="text-xs text-stone-600 leading-relaxed">{model.description}</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-[#E8DFC8] flex items-center justify-between text-xs">
-                <span className="text-stone-400 font-serif">Plazo límite:</span>
-                <span className="font-serif font-semibold text-stone-700">{model.deadline}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Quarterly Selector & Declarations Live Table */}
-      <div className="bg-[#FCFAF7] rounded-3xl border border-[#E8DFC8] shadow-sm overflow-hidden">
-        <div className="p-5 sm:p-6 border-b border-[#E8DFC8] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#FAF7F2]">
+      <section className="rounded-3xl border border-[#345947] bg-[#213B2F] p-6 text-white shadow-sm">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 className="text-base font-serif font-bold text-stone-900">
-              Liquidaciones Trimestrales en Tiempo Real
-            </h3>
-            <p className="text-xs text-stone-500 mt-0.5 font-serif">
-              Resultados calculados con tus tickets de combustible y facturas validadas
-            </p>
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-[#D8EADB]"><ShieldCheck className="h-4 w-4" /> Centro fiscal España · {rider.name}</div>
+            <h2 className="font-serif text-2xl font-bold">Qué tengo, qué falta y qué debe revisar el gestor</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#D3E3D8]">Labora+ organiza datos y referencias de trabajo. Una referencia matemática nunca equivale al importe a presentar o pagar, y una declaración nunca aparece como presentada sin prueba externa verificada.</p>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-serif font-semibold text-stone-600">Trimestre:</span>
-            {['1T 2026', '2T 2026', '3T 2026', '4T 2026'].map((q) => (
-              <button
-                key={q}
-                onClick={() => setSelectedQuarter(q)}
-                className={`px-3 py-1.5 text-xs font-serif font-semibold rounded-xl transition-all ${
-                  selectedQuarter === q
-                    ? 'bg-[#2E5A44] text-white shadow-sm'
-                    : 'bg-white text-stone-600 border border-[#DFD5C6] hover:bg-[#F2EDE4]'
-                }`}
-              >
-                {q}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-2">
+            {isManager && <button onClick={() => setSelectedClientId('')} className="rounded-xl border border-[#416854] bg-[#2D4E3E] px-3.5 py-2 text-xs font-semibold text-[#F3EFE6]">Cambiar cliente</button>}
+            <button onClick={exportExpenseDraft} className="flex items-center gap-2 rounded-xl border border-[#416854] bg-[#2D4E3E] px-3.5 py-2 text-xs font-semibold text-[#F3EFE6]"><FileSpreadsheet className="h-4 w-4" /> Borrador gastos</button>
+            <button onClick={exportIncomeDraft} className="flex items-center gap-2 rounded-xl border border-[#416854] bg-[#2D4E3E] px-3.5 py-2 text-xs font-semibold text-[#F3EFE6]"><Download className="h-4 w-4" /> Borrador ingresos</button>
           </div>
         </div>
+      </section>
 
-        <div className="divide-y divide-[#E8DFC8] bg-white">
-          {/* Card: Modelo 130 */}
-          <div className="p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:bg-[#FAF7F2] transition-colors">
-            <div className="space-y-2 max-w-xl">
-              <div className="flex items-center space-x-2">
-                <span className="px-2.5 py-0.5 bg-[#2E5A44] text-white font-mono text-xs font-bold rounded-lg">
-                  MOD. 130
-                </span>
-                <h4 className="text-base font-serif font-bold text-stone-900">
-                  Pago Fraccionado IRPF (20% Beneficio Neto)
-                </h4>
-                <span className="text-xs font-mono text-stone-400">({selectedQuarter})</span>
-              </div>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Anticipo a cuenta del IRPF anual calculado sobre el rendimiento neto acumulado (ingresos de plataformas menos gastos deducibles de gasolina, cuota y mantenimiento).
-              </p>
-              <div className="grid grid-cols-3 gap-3 pt-2 text-xs">
-                <div className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E8DFC8]">
-                  <p className="text-stone-400 text-[10px] uppercase font-serif font-bold">Ingresos Computables</p>
-                  <p className="text-sm font-serif font-bold text-stone-800 mt-0.5">{currentCalc130.grossIncome.toFixed(2)} €</p>
-                </div>
-                <div className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E8DFC8]">
-                  <p className="text-stone-400 text-[10px] uppercase font-serif font-bold">Gastos Justificados</p>
-                  <p className="text-sm font-serif font-bold text-stone-800 mt-0.5">{currentCalc130.deductibleExpenses.toFixed(2)} €</p>
-                </div>
-                <div className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E8DFC8]">
-                  <p className="text-stone-400 text-[10px] uppercase font-serif font-bold">Rendimiento Neto</p>
-                  <p className="text-sm font-serif font-bold text-[#2E5A44] mt-0.5">{currentCalc130.netYield.toFixed(2)} €</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 text-xs pt-1">
-                <span className="text-stone-500 font-serif">Cuota a ingresar (20%):</span>
-                <span className="text-base font-serif font-bold text-[#85531B]">
-                  {currentCalc130.taxAmount.toFixed(2)} €
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 shrink-0">
-              {userDeclarations.find(d => d.quarter === selectedQuarter && d.modelType === '130' && d.status === 'filed_with_tax_agency') ? (
-                <div className="flex items-center space-x-2">
-                  <span className="px-3 py-1 bg-[#EBF3ED] text-[#245338] text-xs font-serif font-semibold rounded-xl flex items-center space-x-1 border border-[#D0E5D7]">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    <span>Presentado en AEAT</span>
-                  </span>
-                  <button
-                    onClick={() => handleDownloadProof(userDeclarations.find(d => d.quarter === selectedQuarter && d.modelType === '130'))}
-                    className="p-2 text-stone-600 hover:text-[#2E5A44] hover:bg-[#FAF7F2] rounded-xl border border-[#DFD5C6] transition-colors"
-                    title="Descargar justificante oficial"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <span className="px-3 py-1 bg-[#FEF7EB] text-[#85531B] text-xs font-serif font-semibold rounded-xl flex items-center space-x-1 border border-[#FDE3B8]">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Borrador en Preparación</span>
-                  </span>
-                  {isManager && (
-                    <button
-                      onClick={() => setFilingModalDec(currentCalc130)}
-                      className="px-3.5 py-1.5 bg-[#2E5A44] hover:bg-[#234735] text-white text-xs font-serif font-semibold rounded-xl shadow-sm flex items-center space-x-1 transition-all"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>Presentar Declaración</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Card: Modelo 303 */}
-          <div className="p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:bg-[#FAF7F2] transition-colors">
-            <div className="space-y-2 max-w-xl">
-              <div className="flex items-center space-x-2">
-                <span className="px-2.5 py-0.5 bg-[#3A7596] text-white font-mono text-xs font-bold rounded-lg">
-                  MOD. 303
-                </span>
-                <h4 className="text-base font-serif font-bold text-stone-900">
-                  Autoliquidación Periódica del IVA (21%)
-                </h4>
-                <span className="text-xs font-mono text-stone-400">({selectedQuarter})</span>
-              </div>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                Liquidación entre el IVA repercutido a plataformas de delivery y el IVA soportado deducible de tickets de combustible con foto y gastos de actividad.
-              </p>
-              <div className="grid grid-cols-3 gap-3 pt-2 text-xs">
-                <div className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E8DFC8]">
-                  <p className="text-stone-400 text-[10px] uppercase font-serif font-bold">IVA Repercutido (21%)</p>
-                  <p className="text-sm font-serif font-bold text-stone-800 mt-0.5">
-                    {(currentCalc303.grossIncome * 0.21).toFixed(2)} €
-                  </p>
-                </div>
-                <div className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E8DFC8]">
-                  <p className="text-stone-400 text-[10px] uppercase font-serif font-bold">IVA Soportado Deducible</p>
-                  <p className="text-sm font-serif font-bold text-stone-800 mt-0.5">
-                    {(currentCalc303.deductibleExpenses * 0.21).toFixed(2)} €
-                  </p>
-                </div>
-                <div className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E8DFC8]">
-                  <p className="text-stone-400 text-[10px] uppercase font-serif font-bold">Diferencia Neta</p>
-                  <p className="text-sm font-serif font-bold text-[#3A7596] mt-0.5">{currentCalc303.taxAmount.toFixed(2)} €</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 text-xs pt-1">
-                <span className="text-stone-500 font-serif">Resultado liquidación IVA:</span>
-                <span className="text-base font-serif font-bold text-[#3A7596]">
-                  {currentCalc303.taxAmount.toFixed(2)} €
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 shrink-0">
-              {userDeclarations.find(d => d.quarter === selectedQuarter && d.modelType === '303' && d.status === 'filed_with_tax_agency') ? (
-                <div className="flex items-center space-x-2">
-                  <span className="px-3 py-1 bg-[#EBF3ED] text-[#245338] text-xs font-serif font-semibold rounded-xl flex items-center space-x-1 border border-[#D0E5D7]">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    <span>Presentado en AEAT</span>
-                  </span>
-                  <button
-                    onClick={() => handleDownloadProof(userDeclarations.find(d => d.quarter === selectedQuarter && d.modelType === '303'))}
-                    className="p-2 text-stone-600 hover:text-[#2E5A44] hover:bg-[#FAF7F2] rounded-xl border border-[#DFD5C6] transition-colors"
-                    title="Descargar justificante oficial"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <span className="px-3 py-1 bg-[#FEF7EB] text-[#85531B] text-xs font-serif font-semibold rounded-xl flex items-center space-x-1 border border-[#FDE3B8]">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Borrador en Preparación</span>
-                  </span>
-                  {isManager && (
-                    <button
-                      onClick={() => setFilingModalDec(currentCalc303)}
-                      className="px-3.5 py-1.5 bg-[#3A7596] hover:bg-[#2C5F7B] text-white text-xs font-serif font-semibold rounded-xl shadow-sm flex items-center space-x-1 transition-all"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>Presentar Declaración</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+      <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><h3 className="font-serif text-base font-bold text-stone-900">Periodo de trabajo</h3><p className="mt-1 text-xs text-stone-500">Motor verificado: {snapshot.policyId}. Solo se usan movimientos cuya fecha cae dentro del periodo.</p></div>
+          <div className="flex flex-wrap gap-2">{[1, 2, 3, 4].map((quarterNumber) => { const quarter = `${quarterNumber}T ${SUPPORTED_FISCAL_YEAR}`; return <button key={quarter} onClick={() => setSelectedQuarter(quarter)} className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${selectedQuarter === quarter ? 'bg-[#2E5A44] text-white' : 'border border-[#DFD5C6] bg-white text-stone-600'}`}>{quarter}</button>; })}</div>
         </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-4"><Metric label="Ingresos registrados" value={money(snapshot.quarter.grossIncome)} /><Metric label="Gasto deducible computado" value={money(snapshot.quarter.approvedDeductibleExpenses)} /><Metric label="Gastos pendientes" value={String(snapshot.quarter.pendingExpenseCount)} emphasis={snapshot.quarter.pendingExpenseCount > 0} /><Metric label="Gastos rechazados" value={String(snapshot.quarter.rejectedExpenseCount)} /></div>
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-[#2E5A44]" /><h3 className="font-serif font-bold">Modelo 130 · referencia estándar</h3></div><span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">NO ACCIONABLE</span></div>
+          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-amber-800">Referencia matemática, no cuota final</p><p className="mt-1 font-serif text-3xl font-bold text-stone-900">{money(snapshot.model130.standardRateReferenceAmount)}</p><p className="mt-2 text-[11px] leading-relaxed text-amber-800">No uses esta cifra para presentar, pagar ni decidir una obligación fiscal sin completar el contexto requerido.</p></div>
+          <dl className="mt-4 space-y-2 text-sm"><Line label="Ingresos acumulados" value={money(snapshot.yearToDate.grossIncome)} /><Line label="Gasto deducible computado acumulado" value={money(snapshot.yearToDate.approvedDeductibleExpenses)} /><Line label="Retenciones registradas" value={money(snapshot.yearToDate.retentionsRecorded)} /></dl>
+          <MissingInputs title="Falta antes de calcular una cuota final" items={snapshot.model130.missingInputs} />
+          <p className="mt-4 flex gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-800"><Info className="mt-0.5 h-4 w-4 shrink-0" />{snapshot.model130.explanation}</p>
+        </section>
+
+        <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Scale className="h-5 w-5 text-[#3A7596]" /><h3 className="font-serif font-bold">Modelo 303 · control de IVA</h3></div><span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-sky-700">SIN CUOTA FINAL</span></div>
+          <div className="mt-5 rounded-2xl bg-[#EEF4F7] p-4"><p className="text-xs text-stone-500">IVA soportado registrado en gasto aprobado</p><p className="mt-1 font-serif text-3xl font-bold text-stone-900">{money(snapshot.model303.deductibleInputVatRecorded)}</p></div>
+          <MissingInputs title="Falta antes de calcular una liquidación" items={snapshot.model303.missingInputs} />
+          <p className="mt-4 text-sm leading-relaxed text-stone-600">{snapshot.model303.explanation}</p>
+          <p className="mt-4 flex gap-2 rounded-2xl border border-sky-200 bg-sky-50 p-3 text-xs leading-relaxed text-sky-800"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />Labora+ no mostrará una deuda final de IVA hasta disponer de datos estructurados y evidencia suficiente.</p>
+        </section>
       </div>
 
-      {/* Modal: Presentar Declaración con Justificante CSV */}
-      {filingModalDec && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/70 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#FCFAF7] rounded-3xl shadow-2xl max-w-md w-full p-6 border border-[#E8DFC8]">
-            <h3 className="text-base font-serif font-bold text-stone-900 mb-1">
-              Confirmar Presentación en Agencia Tributaria
-            </h3>
-            <p className="text-xs text-stone-500 mb-4 font-serif">
-              Registra el código de justificante o CSV devuelto por la sede electrónica de Hacienda al presentar el {filingModalDec.title}.
-            </p>
-
-            <form onSubmit={handleFileDeclaration} className="space-y-4">
-              <div>
-                <label className="block text-xs font-serif font-bold text-stone-700 mb-1">
-                  Código Seguro de Verificación (CSV / Justificante)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej. AEAT-130-2026-981245X"
-                  value={customCsvRef}
-                  onChange={(e) => setCustomCsvRef(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono border border-[#E3DBD0] rounded-xl focus:ring-2 focus:ring-[#2E5A44] focus:outline-none bg-white text-stone-900"
-                />
-                <p className="text-[11px] text-stone-400 mt-1 font-serif">
-                  Si se deja vacío, el sistema generará un código de verificación estándar.
-                </p>
-              </div>
-
-              <div className="bg-[#FAF7F2] p-3 rounded-2xl border border-[#E8DFC8] text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-stone-500 font-serif">Modelo:</span>
-                  <span className="font-serif font-bold text-stone-800">{filingModalDec.modelType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500 font-serif">Periodo:</span>
-                  <span className="font-serif font-bold text-stone-800">{filingModalDec.quarter}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500 font-serif">Total liquidación:</span>
-                  <span className="font-serif font-bold text-[#85531B]">{filingModalDec.taxAmount.toFixed(2)} €</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setFilingModalDec(null)}
-                  className="px-4 py-2 text-xs font-serif font-semibold text-stone-600 hover:bg-[#FAF7F2] rounded-xl border border-[#DFD5C6] transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-[#2E5A44] hover:bg-[#234735] text-white text-xs font-serif font-semibold rounded-xl shadow-sm transition-all"
-                >
-                  Registrar Presentación
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Ficha Censal Modelo 036 / 037 */}
-      {show036Modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/70 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#FCFAF7] rounded-3xl shadow-2xl max-w-xl w-full p-6 border border-[#E8DFC8] space-y-4">
-            <div className="flex items-start justify-between border-b border-[#E8DFC8] pb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2.5 bg-[#EBF3ED] text-[#245338] rounded-2xl border border-[#D0E5D7]">
-                  <FileCheck className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-base font-serif font-bold text-stone-900">
-                    Ficha Censal Oficial (Modelo 036 / 037)
-                  </h3>
-                  <p className="text-xs text-stone-500 font-serif">
-                    Declaración censal de comienzo de actividad en la Agencia Tributaria
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShow036Modal(false)}
-                className="p-1 text-stone-400 hover:text-stone-600 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white p-3.5 rounded-2xl border border-[#E8DFC8] shadow-sm">
-                  <span className="text-stone-400 block text-[10px] uppercase font-serif font-bold">Titular Autónomo</span>
-                  <span className="font-serif font-bold text-stone-800 text-sm mt-0.5 block">{currentUser?.name}</span>
-                </div>
-                <div className="bg-white p-3.5 rounded-2xl border border-[#E8DFC8] shadow-sm">
-                  <span className="text-stone-400 block text-[10px] uppercase font-serif font-bold">NIF / NIE</span>
-                  <span className="font-mono font-bold text-stone-800 text-sm mt-0.5 block">{currentUser?.nif || '48192834K'}</span>
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-[#E8DFC8] space-y-2.5 shadow-sm">
-                <div className="flex justify-between">
-                  <span className="text-stone-500 font-serif">Epígrafe IAE:</span>
-                  <span className="font-serif font-bold text-stone-800">849.5 - Servicios de mensajería y reparto</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500 font-serif">Método Determinación IRPF:</span>
-                  <span className="font-serif font-bold text-stone-800">Estimación Directa Simplificada (Mod. 130)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500 font-serif">Régimen IVA:</span>
-                  <span className="font-serif font-bold text-stone-800">Régimen General (Mod. 303 - 21%)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500 font-serif">Seguridad Social:</span>
-                  <span className="font-serif font-bold text-[#2E5A44]">RETA - Tarifa Plana 80€/mes</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-500 font-serif">Vehículo Afecto:</span>
-                  <span className="font-serif font-bold text-stone-800">{currentUser?.vehicleType?.toUpperCase() || 'MOTO'} ({currentUser?.vehiclePlate || '4521 LBR'})</span>
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-[#EBF3ED] text-[#245338] rounded-2xl border border-[#D0E5D7] flex items-start space-x-2">
-                <Shield className="w-4 h-4 text-[#2E5A44] shrink-0 mt-0.5" />
-                <p className="text-[11px] font-serif leading-relaxed">
-                  Alta censal validada telemáticamente. Todos los tickets de combustible, revisiones y telefonía asociados al epígrafe 849.5 son computables como gasto deducible.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-[#E8DFC8]">
-              <button
-                type="button"
-                onClick={() => setShow036Modal(false)}
-                className="px-4 py-2 bg-[#2E5A44] hover:bg-[#234735] text-white text-xs font-serif font-semibold rounded-xl transition-all shadow-sm"
-              >
-                Cerrar Ficha
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <section className="rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm">
+        <div className="mb-3 flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-[#2E5A44]" /><h3 className="font-serif font-bold">Control de calidad del trimestre</h3></div>
+        <div className="space-y-2">{snapshot.dataQuality.warnings.length === 0 ? <div className="rounded-xl bg-[#EEF5F0] px-3 py-2.5 text-xs text-[#2E5A44]">No hay avisos de calidad detectados para este periodo.</div> : snapshot.dataQuality.warnings.map((warning) => <div key={warning} className="flex items-start gap-2 rounded-xl bg-[#F7F3EC] px-3 py-2.5 text-xs text-stone-700"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#C96846]" />{warning}</div>)}</div>
+      </section>
     </div>
   );
 };
+
+const MissingInputs: React.FC<{ title: string; items: readonly string[] }> = ({ title, items }) => (
+  <div className="mt-4 rounded-2xl border border-[#E8DFC8] bg-white p-3.5">
+    <p className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{title}</p>
+    <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-stone-700">
+      {items.map((item) => <li key={item} className="flex items-start gap-2"><span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#C96846]" />{item}</li>)}
+    </ul>
+  </div>
+);
+
+const Metric: React.FC<{ label: string; value: string; emphasis?: boolean }> = ({ label, value, emphasis }) => <div className={`rounded-2xl border p-4 ${emphasis ? 'border-amber-200 bg-amber-50' : 'border-[#E8DFC8] bg-white'}`}><p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">{label}</p><p className="mt-1 font-serif text-xl font-bold text-stone-900">{value}</p></div>;
+const Line: React.FC<{ label: string; value: string }> = ({ label, value }) => <div className="flex items-center justify-between gap-3"><dt className="text-stone-500">{label}</dt><dd className="font-semibold text-stone-900">{value}</dd></div>;
