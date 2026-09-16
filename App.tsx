@@ -7,6 +7,7 @@ import {
   EyeOff,
   Fuel,
   LayoutDashboard,
+  Loader2,
   Menu,
   Plus,
   Scale,
@@ -37,6 +38,18 @@ import { PeopleHub } from './modules/core/hubs/PeopleHub';
 import { MessagesHub } from './modules/messages/components/MessagesHub';
 import { IntegrationCatalog } from './modules/integrations/components/IntegrationCatalog';
 
+const SessionBootstrap: React.FC = () => (
+  <main className="flex min-h-screen items-center justify-center bg-[#F4EFE5] px-6 text-stone-800">
+    <div className="w-full max-w-sm rounded-[2rem] border border-[#DFD5C6] bg-[#FCFAF7] p-7 text-center shadow-[0_24px_80px_rgba(64,52,39,.10)]">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EAF2EB] text-[#2E5A44]">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+      <h1 className="mt-4 font-serif text-lg font-bold text-stone-900">Abriendo tu espacio privado</h1>
+      <p className="mt-2 text-xs leading-relaxed text-stone-500">Estamos validando tu sesión y tus permisos antes de mostrar datos. Labora+ no enseña una identidad provisional mientras termina esta comprobación.</p>
+    </div>
+  </main>
+);
+
 const MainLayout: React.FC = () => {
   const {
     currentUser,
@@ -45,12 +58,14 @@ const MainLayout: React.FC = () => {
     requirements,
     privacyMode,
     togglePrivacyMode,
+    isLoading,
   } = useData();
   const { palette } = useGhibliAtmosphere();
   const [currentView, setView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isGlobalGasModalOpen, setIsGlobalGasModalOpen] = useState(false);
 
+  if (isLoading) return <SessionBootstrap />;
   if (!currentUser) return <Login />;
   if (currentUser.role === UserRole.RIDER && !hasOnboarded) return <Onboarding onFinish={completeOnboarding} />;
 
