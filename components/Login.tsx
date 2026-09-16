@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, Bike, Briefcase, Globe2, Leaf, Lock, Mail, ShieldCheck, User as UserIcon } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { getSupabase } from '../services/supabaseClient';
 import { UserRole } from '../types';
 import { MARKET_PROFILES, getMarketProfile } from '../modules/country-config/marketProfiles';
 import Logo from './Logo';
 
 const Login: React.FC = () => {
-  const { login, registerUser, backendConfigured, showNotification } = useData();
+  const { login, refreshData, backendConfigured, showNotification } = useData();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [role, setRole] = useState<UserRole>(UserRole.RIDER);
   const [countryCode, setCountryCode] = useState('ES');
@@ -44,15 +45,30 @@ const Login: React.FC = () => {
       if (mode === 'login') {
         await login(email, password);
       } else {
-        await registerUser({
-          name: name.trim(),
+        const accountKind = role === UserRole.MANAGER ? 'manager' : 'rider';
+        const { data, error: signUpError } = await getSupabase().auth.signUp({
           email: email.trim(),
-          role,
-          platforms: [],
-          banks: [],
-          countryCode,
-          companyName: role === UserRole.MANAGER ? name.trim() : undefined,
-        }, password);
+          password,
+          options: {
+            data: {
+              full_name: name.trim(),
+              account_kind: accountKind,
+              country_code: countryCode,
+            },
+          },
+        });
+        if (signUpError) throw signUpError;
+        if (!data.user) throw new Error('No se pudo crear la cuenta.');
+
+        if (!data.session) {
+          showNotification('info', 'Cuenta creada. Confirma tu correo y después inicia sesión. Tu país ya quedó asociado al alta.');
+          setMode('login');
+          setPassword('');
+          setConfirmPassword('');
+        } else {
+          await refreshData();
+          showNotification('success', 'Cuenta creada. Tu espacio privado se está preparando.');
+        }
       }
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'No se pudo completar la operación.';
