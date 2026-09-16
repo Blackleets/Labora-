@@ -1,5 +1,15 @@
 import React, { useRef, useState } from 'react';
-import { AlertTriangle, Camera, CheckCircle2, Fuel, Loader2, ShieldCheck, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Camera,
+  CheckCircle2,
+  ChevronDown,
+  FileImage,
+  Fuel,
+  Loader2,
+  ShieldCheck,
+  X
+} from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { ExpenseCategory } from '../types';
 import { GAS_STATION_PRESETS } from '../modules/delivery/data/platforms';
@@ -12,7 +22,9 @@ interface GasStationCaptureModalProps {
 
 const hashBuffer = async (buffer: ArrayBuffer) => {
   const digest = await crypto.subtle.digest('SHA-256', buffer);
-  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 };
 
 const readAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
@@ -26,7 +38,7 @@ const readAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
 
 export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ isOpen, onClose }) => {
   const { addExpense, expenses, vehicle, currentUser, showNotification } = useData();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [selectedStation, setSelectedStation] = useState('');
   const [customStation, setCustomStation] = useState('');
@@ -47,6 +59,7 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
   const merchant = selectedStation === 'Otro' ? customStation.trim() : selectedStation.trim();
   const amount = Number(totalAmount || 0);
   const confidencePct = ocr ? Math.round(ocr.confidence * 100) : null;
+  const canSave = Boolean(previewImage && receiptHash && merchant && date && Number.isFinite(amount) && amount > 0 && !isProcessing);
 
   const resetImage = () => {
     setPreviewImage(null);
@@ -56,17 +69,18 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
   };
 
   const handleImageCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const input = event.currentTarget;
+    const file = input.files?.[0];
     if (!file || !currentUser) return;
 
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       showNotification('error', 'Usa una foto JPG, PNG o WebP.');
-      event.target.value = '';
+      input.value = '';
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
       showNotification('error', 'La foto supera el límite de 10 MB.');
-      event.target.value = '';
+      input.value = '';
       return;
     }
 
@@ -88,6 +102,7 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
       setReceiptHash(hash);
       setReceiptMimeType(file.type);
       setOcr(null);
+      window.setTimeout(() => contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' }), 60);
 
       try {
         const base64 = dataUrl.split(',')[1] || '';
@@ -112,20 +127,20 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
         showNotification(
           analysis.needsReview ? 'info' : 'success',
           analysis.needsReview
-            ? `OCR ${pct}%: revisa los campos antes de guardar.`
-            : `OCR ${pct}%: confirma los datos antes de guardar.`
+            ? `Ticket leído al ${pct}%. Revisa los campos marcados.`
+            : `Ticket leído al ${pct}%. Confirma los datos antes de guardar.`
         );
       } catch (ocrError) {
         console.warn('OCR unavailable or failed:', ocrError);
-        showNotification('info', 'Foto guardada. OCR no disponible: completa los datos manualmente.');
+        showNotification('info', 'La foto quedó cargada. Completa los datos manualmente.');
       }
     } catch (error) {
       console.error(error);
       resetImage();
-      showNotification('error', 'No se pudo procesar la foto.');
+      showNotification('error', 'No se pudo procesar la foto. Prueba de nuevo o elige la imagen desde la galería.');
     } finally {
       setIsProcessing(false);
-      event.target.value = '';
+      input.value = '';
     }
   };
 
@@ -134,7 +149,7 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
     if (!currentUser) return;
 
     if (!previewImage || !receiptHash) {
-      showNotification('error', 'Adjunta una foto real del ticket.');
+      showNotification('error', 'Primero toma una foto o elige el ticket desde la galería.');
       return;
     }
     if (!merchant) {
@@ -181,103 +196,136 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
       status: 'pending_review'
     });
 
-    showNotification('success', 'Repostaje guardado pendiente de revisión de gestoría.');
+    showNotification('success', 'Repostaje guardado y enviado a revisión.');
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#18211C]/60 p-3 backdrop-blur-sm">
-      <div className="my-6 w-full max-w-2xl overflow-hidden rounded-[28px] border border-[#E3DBD0] bg-[#FFFDF9] shadow-2xl">
-        <header className="relative overflow-hidden bg-[#214E3A] p-5 text-white sm:p-6">
-          <div className="absolute -right-12 -top-16 h-40 w-40 rounded-full bg-[#F1C56B]/15" />
-          <div className="relative flex items-start justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border border-white/12 bg-white/10 text-[#F1C56B]"><Fuel size={22} /></div>
-              <div>
-                <p className="labora-kicker text-white/55">Gasto con justificante</p>
-                <h2 className="mt-1 text-lg font-extrabold">Registrar repostaje</h2>
-                <p className="mt-1 max-w-xl text-xs leading-relaxed text-white/70">
-                  Fotografía el ticket real. La IA puede sugerir datos, pero no determina IVA ni deducibilidad.
-                </p>
+    <div className="fixed inset-0 z-50 bg-[#18211C]/65 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4">
+      <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#FFFDF9] sm:h-auto sm:max-h-[92dvh] sm:max-w-2xl sm:rounded-[28px] sm:border sm:border-[#E3DBD0] sm:shadow-2xl">
+        <header className="relative shrink-0 overflow-hidden bg-[#214E3A] px-4 py-4 text-white sm:px-6 sm:py-5">
+          <div className="absolute -right-10 -top-14 h-36 w-36 rounded-full bg-[#52AA83]/20" />
+          <div className="relative flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-white/10 text-[#F1C56B]"><Fuel size={20} /></div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/55">Repostaje</p>
+                <h2 className="truncate text-lg font-extrabold">Añadir ticket</h2>
               </div>
             </div>
-            <button type="button" onClick={onClose} className="rounded-xl bg-white/10 p-2 hover:bg-white/15" aria-label="Cerrar"><X size={18} /></button>
+            <button type="button" onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10" aria-label="Cerrar"><X size={18} /></button>
           </div>
         </header>
 
-        <form onSubmit={handleSave} className="space-y-5 p-4 sm:p-6">
-          <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="hidden" onChange={(event) => void handleImageCapture(event)} />
+        <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col">
+          <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+            <input id="labora-fuel-camera" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="sr-only" onChange={(event) => void handleImageCapture(event)} />
+            <input id="labora-fuel-gallery" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => void handleImageCapture(event)} />
 
-          <section className="rounded-[18px] border-2 border-dashed border-[#DDD4C8] bg-[#FAF7F1] p-4 text-center">
-            {previewImage ? (
-              <div>
-                <div className="relative mx-auto max-w-sm overflow-hidden rounded-[15px] border border-[#E3DBD0] bg-white">
-                  <img src={previewImage} alt="Ticket real de repostaje" className="max-h-64 w-full object-contain" />
-                  <button type="button" onClick={resetImage} className="absolute right-2 top-2 rounded-full bg-stone-900/75 p-1.5 text-white" aria-label="Eliminar foto"><X size={15} /></button>
+            {!previewImage ? (
+              <section className="rounded-[22px] border border-[#D9E4DD] bg-[#F3F8F5] p-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-white text-[#214E3A] shadow-sm">
+                  {isProcessing ? <Loader2 size={27} className="animate-spin" /> : <Camera size={27} />}
                 </div>
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-3 text-xs font-extrabold text-[#D66C47]">Cambiar foto</button>
-              </div>
+                <div className="mt-3 text-center">
+                  <h3 className="text-base font-extrabold text-[#1E231F]">Primero, añade el ticket</h3>
+                  <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-stone-500">Haz una foto clara o usa una imagen que ya tengas. Después podrás revisar lo que detecte la IA.</p>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2.5">
+                  <label htmlFor="labora-fuel-camera" className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-[#D66C47] px-3 py-3 text-sm font-extrabold text-white ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
+                    <Camera size={17} /> Tomar foto
+                  </label>
+                  <label htmlFor="labora-fuel-gallery" className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-[#D7DED9] bg-white px-3 py-3 text-sm font-extrabold text-[#214E3A] ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
+                    <FileImage size={17} /> Galería
+                  </label>
+                </div>
+                <p className="mt-3 text-center text-[10px] text-stone-400">JPG, PNG o WebP · máximo 10 MB</p>
+              </section>
             ) : (
-              <button type="button" disabled={isProcessing} onClick={() => fileInputRef.current?.click()} className="flex w-full flex-col items-center py-6 disabled:opacity-60">
-                {isProcessing ? <Loader2 size={26} className="animate-spin text-[#D66C47]" /> : <Camera size={26} className="text-[#D66C47]" />}
-                <span className="mt-2 text-sm font-extrabold text-[#1E231F]">Tomar foto o elegir ticket</span>
-                <span className="mt-1 text-[11px] text-stone-400">JPG, PNG o WebP · máximo 10 MB · sin tickets demo</span>
-              </button>
+              <section className="rounded-[20px] border border-[#D9E4DD] bg-[#F3F8F5] p-3">
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => window.open(previewImage, '_blank')} className="h-24 w-20 shrink-0 overflow-hidden rounded-[14px] border border-[#D6DED8] bg-white">
+                    <img src={previewImage} alt="Ticket cargado" className="h-full w-full object-cover" />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 text-[#214E3A]"><CheckCircle2 size={16} /><p className="text-sm font-extrabold">Ticket cargado</p></div>
+                    <p className="mt-1 text-xs leading-relaxed text-stone-500">Toca la miniatura para verlo grande. Puedes reemplazarlo antes de guardar.</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <label htmlFor="labora-fuel-camera" className="cursor-pointer rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-[#D66C47] shadow-sm">Nueva foto</label>
+                      <label htmlFor="labora-fuel-gallery" className="cursor-pointer rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-[#214E3A] shadow-sm">Cambiar imagen</label>
+                      <button type="button" onClick={resetImage} className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-stone-400">Quitar</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
             )}
-          </section>
 
-          {ocr && (
-            <section className={`rounded-[14px] border p-3.5 ${ocr.needsReview ? 'border-[#EACFA9] bg-[#FFF8EC]' : 'border-[#CFE7D7] bg-[#ECF7F0]'}`}>
-              <div className="flex items-center gap-2">
-                {ocr.needsReview ? <AlertTriangle size={16} className="text-[#9A672C]" /> : <CheckCircle2 size={16} className="text-[#24613F]" />}
-                <p className="text-xs font-extrabold text-[#1E231F]">OCR · confianza {confidencePct}%</p>
+            {isProcessing && (
+              <div className="mt-3 flex items-center gap-2 rounded-[14px] border border-[#DCE5DF] bg-white px-3 py-3 text-xs font-bold text-stone-600">
+                <Loader2 size={15} className="animate-spin text-[#52AA83]" /> Leyendo el ticket…
               </div>
-              <p className="mt-1 text-[11px] leading-relaxed text-stone-600">
-                {ocr.needsReview ? 'Hay datos dudosos. Comprueba el ticket antes de guardar.' : 'La lectura es de alta confianza, pero debes confirmar los campos.'}
-              </p>
-              {ocr.uncertainFields.length > 0 && <p className="mt-1 text-[10px] text-stone-500">Revisar: {ocr.uncertainFields.join(', ')}</p>}
+            )}
+
+            {ocr && (
+              <section className={`mt-3 rounded-[14px] border p-3.5 ${ocr.needsReview ? 'border-[#EACFA9] bg-[#FFF8EC]' : 'border-[#BFDCCD] bg-[#EEF8F3]'}`}>
+                <div className="flex items-center gap-2">
+                  {ocr.needsReview ? <AlertTriangle size={16} className="text-[#9A672C]" /> : <CheckCircle2 size={16} className="text-[#2F6B50]" />}
+                  <p className="text-xs font-extrabold text-[#1E231F]">Lectura IA · confianza {confidencePct}%</p>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-600">{ocr.needsReview ? 'Comprueba los datos antes de guardar.' : 'La lectura parece clara; confirma los datos igualmente.'}</p>
+                {ocr.uncertainFields.length > 0 && <p className="mt-1 text-[10px] text-stone-500">Campos dudosos: {ocr.uncertainFields.join(', ')}</p>}
+              </section>
+            )}
+
+            <section className="mt-5 space-y-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-extrabold text-stone-600">Gasolinera</label>
+                <select value={selectedStation} onChange={(event) => { setSelectedStation(event.target.value); if (event.target.value !== 'Otro') setCustomStation(''); }} className="field-input">
+                  <option value="">Selecciona una gasolinera</option>
+                  {GAS_STATION_PRESETS.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
+                  <option value="Otro">Otra</option>
+                </select>
+                {selectedStation === 'Otro' && <input value={customStation} onChange={(event) => setCustomStation(event.target.value)} placeholder="Nombre que aparece en el ticket" className="field-input mt-2" />}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Importe total"><div className="relative"><input type="number" min="0" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className="field-input pr-8" placeholder="0,00" /><span className="absolute right-3 top-3 text-sm text-stone-400">€</span></div></Field>
+                <Field label="Fecha"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="field-input" /></Field>
+              </div>
             </section>
-          )}
 
-          <section>
-            <label className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.1em] text-stone-500">Gasolinera</label>
-            <div className="flex flex-wrap gap-2">
-              {GAS_STATION_PRESETS.map((preset) => (
-                <button key={preset.name} type="button" onClick={() => { setSelectedStation(preset.name); setCustomStation(''); }} className={`rounded-[12px] border px-3 py-2 text-xs font-bold transition ${selectedStation === preset.name ? 'border-[#D66C47] bg-[#F8EDE7] text-[#A84F34]' : 'border-[#DFD5C6] bg-white text-stone-600 hover:bg-[#FAF7F1]'}`}>{preset.name}</button>
-              ))}
-              <button type="button" onClick={() => setSelectedStation('Otro')} className={`rounded-[12px] border px-3 py-2 text-xs font-bold transition ${selectedStation === 'Otro' ? 'border-[#D66C47] bg-[#F8EDE7] text-[#A84F34]' : 'border-[#DFD5C6] bg-white text-stone-600 hover:bg-[#FAF7F1]'}`}>Otra</button>
-            </div>
-            {selectedStation === 'Otro' && <input value={customStation} onChange={(event) => setCustomStation(event.target.value)} placeholder="Nombre exacto que aparece en el ticket" className="mt-2 w-full rounded-[13px] border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" />}
-          </section>
+            <details className="mt-4 rounded-[16px] border border-[#E5DED4] bg-white">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-extrabold text-stone-700">
+                Detalles opcionales <ChevronDown size={16} className="text-stone-400" />
+              </summary>
+              <div className="grid gap-3 border-t border-[#EEE8DF] p-4 sm:grid-cols-2">
+                <Field label="Litros"><input type="number" min="0" step="0.01" value={fuelLitres} onChange={(event) => setFuelLitres(event.target.value)} placeholder="Solo si los confirmas" className="field-input" /></Field>
+                <Field label="Combustible"><select value={fuelType} onChange={(event) => setFuelType(event.target.value)} className="field-input"><option value="">Sin especificar</option><option value="Gasolina 95">Gasolina 95</option><option value="Gasolina 98">Gasolina 98</option><option value="Diésel / Gasóleo A">Diésel / Gasóleo A</option><option value="GLP Autogas">GLP Autogas</option><option value="Electricidad / Carga">Electricidad / Carga</option></select></Field>
+                <Field label="Matrícula"><input value={plate} onChange={(event) => setPlate(event.target.value)} placeholder="Opcional" className="field-input uppercase" /></Field>
+                <Field label="Notas"><input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Opcional" className="field-input" /></Field>
+              </div>
+            </details>
 
-          <section className="grid gap-3 sm:grid-cols-2">
-            <Field label="Importe total"><div className="relative"><input type="number" min="0" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className="field-input pr-8" /><span className="absolute right-3 top-2.5 text-sm text-stone-400">€</span></div></Field>
-            <Field label="Fecha del ticket"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="field-input" /></Field>
-            <Field label="Litros · solo si los confirmas"><input type="number" min="0" step="0.01" value={fuelLitres} onChange={(event) => setFuelLitres(event.target.value)} placeholder="Opcional" className="field-input" /></Field>
-            <Field label="Combustible"><select value={fuelType} onChange={(event) => setFuelType(event.target.value)} className="field-input"><option value="">Sin especificar</option><option value="Gasolina 95">Gasolina 95</option><option value="Gasolina 98">Gasolina 98</option><option value="Diésel / Gasóleo A">Diésel / Gasóleo A</option><option value="GLP Autogas">GLP Autogas</option><option value="Electricidad / Carga">Electricidad / Carga</option></select></Field>
-            <Field label="Matrícula"><input value={plate} onChange={(event) => setPlate(event.target.value)} placeholder="Opcional" className="field-input uppercase" /></Field>
-            <Field label="Notas"><input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Opcional" className="field-input" /></Field>
-          </section>
-
-          <section className="rounded-[14px] border border-[#D7E5DC] bg-[#F1F7F3] p-3.5">
-            <div className="flex items-center gap-2 text-xs font-extrabold text-[#214E3A]"><ShieldCheck size={15} /> Revisión antes de computar</div>
-            <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
-              Al guardar: IVA 0% y deducibilidad 0%. La gestoría deberá revisar el justificante antes de que el gasto aporte al cálculo fiscal.
-            </p>
-          </section>
-
-          <div className="flex justify-end gap-2 border-t border-[#E8E1D7] pt-4">
-            <button type="button" onClick={onClose} className="rounded-[13px] border border-[#DDD4C8] bg-white px-4 py-2.5 text-xs font-extrabold text-stone-600">Cancelar</button>
-            <button type="submit" disabled={isProcessing} className="inline-flex items-center gap-2 rounded-[13px] bg-[#214E3A] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#183D2D] disabled:opacity-50"><CheckCircle2 size={15} /> Guardar para revisión</button>
+            <section className="mt-4 rounded-[14px] border border-[#D7E5DC] bg-[#F1F7F3] p-3.5">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-[#214E3A]"><ShieldCheck size={15} /> Pendiente de revisión</div>
+              <p className="mt-1 text-[11px] leading-relaxed text-stone-500">Guardar el ticket no lo convierte automáticamente en gasto deducible. Entra con IVA y deducibilidad a 0 hasta revisión.</p>
+            </section>
           </div>
+
+          <footer className="shrink-0 border-t border-[#E8E1D7] bg-[#FFFDF9]/95 px-4 py-3 backdrop-blur sm:px-6">
+            <button type="submit" disabled={!canSave} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#183D2D] disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400">
+              {isProcessing ? <Loader2 size={17} className="animate-spin" /> : <CheckCircle2 size={17} />} Guardar para revisión
+            </button>
+            {!previewImage && <p className="mt-1.5 text-center text-[10px] text-stone-400">Primero añade una foto del ticket.</p>}
+          </footer>
         </form>
 
-        <style>{`.field-input{width:100%;border:1px solid #DED7CC;background:#fff;border-radius:13px;padding:.65rem .75rem;font-size:.875rem;outline:none}.field-input:focus{border-color:#789582;box-shadow:0 0 0 2px rgba(221,233,225,.7)}`}</style>
+        <style>{`.field-input{width:100%;min-height:46px;border:1px solid #DED7CC;background:#fff;border-radius:13px;padding:.7rem .8rem;font-size:.9rem;outline:none}.field-input:focus{border-color:#52AA83;box-shadow:0 0 0 3px rgba(82,170,131,.14)}summary::-webkit-details-marker{display:none}`}</style>
       </div>
     </div>
   );
 };
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <label><span className="mb-1.5 block text-[11px] font-extrabold text-stone-500">{label}</span>{children}</label>
+  <label><span className="mb-1.5 block text-xs font-extrabold text-stone-600">{label}</span>{children}</label>
 );
