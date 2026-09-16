@@ -16,6 +16,7 @@ import {
 import { useData } from '../contexts/DataContext';
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { UserRole } from '../types';
+import { getMarketProfile } from '../modules/country-config/marketProfiles';
 import Logo from './Logo';
 
 interface SidebarProps {
@@ -37,6 +38,8 @@ type NavSection = { section: string };
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currentUser, logout, requirements } = useData();
   const { palette } = useGhibliAtmosphere();
+  const market = getMarketProfile(currentUser?.countryCode);
+  const fiscalEnabled = market.fiscalEngineStatus === 'verified';
 
   const pendingReqCount = requirements.filter((requirement) => {
     if (requirement.status !== 'pending') return false;
@@ -48,21 +51,21 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
     { id: 'dashboard', label: 'Panel', icon: Compass },
     { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount },
     { id: 'money', label: 'Ingresos y gastos', icon: Coins },
-    { id: 'tax-declarations', label: 'Revisión fiscal', icon: ScrollText },
+    ...(fiscalEnabled ? [{ id: 'tax-declarations', label: 'Revisión fiscal', icon: ScrollText } as NavItem] : []),
     { id: 'docs', label: 'Documentos', icon: BookOpen },
     { section: 'Clientes' },
-    { id: 'people', label: 'Autónomos vinculados', icon: Users },
+    { id: 'people', label: 'Trabajadores vinculados', icon: Users },
     { id: 'messages', label: 'Mensajes', icon: MessageCircle },
     { section: 'Cuenta' },
     { id: 'settings', label: 'Ajustes', icon: Sliders },
   ];
 
-  const riderItems: Array<NavItem | NavSection> = [
+  const workerItems: Array<NavItem | NavSection> = [
     { section: 'Mi trabajo' },
     { id: 'dashboard', label: 'Inicio', icon: Compass },
     { id: 'money', label: 'Mi dinero', icon: Coins },
     { id: 'gestor-requirements', label: 'Mi gestor', icon: Bell, badge: pendingReqCount },
-    { id: 'tax-declarations', label: 'Mis impuestos', icon: ScrollText },
+    ...(fiscalEnabled ? [{ id: 'tax-declarations', label: 'Mis impuestos', icon: ScrollText } as NavItem] : []),
     { id: 'docs', label: 'Mis documentos', icon: BookOpen },
     { id: 'messages', label: 'Mensajes', icon: MessageCircle },
     { section: 'Cuenta' },
@@ -70,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   ];
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
-  const menuItems = isManager ? managerItems : riderItems;
+  const menuItems = isManager ? managerItems : workerItems;
 
   const handleNavClick = (viewId: string) => {
     setView(viewId);
@@ -92,7 +95,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
           </button>
         </div>
 
-        <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-6">
+        <div className="mx-4 mt-4 rounded-2xl border border-[#30463B] bg-[#203129] px-3 py-2.5">
+          <p className="text-[9px] font-bold uppercase tracking-[.14em] text-[#789385]">Mercado activo</p>
+          <p className="mt-0.5 font-serif text-xs font-bold text-white">{market.displayName}</p>
+          <p className="mt-0.5 text-[10px] leading-relaxed text-[#91AC9E]">{fiscalEnabled ? 'Fiscalidad guiada habilitada' : 'Control financiero y documental'}</p>
+        </div>
+
+        <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-4 py-5">
           {menuItems.map((item, index) => {
             if ('section' in item) {
               return (
@@ -131,9 +140,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate font-serif text-xs font-bold text-white">{currentUser?.name}</p>
-              <p className="truncate text-[10px] font-medium text-[#8CA597]">{isManager ? 'Gestoría' : 'Autónomo'}</p>
+              <p className="truncate text-[10px] font-medium text-[#8CA597]">{isManager ? market.advisorLabel : market.workerLabel}</p>
             </div>
-            <button onClick={logout} className="rounded-lg p-1.5 text-[#8CA597] transition-colors hover:bg-red-500/10 hover:text-red-400" title="Cerrar sesión">
+            <button onClick={() => void logout()} className="rounded-lg p-1.5 text-[#8CA597] transition-colors hover:bg-red-500/10 hover:text-red-400" title="Cerrar sesión">
               <LogOut size={16} />
             </button>
           </div>
