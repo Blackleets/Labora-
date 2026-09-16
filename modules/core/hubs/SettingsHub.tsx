@@ -4,6 +4,7 @@ import { useData } from '../../../contexts/DataContext';
 import { getSupabase } from '../../../services/supabaseClient';
 import { UserRole } from '../../../types';
 import { AdvisorTrustPanel } from '../../../components/AdvisorTrustPanel';
+import { AdvisorVerificationCenter } from '../../../components/AdvisorVerificationCenter';
 
 export const SettingsHub: React.FC = () => {
   const {
@@ -82,6 +83,7 @@ export const SettingsHub: React.FC = () => {
       </section>
 
       {isManager && <AdvisorTrustPanel user={currentUser} />}
+      {isManager && <AdvisorVerificationCenter />}
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]">
         <form onSubmit={saveProfile} className="space-y-4 rounded-3xl border border-[#E8DFC8] bg-[#FCFAF7] p-5 shadow-sm sm:p-6">
