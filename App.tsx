@@ -27,7 +27,7 @@ import Simulator from './components/Simulator';
 import Toast from './components/Toast';
 import Logo from './components/Logo';
 import IntroAnimation from './components/IntroAnimation';
-import { TaxDeclarationsViewer } from './components/TaxDeclarationsViewer';
+import { TaxOverview } from './components/TaxOverview';
 import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 
 import { MoneyHub } from './modules/core/hubs/MoneyHub';
@@ -104,7 +104,7 @@ const MainLayout: React.FC = () => {
           ? <ManagerDashboard setView={setView} />
           : <Dashboard setView={setView} />;
       case 'money': return <MoneyHub setView={setView} />;
-      case 'tax-declarations': return <TaxDeclarationsViewer setView={setView} />;
+      case 'tax-declarations': return <TaxOverview setView={setView} />;
       case 'gestor-requirements':
         return (
           <div className="max-w-4xl mx-auto space-y-4">
