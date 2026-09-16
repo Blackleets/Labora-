@@ -16,13 +16,26 @@ interface TaxOverviewProps {
   setView?: (view: string) => void;
 }
 
-export const TaxOverview: React.FC<TaxOverviewProps> = ({ setView }) => {
+const currentQuarterLabel = () => {
+  const now = new Date();
+  return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
+};
+
+export const TaxOverview: React.FC<TaxOverviewProps> = () => {
   const { currentUser, users, calculateQuarterlyTaxes, privacyMode } = useData();
   const { selectedCountry } = useCountry();
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
-  const riders = useMemo(() => users.filter((user) => user.role === UserRole.RIDER), [users]);
-  const [selectedRiderId, setSelectedRiderId] = useState(riders[0]?.id || '');
-  const [selectedQuarter, setSelectedQuarter] = useState('3T 2026');
+  const currentYear = new Date().getFullYear();
+
+  const riders = useMemo(() => {
+    if (!currentUser || !isManager) return [];
+    return users.filter(
+      (user) => user.role === UserRole.RIDER && user.managerId === currentUser.id
+    );
+  }, [users, currentUser, isManager]);
+
+  const [selectedRiderId, setSelectedRiderId] = useState('');
+  const [selectedQuarter, setSelectedQuarter] = useState(currentQuarterLabel());
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const activeUser = isManager
@@ -41,18 +54,19 @@ export const TaxOverview: React.FC<TaxOverviewProps> = ({ setView }) => {
     });
   };
 
+  const quarters = [1, 2, 3, 4].map((quarter) => `${quarter}T ${currentYear}`);
   const models = taxData ? [
     {
       code: '130',
       title: 'Pago fraccionado IRPF',
-      description: 'Estimación calculada con los ingresos y gastos registrados.',
+      description: 'Estimación basada únicamente en datos registrados y porcentajes deducibles ya indicados.',
       icon: FileText,
       data: taxData.model130
     },
     {
       code: '303',
-      title: 'Autoliquidación IVA',
-      description: 'Estimación de IVA a partir de los movimientos registrados.',
+      title: 'IVA trimestral',
+      description: 'Estimación informativa; no equivale a una autoliquidación presentada.',
       icon: ReceiptText,
       data: taxData.model303
     }
@@ -60,69 +74,67 @@ export const TaxOverview: React.FC<TaxOverviewProps> = ({ setView }) => {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Fiscalidad</p>
-          <h1 className="mt-1 text-2xl font-bold text-stone-900">Modelos trimestrales</h1>
-          <p className="mt-1 text-sm text-stone-500">
-            Revisa los importes calculados antes de preparar cualquier presentación.
-          </p>
-        </div>
+      <section className="labora-card overflow-hidden">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
+          <div>
+            <p className="labora-kicker text-[#789582]">Fiscal · estimativo</p>
+            <h1 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">Modelos trimestrales</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
+              Revisa importes y documentación antes de preparar cualquier presentación oficial.
+            </p>
+          </div>
 
-        {isManager && riders.length > 0 && (
-          <label className="min-w-[220px]">
-            <span className="mb-1.5 block text-[11px] font-semibold text-stone-500">Cliente</span>
-            <div className="relative">
-              <UserRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-              <select
-                value={activeUser?.id || ''}
-                onChange={(event) => setSelectedRiderId(event.target.value)}
-                className="w-full appearance-none rounded-xl border border-[#DED7CC] bg-white py-2.5 pl-9 pr-3 text-xs font-semibold text-stone-700 outline-none focus:border-[#8EA796]"
-              >
-                {riders.map((rider) => (
-                  <option key={rider.id} value={rider.id}>{rider.name}</option>
-                ))}
-              </select>
-            </div>
-          </label>
-        )}
+          {isManager && riders.length > 0 && (
+            <label className="min-w-[220px]">
+              <span className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.1em] text-stone-400">Cliente vinculado</span>
+              <div className="relative">
+                <UserRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <select
+                  value={activeUser?.id || ''}
+                  onChange={(event) => setSelectedRiderId(event.target.value)}
+                  className="w-full appearance-none rounded-[13px] border border-[#DED7CC] bg-white py-2.5 pl-9 pr-3 text-xs font-extrabold text-stone-700 outline-none focus:border-[#789582]"
+                >
+                  {riders.map((rider) => <option key={rider.id} value={rider.id}>{rider.name}</option>)}
+                </select>
+              </div>
+            </label>
+          )}
+        </div>
       </section>
 
       {!activeUser ? (
-        <section className="rounded-2xl border border-dashed border-[#DCD4C9] bg-white p-8 text-center">
-          <p className="text-sm font-semibold text-stone-600">No hay un autónomo seleccionado.</p>
-          <p className="mt-1 text-xs text-stone-400">Vincula un cliente para consultar sus modelos.</p>
+        <section className="labora-card border-dashed p-10 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A]"><UserRound size={22} /></div>
+          <p className="mt-3 text-sm font-extrabold text-stone-600">No hay un autónomo vinculado.</p>
+          <p className="mt-1 text-xs text-stone-400">Cuando un cliente se vincule a esta gestoría aparecerá aquí.</p>
         </section>
       ) : (
         <>
-          <section className="rounded-2xl border border-[#E3DCD2] bg-white p-4 sm:p-5">
+          <section className="labora-card p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-bold text-stone-900">{activeUser.name}</p>
-                <p className="mt-1 text-xs text-stone-500">
-                  {activeUser.nif || 'Sin NIF'}{activeUser.iaeCode ? ` · IAE ${activeUser.iaeCode}` : ''}
-                </p>
+                <p className="labora-kicker text-stone-400">Contribuyente en contexto</p>
+                <p className="mt-1 text-base font-extrabold text-[#1E231F]">{activeUser.name}</p>
+                <p className="mt-1 text-xs text-stone-500">{activeUser.nif || 'NIF no informado'}{activeUser.iaeCode ? ` · IAE ${activeUser.iaeCode}` : ''}</p>
               </div>
-              <span className="inline-flex w-fit rounded-full bg-[#F3F0EA] px-2.5 py-1 text-[10px] font-semibold text-stone-500">
-                Información registrada en Labora+
-              </span>
+              <span className="inline-flex w-fit rounded-full border border-[#D7E5DC] bg-[#EDF4EF] px-2.5 py-1 text-[10px] font-extrabold text-[#214E3A]">Datos registrados en Labora+</span>
             </div>
           </section>
 
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-stone-800">Periodo</h2>
-              <span className="text-[11px] text-stone-400">Selecciona trimestre</span>
+              <div><p className="labora-kicker text-stone-400">Periodo</p><h2 className="mt-0.5 text-sm font-extrabold text-[#1E231F]">{currentYear}</h2></div>
+              <span className="text-[10px] font-medium text-stone-400">Trimestre actual: {currentQuarterLabel()}</span>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {['1T 2026', '2T 2026', '3T 2026', '4T 2026'].map((quarter) => (
+              {quarters.map((quarter) => (
                 <button
                   key={quarter}
                   onClick={() => setSelectedQuarter(quarter)}
-                  className={`whitespace-nowrap rounded-xl border px-4 py-2.5 text-xs font-semibold transition-colors ${
+                  className={`whitespace-nowrap rounded-[13px] border px-4 py-2.5 text-xs font-extrabold transition ${
                     selectedQuarter === quarter
-                      ? 'border-[#2E5A44] bg-[#2E5A44] text-white'
-                      : 'border-[#E2DBD0] bg-white text-stone-600 hover:border-[#CFC4B5]'
+                      ? 'border-[#214E3A] bg-[#214E3A] text-white shadow-sm'
+                      : 'border-[#E2DBD0] bg-[#FFFDF9] text-stone-600 hover:bg-[#FAF7F1]'
                   }`}
                 >
                   {quarter}
@@ -133,66 +145,50 @@ export const TaxOverview: React.FC<TaxOverviewProps> = ({ setView }) => {
 
           <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {models.map(({ code, title, description, icon: Icon, data }) => (
-              <article key={code} className="rounded-2xl border border-[#E2DBD0] bg-white p-5">
+              <article key={code} className="labora-card p-5">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF3EF] text-[#2E5A44]">
-                    <Icon size={18} strokeWidth={2.1} />
-                  </div>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-[#E7F0EA] text-[#214E3A]"><Icon size={19} /></div>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#2E5A44]">Modelo {code}</p>
-                    <h3 className="mt-1 text-base font-bold text-stone-900">{title}</h3>
+                    <p className="labora-kicker text-[#789582]">Modelo {code}</p>
+                    <h3 className="mt-1 text-base font-extrabold text-[#1E231F]">{title}</h3>
                     <p className="mt-1 text-xs leading-relaxed text-stone-500">{description}</p>
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-[#FAF8F4] p-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">Ingresos</p>
-                    <p className="mt-1 text-sm font-bold text-stone-900">{formatCurrency(data.grossIncome)}</p>
-                  </div>
-                  <div className="rounded-xl bg-[#FAF8F4] p-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">Gastos</p>
-                    <p className="mt-1 text-sm font-bold text-stone-900">{formatCurrency(data.deductibleExpenses)}</p>
-                  </div>
+                <div className="mt-5 grid grid-cols-2 gap-2.5">
+                  <Metric label="Ingresos" value={formatCurrency(data.grossIncome)} />
+                  <Metric label="Gastos computados" value={formatCurrency(data.deductibleExpenses)} />
                 </div>
 
-                <div className="mt-3 flex items-center justify-between rounded-xl border border-[#E7E0D6] px-3 py-3">
-                  <span className="text-xs font-semibold text-stone-500">Resultado estimado</span>
-                  <span className="text-base font-bold text-stone-900">{formatCurrency(data.taxAmount)}</span>
+                <div className="mt-3 flex items-center justify-between rounded-[14px] border border-[#E7E0D6] bg-[#FAF8F4] px-3 py-3">
+                  <span className="text-xs font-bold text-stone-500">Resultado estimado</span>
+                  <span className="text-base font-extrabold tracking-[-0.03em] text-[#1E231F]">{formatCurrency(data.taxAmount)}</span>
                 </div>
               </article>
             ))}
           </section>
 
-          <section className="overflow-hidden rounded-2xl border border-[#E2DBD0] bg-white">
-            <button
-              onClick={() => setShowAdvanced((value) => !value)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-[#FBF9F5]"
-            >
+          <section className="labora-card overflow-hidden">
+            <button onClick={() => setShowAdvanced((value) => !value)} className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left hover:bg-[#FBF9F5]">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F4F1EB] text-stone-600">
-                  <FileCheck2 size={17} strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-stone-900">Detalle y documentos</p>
-                  <p className="mt-0.5 text-xs text-stone-500">Registros, exportaciones e historial.</p>
-                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#F1ECE3] text-stone-600"><FileCheck2 size={17} /></div>
+                <div><p className="text-sm font-extrabold text-[#1E231F]">Detalle y documentos</p><p className="mt-0.5 text-xs text-stone-500">Registros e historial del periodo.</p></div>
               </div>
               {showAdvanced ? <ChevronUp size={18} className="text-stone-400" /> : <ChevronDown size={18} className="text-stone-400" />}
             </button>
 
-            {showAdvanced && (
-              <div className="border-t border-[#E9E2D8] bg-[#FBF9F5] p-4">
-                <TaxDeclarationsViewer userId={riderId} />
-              </div>
-            )}
+            {showAdvanced && <div className="border-t border-[#E9E2D8] bg-[#FBF9F5] p-4"><TaxDeclarationsViewer userId={riderId} /></div>}
           </section>
         </>
       )}
 
-      <p className="text-[11px] leading-relaxed text-stone-400">
-        Los cálculos se basan en la información guardada en la aplicación y no equivalen a una presentación ante la Agencia Tributaria.
-      </p>
+      <div className="rounded-[14px] border border-[#E8DFD2] bg-[#FAF7F1] px-4 py-3 text-[11px] leading-relaxed text-stone-500">
+        Estos cálculos son orientativos y se basan en la información registrada. No equivalen a una presentación ante la Agencia Tributaria.
+      </div>
     </div>
   );
 };
+
+const Metric = ({ label, value }: { label: string; value: string }) => (
+  <div className="rounded-[14px] bg-[#F8F5F0] p-3"><p className="text-[9px] font-extrabold uppercase tracking-[0.1em] text-stone-400">{label}</p><p className="mt-1 truncate text-sm font-extrabold text-[#1E231F]">{value}</p></div>
+);
