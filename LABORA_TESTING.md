@@ -60,7 +60,7 @@ Los justificantes se almacenan en el bucket privado `labora-documents`; solo el 
 3. Responde/sube el justificante disponible en el flujo actual.
 4. Vuelve a Gestoría y revisa la petición.
 
-Resultado esperado: ambas cuentas trabajan sobre el mismo registro remoto.
+Resultado esperado: ambas cuentas trabajan sobre el mismo registro remoto y Realtime refresca cambios operativos.
 
 ## 5. Probar mensajes en dos dispositivos
 
@@ -101,7 +101,17 @@ En Delivery/Movilidad, “Añadir a mi actividad” significa únicamente clasif
 
 En Bancos/Pagos/Contabilidad los botones deben permanecer deshabilitados hasta que exista una API real.
 
-## 9. Build
+Los logos se resuelven actualmente a partir del dominio de la marca mediante el resolver de logos. Eso NO se considera todavía una auditoría de assets oficiales. Para afirmar “logo oficial” habrá que sustituir cada fallback por assets locales obtenidos/verificados desde el kit oficial de cada marca.
+
+## 9. Seguridad
+
+- Supabase Auth gestiona las sesiones.
+- Todas las tablas operativas tienen RLS.
+- `labora-identity` y `labora-documents` son buckets privados.
+- El enlace Rider → Gestoría usa una función pública `SECURITY INVOKER`; la operación privilegiada vive en un esquema privado.
+- El Security Advisor de Supabase queda sin avisos después del hardening actual.
+
+## 10. Build
 
 Antes de mergear deben pasar:
 
@@ -111,9 +121,10 @@ Antes de mergear deben pasar:
 
 ## Límites que siguen abiertos
 
-- Los logos de terceros se resuelven actualmente por dominio mediante un proveedor de logos/fallback; todavía no existe un paquete local auditado de brand assets oficiales para todas las marcas.
+- Falta una auditoría de logos/brand kits oficiales para todas las marcas del catálogo.
 - El escáner de gastos acepta imágenes; soporte PDF/multipágina y detección de duplicados quedan para la siguiente iteración.
 - No existe todavía una integración bancaria PSD2 real; está intencionadamente bloqueada.
+- Conviene añadir pruebas automáticas E2E con dos cuentas antes de producción.
 
 ## Regla de merge
 
