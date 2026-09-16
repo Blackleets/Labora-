@@ -8,6 +8,7 @@ const readRepoFile = (path: string) => readFileSync(resolve(here, '..', path), '
 
 describe('client ↔ database integrity contract', () => {
   const dataContext = readRepoFile('contexts/DataContext.tsx');
+  const settingsHub = readRepoFile('modules/core/hubs/SettingsHub.tsx');
   const signupCountry = readRepoFile('supabase/migrations/20260916090400_signup_country_integrity.sql');
   const financialDefaults = readRepoFile('supabase/migrations/20260916090500_financial_actor_defaults.sql');
 
@@ -27,5 +28,13 @@ describe('client ↔ database integrity contract', () => {
     expect(dataContext).toMatch(/from\('platform_payouts'\)\.insert\(\{[\s\S]*?created_by: userId,[\s\S]*?\}\);/);
     expect(financialDefaults).toContain('alter table public.platform_payouts');
     expect(financialDefaults).toContain('alter column created_by set default auth.uid();');
+  });
+
+  it('lets the worker revoke an active advisor consent link from their own account', () => {
+    expect(settingsHub).toContain(".from('manager_client_links')");
+    expect(settingsHub).toContain(".eq('client_user_id', currentUser.id)");
+    expect(settingsHub).toContain(".eq('manager_user_id', currentUser.managerId)");
+    expect(settingsHub).toContain("rpc('labora_revoke_manager_link', { link_id: data.id })");
+    expect(settingsHub).toContain('Revocar acceso del gestor');
   });
 });
