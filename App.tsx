@@ -18,6 +18,7 @@ import { CountryProvider } from './contexts/CountryContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
 import { GhibliAtmosphereProvider, useGhibliAtmosphere } from './contexts/GhibliAtmosphereContext';
 import { UserRole } from './types';
+import { getMarketProfile } from './modules/country-config/marketProfiles';
 
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -64,6 +65,8 @@ const MainLayout: React.FC = () => {
     return <Onboarding onFinish={completeOnboarding} />;
   }
 
+  const market = getMarketProfile(currentUser.countryCode);
+  const fiscalEnabled = market.fiscalEngineStatus === 'verified';
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
   const pendingReqCount = requirements.filter((requirement) => {
     if (requirement.status !== 'pending') return false;
@@ -73,12 +76,12 @@ const MainLayout: React.FC = () => {
   const viewTitle = (() => {
     switch (currentView) {
       case 'dashboard': return isManager ? 'Panel de gestoría' : 'Inicio';
-      case 'money': return isManager ? 'Auditoría y facturación' : 'Dinero';
-      case 'tax-declarations': return 'Obligaciones fiscales';
+      case 'money': return isManager ? 'Revisión económica' : 'Dinero';
+      case 'tax-declarations': return fiscalEnabled ? 'Obligaciones fiscales' : 'Control financiero';
       case 'gestor-requirements': return isManager ? 'Peticiones a clientes' : 'Avisos del gestor';
       case 'operations': return 'Operaciones';
-      case 'integrations': return 'Integraciones';
-      case 'automation': return 'Asistente fiscal';
+      case 'integrations': return 'Plataformas';
+      case 'automation': return fiscalEnabled ? 'Asistente fiscal' : 'Asistente financiero';
       case 'people': return 'Clientes';
       case 'messages': return 'Mensajes';
       case 'settings': return 'Ajustes';
@@ -92,7 +95,7 @@ const MainLayout: React.FC = () => {
     switch (currentView) {
       case 'dashboard': return isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
       case 'money': return <MoneyHub setView={setView} />;
-      case 'tax-declarations': return <TaxDeclarationsViewer setView={setView} />;
+      case 'tax-declarations': return fiscalEnabled ? <TaxDeclarationsViewer setView={setView} /> : <MoneyHub initialTab="docs" setView={setView} />;
       case 'gestor-requirements': return <div className="mx-auto max-w-4xl"><GestorRequirementsWidget /></div>;
       case 'operations': return <OperationsHub />;
       case 'integrations': return <IntegrationCatalog />;
@@ -105,27 +108,29 @@ const MainLayout: React.FC = () => {
       case 'education': return <Education setView={setView} />;
       case 'simulator': return <Simulator />;
       case 'docs': return <MoneyHub initialTab="docs" setView={setView} />;
-      case 'payroll': return <MoneyHub initialTab="payroll" setView={setView} />;
-      case 'banking': return <MoneyHub initialTab="banking" setView={setView} />;
+      case 'payroll': return <MoneyHub setView={setView} />;
+      case 'banking': return <MoneyHub setView={setView} />;
       default: return isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
     }
   };
 
-  const navItems = isManager
-    ? [
-        { id: 'dashboard', label: 'Panel', icon: LayoutDashboard },
-        { id: 'tax-declarations', label: 'Fiscal', icon: Scale },
-        { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount },
-        { id: 'money', label: 'Auditoría', icon: Wallet },
-        { id: 'settings', label: 'Ajustes', icon: User },
-      ]
-    : [
-        { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
-        { id: 'money', label: 'Dinero', icon: Wallet },
-        { id: 'tax-declarations', label: 'Fiscal', icon: Scale },
-        { id: 'gestor-requirements', label: 'Avisos', icon: Bell, badge: pendingReqCount },
-        { id: 'settings', label: 'Perfil', icon: User },
-      ];
+  const managerNav = [
+    { id: 'dashboard', label: 'Panel', icon: LayoutDashboard },
+    ...(fiscalEnabled ? [{ id: 'tax-declarations', label: 'Fiscal', icon: Scale }] : []),
+    { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount },
+    { id: 'money', label: 'Economía', icon: Wallet },
+    { id: 'settings', label: 'Ajustes', icon: User },
+  ];
+
+  const workerNav = [
+    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
+    { id: 'money', label: 'Dinero', icon: Wallet },
+    ...(fiscalEnabled ? [{ id: 'tax-declarations', label: 'Fiscal', icon: Scale }] : []),
+    { id: 'gestor-requirements', label: 'Avisos', icon: Bell, badge: pendingReqCount },
+    { id: 'settings', label: 'Perfil', icon: User },
+  ];
+
+  const navItems = isManager ? managerNav : workerNav;
 
   return (
     <div className="flex h-screen overflow-hidden font-sans text-stone-800" style={{ backgroundColor: palette.canvas }}>
