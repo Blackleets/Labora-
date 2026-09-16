@@ -3,31 +3,42 @@ import { Building2, LockKeyhole, ShieldCheck } from 'lucide-react';
 
 export const BankingConnect: React.FC = () => {
   return (
-    <section className="rounded-2xl border border-[#E3DCD2] bg-white p-5 sm:p-6">
-      <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF2ED] text-[#2E5A44]">
-          <Building2 size={20} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-base font-bold text-stone-900">Conexión bancaria</h2>
-            <span className="rounded-full border border-[#E4DDD3] bg-[#F8F5F0] px-2.5 py-1 text-[10px] font-bold text-stone-500">Próximamente</span>
+    <section className="labora-card overflow-hidden">
+      <div className="relative overflow-hidden bg-[#214E3A] p-5 text-white sm:p-6">
+        <div className="absolute -right-10 -top-16 h-40 w-40 rounded-full bg-[#F1C56B]/15" />
+        <div className="relative flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/10 text-[#F1C56B]">
+            <Building2 size={21} />
           </div>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
-            Labora+ no solicita ni almacena contraseñas bancarias. La conexión se habilitará únicamente mediante un proveedor Open Banking regulado bajo PSD2, con consentimiento explícito y acceso de solo lectura para conciliación.
-          </p>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="labora-kicker text-white/55">Banca</p>
+              <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-white/75">Aún no conectado</span>
+            </div>
+            <h2 className="labora-display mt-1 text-xl font-semibold text-white">Open Banking, cuando sea real.</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70">
+              Labora+ no solicita ni almacena contraseñas bancarias. La conexión se habilitará únicamente mediante un proveedor regulado bajo PSD2, con consentimiento explícito.
+            </p>
+          </div>
+        </div>
+      </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-[#E6E0D7] bg-[#FAF8F4] p-3.5">
-              <div className="flex items-center gap-2 text-xs font-bold text-stone-700"><LockKeyhole size={15} className="text-[#2E5A44]" /> Sin credenciales en Labora+</div>
-              <p className="mt-1 text-[11px] leading-relaxed text-stone-500">El inicio de sesión ocurre con el banco o proveedor autorizado, no dentro de nuestra app.</p>
-            </div>
-            <div className="rounded-xl border border-[#E6E0D7] bg-[#FAF8F4] p-3.5">
-              <div className="flex items-center gap-2 text-xs font-bold text-stone-700"><ShieldCheck size={15} className="text-[#2E5A44]" /> Solo lectura</div>
-              <p className="mt-1 text-[11px] leading-relaxed text-stone-500">La primera integración se limitará a saldos y movimientos; no iniciará pagos.</p>
-            </div>
-          </div>
+      <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+        <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]"><LockKeyhole size={16} /></div>
+          <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Sin credenciales en Labora+</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-stone-500">El acceso se autorizará con el banco o proveedor regulado, no escribiendo tu clave bancaria dentro de la app.</p>
         </div>
+
+        <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#F8EDE7] text-[#B95635]"><ShieldCheck size={16} /></div>
+          <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Primera fase: solo lectura</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-stone-500">Saldos y movimientos para conciliación. La iniciación de pagos permanece fuera de alcance.</p>
+        </div>
+      </div>
+
+      <div className="border-t border-[#EAE3D9] bg-[#FFF9EE] px-4 py-3 text-[10px] font-medium leading-relaxed text-[#80612E] sm:px-5">
+        No conectes una cuenta bancaria ni compartas credenciales hasta que Labora+ muestre un proveedor Open Banking real y el consentimiento correspondiente.
       </div>
     </section>
   );
