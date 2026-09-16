@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  Menu, X, Compass, Coins, ScrollText, Feather, Sliders,
-  Briefcase, Bike, Plus, Sparkles, MapPin, Search, Fuel,
-  Eye, EyeOff, RefreshCw, Bell, User
+import {
+  Menu, Briefcase, Bike, Plus, Fuel,
+  Eye, EyeOff, RefreshCw, Bell, User,
+  LayoutDashboard, Wallet, Scale
 } from 'lucide-react';
 import { DataProvider, useData } from './contexts/DataContext';
 import { CountryProvider } from './contexts/CountryContext';
@@ -45,7 +45,7 @@ const MainLayout: React.FC = () => {
   const [isGlobalGasModalOpen, setIsGlobalGasModalOpen] = useState(false);
 
   if (!currentUser) return <Login />;
-  
+
   if (currentUser.role === UserRole.RIDER && !hasOnboarded) {
     return <Onboarding onFinish={completeOnboarding} />;
   }
@@ -87,23 +87,22 @@ const MainLayout: React.FC = () => {
 
   const renderView = () => {
     switch (currentView) {
-      // --- CORE SECTIONS ---
-      case 'dashboard': 
-        return isManager 
-          ? <ManagerDashboard setView={setView} /> 
+      case 'dashboard':
+        return isManager
+          ? <ManagerDashboard setView={setView} />
           : <Dashboard setView={setView} />;
-      
-      case 'money': 
+
+      case 'money':
         return <MoneyHub setView={setView} />;
-      
-      case 'tax-declarations': 
+
+      case 'tax-declarations':
         return <TaxDeclarationsViewer setView={setView} />;
-      
-      case 'gestor-requirements': 
+
+      case 'gestor-requirements':
         return (
           <div className="max-w-4xl mx-auto space-y-4">
             <div className="flex items-center justify-between mb-2">
-              <button 
+              <button
                 onClick={() => setView('dashboard')}
                 className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
               >
@@ -127,8 +126,8 @@ const MainLayout: React.FC = () => {
       case 'docs': return <MoneyHub initialTab="docs" setView={setView} />;
       case 'payroll': return <MoneyHub initialTab="payroll" setView={setView} />;
       case 'banking': return <MoneyHub initialTab="banking" setView={setView} />;
-      
-      default: 
+
+      default:
         return isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
     }
   };
@@ -152,39 +151,34 @@ const MainLayout: React.FC = () => {
   const navItems = isManager ? managerNavItems : riderNavItems;
 
   return (
-    <div 
+    <div
       className="flex h-screen font-sans text-stone-800 overflow-hidden selection:bg-[#EAF2ED] selection:text-[#245338] transition-colors duration-500"
       style={{ backgroundColor: palette.canvas }}
     >
       <Toast />
-      
-      {/* Sidebar - Desktop */}
-      <Sidebar 
-        currentView={currentView} 
-        setView={setView} 
+
+      <Sidebar
+        currentView={currentView}
+        setView={setView}
         isMobileMenuOpen={isMobileMenuOpen}
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
-      
-      {/* Main Container */}
-      <main 
+
+      <main
         className="flex-1 flex flex-col h-full relative overflow-hidden transition-colors duration-500"
         style={{ backgroundColor: palette.canvas }}
       >
-        {/* Soft Ghibli Ambient Light Sky Vignette */}
-        <div 
-          className="pointer-events-none absolute inset-0 z-0 opacity-70 transition-all duration-700" 
+        <div
+          className="pointer-events-none absolute inset-0 z-0 opacity-70 transition-all duration-700"
           style={{ background: palette.ambientGradient }}
         />
-        
-        {/* Universal Top Header Bar (Desktop & Mobile) */}
-        <header 
+
+        <header
           className="border-b px-4 md:px-8 py-3 flex items-center justify-between z-20 shrink-0 shadow-[0_1px_4px_rgba(70,55,40,0.03)] transition-colors duration-500 relative"
           style={{ backgroundColor: palette.card, borderColor: palette.border }}
         >
-          {/* Left: Mobile hamburger or breadcrumb */}
           <div className="flex items-center space-x-3">
-            <button 
+            <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="lg:hidden p-2 text-stone-600 hover:bg-[#F2EDE4] rounded-xl transition-colors"
               aria-label="Abrir menú"
@@ -207,13 +201,9 @@ const MainLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Ghibli Lighting, Role Switcher, Quick Action, Privacy Toggle & User */}
           <div className="flex items-center space-x-2 sm:space-x-2.5">
-            
-            {/* Ghibli Lighting Atmosphere Selector */}
             <GhibliLightingControl />
 
-            {/* Instant Role Switcher Toggle Button */}
             <button
               onClick={handleToggleRole}
               className="px-2.5 sm:px-3 py-1.5 bg-[#F2EDE4] hover:bg-[#E8E1D3] text-stone-800 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-[#E0D7C7]"
@@ -228,12 +218,11 @@ const MainLayout: React.FC = () => {
               </span>
             </button>
 
-            {/* Privacy Mode Masking */}
             <button
               onClick={togglePrivacyMode}
               className={`p-2 rounded-xl border transition-colors ${
-                privacyMode 
-                  ? 'bg-[#FEF7EB] border-[#FDE3B8] text-[#85531B]' 
+                privacyMode
+                  ? 'bg-[#FEF7EB] border-[#FDE3B8] text-[#85531B]'
                   : 'bg-[#FCFAF7] border-[#EAE3D6] text-stone-500 hover:bg-[#F2EDE4]'
               }`}
               title={privacyMode ? 'Mostrar importes monetarios' : 'Ocultar importes (Modo Privacidad)'}
@@ -241,7 +230,6 @@ const MainLayout: React.FC = () => {
               {privacyMode ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
 
-            {/* Quick Action Button */}
             {!isManager ? (
               <button
                 onClick={() => setIsGlobalGasModalOpen(true)}
@@ -262,7 +250,6 @@ const MainLayout: React.FC = () => {
               </button>
             )}
 
-            {/* Notifications with counter */}
             <button
               onClick={() => setView('gestor-requirements')}
               className="p-2 relative bg-[#FCFAF7] border border-[#EAE3D6] hover:bg-[#F2EDE4] text-stone-600 rounded-xl transition-colors"
@@ -276,8 +263,7 @@ const MainLayout: React.FC = () => {
               )}
             </button>
 
-            {/* User Pill */}
-            <div 
+            <div
               onClick={() => setView('settings')}
               className="flex items-center space-x-2 pl-1 cursor-pointer"
             >
@@ -287,18 +273,15 @@ const MainLayout: React.FC = () => {
                 {isManager ? <Briefcase size={14} /> : <Bike size={14} />}
               </div>
             </div>
-
           </div>
         </header>
 
-        {/* Scrollable Content View */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth custom-scrollbar">
           <div className="max-w-7xl mx-auto min-h-full">
             {renderView()}
           </div>
         </div>
 
-        {/* Mobile Bottom Navigation Bar */}
         <nav className="lg:hidden bg-white border-t border-slate-200 px-4 py-2.5 flex justify-around items-center z-30 safe-area-bottom shrink-0 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
           {navItems.map((item) => {
             const isActive = currentView === item.id;
@@ -325,7 +308,6 @@ const MainLayout: React.FC = () => {
         </nav>
       </main>
 
-      {/* Global Gasoline Photo Modal accessible anywhere */}
       <GasStationCaptureModal
         isOpen={isGlobalGasModalOpen}
         onClose={() => setIsGlobalGasModalOpen(false)}
