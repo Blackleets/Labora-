@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { analyzeReceipt } from '../services/geminiService';
-import { Expense, ExpenseCategory } from '../types';
+import { Expense, ExpenseCategory, UserRole } from '../types';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
 
 interface ExpenseTrackerProps {
@@ -33,7 +33,7 @@ interface ExpenseTrackerProps {
 }
 
 const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) => {
-  const { expenses, addExpense, updateExpense, showNotification, privacyMode } = useData();
+  const { expenses, addExpense, updateExpense, showNotification, privacyMode, currentUser } = useData();
   const [isScanning, setIsScanning] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
@@ -42,12 +42,15 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredExpenses = useMemo(() => {
+    const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+
     return expenses.filter((expense) => {
+      if (!isManager && currentUser?.id && expense.userId !== currentUser.id) return false;
       if (startDate && expense.date < startDate) return false;
       if (endDate && expense.date > endDate) return false;
       return true;
     });
-  }, [expenses, startDate, endDate]);
+  }, [expenses, startDate, endDate, currentUser]);
 
   const formatCurrency = (amount: number) => {
     if (privacyMode) return '•••• €';
