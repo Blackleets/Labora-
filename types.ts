@@ -29,26 +29,23 @@ export interface User {
   address?: string;
   photoUrl?: string;
   role: UserRole;
-  organizationId?: string; // Multi-tenant link
-  platforms: string[]; // e.g., 'Uber', 'Glovo'
-  banks?: string[]; // e.g., 'BBVA', 'Revolut'
-  managerId?: string; // If linked to a manager
+  organizationId?: string;
+  platforms: string[];
+  banks?: string[];
+  managerId?: string;
   currencyPreference?: string;
   notificationSettings?: NotificationSettings;
-  // Fiscal & Delivery Extensions
-  nif?: string; // DNI / NIE / CIF / RFC
-  fiscalRegime?: string; // e.g. '036_037_directa', '036_037_recargo', 'sat_plataformas', '1099_usa'
-  iaeCode?: string; // e.g. '849.5'
-  socialSecurityType?: string; // 'tarifa_plana' | 'tramos_reales'
+  nif?: string;
+  fiscalRegime?: string;
+  iaeCode?: string;
+  socialSecurityType?: string;
   vehicleType?: 'moto' | 'bici' | 'coche' | 'furgoneta' | 'patinete';
   vehiclePlate?: string;
   vehicleFuel?: 'gasolina' | 'diesel' | 'electrico' | 'glp';
-  companyName?: string; // For Gestores: "Gestoría Fiscal Pérez"
-  collegiateNumber?: string; // For Gestores
-  countryCode?: string; // 'ES', 'MX', 'US', etc.
+  companyName?: string;
+  collegiateNumber?: string;
+  countryCode?: string;
 }
-
-// --- INTEGRATION ENGINE TYPES ---
 
 export type IntegrationCategory = 'delivery' | 'mobility' | 'banking' | 'payments' | 'accounting' | 'hr';
 
@@ -56,18 +53,17 @@ export interface IntegrationDef {
   id: string;
   name: string;
   category: IntegrationCategory;
-  domain: string; // Used for logo fetching (e.g., uber.com)
-  supported_countries: string[]; // ['ES', 'MX', 'US'] or [] for global
+  domain: string;
+  supported_countries: string[];
   status: 'active' | 'beta' | 'deprecated';
-  ranking: number; // 1-100, higher is better/more popular
+  ranking: number;
   description?: string;
-  is_installed?: boolean; // Runtime state
+  is_installed?: boolean;
 }
 
-// --- POLICY ENGINE TYPES ---
 export interface PolicyRule {
   id: string;
-  field: string; // e.g., 'payroll.total_cost'
+  field: string;
   operator: 'gt' | 'lt' | 'eq' | 'neq' | 'contains';
   value: any;
 }
@@ -84,10 +80,10 @@ export interface Policy {
   name: string;
   description: string;
   enabled: boolean;
-  priority: number; // 1-100 (Higher runs first)
+  priority: number;
   scope: {
-    country_code?: string; // Apply only to specific country
-    module?: string; // 'payroll', 'delivery', etc.
+    country_code?: string;
+    module?: string;
   };
   rules: PolicyRule[];
   actions: PolicyAction[];
@@ -101,16 +97,14 @@ export interface ApprovalRequest {
   requesterId: string;
   requesterName: string;
   entityType: 'payroll_run' | 'refund' | 'expense' | 'variable_change';
-  entityId?: string; // Optional ID if the entity exists in draft state
+  entityId?: string;
   status: ApprovalStatus;
-  payload: any; // Snapshot of the data needing approval (e.g. { total_cost: 15000 })
-  policyTriggered?: string; // Name of the policy that caused this
+  payload: any;
+  policyTriggered?: string;
   createdAt: string;
   resolvedAt?: string;
   resolvedBy?: string;
 }
-
-// --- EXISTING TYPES ---
 
 export interface Employee {
   id: string;
@@ -120,14 +114,14 @@ export interface Employee {
   base_salary: number;
   currency: string;
   status: 'active' | 'onboarding' | 'terminated';
-  national_id?: string; // DNI, SSN, CURP
-  bank_account?: string; // IBAN, Routing
+  national_id?: string;
+  bank_account?: string;
   start_date: string;
 }
 
 export interface PayrollRun {
   id: string;
-  period: string; // "2024-04"
+  period: string;
   status: 'draft' | 'approved' | 'paid' | 'needs_approval' | 'rejected';
   total_cost: number;
   employee_count: number;
@@ -149,14 +143,13 @@ export interface Payslip {
   employer_cost: number;
 }
 
-// Legacy Integration Type (Deprecated in favor of IntegrationDef)
 export interface Integration {
   id: string;
   name: string;
   type: IntegrationCategory;
   logo_url: string;
   status: 'active' | 'inactive' | 'pending';
-  country_codes: string[]; // Supported countries
+  country_codes: string[];
   is_installed: boolean;
 }
 
@@ -196,9 +189,9 @@ export interface Income {
   id: string;
   userId: string;
   platform: string;
-  date: string; // ISO Date
+  date: string;
   amount: number;
-  retention: number; // IRPF retention if applicable
+  retention: number;
 }
 
 export enum ExpenseCategory {
@@ -223,17 +216,17 @@ export interface Expense {
   category: ExpenseCategory | string;
   date: string;
   amount: number;
-  receiptUrl?: string; // Base64 or URL image backup
+  receiptUrl?: string;
   notes?: string;
   isRecurring?: boolean;
-  merchant?: string; // e.g. "Repsol", "Cepsa", "BP", "Shell"
-  vatRate?: number; // e.g. 21
+  merchant?: string;
+  vatRate?: number;
   vatAmount?: number;
   fuelLitres?: number;
-  fuelType?: string; // e.g. 'Gasolina 95', 'Diésel'
+  fuelType?: string;
   status?: 'pending_review' | 'approved' | 'rejected' | 'needs_fix';
   gestorNotes?: string;
-  deductiblePercentage?: number; // default 100% or 50%
+  deductiblePercentage?: number;
   invoiceNumber?: string;
 }
 
@@ -249,7 +242,7 @@ export interface GestorRequirement {
   deadline: string;
   status: 'pending' | 'submitted' | 'approved';
   submissionNotes?: string;
-  submissionUrl?: string; // photo / proof uploaded by rider
+  submissionUrl?: string;
   createdAt: string;
   quarter?: string;
 }
@@ -257,14 +250,14 @@ export interface GestorRequirement {
 export interface TaxDeclaration {
   id: string;
   userId: string;
-  quarter: string; // e.g. "1T 2024"
+  quarter: string;
   year: number;
   modelType: '130' | '303' | '390' | '100' | '036_037';
   title: string;
   grossIncome: number;
   deductibleExpenses: number;
   netYield: number;
-  taxAmount: number; // e.g. 20% for 130, VAT balance for 303
+  taxAmount: number;
   status: 'draft' | 'reviewed_by_gestor' | 'filed_with_tax_agency';
   filingReference?: string;
   filedAt?: string;
@@ -277,7 +270,11 @@ export interface Document {
   type: 'Factura' | 'Trimestre' | 'Alta' | 'Otro';
   name: string;
   date: string;
-  content?: string; // Base64
+  content?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  contentHash?: string;
+  pageCount?: number;
 }
 
 export interface FiscalSummary {
@@ -285,7 +282,7 @@ export interface FiscalSummary {
   totalExpenses: number;
   netProfit: number;
   estimatedIRPF: number;
-  quarter: string; // e.g., "Q1 2024"
+  quarter: string;
 }
 
 export interface ChatMessage {
@@ -297,12 +294,12 @@ export interface ChatMessage {
 
 export interface Payment {
   id: string;
-  platform: string; // 'Uber', 'Glovo', etc.
+  platform: string;
   amount: number;
-  date: string; // YYYY-MM-DD
+  date: string;
   status: 'pending' | 'received';
   estimated: boolean;
-  domain?: string; // for logo
+  domain?: string;
 }
 
 export interface Notification {
