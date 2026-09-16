@@ -122,6 +122,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
       badge: pendingReqCount, 
       organicShape: 'rounded-[40%_60%_52%_48%/56%_44%_56%_44%]' 
     },
+    { 
+      id: 'messages', 
+      label: 'Mensajes con mi Gestor', 
+      icon: Send, 
+      organicShape: 'rounded-[45%_55%_58%_42%/52%_48%_52%_48%]' 
+    },
     
     { section: 'Gestoría & Fiscalidad' },
     { 
