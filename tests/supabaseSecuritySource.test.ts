@@ -7,10 +7,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const readRepoFile = (path: string) => readFileSync(resolve(here, '..', path), 'utf8');
 
 describe('Supabase source security contract', () => {
-  const baseSchema = readRepoFile('supabase/schema.sql');
-  const hardening = readRepoFile('supabase/migrations/20260916_zz_security_hardening.sql');
-  const currencyGuard = readRepoFile('supabase/migrations/20260916_market_currency_guard.sql');
-  const advisorTrust = readRepoFile('supabase/migrations/20260916_advisor_trust.sql');
+  const baseSchema = readRepoFile('supabase/migrations/20260916090000_baseline_schema.sql');
+  const hardening = readRepoFile('supabase/migrations/20260916090300_security_hardening.sql');
+  const currencyGuard = readRepoFile('supabase/migrations/20260916090200_market_currency_guard.sql');
+  const advisorTrust = readRepoFile('supabase/migrations/20260916090100_advisor_trust.sql');
 
   it('keeps critical public tables behind RLS', () => {
     for (const table of [
