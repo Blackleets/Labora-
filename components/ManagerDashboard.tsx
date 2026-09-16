@@ -53,11 +53,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = () => {
   const [requirementDeadline, setRequirementDeadline] = useState('');
 
   useEffect(() => {
-    if (!selectedClientId && clients.length > 0) setSelectedClientId(clients[0].id);
-    if (selectedClientId && !clients.some((client) => client.id === selectedClientId)) setSelectedClientId(clients[0]?.id || '');
+    if (selectedClientId && !clients.some((client) => client.id === selectedClientId)) setSelectedClientId('');
   }, [clients, selectedClientId]);
-
-  if (!currentUser) return null;
 
   const selectedClient = clients.find((client) => client.id === selectedClientId) || null;
   const clientMarket = getMarketProfile(selectedClient?.countryCode);
@@ -81,6 +78,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = () => {
     if (!selectedClient || !clientFiscalEnabled) return null;
     return buildFiscalSnapshot(incomes, expenses, selectedClient.id, period);
   }, [clientFiscalEnabled, expenses, incomes, period, selectedClient]);
+
+  if (!currentUser) return null;
 
   const registeredIncome = clientIncomes.reduce((sum, item) => sum + item.amount, 0);
   const registeredExpenses = clientExpenses.reduce((sum, item) => sum + item.amount, 0);
@@ -149,7 +148,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = () => {
       `Peticiones abiertas: ${openRequirements.length}`,
       '',
       clientFiscalEnabled
-        ? 'Fiscalidad guiada habilitada: cualquier cifra fiscal sigue siendo una estimación hasta su revisión y presentación verificadas.'
+        ? 'Fiscalidad guiada habilitada: cualquier cifra fiscal sigue siendo una referencia de trabajo hasta completar contexto, revisión y presentación verificadas.'
         : 'Fiscalidad local no habilitada: este informe es exclusivamente financiero y documental.',
     ];
     if (fiscalSnapshot) {
@@ -212,8 +211,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = () => {
           {!selectedClient ? (
             <section className="rounded-3xl border border-dashed border-[#DFD5C6] bg-[#FCFAF7] p-10 text-center">
               <ShieldCheck className="mx-auto h-8 w-8 text-[#2E5A44]" />
-              <h2 className="mt-3 font-serif text-lg font-bold">Sin cliente seleccionado</h2>
-              <p className="mt-1 text-sm text-stone-500">Cuando un trabajador acepte el vínculo con tu despacho aparecerá aquí.</p>
+              <h2 className="mt-3 font-serif text-lg font-bold">Selecciona un cliente</h2>
+              <p className="mt-1 text-sm text-stone-500">Labora+ no abrirá automáticamente el expediente de nadie. Elige a la persona que quieres revisar en la columna izquierda.</p>
             </section>
           ) : (
             <>
