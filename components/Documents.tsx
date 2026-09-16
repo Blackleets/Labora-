@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
-  AlertTriangle,
   Calendar,
   CheckCircle2,
   Download,
@@ -62,7 +61,9 @@ const hashBuffer = async (buffer: ArrayBuffer) => {
 
 const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader();
-  reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('No se pudo leer el archivo.'));
+  reader.onload = () => typeof reader.result === 'string'
+    ? resolve(reader.result)
+    : reject(new Error('No se pudo leer el archivo.'));
   reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo.'));
   reader.readAsDataURL(file);
 });
@@ -98,7 +99,9 @@ export const Documents: React.FC = () => {
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const linkedIds = useMemo(() => new Set(
-    users.filter((user) => user.role === UserRole.RIDER && user.managerId === currentUser?.id).map((user) => user.id)
+    users
+      .filter((user) => user.role === UserRole.RIDER && user.managerId === currentUser?.id)
+      .map((user) => user.id)
   ), [users, currentUser?.id]);
   const userName = useMemo(() => new Map(users.map((user) => [user.id, user.name])), [users]);
 
@@ -108,7 +111,9 @@ export const Documents: React.FC = () => {
 
   const visibleDocuments = documents.filter((item) => canSeeUser(item.userId));
   const visibleExpenses = expenses.filter((item) => canSeeUser(item.userId) && item.receiptUrl);
-  const visibleDeclarations = declarations.filter((item) => canSeeUser(item.userId) && item.status === 'filed_with_tax_agency');
+  const visibleDeclarations = declarations.filter(
+    (item) => canSeeUser(item.userId) && item.status === 'filed_with_tax_agency'
+  );
 
   const allItems = useMemo<DisplayItem[]>(() => {
     const list: DisplayItem[] = [];
@@ -126,7 +131,7 @@ export const Documents: React.FC = () => {
         mimeType: document.mimeType,
         sizeBytes: document.sizeBytes,
         content: document.content,
-        badge: document.contentHash ? { label: 'Hash SHA-256 guardado', tone: 'stone' } : undefined
+        badge: document.contentHash ? { label: 'SHA-256 guardado', tone: 'stone' } : undefined
       });
     });
 
@@ -136,11 +141,10 @@ export const Documents: React.FC = () => {
         source: 'expense',
         sourceUserId: expense.userId,
         ownerName: userName.get(expense.userId) || currentUser?.name || 'Usuario',
-        name: `Ticket_${expense.merchant || expense.category}_${expense.date}.jpg`,
+        name: `Ticket_${expense.merchant || expense.category}_${expense.date}`,
         category: expense.category === 'Gasolina' ? 'Gasolina' : 'Factura',
         date: expense.date,
         fileType: 'IMG',
-        mimeType: 'image/jpeg',
         content: expense.receiptUrl,
         badge: expense.status === 'approved'
           ? { label: 'Validado por gestoría', tone: 'green' }
@@ -154,13 +158,13 @@ export const Documents: React.FC = () => {
         source: 'tax',
         sourceUserId: declaration.userId,
         ownerName: userName.get(declaration.userId) || currentUser?.name || 'Usuario',
-        name: `Modelo_${declaration.modelType}_${declaration.quarter}`,
+        name: `Modelo ${declaration.modelType} · ${declaration.quarter}`,
         category: 'Trimestre',
         date: declaration.filedAt || `${declaration.year}-01-01`,
         fileType: 'FILE',
         badge: declaration.filingReference
           ? { label: 'Referencia AEAT registrada', tone: 'green' }
-          : { label: 'Marcado como presentado', tone: 'stone' }
+          : { label: 'Presentación registrada', tone: 'stone' }
       });
     });
 
@@ -169,7 +173,9 @@ export const Documents: React.FC = () => {
 
   const filteredItems = useMemo(() => {
     if (selectedFilter === 'all') return allItems;
-    if (selectedFilter === 'receipts') return allItems.filter((item) => item.category === 'Gasolina' || item.category === 'Factura');
+    if (selectedFilter === 'receipts') {
+      return allItems.filter((item) => item.category === 'Gasolina' || item.category === 'Factura');
+    }
     if (selectedFilter === 'taxes') return allItems.filter((item) => item.category === 'Trimestre');
     return allItems.filter((item) => item.category === 'Alta' || item.category === 'Otro');
   }, [allItems, selectedFilter]);
@@ -197,7 +203,9 @@ export const Documents: React.FC = () => {
     try {
       const buffer = await file.arrayBuffer();
       const contentHash = await hashBuffer(buffer);
-      const duplicate = documents.some((document) => document.userId === currentUser.id && document.contentHash === contentHash);
+      const duplicate = documents.some(
+        (document) => document.userId === currentUser.id && document.contentHash === contentHash
+      );
       if (duplicate) {
         setPendingUpload(null);
         showNotification('error', 'Este archivo ya existe en tu expediente.');
@@ -213,7 +221,12 @@ export const Documents: React.FC = () => {
         contentHash
       });
       if (!docName.trim()) setDocName(file.name);
-      showNotification('success', file.type === 'application/pdf' ? 'PDF cargado. Se conservarán todas sus páginas.' : 'Archivo cargado.');
+      showNotification(
+        'success',
+        file.type === 'application/pdf'
+          ? 'PDF preparado. Se conservarán todas sus páginas.'
+          : 'Archivo preparado.'
+      );
     } catch (error) {
       console.error(error);
       showNotification('error', 'No se pudo preparar el archivo.');
@@ -231,8 +244,8 @@ export const Documents: React.FC = () => {
       return;
     }
 
-    const duplicate = documents.some((document) =>
-      document.userId === currentUser.id && document.contentHash === pendingUpload.contentHash
+    const duplicate = documents.some(
+      (document) => document.userId === currentUser.id && document.contentHash === pendingUpload.contentHash
     );
     if (duplicate) {
       showNotification('error', 'Este archivo ya existe en tu expediente.');
@@ -256,7 +269,7 @@ export const Documents: React.FC = () => {
 
   const handleDownload = (item: DisplayItem) => {
     if (!item.content) {
-      showNotification('info', 'No hay un archivo adjunto descargable para este registro.');
+      showNotification('info', 'Este registro no tiene un archivo adjunto descargable.');
       return;
     }
     const anchor = window.document.createElement('a');
@@ -286,7 +299,7 @@ export const Documents: React.FC = () => {
     }
   };
 
-  const badgeClass = (tone: DisplayItem['badge'] extends { tone: infer T } ? T : never) => {
+  const badgeClass = (tone: 'green' | 'amber' | 'stone') => {
     if (tone === 'green') return 'border-[#CFE7D7] bg-[#ECF7F0] text-[#24613F]';
     if (tone === 'amber') return 'border-[#ECD9A8] bg-[#FFF8E8] text-[#855D1E]';
     return 'border-[#E3DDD4] bg-[#F5F2ED] text-stone-600';
@@ -301,53 +314,88 @@ export const Documents: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 pb-20 lg:pb-8">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Documentación</p>
-          <h1 className="mt-1 text-2xl font-bold text-stone-900">Expediente fiscal</h1>
-          <p className="mt-1 max-w-2xl text-sm text-stone-500">Documentos y justificantes almacenados en el espacio privado de Labora+. La app distingue revisión de gestoría de presentación oficial.</p>
-        </div>
-        <div className="flex gap-2">
+      <section className="labora-card overflow-hidden">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="min-w-0">
+            <p className="labora-kicker text-[#789582]">Documentación privada</p>
+            <h1 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">
+              {isManager ? 'Documentos de tu cartera' : 'Tu archivo de trabajo'}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
+              {isManager
+                ? 'Consulta justificantes y documentos únicamente de clientes vinculados.'
+                : 'Conserva tickets, facturas y documentos sin confundir revisión de gestoría con presentación oficial.'}
+            </p>
+          </div>
+
           {!isManager && (
-            <button onClick={() => setIsReportOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-[#DDD6CC] bg-white px-3.5 py-2.5 text-xs font-bold text-stone-600 hover:bg-[#F7F4EF]"><FileBarChart size={15} /> Resumen</button>
-          )}
-          {!isManager && (
-            <button onClick={() => setIsUploadOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#2E5A44] px-3.5 py-2.5 text-xs font-bold text-white hover:bg-[#244936]"><Upload size={15} /> Subir documento</button>
+            <div className="flex shrink-0 gap-2">
+              <button onClick={() => setIsReportOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] border border-[#DDD6CC] bg-white px-3.5 py-2.5 text-xs font-extrabold text-stone-600 hover:bg-[#F7F4EF]">
+                <FileBarChart size={15} /> Resumen
+              </button>
+              <button onClick={() => setIsUploadOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] bg-[#214E3A] px-3.5 py-2.5 text-xs font-extrabold text-white hover:bg-[#183D2D]">
+                <Upload size={15} /> Subir
+              </button>
+            </div>
           )}
         </div>
       </section>
 
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {filters.map(([id, label, count]) => (
-          <button key={id} onClick={() => setSelectedFilter(id)} className={`rounded-xl border p-3 text-left transition ${selectedFilter === id ? 'border-[#9DB5A6] bg-[#EEF4F0]' : 'border-[#E4DDD3] bg-white hover:bg-[#FAF8F4]'}`}>
-            <p className="text-xs font-bold text-stone-800">{label}</p>
-            <p className="mt-1 text-[11px] text-stone-400">{count} registros</p>
+          <button
+            key={id}
+            onClick={() => setSelectedFilter(id)}
+            className={`rounded-[15px] border p-3.5 text-left transition ${
+              selectedFilter === id
+                ? 'border-[#A8BDAF] bg-[#EAF2ED] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.04)]'
+                : 'border-[#E4DDD3] bg-[#FFFDF9] hover:bg-[#FAF8F4]'
+            }`}
+          >
+            <p className={`text-xs font-extrabold ${selectedFilter === id ? 'text-[#214E3A]' : 'text-[#1E231F]'}`}>{label}</p>
+            <p className="mt-1 text-[10px] font-medium text-stone-400">{count} registros</p>
           </button>
         ))}
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-[#E3DCD2] bg-white">
+      <section className="labora-card overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b border-[#EEE7DD] px-4 py-3.5">
-          <div className="flex items-center gap-2"><Folder size={17} className="text-[#2E5A44]" /><h2 className="text-sm font-bold text-stone-900">Archivos y justificantes</h2></div>
-          <span className="hidden text-[11px] text-stone-400 sm:inline">Bucket privado + RLS</span>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[11px] bg-[#E7F0EA] text-[#214E3A]"><Folder size={15} /></div>
+            <div><h2 className="text-sm font-extrabold text-[#1E231F]">Archivos y justificantes</h2><p className="text-[10px] text-stone-400">{filteredItems.length} visibles</p></div>
+          </div>
+          <span className="hidden rounded-full bg-[#F1ECE3] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-stone-500 sm:inline">Storage privado + RLS</span>
         </div>
 
         {filteredItems.length === 0 ? (
-          <div className="px-4 py-14 text-center"><Folder size={30} className="mx-auto text-stone-300" /><p className="mt-3 text-sm font-semibold text-stone-600">No hay documentos en esta categoría.</p></div>
+          <div className="px-4 py-14 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#F1ECE3] text-stone-400"><Folder size={23} /></div>
+            <p className="mt-3 text-sm font-extrabold text-stone-600">No hay documentos en esta categoría.</p>
+          </div>
         ) : (
           <div className="divide-y divide-[#EEE7DD]">
             {filteredItems.map((item) => (
-              <article key={`${item.source}-${item.id}`} className="flex items-center gap-3 p-4 hover:bg-[#FCFAF7]">
-                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${item.category === 'Gasolina' ? 'bg-[#FFF4E7] text-[#A65E2E]' : item.fileType === 'PDF' ? 'bg-[#FDEEEB] text-[#A54B40]' : 'bg-[#EEF4F0] text-[#2E5A44]'}`}>
+              <article key={`${item.source}-${item.id}`} className="flex items-center gap-3 p-4 transition hover:bg-[#FCFAF7]">
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] ${
+                  item.category === 'Gasolina'
+                    ? 'bg-[#FFF2E8] text-[#A65E2E]'
+                    : item.fileType === 'PDF'
+                      ? 'bg-[#F9ECE7] text-[#B95635]'
+                      : 'bg-[#E7F0EA] text-[#214E3A]'
+                }`}>
                   {item.category === 'Gasolina' ? <Fuel size={18} /> : <FileText size={18} />}
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="max-w-full truncate text-sm font-bold text-stone-900">{item.name}</p>
-                    {item.badge && <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${badgeClass(item.badge.tone)}`}><CheckCircle2 size={10} />{item.badge.label}</span>}
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <p className="max-w-full truncate text-sm font-extrabold text-[#1E231F]">{item.name}</p>
+                    {item.badge && (
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${badgeClass(item.badge.tone)}`}>
+                        <CheckCircle2 size={10} /> {item.badge.label}
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-stone-400">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-stone-400">
                     <span className="inline-flex items-center gap-1"><Calendar size={11} />{item.date}</span>
                     <span>{item.fileType}</span>
                     {item.sizeBytes != null && <span>{bytesLabel(item.sizeBytes)}</span>}
@@ -355,11 +403,13 @@ export const Documents: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-1">
-                  <button onClick={() => setPreview(item)} className="rounded-lg p-2 text-stone-400 hover:bg-[#F2EFE9] hover:text-[#2E5A44]" title="Previsualizar"><Eye size={16} /></button>
-                  <button onClick={() => handleDownload(item)} disabled={!item.content} className="rounded-lg p-2 text-stone-400 hover:bg-[#F2EFE9] hover:text-[#2E5A44] disabled:cursor-not-allowed disabled:opacity-30" title="Descargar"><Download size={16} /></button>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <button onClick={() => setPreview(item)} className="rounded-[10px] p-2 text-stone-400 hover:bg-[#F1ECE3] hover:text-[#214E3A]" title="Previsualizar"><Eye size={16} /></button>
+                  <button onClick={() => handleDownload(item)} disabled={!item.content} className="rounded-[10px] p-2 text-stone-400 hover:bg-[#F1ECE3] hover:text-[#214E3A] disabled:cursor-not-allowed disabled:opacity-25" title="Descargar"><Download size={16} /></button>
                   {!isManager && item.source === 'document' && item.sourceUserId === currentUser?.id && (
-                    <button onClick={() => void handleDelete(item)} disabled={deletingId === item.id} className="rounded-lg p-2 text-stone-300 hover:bg-[#FFF0EC] hover:text-[#A34F42] disabled:opacity-40" title="Eliminar">{deletingId === item.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}</button>
+                    <button onClick={() => void handleDelete(item)} disabled={deletingId === item.id} className="rounded-[10px] p-2 text-stone-300 hover:bg-[#FFF0EC] hover:text-[#A34F42] disabled:opacity-40" title="Eliminar">
+                      {deletingId === item.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                    </button>
                   )}
                 </div>
               </article>
@@ -370,60 +420,92 @@ export const Documents: React.FC = () => {
 
       {!isManager && (
         <section className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-[#E3DCD2] bg-white p-3.5"><div className="flex items-center gap-2 text-xs font-bold text-stone-700"><ShieldCheck size={15} className="text-[#2E5A44]" /> Privado</div><p className="mt-1 text-[11px] leading-relaxed text-stone-500">Los archivos se guardan en un bucket privado y el acceso se controla con RLS.</p></div>
-          <div className="rounded-xl border border-[#E3DCD2] bg-white p-3.5"><div className="flex items-center gap-2 text-xs font-bold text-stone-700"><Hash size={15} className="text-[#2E5A44]" /> Anti-duplicados</div><p className="mt-1 text-[11px] leading-relaxed text-stone-500">Los archivos nuevos se identifican con SHA-256 para bloquear copias idénticas.</p></div>
-          <div className="rounded-xl border border-[#E3DCD2] bg-white p-3.5"><div className="flex items-center gap-2 text-xs font-bold text-stone-700"><FileText size={15} className="text-[#2E5A44]" /> PDF multipágina</div><p className="mt-1 text-[11px] leading-relaxed text-stone-500">Un PDF se conserva completo; la previsualización permite recorrer todas sus páginas.</p></div>
+          <InfoCard icon={ShieldCheck} title="Privado" text="Los archivos se guardan en Storage privado y el acceso se controla con RLS." />
+          <InfoCard icon={Hash} title="Anti-duplicados" text="SHA-256 bloquea la subida repetida del mismo archivo exacto." />
+          <InfoCard icon={FileText} title="PDF completo" text="Los PDF multipágina se conservan completos, sin convertirlos en una sola imagen." />
         </section>
       )}
 
       {isUploadOpen && !isManager && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/55 p-3 backdrop-blur-sm sm:items-center">
-          <div className="w-full max-w-lg rounded-t-3xl border border-[#E2DAD0] bg-[#FCFAF7] p-5 shadow-2xl sm:rounded-3xl">
-            <div className="flex items-start justify-between gap-3"><div><h3 className="text-lg font-bold text-stone-900">Subir documento</h3><p className="mt-1 text-xs text-stone-500">PDF, JPG, PNG o WebP · máximo 15 MB.</p></div><button onClick={() => setIsUploadOpen(false)} className="rounded-xl border border-[#E4DDD3] bg-white p-2 text-stone-400"><X size={17} /></button></div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#18211C]/55 p-3 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-lg rounded-t-[26px] border border-[#E2DAD0] bg-[#FFFDF9] p-5 shadow-2xl sm:rounded-[26px]">
+            <div className="flex items-start justify-between gap-3">
+              <div><p className="labora-kicker text-[#789582]">Archivo privado</p><h3 className="mt-1 text-lg font-extrabold text-[#1E231F]">Subir documento</h3><p className="mt-1 text-xs text-stone-500">PDF, JPG, PNG o WebP · máximo 15 MB.</p></div>
+              <button onClick={() => setIsUploadOpen(false)} className="rounded-xl border border-[#E4DDD3] bg-white p-2 text-stone-400"><X size={17} /></button>
+            </div>
 
             <form onSubmit={handleSaveDocument} className="mt-5 space-y-4">
               <input ref={fileInputRef} type="file" className="hidden" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => void handleFileSelect(event)} />
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isReadingFile} className="flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D9D1C6] bg-white px-4 py-7 text-center hover:border-[#91AA9A] disabled:opacity-60">
-                {isReadingFile ? <Loader2 size={24} className="animate-spin text-[#2E5A44]" /> : <Upload size={24} className="text-[#2E5A44]" />}
-                <p className="mt-2 text-sm font-bold text-stone-800">{pendingUpload ? pendingUpload.name : 'Seleccionar archivo'}</p>
-                <p className="mt-1 text-[11px] text-stone-400">{pendingUpload ? `${bytesLabel(pendingUpload.sizeBytes)} · SHA-256 calculado` : 'Los PDF multipágina se conservan completos.'}</p>
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isReadingFile} className="flex w-full flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-[#D9D1C6] bg-[#FAF7F1] px-4 py-7 text-center transition hover:border-[#91AA9A] disabled:opacity-60">
+                {isReadingFile ? <Loader2 size={24} className="animate-spin text-[#214E3A]" /> : <Upload size={24} className="text-[#214E3A]" />}
+                <p className="mt-2 text-sm font-extrabold text-[#1E231F]">{pendingUpload ? pendingUpload.name : 'Seleccionar archivo'}</p>
+                <p className="mt-1 text-[11px] text-stone-400">{pendingUpload ? `${bytesLabel(pendingUpload.sizeBytes)} · SHA-256 calculado` : 'El original se conserva completo.'}</p>
               </button>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <label><span className="mb-1.5 block text-[11px] font-bold text-stone-500">Nombre</span><input value={docName} onChange={(event) => setDocName(event.target.value)} className="w-full rounded-xl border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8EA796]" /></label>
-                <label><span className="mb-1.5 block text-[11px] font-bold text-stone-500">Tipo</span><select value={docType} onChange={(event) => setDocType(event.target.value as UserDocument['type'])} className="w-full rounded-xl border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none"><option value="Factura">Factura</option><option value="Trimestre">Fiscal / trimestre</option><option value="Alta">Alta / censal</option><option value="Otro">Otro</option></select></label>
+                <label><span className="mb-1.5 block text-[11px] font-extrabold text-stone-500">Nombre</span><input value={docName} onChange={(event) => setDocName(event.target.value)} className="w-full rounded-[13px] border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" /></label>
+                <label><span className="mb-1.5 block text-[11px] font-extrabold text-stone-500">Tipo</span><select value={docType} onChange={(event) => setDocType(event.target.value as UserDocument['type'])} className="w-full rounded-[13px] border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none"><option value="Factura">Factura</option><option value="Trimestre">Fiscal / trimestre</option><option value="Alta">Alta / censal</option><option value="Otro">Otro</option></select></label>
               </div>
 
-              <div className="flex gap-2 pt-1"><button type="button" onClick={() => setIsUploadOpen(false)} className="flex-1 rounded-xl border border-[#DDD4C8] bg-white py-2.5 text-xs font-bold text-stone-600">Cancelar</button><button type="submit" disabled={!pendingUpload || !docName.trim()} className="flex-1 rounded-xl bg-[#2E5A44] py-2.5 text-xs font-bold text-white disabled:opacity-40">Guardar</button></div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setIsUploadOpen(false)} className="flex-1 rounded-[13px] border border-[#DDD4C8] bg-white py-2.5 text-xs font-extrabold text-stone-600">Cancelar</button>
+                <button type="submit" disabled={!pendingUpload || !docName.trim()} className="flex-1 rounded-[13px] bg-[#214E3A] py-2.5 text-xs font-extrabold text-white disabled:opacity-40">Guardar</button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
       {preview && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/70 p-3 backdrop-blur-sm" onClick={() => setPreview(null)}>
-          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-4 py-3"><div className="min-w-0"><p className="truncate text-sm font-bold text-stone-900">{preview.name}</p><p className="mt-0.5 text-[10px] text-stone-400">{preview.date} · {preview.ownerName}</p></div><button onClick={() => setPreview(null)} className="rounded-lg p-2 text-stone-400 hover:bg-stone-100"><X size={17} /></button></div>
-            <div className="min-h-[420px] flex-1 bg-[#F4F1EC] p-3">
-              {!preview.content ? (
-                <div className="flex h-[420px] flex-col items-center justify-center text-center"><AlertTriangle size={28} className="text-stone-300" /><p className="mt-3 text-sm font-semibold text-stone-600">Este registro no incluye un archivo adjunto.</p><p className="mt-1 text-xs text-stone-400">Conservamos únicamente sus datos y, cuando existe, la referencia de presentación.</p></div>
-              ) : preview.fileType === 'PDF' ? (
-                <iframe src={preview.content} title={preview.name} className="h-[70vh] w-full rounded-xl bg-white" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#18211C]/60 p-3 backdrop-blur-sm">
+          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[26px] border border-[#E3DBD0] bg-[#FFFDF9] shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b border-[#E9E2D8] p-4 sm:p-5">
+              <div className="min-w-0"><p className="labora-kicker text-[#789582]">Previsualización</p><h3 className="mt-1 truncate text-base font-extrabold text-[#1E231F]">{preview.name}</h3><p className="mt-1 text-[10px] text-stone-400">{preview.ownerName} · {preview.date}</p></div>
+              <button onClick={() => setPreview(null)} className="rounded-xl p-2 text-stone-400 hover:bg-[#F1ECE3]"><X size={18} /></button>
+            </div>
+
+            <div className="min-h-[300px] flex-1 overflow-auto bg-[#F4F0E9] p-3 sm:p-5">
+              {preview.content && preview.fileType === 'PDF' ? (
+                <iframe src={preview.content} title={preview.name} className="h-[62vh] min-h-[420px] w-full rounded-[16px] border border-[#DDD5CA] bg-white" />
+              ) : preview.content && preview.fileType === 'IMG' ? (
+                <img src={preview.content} alt={preview.name} className="mx-auto max-h-[65vh] max-w-full rounded-[16px] border border-[#DDD5CA] bg-white object-contain shadow-sm" />
               ) : (
-                <div className="flex h-[70vh] items-center justify-center"><img src={preview.content} alt={preview.name} className="max-h-full max-w-full rounded-xl object-contain" /></div>
+                <div className="flex min-h-[360px] flex-col items-center justify-center text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#E7F0EA] text-[#214E3A]"><FileText size={26} /></div>
+                  <p className="mt-3 text-sm font-extrabold text-[#1E231F]">Registro sin archivo adjunto</p>
+                  <p className="mt-1 max-w-sm text-xs leading-relaxed text-stone-400">Este elemento representa un estado registrado en Labora+, no un fichero descargable.</p>
+                </div>
               )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-[#E9E2D8] p-3 sm:p-4">
+              <p className="text-[10px] text-stone-400">{preview.sizeBytes != null ? bytesLabel(preview.sizeBytes) : preview.category}</p>
+              <button onClick={() => handleDownload(preview)} disabled={!preview.content} className="inline-flex items-center gap-2 rounded-[12px] bg-[#214E3A] px-3.5 py-2.5 text-xs font-extrabold text-white disabled:opacity-35"><Download size={14} /> Descargar</button>
             </div>
           </div>
         </div>
       )}
 
       {isReportOpen && summary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 p-3 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-stone-400">Resumen informativo</p><h3 className="mt-1 text-lg font-bold text-stone-900">Situación fiscal estimada</h3></div><button onClick={() => setIsReportOpen(false)} className="rounded-lg p-2 text-stone-400 hover:bg-stone-100"><X size={17} /></button></div>
-            <div className="mt-5 grid grid-cols-2 gap-2"><Metric label="Ingresos registrados" value={summary.totalIncome} /><Metric label="Gastos computados" value={summary.totalExpenses} /><Metric label="Neto estimado" value={summary.netProfit} /><Metric label="Reserva IRPF orientativa" value={summary.estimatedIRPF} /></div>
-            <div className="mt-4 rounded-xl border border-[#F0DFC1] bg-[#FFF8EC] p-3 text-[11px] leading-relaxed text-[#805F2B]">Este resumen es orientativo. No equivale a una autoliquidación presentada ni sustituye la revisión de la gestoría o de la AEAT.</div>
-            <div className="mt-4 flex items-center justify-between gap-3"><div className="text-[10px] text-stone-400">NIF: {currentUser?.nif || 'No informado'} · IAE: {currentUser?.iaeCode || 'No informado'}</div><button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-xl border border-[#DDD5CA] bg-white px-3 py-2 text-xs font-bold text-stone-600"><Printer size={14} /> Imprimir</button></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#18211C]/60 p-3 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-[26px] border border-[#E3DBD0] bg-[#FFFDF9] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div><p className="labora-kicker text-[#789582]">Resumen informativo</p><h3 className="labora-display mt-1 text-xl font-semibold text-[#1E231F]">Situación estimada</h3></div>
+              <button onClick={() => setIsReportOpen(false)} className="rounded-xl p-2 text-stone-400 hover:bg-[#F1ECE3]"><X size={17} /></button>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <Metric label="Ingresos registrados" value={summary.totalIncome} />
+              <Metric label="Gastos computados" value={summary.totalExpenses} />
+              <Metric label="Neto estimado" value={summary.netProfit} />
+              <Metric label="IRPF orientativo" value={summary.estimatedIRPF} />
+            </div>
+            <div className="mt-4 rounded-[14px] border border-[#F0DFC1] bg-[#FFF8EC] p-3 text-[11px] leading-relaxed text-[#805F2B]">
+              Este resumen es orientativo. No equivale a una autoliquidación presentada ni sustituye la revisión de la gestoría o de la AEAT.
+            </div>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-[10px] text-stone-400">NIF: {currentUser?.nif || 'No informado'} · IAE: {currentUser?.iaeCode || 'No informado'}</div>
+              <button onClick={() => window.print()} className="inline-flex items-center justify-center gap-2 rounded-[12px] border border-[#DDD5CA] bg-white px-3 py-2 text-xs font-extrabold text-stone-600"><Printer size={14} /> Imprimir</button>
+            </div>
           </div>
         </div>
       )}
@@ -431,8 +513,19 @@ export const Documents: React.FC = () => {
   );
 };
 
+const InfoCard = ({ icon: Icon, title, text }: { icon: React.ComponentType<{ size?: number }>; title: string; text: string }) => (
+  <div className="labora-card p-3.5">
+    <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]"><Icon size={16} /></div>
+    <p className="mt-2 text-xs font-extrabold text-[#1E231F]">{title}</p>
+    <p className="mt-1 text-[11px] leading-relaxed text-stone-500">{text}</p>
+  </div>
+);
+
 const Metric = ({ label, value }: { label: string; value: number }) => (
-  <div className="rounded-xl border border-[#E7E0D6] bg-[#FAF8F4] p-3"><p className="text-[10px] font-semibold text-stone-400">{label}</p><p className="mt-1 text-base font-bold text-stone-900">{value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p></div>
+  <div className="rounded-[14px] border border-[#E7E0D6] bg-[#FAF8F4] p-3">
+    <p className="text-[9px] font-extrabold uppercase tracking-[0.1em] text-stone-400">{label}</p>
+    <p className="mt-1 text-base font-extrabold tracking-[-0.03em] text-[#1E231F]">{value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+  </div>
 );
 
 export default Documents;
