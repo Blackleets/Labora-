@@ -14,6 +14,7 @@ import Logo from './components/Logo';
 import { ManagerDashboard } from './components/ManagerDashboard';
 import Onboarding from './components/Onboarding';
 import Profile from './components/Profile';
+import RemoteSyncBridge from './components/RemoteSyncBridge';
 import Sidebar from './components/Sidebar';
 import { TaxOverview } from './components/TaxOverview';
 import Toast from './components/Toast';
@@ -35,7 +36,7 @@ const MainLayout: React.FC = () => {
 
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
   const identityImage = identityImageStore.getForUser(currentUser);
-  const pendingReqCount = requirements.filter((requirement) => currentUser.role === UserRole.RIDER ? requirement.riderId === currentUser.id && requirement.status === 'pending' : requirement.status === 'pending').length;
+  const pendingReqCount = requirements.filter((requirement) => currentUser.role === UserRole.RIDER ? requirement.riderId === currentUser.id && requirement.status === 'pending' : requirement.managerId === currentUser.id && requirement.status === 'pending').length;
 
   const getViewTitle = () => {
     const titles: Record<string, string> = {
@@ -125,5 +126,17 @@ const MainLayout: React.FC = () => {
   );
 };
 
-const App: React.FC = () => <OrganizationProvider><CountryProvider><DataProvider><GhibliAtmosphereProvider><MainLayout /></GhibliAtmosphereProvider></DataProvider></CountryProvider></OrganizationProvider>;
+const App: React.FC = () => (
+  <OrganizationProvider>
+    <CountryProvider>
+      <DataProvider>
+        <GhibliAtmosphereProvider>
+          <RemoteSyncBridge />
+          <MainLayout />
+        </GhibliAtmosphereProvider>
+      </DataProvider>
+    </CountryProvider>
+  </OrganizationProvider>
+);
+
 export default App;
