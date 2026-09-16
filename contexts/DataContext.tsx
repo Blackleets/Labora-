@@ -23,6 +23,8 @@ import {
 } from '../types';
 import { buildFiscalSnapshot, parseFiscalPeriod } from '../services/fiscalEngine';
 import { getSupabase, isSupabaseConfigured } from '../services/supabaseClient';
+import { evidenceExtensionForMime, safeOriginalEvidenceFilename } from '../services/evidenceFiles';
+import { getMarketProfile } from '../modules/country-config/marketProfiles';
 
 type ExpenseReviewStatus = 'pending_review' | 'approved' | 'rejected' | 'needs_fix';
 type DbRow = Record<string, any>;
@@ -460,7 +462,16 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
   const requireWorkspace = () => {
     if (!currentUser?.organizationId) throw new Error('No hay un espacio de trabajo activo.');
-    return { userId: currentUser.id, organizationId: currentUser.organizationId };
+    const market = getMarketProfile(currentUser.countryCode);
+    return { userId: currentUser.id, organizationId: currentUser.organizationId, currency: market.currency };
+  };
+
+  const assertFiscalEnabledForUser = (userId: string) => {
+    const target = users.find((user) => user.id === userId);
+    const market = getMarketProfile(target?.countryCode);
+    if (!target || market.fiscalEngineStatus !== 'verified') {
+      throw new Error('La fiscalidad guiada no está habilitada para el mercado de este usuario.');
+    }
   };
 
   const login = async (email: string, password: string) => {
@@ -574,7 +585,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const toggleDarkMode = () => setDarkMode((value) => !value);
 
   const addIncome = async (income: Omit<Income, 'id' | 'userId'>) => {
-    const { userId, organizationId } = requireWorkspace();
+    const { userId, organizationId, currency } = requireWorkspace();
     const { error } = await getSupabase().from('incomes').insert({
       organization_id: organizationId,
       user_id: userId,
@@ -582,7 +593,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       occurred_on: income.date,
       gross_amount: income.amount,
       retention_amount: income.retention || 0,
-      currency: 'EUR',
+      currency,
       source_type: 'manual',
       evidence_status: 'unverified',
       created_by: userId,
@@ -593,7 +604,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   };
 
   const addIncomes = async (items: Omit<Income, 'id' | 'userId'>[]) => {
-    const { userId, organizationId } = requireWorkspace();
+    const { userId, organizationId, currency } = requireWorkspace();
     if (items.length === 0) return;
     const rows = items.map((income) => ({
       organization_id: organizationId,
@@ -602,7 +613,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       occurred_on: income.date,
       gross_amount: income.amount,
       retention_amount: income.retention || 0,
-      currency: 'EUR',
+      currency,
       source_type: 'manual',
       evidence_status: 'unverified',
       created_by: userId,
@@ -613,14 +624,16 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     showNotification('success', `${items.length} ingresos registrados.`);
   };
 
-  const uploadEvidence = async (dataUrl: string, kind: string, documentDate?: string) => {
+  const uploadEvidence = async (dataUrl: string, kind: string, documentDate?: string, originalFilename?: string) => {
     const { userId, organizationId } = requireWorkspace();
     const supabase = getSupabase();
     const blob = dataUrlToBlob(dataUrl);
-    const extension = blob.type === 'image/png' ? 'png' : blob.type === 'application/pdf' ? 'pdf' : 'jpg';
+    const extension = evidenceExtensionForMime(blob.type);
     const filename = `${crypto.randomUUID()}.${extension}`;
     const storagePath = `${organizationId}/${userId}/${filename}`;
     const checksum = await sha256(blob);
+    const fallbackBase = `evidencia-${documentDate || new Date().toISOString().slice(0, 10)}`;
+    const persistedOriginalFilename = safeOriginalEvidenceFilename(originalFilename, fallbackBase, extension);
 
     const { error: uploadError } = await supabase.storage.from('fiscal-evidence').upload(storagePath, blob, {
       contentType: blob.type,
@@ -634,7 +647,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       uploaded_by: userId,
       kind,
       storage_path: storagePath,
-      original_filename: `evidencia-${documentDate || new Date().toISOString().slice(0, 10)}.${extension}`,
+      original_filename: persistedOriginalFilename,
       mime_type: blob.type,
       size_bytes: blob.size,
       sha256: checksum,
@@ -649,7 +662,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   };
 
   const addExpense = async (expense: Omit<Expense, 'id' | 'userId'>) => {
-    const { userId, organizationId } = requireWorkspace();
+    const { userId, organizationId, currency } = requireWorkspace();
     let sourceDocumentId: string | null = null;
     if (expense.receiptUrl?.startsWith('data:')) sourceDocumentId = await uploadEvidence(expense.receiptUrl, 'expense_receipt', expense.date);
     if (!sourceDocumentId) throw new Error('Adjunta una evidencia real antes de registrar el gasto.');
@@ -661,7 +674,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       merchant: expense.merchant?.trim() || String(expense.category),
       category: String(expense.category),
       total_amount: expense.amount,
-      currency: 'EUR',
+      currency,
       vat_rate: expense.vatRate ?? null,
       vat_amount: expense.vatAmount ?? null,
       source_document_id: sourceDocumentId,
@@ -725,13 +738,18 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
   const addDocument = async (doc: Omit<Document, 'id' | 'userId'>) => {
     if (!doc.content?.startsWith('data:')) throw new Error('El documento debe contener un archivo real.');
-    await uploadEvidence(doc.content, doc.type === 'Factura' ? 'invoice' : doc.type === 'Alta' ? 'registration' : 'document', doc.date);
+    await uploadEvidence(
+      doc.content,
+      doc.type === 'Factura' ? 'invoice' : doc.type === 'Alta' ? 'registration' : 'document',
+      doc.date,
+      doc.name,
+    );
     await refreshData();
     showNotification('success', 'Documento guardado en almacenamiento privado.');
   };
 
   const addPayment = async (payment: Omit<Payment, 'id'>) => {
-    const { userId, organizationId } = requireWorkspace();
+    const { userId, organizationId, currency } = requireWorkspace();
     const { error } = await getSupabase().from('platform_payouts').insert({
       organization_id: organizationId,
       user_id: userId,
@@ -739,7 +757,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       paid_on: payment.status === 'received' ? payment.date : null,
       period_end: payment.date,
       net_amount: payment.amount,
-      currency: 'EUR',
+      currency,
       status: payment.status === 'received' ? 'paid' : 'expected',
       created_by: userId,
     });
@@ -816,6 +834,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   };
 
   const calculateQuarterlyTaxes = (userId: string, quarter: string) => {
+    assertFiscalEnabledForUser(userId);
     const snapshot = buildFiscalSnapshot(incomes, expenses, userId, quarter);
     const period = parseFiscalPeriod(quarter);
     const common = {
@@ -832,8 +851,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
         id: `estimate-130-${userId}-${period.label}`,
         ...common,
         modelType: '130' as const,
-        title: 'Modelo 130 · estimación pendiente de revisión',
-        taxAmount: snapshot.model130.provisionalAccruedAmount,
+        title: 'Modelo 130 · referencia no accionable pendiente de revisión',
+        taxAmount: snapshot.model130.standardRateReferenceAmount,
       },
       model303: {
         id: `estimate-303-${userId}-${period.label}`,
@@ -846,6 +865,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   };
 
   const getFiscalSummary = (userId: string): FiscalSummary => {
+    assertFiscalEnabledForUser(userId);
     const label = currentQuarter();
     const snapshot = buildFiscalSnapshot(incomes, expenses, userId, label);
     const totalIncome = snapshot.quarter.grossIncome;
@@ -855,7 +875,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       totalIncome,
       totalExpenses,
       netProfit,
-      estimatedIRPF: snapshot.model130.provisionalAccruedAmount,
+      estimatedIRPF: snapshot.model130.standardRateReferenceAmount,
       quarter: label,
     };
   };
