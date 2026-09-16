@@ -25,7 +25,7 @@ create table if not exists public.advisor_verification_requests (
   state public.labora_verification_state not null default 'pending',
   declared_issuer text,
   declared_identifier text,
-  evidence_document_id uuid references public.documents(id) on delete restrict,
+  evidence_document_id uuid not null references public.documents(id) on delete restrict,
   reviewer_notes text,
   reviewed_by uuid references auth.users(id) on delete set null,
   reviewed_at timestamptz,
@@ -65,11 +65,13 @@ alter table public.advisor_trust_profiles enable row level security;
 create policy "advisor verification select own"
   on public.advisor_verification_requests
   for select
+  to authenticated
   using (auth.uid() = user_id);
 
 create policy "advisor verification submit own"
   on public.advisor_verification_requests
   for insert
+  to authenticated
   with check (
     auth.uid() = user_id
     and state = 'pending'
@@ -82,6 +84,14 @@ create policy "advisor verification submit own"
         and membership.status = 'active'
         and membership.role in ('owner', 'manager')
     )
+    and exists (
+      select 1
+      from public.documents document
+      where document.id = evidence_document_id
+        and document.user_id = auth.uid()
+        and document.uploaded_by = auth.uid()
+        and public.labora_is_org_member(document.organization_id)
+    )
   );
 
 -- No client-side UPDATE/DELETE policies are created intentionally.
@@ -90,11 +100,13 @@ create policy "advisor verification submit own"
 create policy "advisor trust select self"
   on public.advisor_trust_profiles
   for select
+  to authenticated
   using (auth.uid() = user_id);
 
 create policy "advisor trust select linked client"
   on public.advisor_trust_profiles
   for select
+  to authenticated
   using (
     exists (
       select 1
@@ -105,8 +117,13 @@ create policy "advisor trust select linked client"
     )
   );
 
--- There are intentionally no INSERT/UPDATE/DELETE policies for advisor_trust_profiles.
--- A trusted backend process derives this table from verified evidence.
+revoke all on table public.advisor_verification_requests from anon, authenticated;
+revoke all on table public.advisor_trust_profiles from anon, authenticated;
+grant select, insert on table public.advisor_verification_requests to authenticated;
+grant select on table public.advisor_trust_profiles to authenticated;
+
+-- There are intentionally no INSERT/UPDATE/DELETE grants for advisor_trust_profiles.
+-- A trusted backend process derives this table from reviewed evidence.
 
 comment on table public.advisor_verification_requests is
   'Private evidence-backed verification cases. Advisors can submit but cannot self-verify.';
