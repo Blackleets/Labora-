@@ -1,8 +1,16 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import {
+  ClipboardPaste,
+  Info,
+  Loader2,
+  Plus,
+  Sparkles,
+  TrendingUp,
+  X
+} from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { TrendingUp, Sparkles, ClipboardPaste, Loader2, Info, AlertCircle, X } from 'lucide-react';
 import { extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
+import { UserRole } from '../types';
 
 interface IncomeTrackerProps {
   startDate: string;
@@ -10,248 +18,219 @@ interface IncomeTrackerProps {
 }
 
 const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => {
-  const { incomes, addIncome } = useData();
+  const {
+    incomes,
+    addIncome,
+    currentUser,
+    users,
+    privacyMode,
+    showNotification
+  } = useData();
+
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // State for AI explanations
+  const [platform, setPlatform] = useState('');
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [retention, setRetention] = useState('0');
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<Record<string, boolean>>({});
 
-  // Filter incomes based on date props
-  const filteredIncomes = useMemo(() => {
-    return incomes.filter(income => {
-      if (startDate && income.date < startDate) return false;
-      if (endDate && income.date > endDate) return false;
-      return true;
-    });
-  }, [incomes, startDate, endDate]);
+  const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+  const linkedIds = useMemo(() => new Set(
+    users
+      .filter((user) => user.role === UserRole.RIDER && user.managerId === currentUser?.id)
+      .map((user) => user.id)
+  ), [users, currentUser?.id]);
+  const ownerNames = useMemo(() => new Map(users.map((user) => [user.id, user.name])), [users]);
+
+  const filteredIncomes = useMemo(() => incomes.filter((income) => {
+    if (!currentUser) return false;
+    if (isManager) {
+      if (!linkedIds.has(income.userId)) return false;
+    } else if (income.userId !== currentUser.id) {
+      return false;
+    }
+    if (startDate && income.date < startDate) return false;
+    if (endDate && income.date > endDate) return false;
+    return true;
+  }), [incomes, startDate, endDate, currentUser, isManager, linkedIds]);
+
+  const totalIncome = filteredIncomes.reduce((sum, income) => sum + income.amount, 0);
+  const totalRetention = filteredIncomes.reduce((sum, income) => sum + income.retention, 0);
+
+  const formatMoney = (value: number) => privacyMode
+    ? '••••'
+    : value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
 
   const handleAIExtraction = async () => {
-    if (!pastedText.trim()) return;
+    if (!pastedText.trim() || isManager) return;
     setIsProcessing(true);
     try {
       const extractedData = await extractIncomeFromText(pastedText);
       if (extractedData.length === 0) {
-        alert("No se encontraron ingresos claros en el texto.");
-      } else {
-        extractedData.forEach(item => {
-          addIncome({
-            platform: item.platform,
-            amount: item.amount,
-            date: item.date,
-            retention: item.retention || 0
-          });
-        });
-        alert(`${extractedData.length} ingresos añadidos correctamente.`);
-        setIsPasteModalOpen(false);
-        setPastedText('');
+        showNotification('info', 'No se encontraron ingresos claros en el texto.');
+        return;
       }
-    } catch (error) {
+
+      extractedData.forEach((item) => {
+        addIncome({
+          platform: item.platform,
+          amount: item.amount,
+          date: item.date,
+          retention: item.retention || 0
+        });
+      });
+      showNotification('success', `${extractedData.length} ingresos añadidos para revisión.`);
+      setIsPasteModalOpen(false);
+      setPastedText('');
+    } catch (error: any) {
       console.error(error);
-      alert("Error al procesar el texto.");
+      showNotification('error', String(error?.message || 'No se pudo procesar el texto.'));
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleAnalyzeRetention = async (id: string, platform: string, amount: number, retention: number) => {
-    if (loadingExplanation[id]) return;
+  const handleManualSave = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!currentUser || isManager) return;
+    const numericAmount = Number(amount);
+    const numericRetention = Number(retention || 0);
 
-    setLoadingExplanation(prev => ({ ...prev, [id]: true }));
+    if (!platform.trim() || !date || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+      showNotification('error', 'Completa plataforma, fecha e importe.');
+      return;
+    }
+    if (!Number.isFinite(numericRetention) || numericRetention < 0) {
+      showNotification('error', 'La retención debe ser un importe válido.');
+      return;
+    }
+
+    addIncome({
+      platform: platform.trim(),
+      amount: numericAmount,
+      date,
+      retention: numericRetention
+    });
+    setPlatform('');
+    setAmount('');
+    setRetention('0');
+    setDate(new Date().toISOString().split('T')[0]);
+    setIsManualOpen(false);
+  };
+
+  const handleAnalyzeRetention = async (id: string, incomePlatform: string, incomeAmount: number, incomeRetention: number) => {
+    if (loadingExplanation[id]) return;
+    setLoadingExplanation((previous) => ({ ...previous, [id]: true }));
     try {
-      const explanation = await getRetentionExplanation(platform, amount, retention);
-      setExplanations(prev => ({ ...prev, [id]: explanation }));
+      const explanation = await getRetentionExplanation(incomePlatform, incomeAmount, incomeRetention);
+      setExplanations((previous) => ({ ...previous, [id]: explanation }));
     } catch (error) {
       console.error(error);
+      showNotification('error', 'No se pudo analizar la retención.');
     } finally {
-      setLoadingExplanation(prev => ({ ...prev, [id]: false }));
+      setLoadingExplanation((previous) => ({ ...previous, [id]: false }));
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Ingresos</h2>
-          <p className="text-gray-500">
-            {startDate || endDate 
-              ? `Mostrando ${filteredIncomes.length} resultados filtrados`
-              : 'Registra lo que ganas en cada plataforma'}
-          </p>
-        </div>
-        <button 
-          onClick={() => setIsPasteModalOpen(true)}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 w-full sm:w-auto justify-center"
-        >
-          <Sparkles size={18} />
-          <span>Importar con IA</span>
-        </button>
-      </div>
-
-      {/* Paste Modal */}
-      {isPasteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl p-6 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <ClipboardPaste className="text-purple-600" />
-                Pegar Factura/Email
-                </h3>
-                <button 
-                  onClick={() => setIsPasteModalOpen(false)}
-                  className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-            </div>
-            
-            <p className="text-sm text-gray-500 mb-4">
-              Copia el texto del email de Uber/Glovo o el PDF de la factura y pégalo aquí. La IA extraerá los datos y las retenciones automáticamente.
+    <div className="space-y-4">
+      <section className="labora-card overflow-hidden">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div>
+            <p className="labora-kicker text-[#789582]">{isManager ? 'Cartera vinculada' : 'Registro de actividad'}</p>
+            <h2 className="mt-1 text-lg font-extrabold text-[#1E231F]">{isManager ? 'Ingresos de clientes' : 'Ingresos'}</h2>
+            <p className="mt-1 text-xs text-stone-500">
+              {isManager ? 'Lectura de ingresos registrados por tus clientes vinculados.' : 'Registra importes explícitos de tus plataformas; la IA no crea filas si no puede extraerlas.'}
             </p>
-            <textarea 
-              className="w-full h-40 p-3 border rounded-xl bg-gray-50 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none transition-all"
-              placeholder="Ej: Resumen de ganancias Uber. Fecha: 2024-03-01. Bruto: 150.50€. IRPF: 3.01€..."
-              value={pastedText}
-              onChange={(e) => setPastedText(e.target.value)}
-            ></textarea>
-            <div className="flex justify-end gap-3 mt-4">
-              <button 
-                onClick={() => setIsPasteModalOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleAIExtraction}
-                disabled={isProcessing || !pastedText.trim()}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-sm font-medium"
-              >
-                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                {isProcessing ? 'Procesando...' : 'Procesar'}
-              </button>
-            </div>
           </div>
+
+          {!isManager && (
+            <div className="flex gap-2">
+              <button onClick={() => setIsManualOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] border border-[#DDD5CA] bg-white px-3.5 py-2.5 text-xs font-extrabold text-stone-600 hover:bg-[#F7F4EF]"><Plus size={15} /> Añadir</button>
+              <button onClick={() => setIsPasteModalOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] bg-[#214E3A] px-3.5 py-2.5 text-xs font-extrabold text-white hover:bg-[#183D2D]"><Sparkles size={15} /> Importar texto</button>
+            </div>
+          )}
         </div>
+
+        <div className="grid grid-cols-2 gap-px bg-[#EAE3D9]">
+          <SummaryMetric label="Ingresos visibles" value={formatMoney(totalIncome)} />
+          <SummaryMetric label="Retenciones registradas" value={formatMoney(totalRetention)} accent />
+        </div>
+      </section>
+
+      <section className="labora-card overflow-hidden">
+        <div className="flex items-center justify-between gap-3 border-b border-[#EEE7DD] px-4 py-3.5">
+          <div className="flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-[11px] bg-[#E7F0EA] text-[#214E3A]"><TrendingUp size={15} /></div><div><h3 className="text-sm font-extrabold text-[#1E231F]">Historial</h3><p className="text-[10px] text-stone-400">{filteredIncomes.length} registros</p></div></div>
+        </div>
+
+        {filteredIncomes.length === 0 ? (
+          <div className="px-4 py-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#F1ECE3] text-stone-300"><TrendingUp size={23} /></div><p className="mt-3 text-sm font-extrabold text-stone-500">No hay ingresos en este periodo.</p></div>
+        ) : (
+          <div className="divide-y divide-[#EEE7DD]">
+            {filteredIncomes.map((income) => (
+              <React.Fragment key={income.id}>
+                <article className="p-4 transition hover:bg-[#FCFAF7]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-[#1E231F]">{income.platform}</p>
+                      <p className="mt-1 text-[10px] font-medium text-stone-400">{income.date}{isManager ? ` · ${ownerNames.get(income.userId) || 'Cliente'}` : ''}</p>
+                    </div>
+                    <div className="shrink-0 text-right"><p className="text-sm font-extrabold text-[#214E3A]">+{formatMoney(income.amount)}</p>{income.retention > 0 && <p className="mt-0.5 text-[10px] font-bold text-[#A45632]">Ret. −{formatMoney(income.retention)}</p>}</div>
+                  </div>
+
+                  {income.retention > 0 && (
+                    <div className="mt-3 flex justify-end">
+                      <button onClick={() => void handleAnalyzeRetention(income.id, income.platform, income.amount, income.retention)} disabled={loadingExplanation[income.id]} className="inline-flex items-center gap-1.5 rounded-[10px] bg-[#F1ECE3] px-2.5 py-1.5 text-[10px] font-extrabold text-stone-600 hover:bg-[#EAE3D9] disabled:opacity-60">
+                        {loadingExplanation[income.id] ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />} Explicar retención
+                      </button>
+                    </div>
+                  )}
+                </article>
+
+                {explanations[income.id] && (
+                  <div className="border-t border-[#E8E1D7] bg-[#F7F4EE] px-4 py-3">
+                    <div className="flex items-start gap-2.5"><div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] bg-[#E7F0EA] text-[#214E3A]"><Info size={13} /></div><div><p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#789582]">Explicación IA</p><p className="mt-1 text-xs leading-relaxed text-stone-600">{explanations[income.id]}</p><p className="mt-1 text-[9px] text-stone-400">Explicación informativa; no confirma que la retención sea fiscalmente correcta.</p></div></div>
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {isManualOpen && !isManager && (
+        <Modal onClose={() => setIsManualOpen(false)} title="Añadir ingreso" kicker="Registro manual">
+          <form onSubmit={handleManualSave} className="space-y-4">
+            <Field label="Plataforma / pagador"><input value={platform} onChange={(e) => setPlatform(e.target.value)} className="field-input" placeholder="Ej. Uber Eats" /></Field>
+            <div className="grid grid-cols-2 gap-3"><Field label="Importe bruto"><input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="field-input" /></Field><Field label="Fecha"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field-input" /></Field></div>
+            <Field label="Retención registrada"><input type="number" min="0" step="0.01" value={retention} onChange={(e) => setRetention(e.target.value)} className="field-input" /></Field>
+            <p className="rounded-[13px] bg-[#FAF7F1] px-3 py-2.5 text-[10px] leading-relaxed text-stone-500">Introduce únicamente importes que aparezcan en tu liquidación, factura o justificante.</p>
+            <button type="submit" className="w-full rounded-[13px] bg-[#214E3A] py-3 text-sm font-extrabold text-white">Guardar ingreso</button>
+          </form>
+        </Modal>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Summary Cards */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 md:col-span-3">
-          <div className="flex items-center gap-4 mb-6">
-             <div className="p-3 bg-green-50 rounded-lg text-green-600">
-               <TrendingUp size={24} />
-             </div>
-             <div>
-               <h3 className="text-lg font-semibold">Historial de Ingresos</h3>
-               <p className="text-sm text-gray-500">Todas tus plataformas unificadas</p>
-             </div>
-          </div>
+      {isPasteModalOpen && !isManager && (
+        <Modal onClose={() => setIsPasteModalOpen(false)} title="Importar desde texto" kicker="Extracción con IA">
+          <p className="mb-4 text-xs leading-relaxed text-stone-500">Pega texto real de una liquidación, email o factura. Si la IA no puede determinar plataforma, fecha o importe, no creará esa fila.</p>
+          <textarea className="h-40 w-full resize-none rounded-[14px] border border-[#DDD5CA] bg-[#FAF7F1] p-3 text-sm outline-none focus:border-[#789582]" placeholder="Pega aquí el texto…" value={pastedText} onChange={(e) => setPastedText(e.target.value)} />
+          <div className="mt-4 flex gap-2"><button onClick={() => setIsPasteModalOpen(false)} className="flex-1 rounded-[13px] border border-[#DDD5CA] bg-white py-2.5 text-xs font-extrabold text-stone-600">Cancelar</button><button onClick={() => void handleAIExtraction()} disabled={isProcessing || !pastedText.trim()} className="flex flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#D66C47] py-2.5 text-xs font-extrabold text-white disabled:opacity-40">{isProcessing ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Extraer</button></div>
+        </Modal>
+      )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="p-4 font-medium text-gray-500 text-sm">Plataforma</th>
-                  <th className="p-4 font-medium text-gray-500 text-sm hidden sm:table-cell">Fecha</th>
-                  <th className="p-4 font-medium text-gray-500 text-sm text-right">Monto Bruto</th>
-                  <th className="p-4 font-medium text-gray-500 text-sm hidden md:table-cell">
-                    <div className="flex items-center gap-1">
-                      Retención <Sparkles size={14} className="text-indigo-500" />
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredIncomes.map((inc) => (
-                  <React.Fragment key={inc.id}>
-                    <tr className="hover:bg-gray-50 transition-colors group">
-                      <td className="p-4">
-                        <div className="font-medium text-gray-900">{inc.platform}</div>
-                        {/* Mobile Date */}
-                        <div className="text-xs text-gray-400 sm:hidden mt-0.5">{inc.date}</div>
-                        {/* Mobile AI Analysis Trigger */}
-                        {inc.retention > 0 && (
-                          <button 
-                            onClick={() => handleAnalyzeRetention(inc.id, inc.platform, inc.amount, inc.retention)}
-                            disabled={loadingExplanation[inc.id]}
-                            className="flex items-center gap-1 mt-2 text-[10px] font-bold uppercase tracking-wide text-indigo-600 md:hidden"
-                          >
-                            {loadingExplanation[inc.id] ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
-                            Analizar Retención
-                          </button>
-                        )}
-                      </td>
-                      <td className="p-4 text-gray-600 hidden sm:table-cell">{inc.date}</td>
-                      <td className="p-4 text-right align-top">
-                        <div className="font-semibold text-green-600">+{inc.amount.toFixed(2)} €</div>
-                        {/* Mobile Retention Display */}
-                        {inc.retention > 0 && (
-                          <div className="text-xs text-red-500 md:hidden font-medium mt-0.5">
-                            -{inc.retention.toFixed(2)} € (Ret)
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-4 hidden md:table-cell">
-                        <div className="flex items-center gap-2">
-                          <span className={`font-medium ${inc.retention > 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                            -{inc.retention.toFixed(2)} €
-                          </span>
-                          {inc.retention > 0 && (
-                            <button 
-                              onClick={() => handleAnalyzeRetention(inc.id, inc.platform, inc.amount, inc.retention)}
-                              disabled={loadingExplanation[inc.id]}
-                              className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                              title="Analizar motivo con IA"
-                            >
-                              {loadingExplanation[inc.id] ? (
-                                <Loader2 size={12} className="animate-spin" />
-                              ) : (
-                                <Sparkles size={12} />
-                              )}
-                              <span>Analizar con IA</span>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                    {/* AI Explanation Row */}
-                    {explanations[inc.id] && (
-                      <tr className="bg-indigo-50/30 animate-in fade-in slide-in-from-top-2">
-                        <td colSpan={4} className="p-4 pt-2 pb-4">
-                          <div className="flex items-start gap-3 bg-white p-3 rounded-lg border border-indigo-100 shadow-sm max-w-2xl mx-auto sm:mx-0">
-                             <div className="p-1 bg-indigo-100 text-indigo-600 rounded-full mt-0.5">
-                               <Info size={14} />
-                             </div>
-                             <div>
-                               <p className="text-xs font-bold text-indigo-800 mb-1">Análisis IA Labora+</p>
-                               <p className="text-sm text-gray-700 leading-relaxed">
-                                 {explanations[inc.id]}
-                               </p>
-                             </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-                 {filteredIncomes.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-gray-400">
-                      {incomes.length > 0 
-                        ? "No se encontraron ingresos en este rango de fechas." 
-                        : "No tienes ingresos registrados."}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <style>{`.field-input{width:100%;border:1px solid #DDD5CA;background:#fff;border-radius:13px;padding:.65rem .75rem;font-size:.875rem;outline:none}.field-input:focus{border-color:#789582;box-shadow:0 0 0 2px rgba(221,233,225,.7)}`}</style>
     </div>
   );
 };
+
+const SummaryMetric = ({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) => <div className="bg-[#FFFDF9] p-3.5 sm:p-4"><p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-stone-400">{label}</p><p className={`mt-1 text-base font-extrabold tracking-[-0.03em] ${accent ? 'text-[#B95635]' : 'text-[#214E3A]'}`}>{value}</p></div>;
+
+const Modal = ({ onClose, title, kicker, children }: { onClose: () => void; title: string; kicker: string; children: React.ReactNode }) => <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#18211C]/55 p-4 backdrop-blur-sm"><div className="w-full max-w-lg rounded-[26px] border border-[#E3DBD0] bg-[#FFFDF9] p-5 shadow-2xl"><div className="mb-5 flex items-start justify-between"><div><p className="labora-kicker text-[#789582]">{kicker}</p><h3 className="mt-1 text-lg font-extrabold text-[#1E231F]">{title}</h3></div><button onClick={onClose} className="rounded-xl p-2 text-stone-400 hover:bg-[#F1ECE3]"><X size={18} /></button></div>{children}</div></div>;
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => <label className="block space-y-1.5"><span className="text-xs font-extrabold text-stone-600">{label}</span>{children}</label>;
 
 export default IncomeTracker;
