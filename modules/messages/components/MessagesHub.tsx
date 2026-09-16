@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCheck, Clock, MessageSquare, Search, Send, Users } from 'lucide-react';
+import { Clock, MessageSquare, Search, Send, UserRound } from 'lucide-react';
 import { useData } from '../../../contexts/DataContext';
 import { UserRole } from '../../../types';
 import { messageRepository } from '../repositories/messageRepository';
@@ -19,16 +19,15 @@ export const MessagesHub: React.FC = () => {
 
     if (isManager) {
       return users.filter(
-        (user) =>
-          user.role === UserRole.RIDER &&
-          (user.managerId === currentUser.id || currentUser.id === 'm1')
+        (user) => user.role === UserRole.RIDER && user.managerId === currentUser.id
       );
     }
 
-    const assignedManager = users.find(
+    if (!currentUser.managerId) return [];
+    const manager = users.find(
       (user) => user.role === UserRole.MANAGER && user.id === currentUser.managerId
     );
-    return assignedManager ? [assignedManager] : users.filter((user) => user.role === UserRole.MANAGER).slice(0, 1);
+    return manager ? [manager] : [];
   }, [currentUser, users, isManager]);
 
   useEffect(() => {
@@ -36,51 +35,28 @@ export const MessagesHub: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedContactId && contacts.length > 0) {
+    if (contacts.length === 0) {
+      setSelectedContactId('');
+      return;
+    }
+
+    if (!contacts.some((contact) => contact.id === selectedContactId)) {
       setSelectedContactId(contacts[0].id);
     }
   }, [contacts, selectedContactId]);
 
-  const visibleMessages = useMemo(() => {
-    if (!currentUser) return [];
-
-    return messages.filter((message) => {
-      // New messages are scoped to the signed-in demo user.
-      if (message.senderId || message.recipientId) {
-        return message.senderId === currentUser.id || message.recipientId === currentUser.id;
-      }
-
-      // Backwards compatibility: legacy CRM messages were outbound manager records.
-      return isManager;
-    });
-  }, [messages, currentUser, isManager]);
-
   const conversation = useMemo(() => {
-    if (!selectedContactId || !currentUser) return [];
+    if (!currentUser || !selectedContactId) return [];
+    const term = searchTerm.trim().toLowerCase();
 
-    return visibleMessages
-      .filter((message) => {
-        if (message.senderId || message.recipientId) {
-          return (
-            (message.senderId === currentUser.id && message.recipientId === selectedContactId) ||
-            (message.senderId === selectedContactId && message.recipientId === currentUser.id)
-          );
-        }
-
-        return isManager && message.personId === selectedContactId;
-      })
-      .filter((message) => {
-        if (!searchTerm.trim()) return true;
-        const term = searchTerm.toLowerCase();
-        return (
-          message.message.toLowerCase().includes(term) ||
-          message.personName.toLowerCase().includes(term) ||
-          message.senderName?.toLowerCase().includes(term) ||
-          message.recipientName?.toLowerCase().includes(term)
-        );
-      })
+    return messages
+      .filter((message) =>
+        (message.senderId === currentUser.id && message.recipientId === selectedContactId) ||
+        (message.senderId === selectedContactId && message.recipientId === currentUser.id)
+      )
+      .filter((message) => !term || message.message.toLowerCase().includes(term))
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  }, [visibleMessages, selectedContactId, currentUser, searchTerm, isManager]);
+  }, [messages, currentUser, selectedContactId, searchTerm]);
 
   const selectedContact = contacts.find((contact) => contact.id === selectedContactId);
 
@@ -88,7 +64,7 @@ export const MessagesHub: React.FC = () => {
     event.preventDefault();
     if (!currentUser || !selectedContact || !draft.trim()) return;
 
-    const newMessage = messageRepository.sendMessage({
+    const message = messageRepository.sendMessage({
       personId: selectedContact.id,
       personName: selectedContact.name,
       senderId: currentUser.id,
@@ -99,37 +75,45 @@ export const MessagesHub: React.FC = () => {
       type: 'internal'
     });
 
-    setMessages((previous) => [...previous, newMessage]);
+    setMessages((previous) => [...previous, message]);
     setDraft('');
-    showNotification('success', `Mensaje enviado a ${selectedContact.name}`);
+    showNotification('success', 'Mensaje enviado.');
   };
 
   if (!currentUser) return null;
 
   return (
-    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 pb-24">
-      <div>
-        <h2 className="text-3xl font-bold text-[#1A1A1A] flex items-center gap-2">
-          <MessageSquare className="text-[#2D6CDF]" /> Comunicaciones
-        </h2>
-        <p className="text-gray-500 mt-1">
-          {isManager
-            ? 'Conversaciones internas con tus riders.'
-            : 'Canal interno con tu gestor asignado.'}
+    <div className="mx-auto max-w-6xl space-y-5 pb-8">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Comunicación</p>
+        <h1 className="mt-1 text-2xl font-bold text-stone-900">Mensajes</h1>
+        <p className="mt-1 text-sm text-stone-500">
+          {isManager ? 'Conversaciones con tus clientes vinculados.' : 'Conversación con tu gestoría vinculada.'}
         </p>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 min-h-[520px]">
-        <aside className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
-            <div className="flex items-center gap-2 text-sm font-bold text-gray-900">
-              <Users size={17} className="text-[#2D6CDF]" />
-              {isManager ? 'Clientes' : 'Mi gestor'}
+      <section className="grid min-h-[520px] overflow-hidden rounded-2xl border border-[#E3DCD2] bg-white lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="border-b border-[#ECE5DB] lg:border-b-0 lg:border-r">
+          <div className="border-b border-[#ECE5DB] p-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Buscar mensajes"
+                className="w-full rounded-xl border border-[#E4DDD3] bg-[#FAF8F4] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#91A799]"
+              />
             </div>
           </div>
-          <div className="p-2 space-y-1">
+
+          <div className="max-h-[220px] overflow-y-auto p-2 lg:max-h-[500px]">
             {contacts.length === 0 ? (
-              <div className="p-5 text-center text-xs text-gray-400">No hay contactos asignados.</div>
+              <div className="px-3 py-8 text-center">
+                <UserRound size={24} className="mx-auto text-stone-300" />
+                <p className="mt-2 text-xs font-semibold text-stone-500">
+                  {isManager ? 'No tienes clientes vinculados.' : 'No tienes gestoría vinculada.'}
+                </p>
+              </div>
             ) : (
               contacts.map((contact) => {
                 const active = contact.id === selectedContactId;
@@ -137,12 +121,19 @@ export const MessagesHub: React.FC = () => {
                   <button
                     key={contact.id}
                     onClick={() => setSelectedContactId(contact.id)}
-                    className={`w-full text-left px-3 py-3 rounded-xl transition-colors ${
-                      active ? 'bg-blue-50 text-blue-800' : 'hover:bg-gray-50 text-gray-700'
+                    className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors ${
+                      active ? 'bg-[#EAF2ED]' : 'hover:bg-[#F7F4EF]'
                     }`}
                   >
-                    <p className="font-bold text-sm truncate">{contact.name}</p>
-                    <p className="text-[11px] opacity-70 truncate">{contact.email}</p>
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
+                      active ? 'bg-[#2E5A44] text-white' : 'bg-[#F0ECE6] text-stone-500'
+                    }`}>
+                      {contact.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold text-stone-900">{contact.companyName || contact.name}</p>
+                      <p className="truncate text-[10px] text-stone-500">{contact.email}</p>
+                    </div>
                   </button>
                 );
               })
@@ -150,51 +141,45 @@ export const MessagesHub: React.FC = () => {
           </div>
         </aside>
 
-        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden min-h-[520px]">
-          <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <div>
-              <p className="font-bold text-gray-900">{selectedContact?.name || 'Selecciona un contacto'}</p>
-              <p className="text-xs text-gray-400">Mensajería interna de Labora+</p>
-            </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-              <input
-                type="search"
-                placeholder="Buscar en conversación..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+        <div className="flex min-h-[420px] min-w-0 flex-col">
+          <div className="border-b border-[#ECE5DB] px-4 py-3.5">
+            <p className="text-sm font-bold text-stone-900">
+              {selectedContact?.companyName || selectedContact?.name || 'Mensajes'}
+            </p>
+            {selectedContact && <p className="mt-0.5 text-[11px] text-stone-400">{selectedContact.email}</p>}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-gray-50/60">
-            {conversation.length === 0 ? (
-              <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center text-gray-400">
-                <MessageSquare size={42} className="mb-3 opacity-20" />
-                <p className="font-bold text-sm">Aún no hay mensajes</p>
-                <p className="text-xs mt-1">Envía el primero para probar el flujo entre ambos perfiles.</p>
+          <div className="flex-1 space-y-3 overflow-y-auto bg-[#FAF8F4] p-4 sm:p-5">
+            {!selectedContact ? (
+              <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center">
+                <MessageSquare size={30} className="text-stone-300" />
+                <p className="mt-3 text-sm font-semibold text-stone-500">Selecciona un contacto para empezar.</p>
+              </div>
+            ) : conversation.length === 0 ? (
+              <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center">
+                <MessageSquare size={30} className="text-stone-300" />
+                <p className="mt-3 text-sm font-semibold text-stone-600">No hay mensajes todavía.</p>
+                <p className="mt-1 text-xs text-stone-400">Puedes iniciar la conversación desde aquí.</p>
               </div>
             ) : (
               conversation.map((message) => {
-                const mine = message.senderId ? message.senderId === currentUser.id : isManager;
+                const mine = message.senderId === currentUser.id;
                 return (
                   <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 border ${
-                        mine
-                          ? 'bg-[#2D6CDF] text-white border-[#2D6CDF]'
-                          : 'bg-white text-gray-800 border-gray-200'
-                      }`}
-                    >
-                      <p className={`text-[10px] font-bold mb-1 ${mine ? 'text-blue-100' : 'text-gray-400'}`}>
-                        {mine ? 'Tú' : message.senderName || message.personName}
-                      </p>
-                      <p className="text-sm whitespace-pre-wrap break-words">{message.message}</p>
-                      <div className={`mt-2 flex items-center justify-end gap-1 text-[9px] ${mine ? 'text-blue-100' : 'text-gray-400'}`}>
-                        <Clock size={10} />
-                        {new Date(message.timestamp).toLocaleString('es-ES')}
-                        {mine && <CheckCheck size={11} />}
+                    <div className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 sm:max-w-[72%] ${
+                      mine
+                        ? 'bg-[#2E5A44] text-white'
+                        : 'border border-[#E3DDD4] bg-white text-stone-800'
+                    }`}>
+                      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.message}</p>
+                      <div className={`mt-1.5 flex items-center gap-1 text-[9px] ${mine ? 'text-white/65' : 'text-stone-400'}`}>
+                        <Clock size={9} />
+                        {new Date(message.timestamp).toLocaleString('es-ES', {
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </div>
                     </div>
                   </div>
@@ -203,30 +188,30 @@ export const MessagesHub: React.FC = () => {
             )}
           </div>
 
-          <form onSubmit={handleSend} className="p-4 border-t border-gray-100 bg-white flex gap-2">
+          <form onSubmit={handleSend} className="flex gap-2 border-t border-[#ECE5DB] bg-white p-3 sm:p-4">
             <textarea
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder={selectedContact ? `Escribe a ${selectedContact.name}...` : 'Selecciona un contacto'}
+              placeholder={selectedContact ? 'Escribe un mensaje…' : 'Sin contacto vinculado'}
               disabled={!selectedContact}
               rows={2}
-              className="flex-1 resize-none px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="min-w-0 flex-1 resize-none rounded-xl border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#8FA697] disabled:bg-[#F4F1EC]"
             />
             <button
               type="submit"
               disabled={!selectedContact || !draft.trim()}
-              className="self-end p-3 bg-[#1A1A1A] text-white rounded-xl hover:bg-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Enviar mensaje"
+              className="self-end rounded-xl bg-[#2E5A44] p-3 text-white transition-colors hover:bg-[#244936] disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Enviar mensaje"
             >
-              <Send size={18} />
+              <Send size={17} />
             </button>
           </form>
-        </section>
-      </div>
+        </div>
+      </section>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
-        Esta mensajería forma parte del entorno demo local. El flujo Rider ↔ Gestor se puede probar cambiando de perfil en Labora+; la sincronización entre dispositivos requiere backend remoto.
-      </div>
+      <p className="text-[10px] leading-relaxed text-stone-400">
+        Los mensajes se guardan actualmente en este navegador. La sincronización entre dispositivos se habilitará al conectar el almacenamiento remoto.
+      </p>
     </div>
   );
 };
