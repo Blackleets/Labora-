@@ -61,6 +61,8 @@ const MainLayout: React.FC = () => {
   }
 
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
+  const currentRoleLabel = isManager ? 'Gestor' : 'Rider';
+  const targetRoleLabel = isManager ? 'Rider' : 'Gestor';
 
   const pendingReqCount = requirements.filter(
     (requirement) =>
@@ -163,18 +165,18 @@ const MainLayout: React.FC = () => {
         setIsMobileMenuOpen={setIsMobileMenuOpen}
       />
 
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F7F4ED]">
-        <header className="z-20 shrink-0 border-b border-[#E3DCD1] bg-[#FCFAF6]/95 backdrop-blur px-3 sm:px-5 md:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F7F4ED] min-w-0">
+        <header className="z-20 shrink-0 border-b border-[#E3DCD1] bg-[#FCFAF6]/95 backdrop-blur px-3 sm:px-5 md:px-8 h-14 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden w-10 h-10 flex items-center justify-center text-stone-600 rounded-xl hover:bg-[#F0ECE4] transition-colors"
+              className="lg:hidden w-9 h-9 flex items-center justify-center text-stone-600 rounded-xl hover:bg-[#F0ECE4] transition-colors shrink-0"
               aria-label="Abrir menú"
             >
-              <Menu size={21} strokeWidth={2} />
+              <Menu size={20} strokeWidth={2} />
             </button>
 
-            <div className="lg:hidden">
+            <div className="lg:hidden min-w-0">
               <Logo size="sm" showText={true} />
             </div>
 
@@ -185,36 +187,37 @@ const MainLayout: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={handleToggleRole}
-              className="h-10 px-3 rounded-xl border border-[#DED6CA] bg-white text-stone-700 text-xs font-semibold flex items-center gap-2 hover:bg-[#F7F3EC] transition-colors"
-              title="Cambiar perfil de prueba"
+              className="h-9 px-2.5 rounded-xl border border-[#DED6CA] bg-white text-stone-700 text-[11px] font-bold flex items-center gap-1.5 hover:bg-[#F7F3EC] transition-colors"
+              title={`Perfil actual: ${currentRoleLabel}. Cambiar a ${targetRoleLabel}.`}
+              aria-label={`Cambiar de ${currentRoleLabel} a ${targetRoleLabel}`}
             >
-              <RefreshCw size={14} strokeWidth={2} className="text-[#2E5A44]" />
-              <span>{isManager ? 'Rider' : 'Gestor'}</span>
+              <RefreshCw size={13} strokeWidth={2} className="text-[#2E5A44]" />
+              <span>{currentRoleLabel}</span>
             </button>
 
             <button
               onClick={togglePrivacyMode}
-              className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
+              className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors ${
                 privacyMode
                   ? 'bg-[#FFF7EA] border-[#EAD9B8] text-[#8B652B]'
                   : 'bg-white border-[#DED6CA] text-stone-500 hover:bg-[#F7F3EC]'
               }`}
               title={privacyMode ? 'Mostrar importes' : 'Ocultar importes'}
             >
-              {privacyMode ? <EyeOff size={17} strokeWidth={2} /> : <Eye size={17} strokeWidth={2} />}
+              {privacyMode ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}
             </button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-7 scroll-smooth custom-scrollbar">
-          <div className="max-w-7xl mx-auto min-h-full">{renderView()}</div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-4 md:px-8 md:py-7 scroll-smooth custom-scrollbar min-w-0">
+          <div className="max-w-7xl mx-auto min-h-full min-w-0">{renderView()}</div>
         </div>
 
-        <nav className="lg:hidden shrink-0 border-t border-[#E3DCD1] bg-white/95 backdrop-blur px-2 py-2 safe-area-bottom shadow-[0_-6px_18px_-16px_rgba(0,0,0,0.35)]">
-          <div className="flex items-center justify-around">
+        <nav className="lg:hidden shrink-0 border-t border-[#E3DCD1] bg-white/95 backdrop-blur px-1.5 py-1.5 safe-area-bottom shadow-[0_-6px_18px_-16px_rgba(0,0,0,0.35)]">
+          <div className="grid grid-cols-5 items-center">
             {navItems.map((item) => {
               const isActive = currentView === item.id;
               const Icon = item.icon;
@@ -223,19 +226,19 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
-                  className={`min-w-[58px] py-1.5 flex flex-col items-center gap-1 rounded-xl transition-colors ${
+                  className={`min-w-0 py-1.5 flex flex-col items-center gap-1 rounded-xl transition-colors ${
                     isActive ? 'text-[#2E5A44]' : 'text-stone-400'
                   }`}
                 >
                   <div className="relative">
-                    <Icon size={20} strokeWidth={isActive ? 2.35 : 2} />
+                    <Icon size={19} strokeWidth={isActive ? 2.35 : 2} />
                     {Boolean(item.badge && item.badge > 0) && (
                       <span className="absolute -top-2 -right-3 min-w-4 h-4 px-1 bg-[#C96846] text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
                         {item.badge}
                       </span>
                     )}
                   </div>
-                  <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{item.label}</span>
+                  <span className={`max-w-full truncate text-[9px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{item.label}</span>
                 </button>
               );
             })}
