@@ -2,9 +2,20 @@
 -- Registration never implies verification.
 -- Verification status may only be promoted by a trusted server/admin workflow.
 
-create type if not exists public.labora_advisor_verification_kind as enum ('identity', 'business', 'professional');
-create type if not exists public.labora_verification_state as enum ('pending', 'verified', 'rejected', 'expired');
-create type if not exists public.labora_advisor_trust_level as enum ('registered', 'identity_verified', 'business_verified', 'professional_verified');
+DO $$ BEGIN
+  CREATE TYPE public.labora_advisor_verification_kind AS ENUM ('identity', 'business', 'professional');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.labora_verification_state AS ENUM ('pending', 'verified', 'rejected', 'expired');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.labora_advisor_trust_level AS ENUM ('registered', 'identity_verified', 'business_verified', 'professional_verified');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 create table if not exists public.advisor_verification_requests (
   id uuid primary key default gen_random_uuid(),
@@ -51,13 +62,11 @@ create table if not exists public.advisor_trust_profiles (
 alter table public.advisor_verification_requests enable row level security;
 alter table public.advisor_trust_profiles enable row level security;
 
--- Advisors can inspect their own verification cases.
 create policy "advisor verification select own"
   on public.advisor_verification_requests
   for select
   using (auth.uid() = user_id);
 
--- Advisors may submit evidence, but they cannot self-approve it.
 create policy "advisor verification submit own"
   on public.advisor_verification_requests
   for insert
@@ -66,18 +75,23 @@ create policy "advisor verification submit own"
     and state = 'pending'
     and reviewed_by is null
     and reviewed_at is null
+    and exists (
+      select 1
+      from public.organization_memberships membership
+      where membership.user_id = auth.uid()
+        and membership.status = 'active'
+        and membership.role in ('owner', 'manager')
+    )
   );
 
 -- No client-side UPDATE/DELETE policies are created intentionally.
 -- Promotion/rejection must be performed by a trusted server/admin workflow.
 
--- An advisor may see their own public trust snapshot.
 create policy "advisor trust select self"
   on public.advisor_trust_profiles
   for select
   using (auth.uid() = user_id);
 
--- A client may see only the public trust snapshot of a manager they actively linked.
 create policy "advisor trust select linked client"
   on public.advisor_trust_profiles
   for select
@@ -95,7 +109,7 @@ create policy "advisor trust select linked client"
 -- A trusted backend process derives this table from verified evidence.
 
 comment on table public.advisor_verification_requests is
-  'Private evidence-backed verification cases. Users can submit but cannot self-verify.';
+  'Private evidence-backed verification cases. Advisors can submit but cannot self-verify.';
 
 comment on table public.advisor_trust_profiles is
   'Public-safe advisor trust snapshot visible only to the advisor and actively linked clients.';
