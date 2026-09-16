@@ -64,6 +64,7 @@ export const MARKET_PROFILES: MarketProfile[] = [
   market('CA', 'Canada', 'en-CA', 'CAD', 'CA$', 'Self-employed', 'Accountant / tax professional'),
   market('MX', 'México', 'es-MX', 'MXN', '$', 'Trabajador independiente', 'Contador / asesor'),
   market('CO', 'Colombia', 'es-CO', 'COP', '$', 'Independiente', 'Contador / asesor'),
+  market('VE', 'Venezuela', 'es-VE', 'VES', 'Bs.', 'Trabajador independiente', 'Contador / asesor'),
   market('AR', 'Argentina', 'es-AR', 'ARS', '$', 'Monotributista / independiente', 'Contador / asesor'),
   market('CL', 'Chile', 'es-CL', 'CLP', '$', 'Independiente', 'Contador / asesor'),
   market('PE', 'Perú', 'es-PE', 'PEN', 'S/', 'Independiente', 'Contador / asesor'),
@@ -81,5 +82,27 @@ export const MARKET_PROFILES: MarketProfile[] = [
 
 export const DEFAULT_MARKET_PROFILE = MARKET_PROFILES[0];
 
-export const getMarketProfile = (countryCode?: string | null): MarketProfile =>
-  MARKET_PROFILES.find((profile) => profile.countryCode === countryCode) || DEFAULT_MARKET_PROFILE;
+/**
+ * Unknown country codes must never inherit Spain's fiscal engine. `XXX` is the
+ * ISO 4217 code used when there is no known currency; Intl renders a neutral
+ * currency marker instead of silently claiming EUR/USD/etc.
+ */
+export const SAFE_UNKNOWN_MARKET_PROFILE: MarketProfile = {
+  countryCode: 'ZZ',
+  displayName: 'Mercado sin configurar',
+  locale: 'es',
+  currency: 'XXX',
+  currencySymbol: '¤',
+  workerLabel: 'Trabajador independiente',
+  advisorLabel: 'Asesor',
+  productMode: 'financial_control',
+  fiscalEngineStatus: 'not_enabled',
+  advisorWorkspace: true,
+};
+
+export const getMarketProfile = (countryCode?: string | null): MarketProfile => {
+  if (!countryCode) return DEFAULT_MARKET_PROFILE;
+  const normalized = countryCode.trim().toUpperCase();
+  return MARKET_PROFILES.find((profile) => profile.countryCode === normalized)
+    || { ...SAFE_UNKNOWN_MARKET_PROFILE, countryCode: normalized || 'ZZ' };
+};
