@@ -233,7 +233,9 @@ export interface Expense {
   fuelType?: string; // e.g. 'Gasolina 95', 'Diésel'
   status?: 'pending_review' | 'approved' | 'rejected' | 'needs_fix';
   gestorNotes?: string;
-  deductiblePercentage?: number; // default 100% or 50%
+  deductiblePercentage?: number;
+  deductibilityAssessed?: boolean;
+  deductibilityBasis?: string;
   invoiceNumber?: string;
 }
 
@@ -264,7 +266,7 @@ export interface TaxDeclaration {
   grossIncome: number;
   deductibleExpenses: number;
   netYield: number;
-  taxAmount: number; // e.g. 20% for 130, VAT balance for 303
+  taxAmount: number;
   status: 'draft' | 'reviewed_by_gestor' | 'filed_with_tax_agency';
   filingReference?: string;
   filedAt?: string;
