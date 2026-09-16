@@ -25,7 +25,6 @@ import Education from './components/Education';
 import Simulator from './components/Simulator';
 import Toast from './components/Toast';
 import Logo from './components/Logo';
-import IntroAnimation from './components/IntroAnimation';
 import { TaxOverview } from './components/TaxOverview';
 import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 
@@ -227,24 +226,16 @@ const MainLayout: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
-  const [showIntro, setShowIntro] = useState(true);
-
-  return (
-    <OrganizationProvider>
-      <CountryProvider>
-        <DataProvider>
-          <GhibliAtmosphereProvider>
-            {showIntro ? (
-              <IntroAnimation onComplete={() => setShowIntro(false)} />
-            ) : (
-              <MainLayout />
-            )}
-          </GhibliAtmosphereProvider>
-        </DataProvider>
-      </CountryProvider>
-    </OrganizationProvider>
-  );
-};
+const App: React.FC = () => (
+  <OrganizationProvider>
+    <CountryProvider>
+      <DataProvider>
+        <GhibliAtmosphereProvider>
+          <MainLayout />
+        </GhibliAtmosphereProvider>
+      </DataProvider>
+    </CountryProvider>
+  </OrganizationProvider>
+);
 
 export default App;
