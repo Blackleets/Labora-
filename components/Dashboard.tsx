@@ -11,6 +11,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import CountrySelector from './CountrySelector';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
+import { GasStationReceiptHistory } from './GasStationReceiptHistory';
 import { UserRole } from '../types';
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 
@@ -322,7 +323,14 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
         {/* Gastos & Combustible (Warm Terracotta accent) */}
         <div 
-          onClick={() => setView?.('money')}
+          onClick={() => {
+            const el = document.getElementById('gas-station-receipt-history');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            } else {
+              setView?.('money');
+            }
+          }}
           className="bg-[#FCFAF7] hover:bg-white p-5 rounded-2xl border border-[#EBE3D5] hover:border-[#E8C0B2] shadow-sm hover:shadow-md transition-all cursor-pointer group"
         >
           <div className="flex justify-between items-start mb-3">
@@ -595,6 +603,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
 
       </div>
+
+      {/* 6. HISTORIAL DE TICKETS DE GASOLINERA */}
+      <GasStationReceiptHistory 
+        onOpenCaptureModal={() => setIsGasModalOpen(true)}
+      />
 
       {/* Gas Station Capture Modal */}
       <GasStationCaptureModal

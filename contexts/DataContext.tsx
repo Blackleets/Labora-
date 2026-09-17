@@ -172,6 +172,24 @@ const INITIAL_EXPENSES: Expense[] = [
     receiptUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" fill="%23FFFFFF"><rect width="400" height="600" fill="%23FEF2F2" stroke="%23EF4444" stroke-width="4"/><text x="200" y="50" font-family="monospace" font-size="20" font-weight="bold" fill="%23B91C1C" text-anchor="middle">CEPSA MOEVE 128</text><text x="200" y="80" font-family="monospace" font-size="12" fill="%234B5563" text-anchor="middle">NIF: B-81928374 - C/ Alcalá 210</text><line x1="20" y1="100" x2="380" y2="100" stroke="%23EF4444" stroke-dasharray="4"/><text x="40" y="140" font-family="monospace" font-size="14" fill="%231F2937">OPT. STAR 95: 26.00 L</text><text x="40" y="170" font-family="monospace" font-size="14" fill="%231F2937">PRECIO/L: 1.615 €</text><text x="40" y="200" font-family="monospace" font-size="14" fill="%231F2937">BASE: 34.71 € | IVA 21%: 7.29 €</text><text x="40" y="250" font-family="monospace" font-size="22" font-weight="bold" fill="%23DC2626">TOTAL: 42.00 €</text><text x="40" y="290" font-family="monospace" font-size="12" fill="%236B7280">FECHA: 2026-09-10 11:20</text><line x1="20" y1="330" x2="380" y2="330" stroke="%23EF4444" stroke-dasharray="4"/><text x="200" y="380" font-family="monospace" font-size="14" fill="%23D97706" text-anchor="middle">PENDIENTE DE REVISIÓN FISCAL</text></svg>'
   },
   {
+    id: 'exp-2b',
+    userId: 'u1',
+    category: ExpenseCategory.GASOLINA,
+    merchant: 'BP Estación de Servicio',
+    date: '2026-09-05',
+    amount: 38.50,
+    fuelLitres: 23.8,
+    fuelType: 'Gasolina 95',
+    vatRate: 21,
+    vatAmount: 6.68,
+    deductiblePercentage: 100,
+    status: 'approved',
+    gestorNotes: 'Ticket correcto con CIF válido. 100% deducible.',
+    notes: 'Turno matinal de reparto urbano (Madrid Norte)',
+    invoiceNumber: 'BP-55210-C',
+    receiptUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" fill="%23FFFFFF"><rect width="400" height="600" fill="%23F0FDF4" stroke="%2316A34A" stroke-width="4"/><text x="200" y="50" font-family="monospace" font-size="20" font-weight="bold" fill="%2315803D" text-anchor="middle">BP ESTACIÓN 912</text><text x="200" y="80" font-family="monospace" font-size="12" fill="%234B5563" text-anchor="middle">NIF: A-28049102 - Ctra. Burgos km 12</text><line x1="20" y1="100" x2="380" y2="100" stroke="%2316A34A" stroke-dasharray="4"/><text x="40" y="140" font-family="monospace" font-size="14" fill="%231F2937">BP ULTIMATE 95: 23.80 L</text><text x="40" y="170" font-family="monospace" font-size="14" fill="%231F2937">PRECIO/L: 1.618 €</text><text x="40" y="200" font-family="monospace" font-size="14" fill="%231F2937">BASE: 31.82 € | IVA 21%: 6.68 €</text><text x="40" y="250" font-family="monospace" font-size="22" font-weight="bold" fill="%2315803D">TOTAL: 38.50 €</text><text x="40" y="290" font-family="monospace" font-size="12" fill="%236B7280">MATRÍCULA: 4521 LBR</text><text x="40" y="320" font-family="monospace" font-size="12" fill="%236B7280">FECHA: 2026-09-05 09:15</text><line x1="20" y1="350" x2="380" y2="350" stroke="%2316A34A" stroke-dasharray="4"/><text x="200" y="400" font-family="monospace" font-size="14" font-weight="bold" fill="%23059669" text-anchor="middle">VALIDADO POR GESTORÍA PÉREZ</text></svg>'
+  },
+  {
     id: 'exp-3',
     userId: 'u1',
     category: ExpenseCategory.MANTENIMIENTO,
