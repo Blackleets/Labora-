@@ -36,7 +36,7 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
 
   const summary = useMemo(() => {
     if (!currentUser) {
-      return { totalIncome: 0, totalExpenses: 0, netProfit: 0, estimatedIRPF: 0, quarter: '' };
+      return { totalIncome: 0, totalExpenses: 0, netProfit: 0, estimatedIRPF: 0, taxEstimateAvailable: false, quarter: '' };
     }
 
     if (!isManager) return getFiscalSummary(currentUser.id);
@@ -61,7 +61,8 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
       totalIncome,
       totalExpenses,
       netProfit,
-      estimatedIRPF: Number((netProfit * 0.2).toFixed(2)),
+      estimatedIRPF: 0,
+      taxEstimateAvailable: false,
       quarter: ''
     };
   }, [isManager, currentUser, users, getFiscalSummary, incomes, expenses]);
@@ -118,7 +119,12 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
           <MetricButton label="Ingresos" value={formatCurrency(summary.totalIncome)} onClick={() => setActiveTab('incomes')} />
           <MetricButton label={isManager ? 'Gastos validados' : 'Gastos'} value={formatCurrency(summary.totalExpenses)} onClick={() => setActiveTab('expenses')} accent="clay" />
           <MetricButton label="Neto" value={formatCurrency(summary.netProfit)} onClick={() => setActiveTab('taxes')} accent="green" />
-          <MetricButton label="IRPF orientativo" value={formatCurrency(summary.estimatedIRPF)} onClick={() => setActiveTab('taxes')} accent="amber" />
+          <MetricButton
+            label="Fiscal"
+            value={summary.taxEstimateAvailable ? formatCurrency(summary.estimatedIRPF) : 'Por revisar'}
+            onClick={() => setActiveTab('taxes')}
+            accent="amber"
+          />
         </div>
       </section>
 
