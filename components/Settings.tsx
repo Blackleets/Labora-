@@ -83,7 +83,12 @@ const Settings: React.FC = () => {
       updateUserFiscalProfile(patch);
       showNotification('success', 'Perfil sincronizado.');
     } catch (error: any) {
-      showNotification('error', String(error?.message || 'No se pudo guardar el perfil.'));
+      console.error('Labora profile save failed', error);
+      const raw = String(error?.message || '');
+      const friendly = raw.includes('sesión') || raw.includes('perfil local')
+        ? raw
+        : 'No se pudo guardar el perfil. Comprueba tu sesión e inténtalo de nuevo.';
+      showNotification('error', friendly);
     } finally {
       setSaving(false);
     }
