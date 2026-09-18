@@ -5,12 +5,14 @@ import { useCountry } from '../../../contexts/CountryContext';
 import { useData } from '../../../contexts/DataContext';
 import { IntegrationCategory, IntegrationDef } from '../../../types';
 import { useIntegrations } from '../hooks/useIntegrations';
+import { updateRemoteUserConfig } from '../../../services/authWorkspace';
 
 export const IntegrationCatalog: React.FC = () => {
   const { selectedCountry } = useCountry();
   const { currentUser, showNotification, updateUserConfig } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCat, setSelectedCat] = useState<IntegrationCategory | 'all'>('all');
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const { integrations } = useIntegrations({
     countryCode: selectedCountry.country_code,
@@ -37,12 +39,32 @@ export const IntegrationCatalog: React.FC = () => {
     return platforms.includes(integration.id.toLowerCase()) || platforms.includes(integration.name.toLowerCase());
   };
 
-  const handleAddPlatform = (integration: IntegrationDef) => {
-    if (!currentUser || !['delivery', 'mobility'].includes(integration.category)) return;
+  const handleTogglePlatform = async (integration: IntegrationDef) => {
+    if (!currentUser || !['delivery', 'mobility'].includes(integration.category) || savingId) return;
+
     const current = currentUser.platforms || [];
-    if (isAdded(integration)) return;
-    updateUserConfig([...current, integration.name], currentUser.banks || []);
-    showNotification('success', `${integration.name} añadida a tu actividad.`);
+    const aliases = new Set([integration.id.toLowerCase(), integration.name.toLowerCase()]);
+    const withoutIntegration = current.filter((item) => !aliases.has(item.toLowerCase()));
+    const nextPlatforms = isAdded(integration)
+      ? withoutIntegration
+      : [...withoutIntegration, integration.id];
+
+    setSavingId(integration.id);
+    try {
+      await updateRemoteUserConfig(nextPlatforms, currentUser.banks || []);
+      updateUserConfig(nextPlatforms, currentUser.banks || []);
+      showNotification(
+        'success',
+        isAdded(integration)
+          ? `${integration.name} eliminada de tu actividad.`
+          : `${integration.name} añadida a tu actividad.`
+      );
+    } catch (error) {
+      console.error('[LABORA_PLATFORM_PREF_SAVE_FAILED]', error);
+      showNotification('error', 'No se pudo guardar esta preferencia. Inténtalo de nuevo.');
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const descriptionFor = (integration: IntegrationDef) => {
@@ -107,8 +129,12 @@ export const IntegrationCatalog: React.FC = () => {
 
               <div className="mt-4 border-t border-[#EEE7DD] pt-3">
                 {selectable ? (
-                  <button disabled={added} onClick={() => handleAddPlatform(integration)} className={`w-full rounded-xl py-2.5 text-xs font-bold transition ${added ? 'cursor-default bg-[#F2F6F3] text-[#2E5A44]' : 'bg-[#2E5A44] text-white hover:bg-[#244936]'}`}>
-                    {added ? 'Añadida' : 'Añadir a mi actividad'}
+                  <button
+                    disabled={savingId === integration.id}
+                    onClick={() => void handleTogglePlatform(integration)}
+                    className={`w-full rounded-xl py-2.5 text-xs font-bold transition disabled:opacity-60 ${added ? 'border border-[#D6E3DA] bg-[#F2F6F3] text-[#2E5A44] hover:bg-[#EAF2ED]' : 'bg-[#2E5A44] text-white hover:bg-[#244936]'}`}
+                  >
+                    {savingId === integration.id ? 'Guardando…' : added ? 'Quitar de mi actividad' : 'Añadir a mi actividad'}
                   </button>
                 ) : (
                   <button disabled className="w-full cursor-not-allowed rounded-xl border border-[#E6DFD5] bg-[#F8F5F0] py-2.5 text-xs font-bold text-stone-400">
