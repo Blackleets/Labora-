@@ -26,7 +26,8 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
   const {
     currentUser,
     requirements,
-    updateRequirementStatus,
+    submitRequirement,
+    reviewRequirement,
     addRequirement,
     users,
     showNotification
@@ -106,9 +107,8 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
     event.preventDefault();
     if (!selectedReq) return;
 
-    updateRequirementStatus(
+    submitRequirement(
       selectedReq.id,
-      'submitted',
       submissionNotes.trim() || 'Justificante adjuntado.',
       submissionProof || undefined
     );
@@ -274,7 +274,7 @@ export const GestorRequirementsWidget: React.FC<GestorRequirementsWidgetProps> =
                     )}
 
                     {isManager && requirement.status === 'submitted' && (
-                      <button onClick={() => updateRequirementStatus(requirement.id, 'approved', 'Revisado por la gestoría.')} className="inline-flex items-center gap-2 rounded-[12px] bg-[#214E3A] px-3.5 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#183D2D]">
+                      <button onClick={() => reviewRequirement(requirement.id, 'approved', 'Revisado por la gestoría.')} className="inline-flex items-center gap-2 rounded-[12px] bg-[#214E3A] px-3.5 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#183D2D]">
                         <CheckCircle2 size={15} /> Aprobar
                       </button>
                     )}
