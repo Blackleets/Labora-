@@ -1,0 +1,191 @@
+name: Labora+ Render Artifact
+
+on:
+  push:
+    branches:
+      - chore/render-main-after-fiscal-fix
+
+jobs:
+  render-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm install
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Serve build
+        run: |
+          nohup npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/labora-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/labora-preview.log
+          exit 1
+
+      - name: Capture real login UI
+        run: |
+          npx playwright screenshot --wait-for-timeout=2500 --viewport-size="1440,1000" http://127.0.0.1:4173 labora-real-login-desktop.png
+          npx playwright screenshot --wait-for-timeout=2500 --viewport-size="430,932" http://127.0.0.1:4173 labora-real-login-mobile.png
+
+      - name: Capture isolated real app QA
+        run: |
+          node <<'NODE'
+          const { chromium } = require('playwright');
+
+          const user = {
+            id: 'qa-rider',
+            name: 'Lewis',
+            email: 'qa-local@example.test',
+            role: 'RIDER',
+            platforms: ['Uber Eats', 'Glovo'],
+            banks: [],
+            currencyPreference: 'EUR',
+            nif: 'QA-LOCAL',
+            iaeCode: '849.5',
+            vehicleType: 'moto',
+            vehiclePlate: 'QA 0000',
+            vehicleFuel: 'gasolina',
+            countryCode: 'ES'
+          };
+
+          const manager = {
+            id: 'qa-manager',
+            name: 'Gestoría Labora QA',
+            email: 'gestoria-qa@example.test',
+            role: 'MANAGER',
+            platforms: [],
+            banks: [],
+            currencyPreference: 'EUR',
+            countryCode: 'ES'
+          };
+
+          const storage = {
+            labora_users: JSON.stringify([user, manager]),
+            labora_user: JSON.stringify(user),
+            labora_onboarding: 'true',
+            labora_privacy: 'false',
+            labora_darkmode: 'false',
+            labora_incomes: JSON.stringify([
+              { id:'inc-1', userId:'qa-rider', platform:'Uber Eats', date:'2026-09-18', amount:86.40, retention:0, sourceType:'manual' },
+              { id:'inc-2', userId:'qa-rider', platform:'Glovo', date:'2026-09-17', amount:74.15, retention:0, sourceType:'manual' },
+              { id:'inc-3', userId:'qa-rider', platform:'Uber Eats', date:'2026-09-16', amount:92.80, retention:0, sourceType:'manual' }
+            ]),
+            labora_expenses: JSON.stringify([
+              { id:'exp-1', userId:'qa-rider', category:'Gasolina', date:'2026-09-18', amount:18.20, merchant:'Estación servicio', status:'pending_review', deductiblePercentage:0 },
+              { id:'exp-2', userId:'qa-rider', category:'Móvil', date:'2026-09-15', amount:24.99, merchant:'Operador móvil', status:'pending_review', deductiblePercentage:0 }
+            ]),
+            labora_requirements: JSON.stringify([
+              {
+                id:'req-1', managerId:'qa-manager', managerName:'Gestoría Labora QA',
+                riderId:'qa-rider', riderName:'Lewis',
+                title:'Revisar justificante de combustible',
+                description:'Adjunta el justificante para revisión.',
+                category:'fuel_receipt', deadline:'2026-09-25',
+                status:'pending', createdAt:'2026-09-18T09:00:00Z', quarter:'3T 2026'
+              }
+            ]),
+            labora_declarations: JSON.stringify([
+              {
+                id:'tax-130', userId:'qa-rider', quarter:'3T 2026', year:2026,
+                modelType:'130', title:'Modelo 130 · 3T 2026',
+                grossIncome:253.35, deductibleExpenses:0, netYield:253.35,
+                taxAmount:0, calculationState:'requires_review', status:'draft'
+              },
+              {
+                id:'tax-303', userId:'qa-rider', quarter:'3T 2026', year:2026,
+                modelType:'303', title:'Modelo 303 · 3T 2026',
+                grossIncome:253.35, deductibleExpenses:0, netYield:253.35,
+                taxAmount:0, calculationState:'requires_review', status:'draft'
+              }
+            ]),
+            labora_docs: '[]',
+            labora_payments: '[]'
+          };
+
+          async function preparePage(browser, viewport) {
+            const page = await browser.newPage({ viewport });
+            await page.route('https://gggtriyvbusbpqohoukv.supabase.co/**', route => route.abort());
+            await page.addInitScript(({ storage }) => {
+              for (const [key, value] of Object.entries(storage)) localStorage.setItem(key, value);
+              sessionStorage.setItem('labora_remote_hydrated:qa-rider', 'true');
+            }, { storage });
+            await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+            await page.waitForTimeout(3500);
+            return page;
+          }
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+
+            const desktop = await preparePage(browser, { width: 1440, height: 1000 });
+            await desktop.screenshot({ path: 'labora-real-dashboard-desktop.png', fullPage: true });
+
+            const mobile = await preparePage(browser, { width: 430, height: 932 });
+            await mobile.screenshot({ path: 'labora-real-dashboard-mobile.png', fullPage: true });
+
+            const nav = mobile.locator('main > nav');
+            const screens = [
+              ['Dinero', 'labora-real-money-mobile.png'],
+              ['Modelos', 'labora-real-models-mobile.png'],
+              ['Avisos', 'labora-real-alerts-mobile.png'],
+              ['Perfil', 'labora-real-profile-mobile.png']
+            ];
+
+            for (const [label, path] of screens) {
+              await nav.getByRole('button', { name: label }).click();
+              await mobile.waitForTimeout(700);
+              await mobile.screenshot({ path, fullPage: true });
+            }
+
+            await browser.close();
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: labora-real-screenshots
+          path: |
+            labora-real-login-desktop.png
+            labora-real-login-mobile.png
+            labora-real-dashboard-desktop.png
+            labora-real-dashboard-mobile.png
+            labora-real-money-mobile.png
+            labora-real-models-mobile.png
+            labora-real-alerts-mobile.png
+            labora-real-profile-mobile.png
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: labora-main-dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
