@@ -5,6 +5,7 @@ const LOCAL = {
   users: 'labora_users',
   currentUser: 'labora_user',
   onboarded: 'labora_onboarding',
+  country: 'labora_country',
   pendingIdentity: 'labora_pending_identity'
 } as const;
 
@@ -101,6 +102,7 @@ export const loadRemoteWorkspace = async (currentUserId: string) => {
   localStorage.setItem(LOCAL.users, JSON.stringify(users));
   localStorage.setItem(LOCAL.currentUser, JSON.stringify(current));
   localStorage.setItem(LOCAL.onboarded, String(Boolean(currentRow.onboarding_completed)));
+  localStorage.setItem(LOCAL.country, current.countryCode || 'ES');
   return { users, currentUser: current };
 };
 
@@ -209,6 +211,7 @@ export const signOutRemote = async () => {
   localStorage.removeItem(LOCAL.users);
   localStorage.removeItem(LOCAL.currentUser);
   localStorage.removeItem(LOCAL.onboarded);
+  localStorage.removeItem(LOCAL.country);
 };
 
 export const recoverRemoteSession = async () => {
