@@ -157,7 +157,18 @@ const RemoteSyncBridge: React.FC = () => {
         return documents.some((item) => item.id === row.id && item.name === row.name && item.date === row.document_date);
       }
       if (table === 'tax_declarations') {
-        return declarations.some((item) => item.id === row.id && item.status === row.status && item.taxAmount === Number(row.tax_amount) && (item.filingReference || null) === (row.filing_reference || null));
+        return declarations.some((item) =>
+          item.id === row.id
+          && item.status === row.status
+          && item.taxAmount === Number(row.tax_amount)
+          && (item.reviewedBy || null) === (row.reviewed_by || null)
+          && (item.reviewedAt || null) === (row.reviewed_at || null)
+          && (item.reviewNote || null) === (row.review_note || null)
+          && (item.filingReference || null) === (row.filing_reference || null)
+          && (item.filingEvidenceUrl || null) === (row.filing_evidence_url || null)
+          && (item.filedBy || null) === (row.filed_by || null)
+          && (item.filedAt || null) === (row.filed_at || null)
+        );
       }
       if (table === 'payments') {
         return payments.some((item) => item.id === row.id && item.status === row.status && item.amount === Number(row.amount) && item.date === row.date);
