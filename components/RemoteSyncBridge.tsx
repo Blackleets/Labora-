@@ -110,7 +110,7 @@ const RemoteSyncBridge: React.FC = () => {
         return incomes.some((item) => item.id === row.id && item.amount === Number(row.amount) && item.date === row.date && item.platform === row.platform && item.retention === Number(row.retention || 0));
       }
       if (table === 'expenses') {
-        return expenses.some((item) => item.id === row.id && item.amount === Number(row.amount) && item.date === row.date && item.category === row.category && (item.status || 'pending_review') === row.status && (item.gestorNotes || null) === (row.gestor_notes || null) && (item.deductiblePercentage ?? 100) === Number(row.deductible_percentage ?? 100));
+        return expenses.some((item) => item.id === row.id && item.amount === Number(row.amount) && item.date === row.date && item.category === row.category && (item.status || 'pending_review') === row.status && (item.gestorNotes || null) === (row.gestor_notes || null) && (item.deductiblePercentage ?? 0) === Number(row.deductible_percentage ?? 0));
       }
       if (table === 'requirements') {
         return requirements.some((item) => item.id === row.id && item.status === row.status && item.title === row.title && item.deadline === row.deadline && (item.submissionNotes || null) === (row.submission_notes || null));
