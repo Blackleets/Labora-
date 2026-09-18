@@ -293,7 +293,12 @@ export interface TaxDeclaration {
   taxAmount: number;
   calculationState?: 'requires_review' | 'recorded';
   status: 'draft' | 'reviewed_by_gestor' | 'filed_with_tax_agency';
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
   filingReference?: string;
+  filingEvidenceUrl?: string;
+  filedBy?: string;
   filedAt?: string;
   gestorId?: string;
 }
