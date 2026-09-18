@@ -78,10 +78,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   );
 
   const totalIncome = clientIncomes.reduce((sum, income) => sum + income.amount, 0);
-  const deductibleExpenses = clientExpenses
-    .filter((expense) => expense.status !== 'rejected')
-    .reduce((sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100), 0);
-  const net = Math.max(0, totalIncome - deductibleExpenses);
+  const cashExpenses = clientExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const netOperating = totalIncome - cashExpenses;
   const pendingAudit = clientExpenses.filter(
     (expense) => expense.status === 'pending_review' || expense.status === 'needs_fix'
   ).length;
@@ -286,8 +284,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 
                   <div className="mt-5 grid grid-cols-3 gap-2.5">
                     <SummaryBox label="Ingresos" value={formatMoney(totalIncome)} />
-                    <SummaryBox label="Gastos validados" value={formatMoney(deductibleExpenses)} />
-                    <SummaryBox label="Neto" value={formatMoney(net)} emphasis />
+                    <SummaryBox label="Gastos reales" value={formatMoney(cashExpenses)} />
+                    <SummaryBox label="Neto operativo" value={formatMoney(netOperating)} emphasis />
                   </div>
                 </section>
 
