@@ -139,7 +139,18 @@ const RemoteSyncBridge: React.FC = () => {
         return expenses.some((item) => item.id === row.id && item.amount === Number(row.amount) && item.date === row.date && item.category === row.category && (item.status || 'pending_review') === row.status && (item.gestorNotes || null) === (row.gestor_notes || null) && (item.deductiblePercentage ?? 0) === Number(row.deductible_percentage ?? 0));
       }
       if (table === 'requirements') {
-        return requirements.some((item) => item.id === row.id && item.status === row.status && item.title === row.title && item.deadline === row.deadline && (item.submissionNotes || null) === (row.submission_notes || null));
+        return requirements.some((item) =>
+          item.id === row.id
+          && item.status === row.status
+          && item.title === row.title
+          && item.deadline === row.deadline
+          && (item.submissionNotes || null) === (row.submission_notes || null)
+          && (item.submissionUrl || null) === (row.submission_url || null)
+          && (item.submittedAt || null) === (row.submitted_at || null)
+          && (item.reviewedBy || null) === (row.reviewed_by || null)
+          && (item.reviewedAt || null) === (row.reviewed_at || null)
+          && (item.reviewNote || null) === (row.review_note || null)
+        );
       }
       if (table === 'documents') {
         return documents.some((item) => item.id === row.id && item.name === row.name && item.date === row.document_date);
