@@ -227,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             onClick={() => setView?.('money')}
             className="relative z-10 rounded-[22px] border border-white/15 bg-white/10 p-4 text-left backdrop-blur transition hover:bg-white/15"
           >
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/55">Neto registrado</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/55">Neto operativo</p>
             <p className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-white">{formatCurrency(summary.netProfit)}</p>
             <div className="mt-4 flex items-center justify-between text-xs font-bold text-[#F7D99B]">
               <span>Ver dinero</span>
@@ -352,7 +352,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Metric onClick={() => setView?.('money')} icon={Wallet} label="Ingresos" value={formatCurrency(summary.totalIncome)} />
           <Metric onClick={() => setView?.('money')} icon={ReceiptText} label="Gastos" value={formatCurrency(summary.totalExpenses)} accent />
-          <Metric onClick={() => setView?.('tax-declarations')} icon={ShieldCheck} label="Neto" value={formatCurrency(summary.netProfit)} />
+          <Metric onClick={() => setView?.('money')} icon={ShieldCheck} label="Neto operativo" value={formatCurrency(summary.netProfit)} />
           <Metric onClick={() => setView?.('messages')} icon={MessageSquare} label="Gestoría" value="Abrir chat" compact />
         </div>
       </section>
