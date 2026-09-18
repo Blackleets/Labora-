@@ -72,7 +72,10 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     needsReview: row.needs_review == null ? true : Boolean(row.needs_review),
     importedAt: row.imported_at || undefined,
     sourceDocumentId: row.source_document_id || undefined,
-    sourceHash: row.source_hash || undefined
+    sourceHash: row.source_hash || undefined,
+    reviewedBy: row.reviewed_by || undefined,
+    reviewedAt: row.reviewed_at || undefined,
+    reviewNote: row.review_note || undefined
   }));
 
   const expenses: Expense[] = await Promise.all((expensesResult.data || []).map(async (row: any) => ({
@@ -177,6 +180,19 @@ type OperationalSnapshot = {
   documents: Document[];
   declarations: TaxDeclaration[];
   payments: Payment[];
+};
+
+export const reviewRemoteIncome = async (
+  incomeId: string,
+  action: 'reviewed' | 'needs_fix',
+  note?: string
+) => {
+  const { error } = await supabase.rpc('review_income', {
+    p_income_id: incomeId,
+    p_action: action,
+    p_note: note || null
+  });
+  if (error) throw error;
 };
 
 export const deleteRemoteExpense = async (expenseId: string) => {
