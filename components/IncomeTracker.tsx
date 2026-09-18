@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { extractIncomeFromDocument, extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
+import { reviewRemoteIncome } from '../services/remoteOperational';
 import { UserRole } from '../types';
 
 interface IncomeTrackerProps {
@@ -52,6 +53,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   const [retention, setRetention] = useState('0');
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<Record<string, boolean>>({});
+  const [reviewingIncome, setReviewingIncome] = useState<Record<string, boolean>>({});
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const linkedIds = useMemo(() => new Set(
@@ -287,6 +289,29 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     setIsManualOpen(false);
   };
 
+  const handleIncomeReview = async (incomeId: string, action: 'reviewed' | 'needs_fix') => {
+    if (!isManager || reviewingIncome[incomeId]) return;
+    setReviewingIncome((previous) => ({ ...previous, [incomeId]: true }));
+    try {
+      await reviewRemoteIncome(
+        incomeId,
+        action,
+        action === 'reviewed'
+          ? 'Revisado por la gestoría.'
+          : 'Revisa el importe, la fecha o el justificante antes de volver a enviarlo.'
+      );
+      showNotification(
+        'success',
+        action === 'reviewed' ? 'Ingreso marcado como revisado.' : 'Corrección solicitada al cliente.'
+      );
+    } catch (error) {
+      console.error('Income review failed', error);
+      showNotification('error', 'No se pudo actualizar la revisión del ingreso.');
+    } finally {
+      setReviewingIncome((previous) => ({ ...previous, [incomeId]: false }));
+    }
+  };
+
   const handleAnalyzeRetention = async (id: string, incomePlatform: string, incomeAmount: number, incomeRetention: number) => {
     if (loadingExplanation[id]) return;
     setLoadingExplanation((previous) => ({ ...previous, [id]: true }));
@@ -345,10 +370,21 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
                       <p className="mt-1 text-[10px] font-medium text-stone-400">
                         {income.date}{isManager ? ` · ${ownerNames.get(income.userId) || 'Cliente'}` : ''} · {incomeSourceLabel(income.sourceType)}
                       </p>
-                      {income.needsReview && (
+                      {income.reviewedBy && !income.needsReview ? (
+                        <span className="mt-1.5 inline-flex rounded-full border border-[#CFE7D7] bg-[#ECF7F0] px-2 py-0.5 text-[9px] font-extrabold text-[#24613F]">
+                          Revisado por gestoría
+                        </span>
+                      ) : income.reviewedBy && income.needsReview ? (
+                        <span className="mt-1.5 inline-flex rounded-full border border-[#EBCFCB] bg-[#FFF0EE] px-2 py-0.5 text-[9px] font-extrabold text-[#93443B]">
+                          Corrección solicitada
+                        </span>
+                      ) : income.needsReview ? (
                         <span className="mt-1.5 inline-flex rounded-full border border-[#E8D9C8] bg-[#FFF5E9] px-2 py-0.5 text-[9px] font-extrabold text-[#8A641E]">
                           Pendiente de revisión
                         </span>
+                      ) : null}
+                      {income.reviewNote && (
+                        <p className="mt-1.5 max-w-md text-[10px] leading-relaxed text-stone-500">{income.reviewNote}</p>
                       )}
                     </div>
                     <div className="shrink-0 text-right"><p className="text-sm font-extrabold text-[#214E3A]">+{formatMoney(income.amount)}</p>{income.retention > 0 && <p className="mt-0.5 text-[10px] font-bold text-[#A45632]">Ret. −{formatMoney(income.retention)}</p>}</div>
@@ -358,6 +394,26 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
                     <div className="mt-3 flex justify-end">
                       <button onClick={() => void handleAnalyzeRetention(income.id, income.platform, income.amount, income.retention)} disabled={loadingExplanation[income.id]} className="inline-flex items-center gap-1.5 rounded-[10px] bg-[#F1ECE3] px-2.5 py-1.5 text-[10px] font-extrabold text-stone-600 hover:bg-[#EAE3D9] disabled:opacity-60">
                         {loadingExplanation[income.id] ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />} Explicar retención
+                      </button>
+                    </div>
+                  )}
+
+                  {isManager && income.needsReview && (
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        onClick={() => void handleIncomeReview(income.id, 'needs_fix')}
+                        disabled={reviewingIncome[income.id]}
+                        className="rounded-[10px] border border-[#E4D8CF] px-2.5 py-1.5 text-[10px] font-extrabold text-[#9A5637] hover:bg-[#FFF6F0] disabled:opacity-50"
+                      >
+                        Pedir corrección
+                      </button>
+                      <button
+                        onClick={() => void handleIncomeReview(income.id, 'reviewed')}
+                        disabled={reviewingIncome[income.id]}
+                        className="inline-flex items-center gap-1.5 rounded-[10px] bg-[#214E3A] px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#183D2D] disabled:opacity-50"
+                      >
+                        {reviewingIncome[income.id] && <Loader2 size={11} className="animate-spin" />}
+                        Validar
                       </button>
                     </div>
                   )}
