@@ -100,6 +100,11 @@ const parseStored = <T,>(key: string, fallback: T): T => {
 
 const createId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+const currentQuarter = () => {
+  const now = new Date();
+  return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
+};
+
 const getQuarterRange = (quarter: string) => {
   const match = quarter.match(/([1-4])T\s+(\d{4})/i);
   if (!match) return null;
