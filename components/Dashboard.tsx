@@ -1,18 +1,25 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Bell,
   CheckCircle2,
   ChevronRight,
+  Clock3,
   FileText,
   Fuel,
+  Loader2,
   MessageSquare,
+  Play,
   ReceiptText,
   ShieldCheck,
+  Square,
   Wallet
 } from 'lucide-react';
 import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
+import { finishWorkSession, getActiveWorkSession, startWorkSession } from '../services/workSessionService';
+import { WorkSession } from '../types';
+
 
 interface DashboardProps { setView?: (view: string) => void; }
 
@@ -22,9 +29,34 @@ const currentQuarter = () => {
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-  const { currentUser, getFiscalSummary, privacyMode, requirements } = useData();
+  const { currentUser, getFiscalSummary, privacyMode, requirements, showNotification } = useData();
   const { selectedCountry } = useCountry();
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
+  const [activeSession, setActiveSession] = useState<WorkSession | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [sessionBusy, setSessionBusy] = useState(false);
+  const [clockNow, setClockNow] = useState(Date.now());
+
+  useEffect(() => {
+    let active = true;
+    void getActiveWorkSession()
+      .then((session) => {
+        if (active) setActiveSession(session);
+      })
+      .catch((error) => console.error('No se pudo cargar la jornada activa.', error))
+      .finally(() => {
+        if (active) setSessionLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!activeSession) return;
+    setClockNow(Date.now());
+    const timer = window.setInterval(() => setClockNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, [activeSession?.id]);
 
   if (!currentUser) return null;
 
@@ -41,6 +73,35 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         currency: selectedCountry.currency || 'EUR',
         maximumFractionDigits: 0
       });
+
+  const elapsedMinutes = activeSession
+    ? Math.max(0, Math.floor((clockNow - new Date(activeSession.startedAt).getTime()) / 60_000))
+    : 0;
+  const elapsedLabel = activeSession
+    ? `${Math.floor(elapsedMinutes / 60)} h ${elapsedMinutes % 60} min`
+    : 'Sin jornada activa';
+
+  const toggleWorkSession = async () => {
+    if (sessionBusy) return;
+    setSessionBusy(true);
+    try {
+      if (activeSession) {
+        await finishWorkSession(activeSession.id);
+        setActiveSession(null);
+        showNotification('success', 'Jornada finalizada.');
+      } else {
+        const session = await startWorkSession();
+        setActiveSession(session);
+        setClockNow(Date.now());
+        showNotification('success', 'Jornada iniciada.');
+      }
+    } catch (error: any) {
+      console.error('No se pudo actualizar la jornada.', error);
+      showNotification('error', 'No se pudo actualizar la jornada. Comprueba tu conexión e inténtalo de nuevo.');
+    } finally {
+      setSessionBusy(false);
+    }
+  };
 
   const quickActions = [
     {
@@ -109,6 +170,39 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               <span>Ver dinero</span>
               <ChevronRight size={15} />
             </div>
+          </button>
+        </div>
+      </section>
+
+      <section className="labora-card p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] border ${activeSession ? 'border-[#D2E3D8] bg-[#E7F0EA] text-[#214E3A]' : 'border-[#E5DDD2] bg-[#F7F3EA] text-stone-500'}`}>
+              <Clock3 size={19} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-extrabold text-[#1E231F]">Jornada Labora</p>
+                {activeSession && <span className="rounded-full bg-[#E7F0EA] px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#214E3A]">En curso</span>}
+              </div>
+              <p className="mt-1 text-xs text-stone-500">
+                {sessionLoading
+                  ? 'Comprobando jornada…'
+                  : activeSession
+                    ? `Llevas ${elapsedLabel}. Iniciada a las ${new Date(activeSession.startedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.`
+                    : 'Registra tus horas reales. Esta versión no usa GPS ni rastrea tu ubicación.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void toggleWorkSession()}
+            disabled={sessionLoading || sessionBusy}
+            className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-[13px] px-4 py-2.5 text-xs font-extrabold transition disabled:opacity-50 ${activeSession ? 'border border-[#E7CFC6] bg-[#FFF4EF] text-[#A84F36] hover:bg-[#FCEAE3]' : 'bg-[#214E3A] text-white hover:bg-[#183D2D]'}`}
+          >
+            {sessionBusy ? <Loader2 size={15} className="animate-spin" /> : activeSession ? <Square size={14} /> : <Play size={15} />}
+            {activeSession ? 'Finalizar jornada' : 'Iniciar jornada'}
           </button>
         </div>
       </section>
