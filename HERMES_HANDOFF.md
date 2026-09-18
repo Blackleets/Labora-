@@ -4,14 +4,14 @@ Updated: 2026-09-18
 Repository: `Blackleets/Labora-`  
 Working branch: `feat/labora-e2e-ready`  
 Pull request: `#2`  
-Known-good code HEAD before this handoff update: `13f96caf91ce7d546c17d536d9ed6a3c6983a53e`  
+Current code HEAD before this handoff refresh: `8ddf5891000987e2f3568da672dfd02eb2b6230f`  
 Supabase project: `gggtriyvbusbpqohoukv`
 
 ## 0. Current status
 
 **DO NOT MERGE YET.**
 
-GitHub Actions at `13f96caf...` are green for install, TypeScript and Vite build.
+GitHub Actions at `13f96caf...` were green for install, TypeScript and Vite build. The current Priority 1 HEAD has no workflow run surfaced by the GitHub connector yet, so do not claim current CI is green until a run is visible and passes.
 
 PR #2 currently reports:
 
@@ -231,33 +231,53 @@ Do not claim it is enabled until verified in Supabase Auth settings.
 
 ## 5. Immediate next work
 
-### Priority 1 — Requirements / Peticiones integrity
+### Priority 1 — Requirements / Peticiones integrity — DONE / PROVEN
 
-Current DB policy still allows both participants to UPDATE the whole requirement row.
+Implemented on 2026-09-18.
 
-Desired model:
+Authority model now enforced in Supabase:
 
 **Manager owns request definition**
-- manager_id
-- rider_id
-- title
-- description
-- category
-- deadline
-- quarter
+- manager/rider identity is fixed at creation;
+- title, description, category, deadline and quarter can only be edited by the linked manager while the request is pending;
+- creation and definition edits go through narrow RPCs.
 
 **Rider owns response**
-- submission_notes
-- submission_url
-- transition pending -> submitted
+- only the assigned rider can transition `pending -> submitted`;
+- rider controls `submission_notes` and `submission_url`;
+- submission records `submitted_by` and `submitted_at`;
+- a submitted request cannot be silently resubmitted/re-written.
 
 **Manager owns review**
-- transition submitted -> approved / correction state as designed
+- only the still-linked manager can transition `submitted -> approved`;
+- review records `reviewed_by`, `reviewed_at` and `review_note`;
+- review cannot rewrite the rider response or request definition.
 
-Rider must never be able to rewrite manager/rider ids, title or deadline through a direct Supabase call.
+Direct browser INSERT/UPDATE/DELETE on `requirements` is revoked. Anonymous table access is revoked. RLS SELECT is participant-scoped to `authenticated`. A defense-in-depth trigger protects the role/state boundaries if grants regress later.
 
-Implement narrow RPCs and column/trigger protections analogous to expense review integrity.
+Frontend sync no longer mutates `requirements` directly. It reconciles remote state and calls only:
+- `create_requirement`
+- `update_requirement_definition`
+- `submit_requirement`
+- `review_requirement`
 
+Adversarial rollback test: **10/10 passed**.
+Verified:
+- manager creates pending request;
+- rider submits with audit metadata;
+- rider resubmit blocked;
+- rider definition edit blocked;
+- rider self-review blocked;
+- unlinked manager review blocked;
+- manager approval preserves rider response and records review metadata;
+- authenticated direct INSERT blocked;
+- authenticated direct UPDATE blocked;
+- anon table access blocked.
+
+A second rollback test confirmed manager definition editing while pending and RPC execute grants. All temporary auth users and requirement rows were rolled back and verified absent.
+
+Supabase Security Advisor after Priority 1: only the pre-existing `Leaked Password Protection Disabled` warning remains.
+Performance Advisor no longer reports unindexed requirement audit foreign keys after adding indexes for `submitted_by` and `reviewed_by`.
 ### Priority 2 — Tax declarations integrity
 
 Audit `tax_declarations` UPDATE/INSERT permissions.
@@ -314,6 +334,9 @@ Recent branch migrations include:
 - onboarding state
 - profile column security
 - expense review integrity
+- requirements integrity
+- requirements integrity follow-up / trigger hardening
+- requirements audit FK indexes
 
 Treat GitHub migration files and the live Supabase project together as the source of truth.
 
@@ -361,11 +384,12 @@ Do not disable RLS.
 Do not reintroduce fake integrations or fiscal assumptions.
 Preserve all existing security hardening.
 
-Continue from Priority 1:
-harden Requirements/Peticiones so the rider can only submit a response and the manager can only manage/review requests through narrow audited operations.
+Continue from Priority 2:
+harden tax_declarations so draft/review/filed transitions are explicit and filing facts require auditable evidence/reference.
 
-Then harden tax_declarations and message read-state mutations.
+Then harden message read-state mutations.
 
+Priority 1 Requirements/Peticiones is already hardened and adversarially tested. Do not redesign or weaken it without a reproduced defect.
 Also inspect PR #2 merge conflicts with main, but do not resolve them by discarding hardened branch changes.
 
 Keep CI green and prove security behavior with rollback/adversarial tests before claiming completion.
