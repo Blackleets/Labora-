@@ -31,38 +31,31 @@ export const getActiveWorkSession = async (): Promise<WorkSession | null> => {
   return data ? rowToWorkSession(data) : null;
 };
 
-export const startWorkSession = async (): Promise<WorkSession> => {
-  const user = await requireUser();
+export const startWorkSession = async (startOdometerKm?: number): Promise<WorkSession> => {
+  await requireUser();
 
-  const existing = await getActiveWorkSession();
-  if (existing) return existing;
-
-  const { data, error } = await supabase
-    .from('work_sessions')
-    .insert({
-      user_id: user.id,
-      started_at: new Date().toISOString()
-    })
-    .select('*')
-    .single();
+  const { data, error } = await supabase.rpc('start_work_session', {
+    p_start_odometer_km: startOdometerKm ?? null
+  });
 
   if (error) throw error;
-  return rowToWorkSession(data);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('No se pudo iniciar la jornada.');
+  return rowToWorkSession(row);
 };
 
-export const finishWorkSession = async (sessionId: string): Promise<WorkSession> => {
-  const user = await requireUser();
-  const { data, error } = await supabase
-    .from('work_sessions')
-    .update({ ended_at: new Date().toISOString() })
-    .eq('id', sessionId)
-    .eq('user_id', user.id)
-    .is('ended_at', null)
-    .select('*')
-    .single();
+export const finishWorkSession = async (sessionId: string, endOdometerKm?: number): Promise<WorkSession> => {
+  await requireUser();
+
+  const { data, error } = await supabase.rpc('finish_work_session', {
+    p_session_id: sessionId,
+    p_end_odometer_km: endOdometerKm ?? null
+  });
 
   if (error) throw error;
-  return rowToWorkSession(data);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('No se pudo finalizar la jornada.');
+  return rowToWorkSession(row);
 };
 
 export const listRecentWorkSessions = async (limit = 14): Promise<WorkSession[]> => {
