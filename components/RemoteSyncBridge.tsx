@@ -12,12 +12,25 @@ const RemoteSyncBridge: React.FC = () => {
     requirements,
     documents,
     declarations,
-    payments
+    payments,
+    showNotification
   } = useData();
 
   const hydrationRef = useRef(false);
   const syncTimerRef = useRef<number | null>(null);
   const refreshingRef = useRef(false);
+  const lastSyncErrorAtRef = useRef(0);
+
+  const reportSyncError = (code: string, error: unknown) => {
+    console.error(`[${code}]`, error);
+    const now = Date.now();
+    if (now - lastSyncErrorAtRef.current < 60_000) return;
+    lastSyncErrorAtRef.current = now;
+    showNotification(
+      'error',
+      'No se pudo sincronizar con la nube. Tus cambios siguen en este dispositivo y volveremos a intentarlo.'
+    );
+  };
 
   const fingerprint = useMemo(() => JSON.stringify({
     userId: currentUser?.id,
@@ -68,7 +81,7 @@ const RemoteSyncBridge: React.FC = () => {
 
         if (before !== after) window.location.reload();
       } catch (error) {
-        console.error('No se pudo cargar el workspace remoto.', error);
+        reportSyncError('LABORA_SYNC_HYDRATE_FAILED', error);
         hydrationRef.current = false;
       }
     };
@@ -93,7 +106,7 @@ const RemoteSyncBridge: React.FC = () => {
         documents,
         declarations,
         payments
-      }).catch((error) => console.error('No se pudo sincronizar el workspace.', error));
+      }).catch((error) => reportSyncError('LABORA_SYNC_WRITE_FAILED', error));
     }, 700);
 
     return () => {
@@ -148,7 +161,7 @@ const RemoteSyncBridge: React.FC = () => {
         await loadRemoteOperationalData(users);
         window.location.reload();
       } catch (error) {
-        console.error('No se pudo refrescar un cambio remoto.', error);
+        reportSyncError('LABORA_SYNC_REALTIME_REFRESH_FAILED', error);
         refreshingRef.current = false;
       }
     };
