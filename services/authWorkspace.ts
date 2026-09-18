@@ -25,6 +25,8 @@ type ProfileRow = {
   vehicle_plate?: string | null;
   vehicle_fuel?: User['vehicleFuel'] | null;
   country_code?: string | null;
+  platforms?: string[] | null;
+  banks?: string[] | null;
   identity_image_path?: string | null;
   identity_image_kind?: string | null;
 };
@@ -66,8 +68,8 @@ const rowToUser = async (row: ProfileRow): Promise<User> => ({
   phone: row.phone || undefined,
   photoUrl: await identityUrl(row.identity_image_path),
   role: roleFromDb(row.role),
-  platforms: [],
-  banks: [],
+  platforms: Array.isArray(row.platforms) ? row.platforms : [],
+  banks: Array.isArray(row.banks) ? row.banks : [],
   managerId: row.manager_id || undefined,
   currencyPreference: 'EUR',
   nif: row.nif || undefined,
@@ -85,7 +87,7 @@ const rowToUser = async (row: ProfileRow): Promise<User> => ({
 export const loadRemoteWorkspace = async (currentUserId: string) => {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id,role,name,email,phone,nif,company_name,collegiate_number,manager_id,fiscal_regime,iae_code,social_security_type,vehicle_type,vehicle_plate,vehicle_fuel,country_code,identity_image_path,identity_image_kind');
+    .select('id,role,name,email,phone,nif,company_name,collegiate_number,manager_id,fiscal_regime,iae_code,social_security_type,vehicle_type,vehicle_plate,vehicle_fuel,country_code,platforms,banks,identity_image_path,identity_image_kind');
 
   if (error) throw error;
 
@@ -223,6 +225,22 @@ export const linkManagerByEmail = async (managerEmail: string) => {
   if (error) throw error;
 
   await loadRemoteWorkspace(authData.user.id);
+};
+
+export const updateRemoteUserConfig = async (platforms: string[], banks: string[]) => {
+  const authenticatedUser = await requireAuthenticatedUser();
+  const normalizedPlatforms = Array.from(new Set(platforms.map((value) => value.trim()).filter(Boolean)));
+  const normalizedBanks = Array.from(new Set(banks.map((value) => value.trim()).filter(Boolean)));
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      platforms: normalizedPlatforms,
+      banks: normalizedBanks
+    })
+    .eq('id', authenticatedUser.id);
+
+  if (error) throw error;
 };
 
 export const updateRemoteProfile = async (userId: string, patch: Partial<User>) => {
