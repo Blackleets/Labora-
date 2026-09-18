@@ -59,14 +59,14 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
     {
       code: '130',
       title: 'Pago fraccionado IRPF',
-      description: 'Estimación basada únicamente en datos registrados y porcentajes deducibles ya indicados.',
+      description: 'Base de trabajo con ingresos y gastos registrados. El importe fiscal requiere revisión antes de mostrarse como cálculo.',
       icon: FileText,
       data: taxData.model130
     },
     {
       code: '303',
       title: 'IVA trimestral',
-      description: 'Estimación informativa; no equivale a una autoliquidación presentada.',
+      description: 'Base de trabajo informativa. Labora+ no presume un tipo de IVA de salida sin evidencia suficiente.',
       icon: ReceiptText,
       data: taxData.model303
     }
@@ -162,7 +162,9 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
 
                 <div className="mt-3 flex items-center justify-between rounded-[14px] border border-[#E7E0D6] bg-[#FAF8F4] px-3 py-3">
                   <span className="text-xs font-bold text-stone-500">Resultado estimado</span>
-                  <span className="text-base font-extrabold tracking-[-0.03em] text-[#1E231F]">{formatCurrency(data.taxAmount)}</span>
+                  <span className="text-base font-extrabold tracking-[-0.03em] text-[#1E231F]">
+                    {data.calculationState === 'requires_review' ? 'Por revisar' : formatCurrency(data.taxAmount)}
+                  </span>
                 </div>
               </article>
             ))}
