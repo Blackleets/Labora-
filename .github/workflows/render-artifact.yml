@@ -49,7 +49,7 @@ jobs:
           npx playwright screenshot --wait-for-timeout=2500 --viewport-size="1440,1000" http://127.0.0.1:4173 labora-real-login-desktop.png
           npx playwright screenshot --wait-for-timeout=2500 --viewport-size="430,932" http://127.0.0.1:4173 labora-real-login-mobile.png
 
-      - name: Capture isolated real dashboard UI
+      - name: Capture isolated real app QA
         run: |
           node <<'NODE'
           const { chromium } = require('playwright');
@@ -124,8 +124,7 @@ jobs:
             labora_payments: '[]'
           };
 
-          async function capture(viewport, path) {
-            const browser = await chromium.launch({ headless: true });
+          async function preparePage(browser, viewport) {
             const page = await browser.newPage({ viewport });
             await page.route('https://gggtriyvbusbpqohoukv.supabase.co/**', route => route.abort());
             await page.addInitScript(({ storage }) => {
@@ -133,14 +132,34 @@ jobs:
               sessionStorage.setItem('labora_remote_hydrated:qa-rider', 'true');
             }, { storage });
             await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
-            await page.waitForTimeout(4000);
-            await page.screenshot({ path, fullPage: true });
-            await browser.close();
+            await page.waitForTimeout(3500);
+            return page;
           }
 
           (async () => {
-            await capture({ width: 1440, height: 1000 }, 'labora-real-dashboard-desktop.png');
-            await capture({ width: 430, height: 932 }, 'labora-real-dashboard-mobile.png');
+            const browser = await chromium.launch({ headless: true });
+
+            const desktop = await preparePage(browser, { width: 1440, height: 1000 });
+            await desktop.screenshot({ path: 'labora-real-dashboard-desktop.png', fullPage: true });
+
+            const mobile = await preparePage(browser, { width: 430, height: 932 });
+            await mobile.screenshot({ path: 'labora-real-dashboard-mobile.png', fullPage: true });
+
+            const nav = mobile.locator('main > nav');
+            const screens = [
+              ['Dinero', 'labora-real-money-mobile.png'],
+              ['Modelos', 'labora-real-models-mobile.png'],
+              ['Avisos', 'labora-real-alerts-mobile.png'],
+              ['Perfil', 'labora-real-profile-mobile.png']
+            ];
+
+            for (const [label, path] of screens) {
+              await nav.getByRole('button', { name: label }).click();
+              await mobile.waitForTimeout(700);
+              await mobile.screenshot({ path, fullPage: true });
+            }
+
+            await browser.close();
           })().catch((error) => {
             console.error(error);
             process.exit(1);
@@ -156,6 +175,10 @@ jobs:
             labora-real-login-mobile.png
             labora-real-dashboard-desktop.png
             labora-real-dashboard-mobile.png
+            labora-real-money-mobile.png
+            labora-real-models-mobile.png
+            labora-real-alerts-mobile.png
+            labora-real-profile-mobile.png
           if-no-files-found: error
           retention-days: 1
 
