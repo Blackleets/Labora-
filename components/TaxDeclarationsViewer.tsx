@@ -7,7 +7,7 @@ import {
   Info
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { UserRole } from '../types';
+import { TaxDeclaration, UserRole } from '../types';
 
 interface TaxDeclarationsViewerProps {
   setView?: (view: string) => void;
@@ -22,14 +22,30 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
     expenses,
     incomes,
     calculateQuarterlyTaxes,
+    saveTaxDeclarationDraft,
+    reviewTaxDeclaration,
+    fileTaxDeclaration,
     showNotification
   } = useData();
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
-  const fallbackRider = users.find((user) => user.role === UserRole.RIDER);
+  const fallbackRider = users.find(
+    (user) => user.role === UserRole.RIDER
+      && (!isManager || user.managerId === currentUser?.id)
+  );
   const effectiveUserId = userId || (currentUser?.role === UserRole.RIDER ? currentUser.id : fallbackRider?.id) || '';
   const effectiveUser = users.find((user) => user.id === effectiveUserId) || (currentUser?.id === effectiveUserId ? currentUser : undefined);
+  const canManageEffectiveUser = Boolean(
+    currentUser
+      && effectiveUser
+      && (
+        (currentUser.role === UserRole.RIDER && effectiveUser.id === currentUser.id)
+        || (isManager && effectiveUser.managerId === currentUser.id)
+      )
+  );
   const [selectedQuarter, setSelectedQuarter] = useState('3T 2026');
+  const [filingModalDec, setFilingModalDec] = useState<TaxDeclaration | null>(null);
+  const [filingReference, setFilingReference] = useState('');
 
   const { model130, model303 } = effectiveUserId
     ? calculateQuarterlyTaxes(effectiveUserId, selectedQuarter)
@@ -52,6 +68,52 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
     () => incomes.filter((income) => income.userId === effectiveUserId),
     [incomes, effectiveUserId]
   );
+
+  const getModelAction = (model: TaxDeclaration) => {
+    if (!canManageEffectiveUser) return null;
+
+    const stored = declarations.find((declaration) => declaration.id === model.id);
+    if (!stored) {
+      return {
+        label: 'Guardar borrador',
+        onClick: () => saveTaxDeclarationDraft(model)
+      };
+    }
+
+    if (isManager && stored.status === 'draft') {
+      return {
+        label: 'Marcar revisado',
+        onClick: () => reviewTaxDeclaration(stored.id)
+      };
+    }
+
+    if (isManager && stored.status === 'reviewed_by_gestor') {
+      return {
+        label: 'Registrar presentación',
+        onClick: () => {
+          setFilingModalDec(stored);
+          setFilingReference('');
+        }
+      };
+    }
+
+    return null;
+  };
+
+  const handleRegisterFiling = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!filingModalDec) return;
+
+    const reference = filingReference.trim();
+    if (!reference) {
+      showNotification('error', 'Introduce la referencia real de presentación.');
+      return;
+    }
+
+    fileTaxDeclaration(filingModalDec.id, reference);
+    setFilingModalDec(null);
+    setFilingReference('');
+  };
 
   const downloadCsv = (filename: string, rows: Array<Array<string | number>>) => {
     const content = rows
@@ -129,8 +191,20 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
 
         {model130 && model303 && (
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <ModelRow code="130" title="Pago fraccionado IRPF" amount={model130.taxAmount} requiresReview={model130.calculationState === 'requires_review'} />
-            <ModelRow code="303" title="Autoliquidación IVA" amount={model303.taxAmount} requiresReview={model303.calculationState === 'requires_review'} />
+            <ModelRow
+              code="130"
+              title="Pago fraccionado IRPF"
+              amount={model130.taxAmount}
+              requiresReview={model130.calculationState === 'requires_review'}
+              action={getModelAction(model130)}
+            />
+            <ModelRow
+              code="303"
+              title="Autoliquidación IVA"
+              amount={model303.taxAmount}
+              requiresReview={model303.calculationState === 'requires_review'}
+              action={getModelAction(model303)}
+            />
           </div>
         )}
       </section>
@@ -179,7 +253,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
                     <p className="text-xs font-bold text-stone-800">Modelo {declaration.modelType} · {declaration.quarter}</p>
                     <p className="mt-0.5 text-[10px] text-stone-400">
                       {declaration.status === 'filed_with_tax_agency'
-                        ? 'Referencia registrada por el usuario/gestoría'
+                        ? 'Presentación registrada con referencia'
                         : declaration.status === 'reviewed_by_gestor'
                           ? 'Revisado en Labora+'
                           : 'Borrador'}
@@ -202,16 +276,86 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
           Esta vista organiza cálculos y registros guardados en Labora+. No genera justificantes oficiales ni realiza presentaciones ante la Agencia Tributaria.
         </p>
       </div>
+
+      {filingModalDec && isManager && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#18211C]/50 p-4 backdrop-blur-sm"
+          onClick={() => setFilingModalDec(null)}
+        >
+          <form
+            onSubmit={handleRegisterFiling}
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-md rounded-[24px] border border-[#E6DDD2] bg-[#FFFDF9] p-5 shadow-2xl"
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">Registro de presentación</p>
+            <h3 className="mt-1 text-lg font-extrabold text-stone-900">
+              Modelo {filingModalDec.modelType} · {filingModalDec.quarter}
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-stone-500">
+              Introduce la referencia real recibida tras la presentación. Labora+ no inventa esta referencia ni presenta el modelo por ti.
+            </p>
+
+            <label className="mt-4 block text-[11px] font-bold text-stone-600">
+              Referencia de presentación
+            </label>
+            <input
+              value={filingReference}
+              onChange={(event) => setFilingReference(event.target.value)}
+              placeholder="Referencia real"
+              className="mt-1 w-full rounded-[13px] border border-[#DDD5CA] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]"
+              required
+            />
+
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFilingModalDec(null)}
+                className="flex-1 rounded-[13px] border border-[#DDD5CA] px-3 py-2.5 text-sm font-bold text-stone-600"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={!filingReference.trim()}
+                className="flex-1 rounded-[13px] bg-[#214E3A] px-3 py-2.5 text-sm font-extrabold text-white disabled:opacity-45"
+              >
+                Registrar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
 
-const ModelRow = ({ code, title, amount, requiresReview = false }: { code: string; title: string; amount: number; requiresReview?: boolean }) => (
+const ModelRow = ({
+  code,
+  title,
+  amount,
+  requiresReview = false,
+  action
+}: {
+  code: string;
+  title: string;
+  amount: number;
+  requiresReview?: boolean;
+  action?: { label: string; onClick: () => void } | null;
+}) => (
   <div className="rounded-xl bg-[#F8F5F0] p-3">
     <p className="text-[10px] font-bold uppercase tracking-wide text-[#2E5A44]">Modelo {code}</p>
     <p className="mt-1 text-xs font-semibold text-stone-700">{title}</p>
     <p className="mt-2 text-base font-bold text-stone-900">
       {requiresReview ? 'Por revisar' : amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
     </p>
+    {action && (
+      <button
+        type="button"
+        onClick={action.onClick}
+        className="mt-3 rounded-[10px] border border-[#D7DED8] bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-[#214E3A] hover:bg-[#F1F6F2]"
+      >
+        {action.label}
+      </button>
+    )}
   </div>
 );
