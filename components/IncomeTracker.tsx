@@ -21,8 +21,10 @@ interface IncomeTrackerProps {
 const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => {
   const {
     incomes,
+    documents,
     addIncome,
     addIncomes,
+    addDocument,
     currentUser,
     users,
     privacyMode,
@@ -35,6 +37,13 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   const [pendingImports, setPendingImports] = useState<Array<{ platform: string; amount: number; date: string; retention: number }>>([]);
   const [pendingImportSource, setPendingImportSource] = useState<'text_import' | 'document_import'>('text_import');
   const [pendingImportReference, setPendingImportReference] = useState('Texto pegado por el usuario');
+  const [pendingEvidence, setPendingEvidence] = useState<{
+    name: string;
+    dataUrl: string;
+    mimeType: string;
+    sizeBytes: number;
+    contentHash: string;
+  } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const importFileRef = useRef<HTMLInputElement>(null);
   const [platform, setPlatform] = useState('');
@@ -83,6 +92,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
       setPendingImportSource('text_import');
       setPendingImportReference('Texto pegado por el usuario');
+      setPendingEvidence(null);
       setPendingImports(extractedData.map((item) => ({
         platform: item.platform,
         amount: item.amount,
@@ -104,17 +114,68 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     setPendingImports([]);
     setPendingImportSource('text_import');
     setPendingImportReference('Texto pegado por el usuario');
+    setPendingEvidence(null);
   };
 
   const confirmPendingImports = () => {
-    if (!pendingImports.length || isManager) return;
+    if (!pendingImports.length || isManager || !currentUser) return;
+
+    const hasInvalidRow = pendingImports.some((item) =>
+      !item.platform.trim()
+      || !/^\d{4}-\d{2}-\d{2}$/.test(item.date)
+      || !Number.isFinite(item.amount)
+      || item.amount <= 0
+      || !Number.isFinite(item.retention)
+      || item.retention < 0
+    );
+    if (hasInvalidRow) {
+      showNotification('error', 'Revisa plataforma, fecha, importe y retención antes de guardar.');
+      return;
+    }
+
+    let sourceDocumentId: string | undefined;
+    let sourceHash: string | undefined;
+
+    if (pendingImportSource === 'document_import') {
+      if (!pendingEvidence) {
+        showNotification('error', 'Falta el documento original de esta importación.');
+        return;
+      }
+
+      const duplicate = documents.some(
+        (document) => document.userId === currentUser.id && document.contentHash === pendingEvidence.contentHash
+      );
+      if (duplicate) {
+        showNotification('error', 'Esta liquidación exacta ya existe en tu expediente.');
+        return;
+      }
+
+      const evidenceDocument = addDocument({
+        type: 'Liquidación',
+        name: pendingEvidence.name,
+        date: new Date().toISOString().split('T')[0],
+        content: pendingEvidence.dataUrl,
+        mimeType: pendingEvidence.mimeType,
+        sizeBytes: pendingEvidence.sizeBytes,
+        contentHash: pendingEvidence.contentHash
+      });
+      if (!evidenceDocument) {
+        showNotification('error', 'No se pudo conservar el documento original.');
+        return;
+      }
+
+      sourceDocumentId = evidenceDocument.id;
+      sourceHash = pendingEvidence.contentHash;
+    }
+
     addIncomes(pendingImports.map((item) => ({
       ...item,
       sourceType: pendingImportSource,
       sourceReference: pendingImportReference,
+      sourceDocumentId,
+      sourceHash,
       needsReview: true
     })));
-    showNotification('success', `${pendingImports.length} ingresos guardados para revisión.`);
     closeImportModal();
   };
 
@@ -135,6 +196,20 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
     setIsProcessing(true);
     try {
+      const buffer = await file.arrayBuffer();
+      const digest = await crypto.subtle.digest('SHA-256', buffer);
+      const contentHash = Array.from(new Uint8Array(digest))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+
+      const duplicate = documents.some(
+        (document) => document.userId === currentUser?.id && document.contentHash === contentHash
+      );
+      if (duplicate) {
+        showNotification('error', 'Esta liquidación exacta ya existe en tu expediente.');
+        return;
+      }
+
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => typeof reader.result === 'string'
@@ -154,6 +229,13 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
       setPendingImportSource('document_import');
       setPendingImportReference(`Archivo importado: ${file.name}`);
+      setPendingEvidence({
+        name: file.name,
+        dataUrl,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        contentHash
+      });
       setPendingImports(extractedData.map((item) => ({
         platform: item.platform,
         amount: item.amount,
