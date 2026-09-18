@@ -266,8 +266,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
   const addExpense = (expense: Omit<Expense, 'id' | 'userId'>) => {
     if (!currentUser) return;
-    const vatRate = expense.vatRate ?? 21;
-    const vatAmount = expense.vatAmount ?? (vatRate > 0 ? Number(((expense.amount * vatRate) / (100 + vatRate)).toFixed(2)) : 0);
+    const vatRate = expense.vatRate ?? 0;
+    const vatAmount = expense.vatAmount ?? 0;
     const newExpense: Expense = {
       ...expense,
       id: createId('expense'),
@@ -275,7 +275,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       status: expense.status || 'pending_review',
       vatRate,
       vatAmount,
-      deductiblePercentage: expense.deductiblePercentage ?? 100
+      deductiblePercentage: expense.deductiblePercentage ?? 0,
+      ocrNeedsReview: expense.ocrNeedsReview ?? true
     };
     setExpenses((previous) => [newExpense, ...previous]);
     showNotification('success', 'Gasto registrado.');
@@ -287,7 +288,11 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       ...expense,
       id: createId('expense'),
       userId: currentUser.id,
-      status: expense.status || 'pending_review' as const
+      status: expense.status || 'pending_review' as const,
+      vatRate: expense.vatRate ?? 0,
+      vatAmount: expense.vatAmount ?? 0,
+      deductiblePercentage: expense.deductiblePercentage ?? 0,
+      ocrNeedsReview: expense.ocrNeedsReview ?? true
     }));
     setExpenses((previous) => [...newItems, ...previous]);
     showNotification('success', `${newItems.length} gastos importados.`);
@@ -367,12 +372,12 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
     const grossIncome = quarterIncomes.reduce((sum, income) => sum + income.amount, 0);
     const deductibleExpenses = quarterExpenses.reduce(
-      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 100) / 100),
+      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
       0
     );
     const netYield = Math.max(0, grossIncome - deductibleExpenses);
     const deductibleVat = quarterExpenses.reduce(
-      (sum, expense) => sum + (expense.vatAmount || 0) * ((expense.deductiblePercentage ?? 100) / 100),
+      (sum, expense) => sum + (expense.vatAmount || 0) * ((expense.deductiblePercentage ?? 0) / 100),
       0
     );
     const estimatedOutputVat = grossIncome * 0.21;
@@ -436,7 +441,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const userExpenses = expenses.filter((expense) => expense.userId === userId && expense.status !== 'rejected');
     const totalIncome = userIncomes.reduce((sum, income) => sum + income.amount, 0);
     const totalExpenses = userExpenses.reduce(
-      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 100) / 100),
+      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
       0
     );
     const netProfit = Math.max(0, totalIncome - totalExpenses);
