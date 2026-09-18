@@ -202,6 +202,9 @@ export interface Income {
   importedAt?: string;
   sourceDocumentId?: string;
   sourceHash?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
 }
 
 export interface WorkSession {
