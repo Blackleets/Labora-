@@ -281,6 +281,7 @@ export interface TaxDeclaration {
   deductibleExpenses: number;
   netYield: number;
   taxAmount: number;
+  calculationState?: 'requires_review' | 'recorded';
   status: 'draft' | 'reviewed_by_gestor' | 'filed_with_tax_agency';
   filingReference?: string;
   filedAt?: string;
@@ -305,6 +306,7 @@ export interface FiscalSummary {
   totalExpenses: number;
   netProfit: number;
   estimatedIRPF: number;
+  taxEstimateAvailable: boolean;
   quarter: string;
 }
 
