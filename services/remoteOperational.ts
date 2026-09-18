@@ -116,6 +116,10 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     status: row.status,
     submissionNotes: row.submission_notes || undefined,
     submissionUrl: row.submission_url || undefined,
+    submittedAt: row.submitted_at || undefined,
+    reviewedBy: row.reviewed_by || undefined,
+    reviewedAt: row.reviewed_at || undefined,
+    reviewNote: row.review_note || undefined,
     createdAt: String(row.created_at || '').slice(0, 10),
     quarter: row.quarter || undefined
   }));
@@ -197,12 +201,24 @@ export const reviewRemoteIncome = async (
 
 export const createRemoteRequirement = async (requirement: GestorRequirement) => {
   const { error } = await supabase.rpc('create_requirement', {
-    p_id: requirement.id,
+    p_requirement_id: requirement.id,
     p_rider_id: requirement.riderId,
     p_title: requirement.title,
+    p_deadline: requirement.deadline,
     p_description: requirement.description || '',
     p_category: requirement.category || 'other',
+    p_quarter: requirement.quarter || null
+  });
+  if (error) throw error;
+};
+
+export const updateRemoteRequirementDefinition = async (requirement: GestorRequirement) => {
+  const { error } = await supabase.rpc('update_requirement_definition', {
+    p_requirement_id: requirement.id,
+    p_title: requirement.title,
     p_deadline: requirement.deadline,
+    p_description: requirement.description || '',
+    p_category: requirement.category || 'other',
     p_quarter: requirement.quarter || null
   });
   if (error) throw error;
@@ -221,10 +237,14 @@ export const submitRemoteRequirement = async (
   if (error) throw error;
 };
 
-export const reviewRemoteRequirement = async (requirementId: string) => {
+export const reviewRemoteRequirement = async (
+  requirementId: string,
+  note?: string
+) => {
   const { error } = await supabase.rpc('review_requirement', {
     p_requirement_id: requirementId,
-    p_action: 'approved'
+    p_action: 'approved',
+    p_note: note || null
   });
   if (error) throw error;
 };
@@ -417,13 +437,49 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     }
   }
 
+  const { data: remoteRequirementRows, error: remoteRequirementError } = await supabase
+    .from('requirements')
+    .select('id, manager_id, rider_id, title, description, category, deadline, status, submission_notes, submission_url, quarter, submitted_at, reviewed_by, reviewed_at, review_note');
+  if (remoteRequirementError) throw remoteRequirementError;
+
+  const remoteRequirementsById = new Map(
+    (remoteRequirementRows || []).map((row: any) => [row.id, row])
+  );
+
   for (const requirement of requirements) {
+    const remote = remoteRequirementsById.get(requirement.id) as any | undefined;
+
     if (requirement.managerId === currentUser.id) {
-      await createRemoteRequirement(requirement);
-      if (requirement.status === 'approved') {
-        await reviewRemoteRequirement(requirement.id);
+      if (!remote) {
+        await createRemoteRequirement(requirement);
+        continue;
       }
-    } else if (requirement.riderId === currentUser.id && requirement.status === 'submitted') {
+
+      if (remote.manager_id !== currentUser.id || remote.rider_id !== requirement.riderId) {
+        continue;
+      }
+
+      const definitionChanged =
+        remote.title !== requirement.title
+        || (remote.description || '') !== (requirement.description || '')
+        || remote.category !== requirement.category
+        || remote.deadline !== requirement.deadline
+        || (remote.quarter || null) !== (requirement.quarter || null);
+
+      if (definitionChanged && remote.status === 'pending') {
+        await updateRemoteRequirementDefinition(requirement);
+      }
+
+      if (requirement.status === 'approved' && remote.status === 'submitted') {
+        await reviewRemoteRequirement(requirement.id, requirement.reviewNote);
+      }
+    } else if (
+      requirement.riderId === currentUser.id
+      && remote
+      && remote.rider_id === currentUser.id
+      && requirement.status === 'submitted'
+      && remote.status === 'pending'
+    ) {
       await submitRemoteRequirement(
         requirement.id,
         requirement.submissionNotes,
