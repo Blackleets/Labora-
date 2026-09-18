@@ -456,17 +456,21 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
   const getFiscalSummary = (userId: string): FiscalSummary => {
     const userIncomes = incomes.filter((income) => income.userId === userId);
-    const userExpenses = expenses.filter((expense) => expense.userId === userId && expense.status !== 'rejected');
+    const userExpenses = expenses.filter((expense) => expense.userId === userId);
     const totalIncome = userIncomes.reduce((sum, income) => sum + income.amount, 0);
-    const totalExpenses = userExpenses.reduce(
-      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
-      0
-    );
-    const netProfit = Math.max(0, totalIncome - totalExpenses);
+    const totalExpenses = userExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const deductibleExpenses = userExpenses
+      .filter((expense) => expense.status !== 'rejected')
+      .reduce(
+        (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
+        0
+      );
+    const netProfit = totalIncome - totalExpenses;
 
     return {
       totalIncome,
       totalExpenses,
+      deductibleExpenses,
       netProfit,
       estimatedIRPF: 0,
       taxEstimateAvailable: false,
