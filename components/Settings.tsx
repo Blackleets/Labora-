@@ -10,6 +10,7 @@ import {
 import { identityImageStore } from '../services/identityImage';
 import { UserRole } from '../types';
 import IdentityImagePicker from './IdentityImagePicker';
+import BillingCard from './BillingCard';
 
 const Settings: React.FC = () => {
   const {
@@ -163,6 +164,8 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </section>
+
+      <BillingCard />
 
       <section className="labora-card p-4 sm:p-5">
         <div className="mb-5">
