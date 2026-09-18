@@ -36,7 +36,7 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
 
   const summary = useMemo(() => {
     if (!currentUser) {
-      return { totalIncome: 0, totalExpenses: 0, netProfit: 0, estimatedIRPF: 0, taxEstimateAvailable: false, quarter: '' };
+      return { totalIncome: 0, totalExpenses: 0, deductibleExpenses: 0, netProfit: 0, estimatedIRPF: 0, taxEstimateAvailable: false, quarter: '' };
     }
 
     if (!isManager) return getFiscalSummary(currentUser.id);
@@ -47,19 +47,21 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
         .map((user) => user.id)
     );
     const scopedIncomes = incomes.filter((income) => linkedIds.has(income.userId));
-    const scopedExpenses = expenses.filter(
-      (expense) => linkedIds.has(expense.userId) && expense.status !== 'rejected'
-    );
+    const scopedExpenses = expenses.filter((expense) => linkedIds.has(expense.userId));
     const totalIncome = scopedIncomes.reduce((sum, income) => sum + income.amount, 0);
-    const totalExpenses = scopedExpenses.reduce(
-      (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
-      0
-    );
-    const netProfit = Math.max(0, totalIncome - totalExpenses);
+    const totalExpenses = scopedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const deductibleExpenses = scopedExpenses
+      .filter((expense) => expense.status !== 'rejected')
+      .reduce(
+        (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
+        0
+      );
+    const netProfit = totalIncome - totalExpenses;
 
     return {
       totalIncome,
       totalExpenses,
+      deductibleExpenses,
       netProfit,
       estimatedIRPF: 0,
       taxEstimateAvailable: false,
@@ -103,7 +105,7 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
               {isManager
-                ? 'Ingresos, gastos validados, documentación y cálculos de tus clientes vinculados.'
+                ? 'Ingresos, gastos reales, documentación y revisión fiscal de tus clientes vinculados.'
                 : 'Registra movimientos, guarda justificantes y prepara la información que revisará tu gestoría.'}
             </p>
           </div>
@@ -117,8 +119,8 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
 
         <div className="grid grid-cols-2 gap-px bg-[#EAE3D9] sm:grid-cols-4">
           <MetricButton label="Ingresos" value={formatCurrency(summary.totalIncome)} onClick={() => setActiveTab('incomes')} />
-          <MetricButton label={isManager ? 'Gastos validados' : 'Gastos'} value={formatCurrency(summary.totalExpenses)} onClick={() => setActiveTab('expenses')} accent="clay" />
-          <MetricButton label="Neto" value={formatCurrency(summary.netProfit)} onClick={() => setActiveTab('taxes')} accent="green" />
+          <MetricButton label="Gastos reales" value={formatCurrency(summary.totalExpenses)} onClick={() => setActiveTab('expenses')} accent="clay" />
+          <MetricButton label="Neto operativo" value={formatCurrency(summary.netProfit)} onClick={() => setActiveTab('expenses')} accent="green" />
           <MetricButton
             label="Fiscal"
             value={summary.taxEstimateAvailable ? formatCurrency(summary.estimatedIRPF) : 'Por revisar'}
