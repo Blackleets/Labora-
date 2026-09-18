@@ -41,6 +41,18 @@ const roleToDb = (role: UserRole) => {
   return 'rider';
 };
 
+const requireAuthenticatedUser = async (expectedUserId?: string) => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user) throw new Error('Tu sesión ha caducado. Vuelve a iniciar sesión.');
+
+  if (expectedUserId && expectedUserId !== data.user.id) {
+    throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
+  }
+
+  return data.user;
+};
+
 const identityUrl = async (path?: string | null) => {
   if (!path) return undefined;
   const { data, error } = await supabase.storage.from('labora-identity').createSignedUrl(path, 60 * 60);
@@ -94,11 +106,12 @@ export const uploadIdentityDataUrl = async (
 ) => {
   if (!dataUrl) return;
 
+  const authenticatedUser = await requireAuthenticatedUser(userId);
   const response = await fetch(dataUrl);
   const blob = await response.blob();
   const contentType = blob.type || 'image/jpeg';
   const extension = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
-  const path = `${userId}/identity.${extension}`;
+  const path = `${authenticatedUser.id}/identity.${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from('labora-identity')
@@ -108,7 +121,7 @@ export const uploadIdentityDataUrl = async (
   const { error: profileError } = await supabase
     .from('profiles')
     .update({ identity_image_path: path, identity_image_kind: kind })
-    .eq('id', userId);
+    .eq('id', authenticatedUser.id);
   if (profileError) throw profileError;
 };
 
@@ -213,6 +226,7 @@ export const linkManagerByEmail = async (managerEmail: string) => {
 };
 
 export const updateRemoteProfile = async (userId: string, patch: Partial<User>) => {
+  const authenticatedUser = await requireAuthenticatedUser(userId);
   const payload: Record<string, unknown> = {};
   if (patch.name !== undefined) payload.name = patch.name;
   if (patch.phone !== undefined) payload.phone = patch.phone || null;
@@ -222,6 +236,9 @@ export const updateRemoteProfile = async (userId: string, patch: Partial<User>) 
   if (patch.vehiclePlate !== undefined) payload.vehicle_plate = patch.vehiclePlate || null;
 
   if (Object.keys(payload).length === 0) return;
-  const { error } = await supabase.from('profiles').update(payload).eq('id', userId);
+  const { error } = await supabase
+    .from('profiles')
+    .update(payload)
+    .eq('id', authenticatedUser.id);
   if (error) throw error;
 };
