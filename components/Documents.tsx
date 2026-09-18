@@ -501,13 +501,13 @@ export const Documents: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#18211C]/60 p-3 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-[26px] border border-[#E3DBD0] bg-[#FFFDF9] p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
-              <div><p className="labora-kicker text-[#789582]">Resumen informativo</p><h3 className="labora-display mt-1 text-xl font-semibold text-[#1E231F]">Situación estimada</h3></div>
+              <div><p className="labora-kicker text-[#789582]">Resumen informativo</p><h3 className="labora-display mt-1 text-xl font-semibold text-[#1E231F]">Situación registrada</h3></div>
               <button onClick={() => setIsReportOpen(false)} className="rounded-xl p-2 text-stone-400 hover:bg-[#F1ECE3]"><X size={17} /></button>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
               <Metric label="Ingresos registrados" value={summary.totalIncome} />
-              <Metric label="Gastos computados" value={summary.totalExpenses} />
-              <Metric label="Neto estimado" value={summary.netProfit} />
+              <Metric label="Gastos registrados" value={summary.totalExpenses} />
+              <Metric label="Neto operativo" value={summary.netProfit} />
               <Metric label="Fiscal" value={summary.taxEstimateAvailable ? summary.estimatedIRPF : 'Por revisar'} />
             </div>
             <div className="mt-4 rounded-[14px] border border-[#F0DFC1] bg-[#FFF8EC] p-3 text-[11px] leading-relaxed text-[#805F2B]">
