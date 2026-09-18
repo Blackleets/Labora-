@@ -70,7 +70,9 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     externalId: row.external_id || undefined,
     confidence: row.confidence == null ? undefined : numberValue(row.confidence),
     needsReview: row.needs_review == null ? true : Boolean(row.needs_review),
-    importedAt: row.imported_at || undefined
+    importedAt: row.imported_at || undefined,
+    sourceDocumentId: row.source_document_id || undefined,
+    sourceHash: row.source_hash || undefined
   }));
 
   const expenses: Expense[] = await Promise.all((expensesResult.data || []).map(async (row: any) => ({
@@ -239,22 +241,6 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       if (!localDocumentIds.has(row.id)) await deleteRemoteDocument(row.id);
     }
 
-    const ownIncomes = incomes.filter((item) => item.userId === currentUser.id).map((item) => ({
-      id: item.id,
-      user_id: item.userId,
-      platform: item.platform,
-      date: item.date,
-      amount: item.amount,
-      retention: item.retention,
-      source_type: item.sourceType || 'manual',
-      source_reference: item.sourceReference || null,
-      external_id: item.externalId || null,
-      confidence: item.confidence ?? null,
-      needs_review: item.needsReview ?? false,
-      imported_at: item.importedAt || new Date().toISOString()
-    }));
-    if (ownIncomes.length) await supabase.from('incomes').upsert(ownIncomes);
-
     const ownExpenses: any[] = [];
     for (const item of ownExpenseItems) {
       let receiptPath: string | undefined;
@@ -312,6 +298,27 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     }
     if (ownDocuments.length) {
       const { error } = await supabase.from('documents').upsert(ownDocuments);
+      if (error) throw error;
+    }
+
+    const ownIncomes = incomes.filter((item) => item.userId === currentUser.id).map((item) => ({
+      id: item.id,
+      user_id: item.userId,
+      platform: item.platform,
+      date: item.date,
+      amount: item.amount,
+      retention: item.retention,
+      source_type: item.sourceType || 'manual',
+      source_reference: item.sourceReference || null,
+      external_id: item.externalId || null,
+      confidence: item.confidence ?? null,
+      needs_review: item.needsReview ?? false,
+      imported_at: item.importedAt || new Date().toISOString(),
+      source_document_id: item.sourceDocumentId || null,
+      source_hash: item.sourceHash || null
+    }));
+    if (ownIncomes.length) {
+      const { error } = await supabase.from('incomes').upsert(ownIncomes);
       if (error) throw error;
     }
 
