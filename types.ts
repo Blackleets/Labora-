@@ -202,6 +202,16 @@ export interface Income {
   importedAt?: string;
 }
 
+export interface WorkSession {
+  id: string;
+  userId: string;
+  startedAt: string;
+  endedAt?: string;
+  startOdometerKm?: number;
+  endOdometerKm?: number;
+  notes?: string;
+}
+
 export enum ExpenseCategory {
   GASOLINA = 'Gasolina',
   MANTENIMIENTO = 'Mantenimiento',
