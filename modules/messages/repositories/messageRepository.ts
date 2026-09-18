@@ -73,7 +73,7 @@ export const messageRepository = {
   },
 
   markRead: async (id: string): Promise<void> => {
-    const { error } = await supabase.from('messages').update({ status: 'read' }).eq('id', id);
+    const { error } = await supabase.rpc('mark_message_read', { p_message_id: id });
     if (error) throw error;
   },
 
