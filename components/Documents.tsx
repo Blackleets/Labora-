@@ -497,7 +497,7 @@ export const Documents: React.FC = () => {
               <Metric label="Ingresos registrados" value={summary.totalIncome} />
               <Metric label="Gastos computados" value={summary.totalExpenses} />
               <Metric label="Neto estimado" value={summary.netProfit} />
-              <Metric label="IRPF orientativo" value={summary.estimatedIRPF} />
+              <Metric label="Fiscal" value={summary.taxEstimateAvailable ? summary.estimatedIRPF : 'Por revisar'} />
             </div>
             <div className="mt-4 rounded-[14px] border border-[#F0DFC1] bg-[#FFF8EC] p-3 text-[11px] leading-relaxed text-[#805F2B]">
               Este resumen es orientativo. No equivale a una autoliquidación presentada ni sustituye la revisión de la gestoría o de la AEAT.
@@ -521,10 +521,12 @@ const InfoCard = ({ icon: Icon, title, text }: { icon: React.ComponentType<{ siz
   </div>
 );
 
-const Metric = ({ label, value }: { label: string; value: number }) => (
+const Metric = ({ label, value }: { label: string; value: number | string }) => (
   <div className="rounded-[14px] border border-[#E7E0D6] bg-[#FAF8F4] p-3">
     <p className="text-[9px] font-extrabold uppercase tracking-[0.1em] text-stone-400">{label}</p>
-    <p className="mt-1 text-base font-extrabold tracking-[-0.03em] text-[#1E231F]">{value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</p>
+    <p className="mt-1 text-base font-extrabold tracking-[-0.03em] text-[#1E231F]">
+      {typeof value === 'number' ? value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : value}
+    </p>
   </div>
 );
 
