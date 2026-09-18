@@ -64,7 +64,13 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     platform: row.platform,
     date: row.date,
     amount: numberValue(row.amount),
-    retention: numberValue(row.retention)
+    retention: numberValue(row.retention),
+    sourceType: row.source_type || 'manual',
+    sourceReference: row.source_reference || undefined,
+    externalId: row.external_id || undefined,
+    confidence: row.confidence == null ? undefined : numberValue(row.confidence),
+    needsReview: row.needs_review == null ? true : Boolean(row.needs_review),
+    importedAt: row.imported_at || undefined
   }));
 
   const expenses: Expense[] = await Promise.all((expensesResult.data || []).map(async (row: any) => ({
@@ -233,7 +239,18 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     }
 
     const ownIncomes = incomes.filter((item) => item.userId === currentUser.id).map((item) => ({
-      id: item.id, user_id: item.userId, platform: item.platform, date: item.date, amount: item.amount, retention: item.retention
+      id: item.id,
+      user_id: item.userId,
+      platform: item.platform,
+      date: item.date,
+      amount: item.amount,
+      retention: item.retention,
+      source_type: item.sourceType || 'manual',
+      source_reference: item.sourceReference || null,
+      external_id: item.externalId || null,
+      confidence: item.confidence ?? null,
+      needs_review: item.needsReview ?? false,
+      imported_at: item.importedAt || new Date().toISOString()
     }));
     if (ownIncomes.length) await supabase.from('incomes').upsert(ownIncomes);
 
