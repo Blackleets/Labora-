@@ -264,7 +264,7 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
         fuel_type: item.fuelType || null,
         status: item.status || 'pending_review',
         gestor_notes: item.gestorNotes || null,
-        deductible_percentage: item.deductiblePercentage ?? 100,
+        deductible_percentage: item.deductiblePercentage ?? 0,
         invoice_number: item.invoiceNumber || null
       });
     }
@@ -313,7 +313,7 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       await supabase.from('expenses').update({
         status: expense.status || 'pending_review',
         gestor_notes: expense.gestorNotes || null,
-        deductible_percentage: expense.deductiblePercentage ?? 100
+        deductible_percentage: expense.deductiblePercentage ?? 0
       }).eq('id', expense.id);
     }
   }
