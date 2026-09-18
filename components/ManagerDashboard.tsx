@@ -355,8 +355,16 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                     <div className="p-4 sm:p-5">
                       {taxModels ? (
                         <div className="grid gap-3 sm:grid-cols-2">
-                          <TaxCard title="Modelo 130" amount={formatMoney(taxModels.model130.taxAmount)} status={taxModels.model130.status} />
-                          <TaxCard title="Modelo 303" amount={formatMoney(taxModels.model303.taxAmount)} status={taxModels.model303.status} />
+                          <TaxCard
+                            title="Modelo 130"
+                            amount={taxModels.model130.calculationState === 'requires_review' ? 'Por revisar' : formatMoney(taxModels.model130.taxAmount)}
+                            status={taxModels.model130.status}
+                          />
+                          <TaxCard
+                            title="Modelo 303"
+                            amount={taxModels.model303.calculationState === 'requires_review' ? 'Por revisar' : formatMoney(taxModels.model303.taxAmount)}
+                            status={taxModels.model303.status}
+                          />
                         </div>
                       ) : (
                         <EmptyState text="No hay cálculo fiscal disponible." />
