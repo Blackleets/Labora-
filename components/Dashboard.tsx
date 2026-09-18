@@ -17,7 +17,7 @@ import {
 import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
-import { finishWorkSession, getActiveWorkSession, startWorkSession } from '../services/workSessionService';
+import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
 
 
@@ -29,21 +29,24 @@ const currentQuarter = () => {
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-  const { currentUser, getFiscalSummary, privacyMode, requirements, showNotification } = useData();
+  const { currentUser, getFiscalSummary, privacyMode, requirements, incomes, showNotification } = useData();
   const { selectedCountry } = useCountry();
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
   const [activeSession, setActiveSession] = useState<WorkSession | null>(null);
+  const [recentSessions, setRecentSessions] = useState<WorkSession[]>([]);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionBusy, setSessionBusy] = useState(false);
   const [clockNow, setClockNow] = useState(Date.now());
 
   useEffect(() => {
     let active = true;
-    void getActiveWorkSession()
-      .then((session) => {
-        if (active) setActiveSession(session);
+    void Promise.all([getActiveWorkSession(), listRecentWorkSessions(30)])
+      .then(([session, sessions]) => {
+        if (!active) return;
+        setActiveSession(session);
+        setRecentSessions(sessions);
       })
-      .catch((error) => console.error('No se pudo cargar la jornada activa.', error))
+      .catch((error) => console.error('No se pudo cargar el historial de jornadas.', error))
       .finally(() => {
         if (active) setSessionLoading(false);
       });
@@ -74,6 +77,22 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         maximumFractionDigits: 0
       });
 
+  const nowDate = new Date(clockNow);
+  const dayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
+  const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+  const todayKey = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}-${String(nowDate.getDate()).padStart(2, '0')}`;
+  const todayWorkedMs = recentSessions.reduce((total, session) => {
+    const start = Math.max(new Date(session.startedAt).getTime(), dayStart);
+    const rawEnd = session.endedAt ? new Date(session.endedAt).getTime() : clockNow;
+    const end = Math.min(rawEnd, dayEnd);
+    return total + Math.max(0, end - start);
+  }, 0);
+  const todayWorkedHours = todayWorkedMs / (60 * 60 * 1000);
+  const todayRegisteredIncome = incomes
+    .filter((income) => income.userId === currentUser.id && income.date === todayKey)
+    .reduce((sum, income) => sum + income.amount, 0);
+  const todayGrossPerHour = todayWorkedHours > 0 ? todayRegisteredIncome / todayWorkedHours : 0;
+
   const elapsedMinutes = activeSession
     ? Math.max(0, Math.floor((clockNow - new Date(activeSession.startedAt).getTime()) / 60_000))
     : 0;
@@ -88,10 +107,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       if (activeSession) {
         await finishWorkSession(activeSession.id);
         setActiveSession(null);
+        setRecentSessions(await listRecentWorkSessions(30));
+        setClockNow(Date.now());
         showNotification('success', 'Jornada finalizada.');
       } else {
         const session = await startWorkSession();
         setActiveSession(session);
+        setRecentSessions(await listRecentWorkSessions(30));
         setClockNow(Date.now());
         showNotification('success', 'Jornada iniciada.');
       }
@@ -205,6 +227,19 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             {activeSession ? 'Finalizar jornada' : 'Iniciar jornada'}
           </button>
         </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[#EEE7DD] pt-4">
+          <MiniMetric label="Horas hoy" value={todayWorkedHours > 0 ? `${todayWorkedHours.toFixed(1)} h` : '0 h'} />
+          <MiniMetric label="Ingresos hoy" value={formatCurrency(todayRegisteredIncome)} />
+          <MiniMetric
+            label="€/h registrado"
+            value={todayWorkedHours > 0 ? formatCurrency(todayGrossPerHour) : '—'}
+            emphasis
+          />
+        </div>
+        <p className="mt-2 text-[9px] leading-relaxed text-stone-400">
+          €/h usa únicamente ingresos registrados con fecha de hoy y horas de Jornada Labora. No incluye todavía todos los costes ni equivale a beneficio neto.
+        </p>
       </section>
 
       <section>
@@ -287,6 +322,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     </div>
   );
 };
+
+const MiniMetric = ({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) => (
+  <div className={`min-w-0 rounded-[12px] px-2 py-2.5 ${emphasis ? 'bg-[#EAF2ED]' : 'bg-[#F8F5F0]'}`}>
+    <p className="truncate text-[8px] font-extrabold uppercase tracking-[0.09em] text-stone-400">{label}</p>
+    <p className={`mt-1 truncate text-xs font-extrabold ${emphasis ? 'text-[#214E3A]' : 'text-[#1E231F]'}`}>{value}</p>
+  </div>
+);
 
 const Metric = ({ onClick, icon: Icon, label, value, accent = false, compact = false }: any) => (
   <button onClick={onClick} className="labora-card labora-card-interactive p-4 text-left">
