@@ -80,7 +80,10 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
           platform: item.platform,
           amount: item.amount,
           date: item.date,
-          retention: item.retention || 0
+          retention: item.retention || 0,
+          sourceType: 'text_import',
+          sourceReference: 'Texto pegado por el usuario',
+          needsReview: true
         });
       });
       showNotification('success', `${extractedData.length} ingresos añadidos para revisión.`);
@@ -113,7 +116,9 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
       platform: platform.trim(),
       amount: numericAmount,
       date,
-      retention: numericRetention
+      retention: numericRetention,
+      sourceType: 'manual',
+      needsReview: false
     });
     setPlatform('');
     setAmount('');
@@ -177,7 +182,14 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-extrabold text-[#1E231F]">{income.platform}</p>
-                      <p className="mt-1 text-[10px] font-medium text-stone-400">{income.date}{isManager ? ` · ${ownerNames.get(income.userId) || 'Cliente'}` : ''}</p>
+                      <p className="mt-1 text-[10px] font-medium text-stone-400">
+                        {income.date}{isManager ? ` · ${ownerNames.get(income.userId) || 'Cliente'}` : ''} · {incomeSourceLabel(income.sourceType)}
+                      </p>
+                      {income.needsReview && (
+                        <span className="mt-1.5 inline-flex rounded-full border border-[#E8D9C8] bg-[#FFF5E9] px-2 py-0.5 text-[9px] font-extrabold text-[#8A641E]">
+                          Pendiente de revisión
+                        </span>
+                      )}
                     </div>
                     <div className="shrink-0 text-right"><p className="text-sm font-extrabold text-[#214E3A]">+{formatMoney(income.amount)}</p>{income.retention > 0 && <p className="mt-0.5 text-[10px] font-bold text-[#A45632]">Ret. −{formatMoney(income.retention)}</p>}</div>
                   </div>
@@ -225,6 +237,14 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
       <style>{`.field-input{width:100%;border:1px solid #DDD5CA;background:#fff;border-radius:13px;padding:.65rem .75rem;font-size:.875rem;outline:none}.field-input:focus{border-color:#789582;box-shadow:0 0 0 2px rgba(221,233,225,.7)}`}</style>
     </div>
   );
+};
+
+const incomeSourceLabel = (sourceType?: string) => {
+  if (sourceType === 'text_import') return 'Texto importado';
+  if (sourceType === 'document_import') return 'Documento';
+  if (sourceType === 'api_sync') return 'API verificada';
+  if (sourceType === 'bank_import') return 'Movimiento bancario';
+  return 'Manual';
 };
 
 const SummaryMetric = ({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) => <div className="bg-[#FFFDF9] p-3.5 sm:p-4"><p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-stone-400">{label}</p><p className={`mt-1 text-base font-extrabold tracking-[-0.03em] ${accent ? 'text-[#B95635]' : 'text-[#214E3A]'}`}>{value}</p></div>;
