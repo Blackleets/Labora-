@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, PropsWithChildren } from 'react';
+import React, { createContext, useContext, useState, PropsWithChildren } from 'react';
 import { CountryConfig, DEFAULT_SPAIN_CONFIG, DEFAULT_MEXICO_CONFIG, DEFAULT_USA_CONFIG, OTHER_COUNTRIES } from '../modules/country-config/types';
 
 interface CountryContextType {
@@ -12,18 +12,23 @@ interface CountryContextType {
 export const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
 export const CountryProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
-  const [selectedCountry, setSelectedCountry] = useState<CountryConfig>(DEFAULT_SPAIN_CONFIG);
-
   const countries = [
-    DEFAULT_SPAIN_CONFIG, 
-    DEFAULT_MEXICO_CONFIG, 
+    DEFAULT_SPAIN_CONFIG,
+    DEFAULT_MEXICO_CONFIG,
     DEFAULT_USA_CONFIG,
     ...OTHER_COUNTRIES
   ];
 
+  const [selectedCountry, setSelectedCountry] = useState<CountryConfig>(() => {
+    const storedCode = localStorage.getItem('labora_country');
+    return countries.find((country) => country.country_code === storedCode) || DEFAULT_SPAIN_CONFIG;
+  });
+
   const selectCountry = (code: string) => {
-    const found = countries.find(c => c.country_code === code);
-    if (found) setSelectedCountry(found);
+    const found = countries.find((country) => country.country_code === code);
+    if (!found) return;
+    localStorage.setItem('labora_country', found.country_code);
+    setSelectedCountry(found);
   };
 
   const refreshCountries = async () => {

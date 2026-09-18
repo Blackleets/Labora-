@@ -1,202 +1,192 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Wallet, Receipt, TrendingUp, Scale, FileText, 
-  DollarSign, Building, ArrowUpRight, ArrowDownRight, 
-  Plus, Fuel, ShieldCheck, Download, PiggyBank 
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Building,
+  FileText,
+  Receipt,
+  Scale,
+  TrendingUp,
+  Wallet
 } from 'lucide-react';
 import { useData } from '../../../contexts/DataContext';
 import { useCountry } from '../../../contexts/CountryContext';
 import { UserRole } from '../../../types';
 import ExpenseTracker from '../../../components/ExpenseTracker';
 import IncomeTracker from '../../../components/IncomeTracker';
-import { TaxDeclarationsViewer } from '../../../components/TaxDeclarationsViewer';
+import { TaxOverview } from '../../../components/TaxOverview';
 import Documents from '../../../components/Documents';
-import { PayrollDashboard } from '../../payroll/components/PayrollDashboard';
 import { BankingConnect } from '../../banking-connect/BankingConnect';
-import { GasStationCaptureModal } from '../../../components/GasStationCaptureModal';
+
+type MoneyTab = 'expenses' | 'incomes' | 'taxes' | 'docs' | 'banking';
 
 interface MoneyHubProps {
-  initialTab?: 'expenses' | 'incomes' | 'taxes' | 'docs' | 'payroll' | 'banking';
+  initialTab?: MoneyTab;
   setView?: (view: string) => void;
 }
 
 export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', setView }) => {
-  const { currentUser, getFiscalSummary, privacyMode } = useData();
+  const { currentUser, users, getFiscalSummary, privacyMode, incomes, expenses } = useData();
   const { selectedCountry } = useCountry();
-  const [activeTab, setActiveTab] = useState<'expenses' | 'incomes' | 'taxes' | 'docs' | 'payroll' | 'banking'>(initialTab);
-  const [isGasModalOpen, setIsGasModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<MoneyTab>(initialTab);
 
   useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
-    }
+    setActiveTab(initialTab);
   }, [initialTab]);
 
-  const summary = getFiscalSummary(currentUser?.id || 'u1');
+  const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+
+  const summary = useMemo(() => {
+    if (!currentUser) {
+      return { totalIncome: 0, totalExpenses: 0, deductibleExpenses: 0, netProfit: 0, estimatedIRPF: 0, taxEstimateAvailable: false, quarter: '' };
+    }
+
+    if (!isManager) return getFiscalSummary(currentUser.id);
+
+    const linkedIds = new Set(
+      users
+        .filter((user) => user.role === UserRole.RIDER && user.managerId === currentUser.id)
+        .map((user) => user.id)
+    );
+    const scopedIncomes = incomes.filter((income) => linkedIds.has(income.userId));
+    const scopedExpenses = expenses.filter((expense) => linkedIds.has(expense.userId));
+    const totalIncome = scopedIncomes.reduce((sum, income) => sum + income.amount, 0);
+    const totalExpenses = scopedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const deductibleExpenses = scopedExpenses
+      .filter((expense) => expense.status !== 'rejected')
+      .reduce(
+        (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
+        0
+      );
+    const netProfit = totalIncome - totalExpenses;
+
+    return {
+      totalIncome,
+      totalExpenses,
+      deductibleExpenses,
+      netProfit,
+      estimatedIRPF: 0,
+      taxEstimateAvailable: false,
+      quarter: ''
+    };
+  }, [isManager, currentUser, users, getFiscalSummary, incomes, expenses]);
 
   const formatCurrency = (amount: number) => {
     if (privacyMode) return '••••';
-    return amount.toLocaleString('es-ES', { 
-      style: 'currency', 
+    return amount.toLocaleString('es-ES', {
+      style: 'currency',
       currency: selectedCountry.currency || 'EUR',
-      maximumFractionDigits: 0 
+      maximumFractionDigits: 0
     });
   };
 
-  const tabs = [
-    { id: 'expenses', label: 'Gastos & Tickets', icon: Receipt, desc: 'Combustible y deducciones' },
-    { id: 'incomes', label: 'Ingresos Plataformas', icon: TrendingUp, desc: 'Uber, Glovo, Just Eat' },
-    { id: 'taxes', label: 'Modelos AEAT (130/303)', icon: Scale, desc: 'Liquidaciones trimestrales' },
-    { id: 'docs', label: 'Expediente Digital', icon: FileText, desc: 'Tickets y certificados' },
-    { id: 'payroll', label: 'Liquidaciones', icon: DollarSign, desc: 'Extractos semanales' },
-    { id: 'banking', label: 'Banca Conectada', icon: Building, desc: 'Cuentas y cobros' },
-  ];
+  const tabs = useMemo(() => {
+    const base = [
+      { id: 'expenses' as const, label: isManager ? 'Auditoría' : 'Gastos', icon: Receipt },
+      { id: 'incomes' as const, label: 'Ingresos', icon: TrendingUp },
+      { id: 'taxes' as const, label: 'Fiscal', icon: Scale },
+      { id: 'docs' as const, label: 'Documentos', icon: FileText }
+    ];
+    return isManager ? base : [...base, { id: 'banking' as const, label: 'Banca', icon: Building }];
+  }, [isManager]);
+
+  useEffect(() => {
+    if (isManager && activeTab === 'banking') setActiveTab('expenses');
+  }, [isManager, activeTab]);
 
   return (
-    <div id="money-hub-workspace" className="space-y-6 animate-in fade-in duration-300">
-      
-      {/* Top Banner & Quick Financial Metrics */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-          <div>
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-full border border-blue-200 flex items-center space-x-1">
-                <Wallet className="w-3.5 h-3.5" />
-                <span>Gestión Financiera & Tributaria</span>
-              </span>
-              <span className="text-xs text-slate-400">• Periodo Activo: 3T 2026</span>
-            </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              {currentUser?.role === UserRole.MANAGER ? 'Auditoría Económica de Cartera' : 'Centro Económico & Fiscal'}
+    <div id="money-hub-workspace" className="min-w-0 space-y-4 animate-in fade-in duration-200">
+      <section className="labora-card overflow-hidden">
+        <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <p className="labora-kicker text-[#789582]">
+              {isManager ? 'Cartera vinculada' : 'Actividad registrada'}
+            </p>
+            <h1 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">
+              {isManager ? 'Auditoría y fiscalidad' : 'Tu dinero, sin ruido'}
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Control de ingresos por plataforma, tickets de combustible deducibles con respaldo fotográfico y cálculo de IRPF e IVA.
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
+              {isManager
+                ? 'Ingresos, gastos reales, documentación y revisión fiscal de tus clientes vinculados.'
+                : 'Registra movimientos, guarda justificantes y prepara la información que revisará tu gestoría.'}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {currentUser?.role === UserRole.RIDER && (
-              <button
-                onClick={() => setIsGasModalOpen(true)}
-                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-sm flex items-center space-x-2 transition-colors active:scale-95"
-              >
-                <Fuel size={16} />
-                <span>+ Repostaje Gasolinera</span>
-              </button>
-            )}
-            <button
-              onClick={() => setActiveTab('taxes')}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm flex items-center space-x-2 transition-colors active:scale-95"
-            >
-              <Scale size={16} />
-              <span>Ver Modelos 130 / 303</span>
-            </button>
+          <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A] lg:h-14 lg:w-14">
+            <Wallet size={22} />
           </div>
         </div>
 
-        {/* Quick Summary Numbers */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-          <div 
-            onClick={() => setActiveTab('incomes')}
-            className="p-3 bg-blue-50/50 hover:bg-blue-50 rounded-xl border border-blue-100/60 cursor-pointer transition-colors"
-          >
-            <div className="flex items-center justify-between text-blue-700 text-xs font-bold mb-1">
-              <span>Ingresos Brutos</span>
-              <ArrowUpRight size={14} />
-            </div>
-            <p className="text-lg font-black text-slate-900">{formatCurrency(summary.totalIncome)}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5 font-medium">Plataformas de reparto</p>
-          </div>
+        <div className="labora-divider" />
 
-          <div 
-            onClick={() => setActiveTab('expenses')}
-            className="p-3 bg-rose-50/50 hover:bg-rose-50 rounded-xl border border-rose-100/60 cursor-pointer transition-colors"
-          >
-            <div className="flex items-center justify-between text-rose-700 text-xs font-bold mb-1">
-              <span>Gastos Deducibles</span>
-              <ArrowDownRight size={14} />
-            </div>
-            <p className="text-lg font-black text-slate-900">{formatCurrency(summary.totalExpenses)}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5 font-medium">Combustible, cuota y taller</p>
-          </div>
-
-          <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/60">
-            <div className="flex items-center justify-between text-emerald-700 text-xs font-bold mb-1">
-              <span>Rendimiento Neto</span>
-              <TrendingUp size={14} />
-            </div>
-            <p className="text-lg font-black text-emerald-600">{formatCurrency(summary.netProfit)}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5 font-medium">Base liquidable IRPF</p>
-          </div>
-
-          <div 
+        <div className="grid grid-cols-2 gap-px bg-[#EAE3D9] sm:grid-cols-4">
+          <MetricButton label="Ingresos" value={formatCurrency(summary.totalIncome)} onClick={() => setActiveTab('incomes')} />
+          <MetricButton label="Gastos reales" value={formatCurrency(summary.totalExpenses)} onClick={() => setActiveTab('expenses')} accent="clay" />
+          <MetricButton label="Neto operativo" value={formatCurrency(summary.netProfit)} onClick={() => setActiveTab('expenses')} accent="green" />
+          <MetricButton
+            label="Fiscal"
+            value={summary.taxEstimateAvailable ? formatCurrency(summary.estimatedIRPF) : 'Por revisar'}
             onClick={() => setActiveTab('taxes')}
-            className="p-3 bg-amber-50/50 hover:bg-amber-50 rounded-xl border border-amber-100/60 cursor-pointer transition-colors"
-          >
-            <div className="flex items-center justify-between text-amber-700 text-xs font-bold mb-1">
-              <span>Hucha IRPF (130)</span>
-              <PiggyBank size={14} />
-            </div>
-            <p className="text-lg font-black text-amber-900">{formatCurrency(summary.estimatedIRPF)}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5 font-medium">20% reservado AEAT</p>
-          </div>
+            accent="amber"
+          />
         </div>
+      </section>
+
+      <nav className="labora-card overflow-x-auto p-1.5 custom-scrollbar">
+        <div className="flex min-w-max items-center gap-1">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-[12px] px-3.5 text-xs font-extrabold transition ${
+                  active
+                    ? 'bg-[#214E3A] text-white shadow-sm'
+                    : 'text-stone-500 hover:bg-[#F3EFE8] hover:text-[#1E231F]'
+                }`}
+              >
+                <Icon size={14} strokeWidth={2.2} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <div className="min-w-0">
+        {activeTab === 'expenses' && <ExpenseTracker startDate="" endDate="" />}
+        {activeTab === 'incomes' && <IncomeTracker startDate="" endDate="" />}
+        {activeTab === 'taxes' && <TaxOverview setView={setView} />}
+        {activeTab === 'docs' && <Documents />}
+        {activeTab === 'banking' && !isManager && <BankingConnect />}
       </div>
-
-      {/* Navigation Sub-Tabs */}
-      <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-1 overflow-x-auto custom-scrollbar">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 ${
-                isActive
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <Icon size={16} className={isActive ? 'text-blue-400' : 'text-slate-400'} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Active Tab Content Area */}
-      <div className="transition-all duration-200">
-        {activeTab === 'expenses' && (
-          <ExpenseTracker startDate="" endDate="" />
-        )}
-
-        {activeTab === 'incomes' && (
-          <IncomeTracker startDate="" endDate="" />
-        )}
-
-        {activeTab === 'taxes' && (
-          <TaxDeclarationsViewer />
-        )}
-
-        {activeTab === 'docs' && (
-          <Documents />
-        )}
-
-        {activeTab === 'payroll' && (
-          <PayrollDashboard />
-        )}
-
-        {activeTab === 'banking' && (
-          <BankingConnect />
-        )}
-      </div>
-
-      {/* Gasoline Capture Modal */}
-      <GasStationCaptureModal
-        isOpen={isGasModalOpen}
-        onClose={() => setIsGasModalOpen(false)}
-      />
     </div>
+  );
+};
+
+const MetricButton = ({
+  label,
+  value,
+  onClick,
+  accent = 'neutral'
+}: {
+  label: string;
+  value: string;
+  onClick: () => void;
+  accent?: 'neutral' | 'green' | 'clay' | 'amber';
+}) => {
+  const valueClass = accent === 'green'
+    ? 'text-[#214E3A]'
+    : accent === 'clay'
+      ? 'text-[#B95635]'
+      : accent === 'amber'
+        ? 'text-[#8A641E]'
+        : 'text-[#1E231F]';
+
+  return (
+    <button onClick={onClick} className="min-w-0 bg-[#FFFDF9] p-3.5 text-left transition hover:bg-[#FAF7F1] sm:p-4">
+      <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-stone-400">{label}</p>
+      <p className={`mt-1 truncate text-base font-extrabold tracking-[-0.03em] sm:text-lg ${valueClass}`}>{value}</p>
+    </button>
   );
 };

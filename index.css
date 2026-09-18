@@ -1,0 +1,176 @@
+:root {
+  --labora-ink: #1E231F;
+  --labora-primary: #214E3A;
+  --labora-primary-2: #2F6B50;
+  --labora-clay: #D66C47;
+  --labora-amber: #F1C56B;
+  --labora-canvas: #F7F3EA;
+  --labora-surface: #FFFDF9;
+  --labora-surface-2: #F1ECE3;
+  --labora-border: #E5DDD2;
+  --labora-muted: #6E756F;
+  --labora-soft-green: #E6F0EA;
+  --labora-soft-clay: #F8EDE7;
+  --labora-shadow: 0 18px 60px rgba(33, 78, 58, 0.10);
+  --labora-shadow-soft: 0 8px 30px rgba(30, 35, 31, 0.06);
+  --labora-radius: 24px;
+}
+
+html {
+  background: var(--labora-canvas);
+}
+
+body:not(.dark) {
+  background:
+    radial-gradient(circle at 12% -4%, rgba(241, 197, 107, 0.18), transparent 26rem),
+    radial-gradient(circle at 95% 14%, rgba(47, 107, 80, 0.10), transparent 24rem),
+    var(--labora-canvas);
+  color: var(--labora-ink);
+}
+
+body:not(.dark) .bg-white {
+  background-color: var(--labora-surface) !important;
+}
+
+body:not(.dark) main {
+  background: transparent !important;
+}
+
+body:not(.dark) main > header {
+  background: color-mix(in srgb, var(--labora-surface) 90%, transparent) !important;
+  border-color: rgba(137, 123, 107, 0.20) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.75) inset;
+}
+
+body:not(.dark) aside {
+  background:
+    linear-gradient(180deg, rgba(255,253,249,0.98), rgba(249,245,238,0.98)) !important;
+  border-color: rgba(137, 123, 107, 0.20) !important;
+}
+
+body:not(.dark) main > nav {
+  background: rgba(255,253,249,0.96) !important;
+  border-color: rgba(137, 123, 107, 0.18) !important;
+  box-shadow: 0 -12px 40px rgba(30,35,31,0.05);
+}
+
+::selection {
+  background: rgba(47,107,80,0.18);
+  color: var(--labora-primary);
+}
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(241, 197, 107, 0.55);
+  outline-offset: 2px;
+}
+
+.labora-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(33,78,58,0.16);
+  background:
+    radial-gradient(circle at 83% 14%, rgba(241,197,107,0.32), transparent 14rem),
+    linear-gradient(135deg, #214E3A 0%, #2B6048 58%, #3B7258 100%);
+  color: #fff;
+  border-radius: 28px;
+  box-shadow: var(--labora-shadow);
+}
+
+.labora-hero::after {
+  content: '';
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -78px;
+  bottom: -112px;
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 44% 56% 58% 42%;
+  transform: rotate(-12deg);
+}
+
+.labora-card {
+  border: 1px solid var(--labora-border);
+  background: var(--labora-surface);
+  border-radius: var(--labora-radius);
+  box-shadow: var(--labora-shadow-soft);
+}
+
+.labora-card-interactive {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.labora-card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(30,35,31,0.08);
+  border-color: rgba(33,78,58,0.24);
+}
+
+.labora-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255,255,255,0.20);
+  background: rgba(255,255,255,0.10);
+  border-radius: 999px;
+  padding: 0.38rem 0.7rem;
+  backdrop-filter: blur(10px);
+}
+
+.labora-kicker {
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.labora-display {
+  font-family: 'Fraunces', Georgia, serif;
+  letter-spacing: -0.035em;
+}
+
+.labora-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(33,78,58,0.16), transparent);
+}
+
+.labora-soft-grid {
+  background-image:
+    linear-gradient(rgba(33,78,58,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33,78,58,0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+#rider-dashboard {
+  position: relative;
+}
+
+#rider-dashboard > section {
+  scroll-margin-top: 84px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --labora-radius: 20px;
+  }
+
+  .labora-hero {
+    border-radius: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

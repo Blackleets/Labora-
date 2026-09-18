@@ -1,9 +1,30 @@
-
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import {
+  BookOpen,
+  Briefcase,
+  Camera,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Fuel,
+  HelpCircle,
+  Image as ImageIcon,
+  Loader2,
+  Monitor,
+  Plus,
+  Receipt,
+  Repeat,
+  Save,
+  Shield,
+  ShoppingBag,
+  Smartphone,
+  Utensils,
+  Wrench,
+  X
+} from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { Camera, Loader2, Plus, Receipt, X, AlignLeft, Calendar, Euro, Save, Image as ImageIcon, Maximize2, Tag, CheckCircle2, ZoomIn, ZoomOut, RotateCcw, Fuel, Wrench, Utensils, Smartphone, Shield, Briefcase, ShoppingBag, Monitor, BookOpen, HelpCircle, Repeat, Trash2, Eye, ScanLine, Clock } from 'lucide-react';
 import { analyzeReceipt } from '../services/geminiService';
-import { ExpenseCategory, Expense } from '../types';
+import { Expense, ExpenseCategory, UserRole } from '../types';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
 
 interface ExpenseTrackerProps {
@@ -11,121 +32,65 @@ interface ExpenseTrackerProps {
   endDate: string;
 }
 
+const MAX_SCAN_BYTES = 12 * 1024 * 1024;
+
+const hashBuffer = async (buffer: ArrayBuffer) => {
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+};
+
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => typeof reader.result === 'string'
+    ? resolve(reader.result)
+    : reject(new Error('No se pudo leer la imagen.'));
+  reader.onerror = () => reject(reader.error || new Error('No se pudo leer la imagen.'));
+  reader.readAsDataURL(file);
+});
+
 const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) => {
-  const { expenses, addExpense, updateExpense, showNotification, privacyMode } = useData();
+  const { expenses, addExpense, updateExpense, showNotification, privacyMode, currentUser } = useData();
   const [isScanning, setIsScanning] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
-  
-  // State for viewing image
   const [viewingImage, setViewingImage] = useState<string | null>(null);
-  
-  // Image Viewer State
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper to format currency respecting Privacy Mode
+  const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+
+  const filteredExpenses = useMemo(() => expenses.filter((expense) => {
+    if (!currentUser) return false;
+    if (!isManager && expense.userId !== currentUser.id) return false;
+    if (isManager) {
+      const linked = expense.userId !== currentUser.id;
+      if (!linked) return false;
+    }
+    if (startDate && expense.date < startDate) return false;
+    if (endDate && expense.date > endDate) return false;
+    return true;
+  }), [expenses, startDate, endDate, currentUser, isManager]);
+
   const formatCurrency = (amount: number) => {
-    if (privacyMode) return '**** €';
-    return amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
-  };
-
-  const filteredExpenses = useMemo(() => {
-    return expenses.filter(expense => {
-      if (startDate && expense.date < startDate) return false;
-      if (endDate && expense.date > endDate) return false;
-      return true;
+    if (privacyMode) return '•••• €';
+    return amount.toLocaleString('es-ES', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 2
     });
-  }, [expenses, startDate, endDate]);
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      
-      setIsScanning(true);
-      
-      reader.onload = async (event) => {
-        if (event.target?.result) {
-          const base64 = event.target.result as string;
-          const base64Data = base64.split(',')[1]; // Remove data header
-
-          try {
-            const result = await analyzeReceipt(base64Data);
-            
-            setSelectedExpense({
-              id: 'temp_' + Date.now(),
-              userId: '',
-              category: result.category,
-              date: result.date,
-              amount: result.amount,
-              notes: `${result.merchantName} - ${result.summary}`,
-              receiptUrl: base64,
-              isRecurring: false
-            });
-            setIsManualOpen(true);
-            showNotification('success', 'Ticket analizado correctamente');
-          } catch (error) {
-            console.error(error);
-            showNotification('error', 'Error al leer ticket. Inténtalo manual.');
-          } finally {
-            setIsScanning(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedExpense) return;
-
-    // Validation
-    if (!selectedExpense.amount || !selectedExpense.date || !selectedExpense.category) {
-      showNotification('error', 'Rellena todos los campos obligatorios');
-      return;
+  const formatDate = (date: string) => {
+    if (!date) return 'Fecha pendiente';
+    try {
+      return new Intl.DateTimeFormat('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }).format(new Date(`${date}T12:00:00`));
+    } catch {
+      return date;
     }
-
-    if (selectedExpense.id.startsWith('temp_')) {
-      addExpense({
-        category: selectedExpense.category,
-        date: selectedExpense.date,
-        amount: Number(selectedExpense.amount),
-        notes: selectedExpense.notes,
-        receiptUrl: selectedExpense.receiptUrl,
-        isRecurring: selectedExpense.isRecurring
-      });
-    } else {
-      updateExpense(selectedExpense);
-    }
-    
-    setIsManualOpen(false);
-    setSelectedExpense(null);
-  };
-
-  const openManualEntry = () => {
-    setSelectedExpense({
-      id: 'temp_' + Date.now(),
-      userId: '',
-      category: ExpenseCategory.OTROS,
-      date: new Date().toISOString().split('T')[0],
-      amount: 0,
-      notes: '',
-      isRecurring: false
-    });
-    setIsManualOpen(true);
-  };
-
-  const openEdit = (expense: Expense) => {
-    setSelectedExpense({ ...expense });
-    setIsManualOpen(true);
   };
 
   const getCategoryIcon = (categoryName: string) => {
@@ -143,404 +108,354 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
     }
   };
 
-  // Image Viewer Logic
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (zoom > 1) {
-      setIsDragging(true);
-      setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  const getStatus = (expense: Expense) => {
+    switch (expense.status) {
+      case 'approved':
+        return { label: 'Validado', detail: 'Gestoría', className: 'bg-[#ECF7F0] text-[#24613F] border-[#CFE7D7]', icon: CheckCircle2 };
+      case 'pending_review':
+        return { label: 'En revisión', detail: 'Gestoría', className: 'bg-[#FFF8E8] text-[#855D1E] border-[#ECD9A8]', icon: Clock };
+      case 'rejected':
+        return { label: 'No computado', detail: '', className: 'bg-[#FFF0EE] text-[#9A443B] border-[#EBCFCB]', icon: X };
+      case 'needs_fix':
+        return { label: 'Corregir', detail: '', className: 'bg-[#FFF3EA] text-[#A4562D] border-[#EDCFBB]', icon: Clock };
+      default:
+        return { label: 'Pendiente', detail: '', className: 'bg-[#F3F1ED] text-stone-600 border-[#E3DDD4]', icon: Clock };
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  const makeManualDraft = (receipt?: { dataUrl: string; hash: string; mimeType: string }) => ({
+    id: `temp_${Date.now()}`,
+    userId: '',
+    category: ExpenseCategory.OTROS,
+    date: receipt ? '' : new Date().toISOString().split('T')[0],
+    amount: 0,
+    merchant: '',
+    notes: '',
+    receiptUrl: receipt?.dataUrl,
+    receiptHash: receipt?.hash,
+    receiptMimeType: receipt?.mimeType,
+    vatRate: 0,
+    vatAmount: 0,
+    deductiblePercentage: 0,
+    status: 'pending_review' as const,
+    isRecurring: false
+  });
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !currentUser || isManager) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      showNotification('error', 'Para escanear usa JPG, PNG o WebP. Los PDF se suben desde Documentos.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > MAX_SCAN_BYTES) {
+      showNotification('error', 'La imagen supera el límite de 12 MB.');
+      event.target.value = '';
+      return;
+    }
+
+    setIsScanning(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const receiptHash = await hashBuffer(buffer);
+      const duplicate = expenses.some(
+        (expense) => expense.userId === currentUser.id && expense.receiptHash === receiptHash
+      );
+      if (duplicate) {
+        showNotification('error', 'Este ticket exacto ya está registrado.');
+        return;
+      }
+
+      const resultUrl = await readFileAsDataUrl(file);
+      const base64Data = resultUrl.split(',')[1] || '';
+
+      try {
+        const result = await analyzeReceipt(base64Data, file.type);
+        setSelectedExpense({
+          id: `temp_${Date.now()}`,
+          userId: '',
+          category: result.category,
+          date: result.date,
+          amount: result.amount,
+          merchant: result.merchantName,
+          notes: result.summary,
+          receiptUrl: resultUrl,
+          receiptHash,
+          receiptMimeType: file.type,
+          ocrConfidence: result.confidence,
+          ocrNeedsReview: result.needsReview,
+          ocrUncertainFields: result.uncertainFields,
+          vatRate: 0,
+          vatAmount: 0,
+          deductiblePercentage: 0,
+          status: 'pending_review',
+          isRecurring: false
+        });
+        setIsManualOpen(true);
+        showNotification(
+          result.needsReview ? 'info' : 'success',
+          result.needsReview
+            ? 'OCR completado con campos por revisar.'
+            : 'OCR completado. Confirma los datos antes de guardar.'
+        );
+      } catch (error) {
+        console.error(error);
+        setSelectedExpense(makeManualDraft({ dataUrl: resultUrl, hash: receiptHash, mimeType: file.type }));
+        setIsManualOpen(true);
+        showNotification('error', 'No se pudo leer el ticket. La imagen se conserva para que completes los datos manualmente.');
+      }
+    } catch (error) {
+      console.error(error);
+      showNotification('error', 'No se pudo preparar la imagen.');
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  const openManualEntry = () => {
+    if (isManager) return;
+    setSelectedExpense(makeManualDraft());
+    setIsManualOpen(true);
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.stopPropagation();
-    const scaleAdjustment = -e.deltaY * 0.001;
-    const newZoom = Math.min(Math.max(1, zoom + scaleAdjustment), 4);
-    setZoom(newZoom);
-    
-    // Reset pan if zoomed out to 1
-    if (newZoom === 1) setPan({ x: 0, y: 0 });
+  const openEdit = (expense: Expense) => {
+    if (isManager) return;
+    setSelectedExpense({ ...expense });
+    setIsManualOpen(true);
   };
 
-  const resetZoom = () => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
+  const handleSave = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedExpense || !currentUser || isManager) return;
+
+    if (!selectedExpense.amount || selectedExpense.amount <= 0 || !selectedExpense.date || !selectedExpense.category) {
+      showNotification('error', 'Completa importe, fecha y categoría.');
+      return;
+    }
+
+    if (selectedExpense.receiptHash) {
+      const duplicate = expenses.some(
+        (expense) => expense.userId === currentUser.id
+          && expense.receiptHash === selectedExpense.receiptHash
+          && expense.id !== selectedExpense.id
+      );
+      if (duplicate) {
+        showNotification('error', 'Este ticket exacto ya está registrado.');
+        return;
+      }
+    }
+
+    const truthfulFiscalDefaults = {
+      vatRate: 0,
+      vatAmount: 0,
+      deductiblePercentage: 0,
+      status: 'pending_review' as const
+    };
+
+    if (selectedExpense.id.startsWith('temp_')) {
+      addExpense({
+        category: selectedExpense.category,
+        date: selectedExpense.date,
+        amount: Number(selectedExpense.amount),
+        merchant: selectedExpense.merchant?.trim() || undefined,
+        notes: selectedExpense.notes,
+        receiptUrl: selectedExpense.receiptUrl,
+        receiptHash: selectedExpense.receiptHash,
+        receiptMimeType: selectedExpense.receiptMimeType,
+        ocrConfidence: selectedExpense.ocrConfidence,
+        ocrNeedsReview: selectedExpense.ocrNeedsReview,
+        ocrUncertainFields: selectedExpense.ocrUncertainFields,
+        isRecurring: selectedExpense.isRecurring,
+        ...truthfulFiscalDefaults
+      });
+    } else {
+      updateExpense({
+        ...selectedExpense,
+        amount: Number(selectedExpense.amount),
+        merchant: selectedExpense.merchant?.trim() || undefined,
+        ...truthfulFiscalDefaults,
+        gestorNotes: undefined
+      });
+      showNotification('info', 'El gasto modificado vuelve a revisión de gestoría.');
+    }
+
+    setIsManualOpen(false);
+    setSelectedExpense(null);
   };
 
   return (
-    <div className="space-y-6 relative">
-      {/* Hidden Input */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        className="hidden" 
-        accept="image/*"
-        onChange={handleFileSelect}
-      />
+    <div className="min-w-0 space-y-4">
+      {!isManager && (
+        <>
+          <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => void handleFileSelect(event)} />
 
-      {/* Actions Header */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Gas Station Receipt with Photo Backup */}
-        <button 
-          onClick={() => setIsGasModalOpen(true)}
-          className="flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white py-4 px-4 rounded-[20px] shadow-lg shadow-amber-500/20 hover:from-amber-600 hover:to-amber-700 transition-all active:scale-95 group"
-        >
-          <Fuel className="group-hover:scale-110 transition-transform shrink-0" size={24} />
-          <div className="text-left min-w-0">
-            <p className="font-bold text-sm truncate">Repostaje Gasolinera</p>
-            <p className="text-[11px] opacity-90 font-medium truncate">Foto ticket + IRPF/IVA</p>
+          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            <ActionCard icon={Fuel} title="Repostaje" text="Ticket de combustible" tone="clay" onClick={() => setIsGasModalOpen(true)} />
+            <ActionCard icon={Camera} title={isScanning ? 'Leyendo…' : 'Escanear'} text="OCR + anti-duplicado" tone="green" onClick={() => fileInputRef.current?.click()} loading={isScanning} />
+            <ActionCard icon={Plus} title="Añadir manual" text="Sin suposiciones fiscales" tone="stone" onClick={openManualEntry} wide />
+          </section>
+        </>
+      )}
+
+      <section className="labora-card min-w-0 overflow-hidden">
+        <header className="flex items-center justify-between gap-3 border-b border-[#EEE8DF] px-4 py-3.5">
+          <div className="min-w-0">
+            <p className="labora-kicker text-stone-400">{isManager ? 'Cartera vinculada' : 'Registro'}</p>
+            <h3 className="mt-0.5 text-base font-extrabold text-[#1E231F]">{isManager ? 'Gastos de clientes' : 'Gastos'}</h3>
           </div>
-        </button>
+          <span className="rounded-full bg-[#F1ECE3] px-2.5 py-1 text-[10px] font-extrabold text-stone-500">{filteredExpenses.length}</span>
+        </header>
 
-        <button 
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isScanning}
-          className="flex items-center justify-center gap-3 bg-[#2D6CDF] text-white py-4 px-4 rounded-[20px] shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-95 group"
-        >
-          {isScanning ? (
-            <Loader2 className="animate-spin shrink-0" size={24} />
-          ) : (
-            <Camera className="group-hover:rotate-12 transition-transform shrink-0" size={24} />
-          )}
-          <div className="text-left min-w-0">
-            <p className="font-bold text-sm truncate">{isScanning ? 'Analizando...' : 'Escanear Ticket'}</p>
-            <p className="text-[11px] opacity-80 font-medium truncate">Cualquier gasto con IA</p>
-          </div>
-        </button>
-
-        <button 
-          onClick={openManualEntry}
-          className="flex items-center justify-center gap-3 bg-white border-2 border-dashed border-gray-200 text-gray-600 py-4 px-4 rounded-[20px] hover:border-[#2D6CDF] hover:text-[#2D6CDF] hover:bg-blue-50 transition-all active:scale-95"
-        >
-          <div className="bg-gray-100 p-1.5 rounded-full shrink-0">
-            <Plus size={18} />
-          </div>
-          <div className="text-left min-w-0">
-            <p className="font-bold text-sm truncate">Añadir Manual</p>
-            <p className="text-[11px] opacity-60 font-medium truncate">Registro rápido</p>
-          </div>
-        </button>
-      </div>
-
-      {/* Expense List */}
-      <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <div>
-             <h3 className="font-bold text-lg text-gray-900">Gastos Recientes</h3>
-             <p className="text-xs text-gray-400 font-medium">{filteredExpenses.length} registros</p>
-          </div>
-          {startDate && (
-            <span className="text-xs font-bold bg-blue-50 text-blue-600 px-3 py-1 rounded-full">
-              Filtrado
-            </span>
-          )}
-        </div>
-        
-        <div className="divide-y divide-gray-50">
-          {filteredExpenses.map((expense) => (
-            <div 
-              key={expense.id} 
-              className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group cursor-pointer"
-              onClick={() => openEdit(expense)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center group-hover:bg-white group-hover:text-[#2D6CDF] group-hover:shadow-md transition-all">
-                  {getCategoryIcon(expense.category)}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-gray-800">{expense.category}</h4>
-                    {expense.isRecurring && (
-                      <Repeat size={12} className="text-purple-500" title="Gasto Recurrente" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-                    <span className="font-medium">{expense.date}</span>
-                    {expense.notes && <span className="truncate max-w-[150px]">• {expense.notes}</span>}
-                    {expense.status === 'approved' && (
-                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200">
-                        ✓ Validado AEAT
-                      </span>
-                    )}
-                    {expense.status === 'pending_review' && (
-                      <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full border border-amber-200 flex items-center space-x-1">
-                        <Clock size={10} />
-                        <span>En revisión Gestor</span>
-                      </span>
-                    )}
-                    {expense.status === 'rejected' && (
-                      <span className="px-2 py-0.5 bg-rose-50 text-rose-700 text-[10px] font-bold rounded-full border border-rose-200">
-                        ✕ Rechazado
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                 <div className="text-right">
-                   <p className="font-bold text-gray-900">{formatCurrency(expense.amount)}</p>
-                   {expense.receiptUrl && (
-                     <span className="flex items-center justify-end gap-1 text-[10px] text-[#2D6CDF] font-bold">
-                       <Receipt size={10} /> Ticket
-                     </span>
-                   )}
-                 </div>
-                 <div className="opacity-0 group-hover:opacity-100 transition-opacity px-2">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if(expense.receiptUrl) setViewingImage(expense.receiptUrl);
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded-lg text-gray-400 hover:text-gray-600"
-                      title="Ver ticket"
-                    >
-                      <Eye size={18} />
-                    </button>
-                 </div>
-              </div>
-            </div>
-          ))}
-          
-          {filteredExpenses.length === 0 && (
-            <div className="py-12 text-center">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">
-                <Receipt size={32} />
-              </div>
-              <p className="text-gray-400 text-sm font-medium">No hay gastos registrados</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Floating Action Button (FAB) for Mobile Scan */}
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isScanning}
-        className="fixed bottom-24 right-6 md:hidden w-14 h-14 bg-[#2D6CDF] text-white rounded-full shadow-2xl shadow-blue-500/40 flex items-center justify-center z-40 transition-transform active:scale-90 hover:scale-110"
-        title="Escanear Ticket"
-      >
-        {isScanning ? (
-          <Loader2 className="animate-spin" size={24} />
-        ) : (
-          <ScanLine size={24} strokeWidth={2.5} />
-        )}
-      </button>
-
-      {/* Edit/Create Modal */}
-      {isManualOpen && selectedExpense && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-[32px] w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-10 duration-300">
-            
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-[32px]">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  {selectedExpense.id.startsWith('temp_') ? 'Nuevo Gasto' : 'Editar Gasto'}
-                </h3>
-                <p className="text-xs text-gray-400 font-medium mt-1">Detalles de la transacción</p>
-              </div>
-              <button onClick={() => setIsManualOpen(false)} className="p-2 bg-white rounded-full shadow-sm hover:bg-gray-100 transition-colors">
-                <X size={20} className="text-gray-500" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} className="overflow-y-auto p-6 space-y-5">
-              
-              {/* Amount Input */}
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="text-gray-400 font-bold text-lg">€</span>
-                </div>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  required
-                  value={selectedExpense.amount || ''} 
-                  onChange={(e) => setSelectedExpense({ ...selectedExpense, amount: parseFloat(e.target.value) })}
-                  className="w-full pl-10 pr-4 py-5 text-3xl font-bold text-gray-900 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#2D6CDF] outline-none transition-all text-center group-hover:bg-gray-100 focus:group-hover:bg-white placeholder-gray-300"
-                  placeholder="0.00"
-                />
-                <p className="text-center text-xs text-gray-400 font-bold uppercase mt-2 tracking-widest">Importe Total</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase mb-2 ml-1">
-                    <Calendar size={14} /> Fecha
-                  </label>
-                  <input 
-                    type="date"
-                    required
-                    value={selectedExpense.date}
-                    onChange={(e) => setSelectedExpense({ ...selectedExpense, date: e.target.value })}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2D6CDF] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase mb-2 ml-1">
-                    <Tag size={14} /> Categoría
-                  </label>
-                  <select 
-                    value={selectedExpense.category}
-                    onChange={(e) => setSelectedExpense({ ...selectedExpense, category: e.target.value as any })}
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2D6CDF] outline-none appearance-none"
-                  >
-                    {Object.values(ExpenseCategory).map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                 <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase mb-2 ml-1">
-                    <AlignLeft size={14} /> Notas
-                 </label>
-                 <input 
-                    type="text"
-                    value={selectedExpense.notes || ''}
-                    onChange={(e) => setSelectedExpense({ ...selectedExpense, notes: e.target.value })}
-                    placeholder="Ej: Gasolinera Repsol"
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#2D6CDF] outline-none"
-                 />
-              </div>
-
-              {/* Recurring Toggle */}
-              <div 
-                className="flex items-center justify-between p-3 bg-purple-50 rounded-xl border border-purple-100 cursor-pointer hover:bg-purple-100 transition-colors"
-                onClick={() => setSelectedExpense({...selectedExpense, isRecurring: !selectedExpense.isRecurring})}
+        <div className="divide-y divide-[#EEE8DF]">
+          {filteredExpenses.map((expense) => {
+            const status = getStatus(expense);
+            const StatusIcon = status.icon;
+            return (
+              <article
+                key={expense.id}
+                onClick={() => openEdit(expense)}
+                className={`min-w-0 p-4 transition ${isManager ? '' : 'cursor-pointer hover:bg-[#FCFAF7]'}`}
               >
-                 <div className="flex items-center gap-3">
-                   <div className={`p-2 rounded-lg ${selectedExpense.isRecurring ? 'bg-purple-500 text-white' : 'bg-white text-purple-300'}`}>
-                     <Repeat size={18} />
-                   </div>
-                   <div>
-                     <p className="text-sm font-bold text-purple-900">Gasto Recurrente</p>
-                     <p className="text-[10px] text-purple-700">Se repite mensualmente (ej. Cuota)</p>
-                   </div>
-                 </div>
-                 <div className={`w-10 h-5 rounded-full relative transition-colors ${selectedExpense.isRecurring ? 'bg-purple-500' : 'bg-gray-300'}`}>
-                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm transition-all ${selectedExpense.isRecurring ? 'left-6' : 'left-1'}`}></div>
-                 </div>
-              </div>
-
-              {/* Receipt Preview if available */}
-              {selectedExpense.receiptUrl && (
-                <div className="relative h-32 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 group">
-                  <img src={selectedExpense.receiptUrl} alt="Ticket" className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                     <button 
-                       type="button"
-                       onClick={() => setViewingImage(selectedExpense.receiptUrl || null)}
-                       className="bg-black/50 text-white px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm hover:bg-black/70 transition-colors flex items-center gap-2"
-                     >
-                       <Maximize2 size={14} /> Ampliar Ticket
-                     </button>
+                <div className="grid min-w-0 grid-cols-[42px_minmax(0,1fr)] items-start gap-3">
+                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[#F1ECE3] text-stone-500">
+                    {getCategoryIcon(String(expense.category))}
                   </div>
+
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <h4 className="truncate text-[15px] font-extrabold leading-tight text-[#1E231F]">{expense.merchant || expense.category}</h4>
+                          {expense.isRecurring && <Repeat size={12} className="shrink-0 text-stone-400" />}
+                        </div>
+                        <p className="mt-1 text-[11px] font-medium text-stone-400">{expense.merchant ? `${expense.category} · ` : ''}{formatDate(expense.date)}</p>
+                      </div>
+                      <p className="shrink-0 whitespace-nowrap text-sm font-extrabold text-[#1E231F]">{formatCurrency(expense.amount)}</p>
+                    </div>
+
+                    {expense.notes && <p className="mt-2 line-clamp-2 break-words text-xs leading-relaxed text-stone-500">{expense.notes}</p>}
+
+                    <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold leading-none ${status.className}`}>
+                          <StatusIcon size={11} /><span>{status.label}</span>{status.detail && <span className="hidden opacity-75 min-[380px]:inline">· {status.detail}</span>}
+                        </span>
+                        {typeof expense.ocrConfidence === 'number' && (
+                          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${expense.ocrNeedsReview ? 'border-[#ECD9A8] bg-[#FFF8E8] text-[#855D1E]' : 'border-[#D6E4DB] bg-[#EDF4EF] text-[#214E3A]'}`}>
+                            OCR {Math.round(expense.ocrConfidence * 100)}%
+                          </span>
+                        )}
+                      </div>
+
+                      {expense.receiptUrl && (
+                        <button
+                          onClick={(event) => { event.stopPropagation(); setViewingImage(expense.receiptUrl || null); }}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-[10px] px-2 py-1.5 text-[11px] font-bold text-[#214E3A] hover:bg-[#EDF4EF]"
+                          title="Ver ticket"
+                        >
+                          <Eye size={14} /> Ticket
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+
+          {filteredExpenses.length === 0 && (
+            <div className="px-4 py-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#F1ECE3] text-stone-300"><Receipt size={23} /></div>
+              <p className="mt-3 text-sm font-extrabold text-stone-500">No hay gastos registrados</p>
+              <p className="mt-1 text-xs text-stone-400">{isManager ? 'Los gastos aparecerán cuando tus clientes los registren.' : 'Escanea un ticket o añade uno manualmente.'}</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {isManualOpen && selectedExpense && !isManager && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#18211C]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[#E3DBD0] bg-[#FFFDF9] shadow-2xl sm:rounded-[26px]">
+            <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-5 py-4">
+              <div><p className="labora-kicker text-[#789582]">{selectedExpense.receiptUrl ? 'Revisar ticket' : 'Registro manual'}</p><h3 className="mt-1 text-lg font-extrabold text-[#1E231F]">{selectedExpense.id.startsWith('temp_') ? 'Nuevo gasto' : 'Editar gasto'}</h3></div>
+              <button type="button" onClick={() => { setIsManualOpen(false); setSelectedExpense(null); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DED2] bg-white text-stone-500"><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-4 overflow-y-auto p-5">
+              {typeof selectedExpense.ocrConfidence === 'number' && (
+                <div className={`rounded-[14px] border p-3 ${selectedExpense.ocrNeedsReview ? 'border-[#ECD9A8] bg-[#FFF8E8]' : 'border-[#D5E4DA] bg-[#EDF4EF]'}`}>
+                  <div className="flex items-center justify-between gap-3"><p className={`text-xs font-extrabold ${selectedExpense.ocrNeedsReview ? 'text-[#805F2B]' : 'text-[#214E3A]'}`}>Lectura OCR · {Math.round(selectedExpense.ocrConfidence * 100)}%</p><span className="text-[10px] font-bold text-stone-500">Siempre confirma los datos</span></div>
+                  {selectedExpense.ocrUncertainFields?.length ? <p className="mt-1 text-[10px] text-stone-500">Campos dudosos: {selectedExpense.ocrUncertainFields.join(', ')}</p> : null}
                 </div>
               )}
 
-              <button 
-                type="submit"
-                className="w-full py-4 bg-[#2D6CDF] text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 size={20} />
-                Guardar Gasto
-              </button>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Importe"><div className="relative"><input type="number" min="0" step="0.01" value={selectedExpense.amount || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, amount: Number(event.target.value) })} className="field-input pr-9" required /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-stone-400">€</span></div></Field>
+                <Field label="Fecha"><input type="date" value={selectedExpense.date} onChange={(event) => setSelectedExpense({ ...selectedExpense, date: event.target.value })} className="field-input" required /></Field>
+              </div>
+
+              <Field label="Proveedor / comercio"><input value={selectedExpense.merchant || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, merchant: event.target.value })} className="field-input" placeholder="Nombre visible en el justificante" /></Field>
+
+              <Field label="Categoría"><select value={String(selectedExpense.category)} onChange={(event) => setSelectedExpense({ ...selectedExpense, category: event.target.value })} className="field-input">{Object.values(ExpenseCategory).map((category) => <option key={category} value={category}>{category}</option>)}</select></Field>
+
+              <Field label="Descripción"><textarea rows={3} value={selectedExpense.notes || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, notes: event.target.value })} placeholder="Concepto o nota…" className="field-input resize-none" /></Field>
+
+              {selectedExpense.receiptUrl && (
+                <button type="button" onClick={() => setViewingImage(selectedExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[#DDE7E0] bg-[#F2F7F4] p-3 text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#DDE7E0] bg-white text-[#214E3A]"><ImageIcon size={17} /></div>
+                  <div className="min-w-0"><p className="text-sm font-extrabold text-[#1E231F]">Justificante adjunto</p><p className="text-[11px] text-stone-500">Toca para revisarlo</p></div>
+                </button>
+              )}
+
+              <div className="rounded-[14px] border border-[#E8DFD2] bg-[#FAF7F1] p-3 text-[10px] leading-relaxed text-stone-500">
+                Este gasto se guarda <strong className="text-stone-700">pendiente de revisión</strong>. Labora+ no asignará automáticamente IVA ni porcentaje deducible solo por haber subido el justificante.
+              </div>
+
+              <label className="flex items-center gap-2 text-xs font-bold text-stone-600"><input type="checkbox" checked={Boolean(selectedExpense.isRecurring)} onChange={(event) => setSelectedExpense({ ...selectedExpense, isRecurring: event.target.checked })} className="rounded border-stone-300" />Es un gasto recurrente</label>
+
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => { setIsManualOpen(false); setSelectedExpense(null); }} className="flex-1 rounded-[13px] border border-[#DDD4C8] bg-white px-4 py-3 text-sm font-extrabold text-stone-600">Cancelar</button>
+                <button type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#214E3A] px-4 py-3 text-sm font-extrabold text-white"><Save size={16} /> Guardar</button>
+              </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Image Viewer Modal */}
       {viewingImage && (
-        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col animate-in fade-in duration-300">
-          {/* Viewer Toolbar */}
-          <div className="flex justify-between items-center p-4 text-white bg-black/50 backdrop-blur-md z-10">
-            <div className="flex gap-4">
-              <button 
-                onClick={() => setZoom(z => Math.max(1, z - 0.5))} 
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
-                title="Zoom Out"
-              >
-                <ZoomOut size={24} />
-              </button>
-              <span className="self-center font-mono text-sm min-w-[3rem] text-center">
-                {Math.round(zoom * 100)}%
-              </span>
-              <button 
-                onClick={() => setZoom(z => Math.min(4, z + 0.5))} 
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
-                title="Zoom In"
-              >
-                <ZoomIn size={24} />
-              </button>
-              <button 
-                onClick={resetZoom} 
-                className="p-2 hover:bg-white/20 rounded-full transition-colors" 
-                title="Reset View"
-              >
-                <RotateCcw size={24} />
-              </button>
-            </div>
-            <button 
-              onClick={() => {
-                setViewingImage(null);
-                resetZoom();
-              }} 
-              className="p-2 bg-white/10 hover:bg-red-500 rounded-full transition-colors"
-              title="Close Viewer"
-            >
-              <X size={24} />
-            </button>
-          </div>
-
-          {/* Image Area */}
-          <div 
-            className={`flex-1 overflow-hidden flex items-center justify-center relative select-none ${zoom > 1 ? 'cursor-grab active:cursor-grabbing' : ''}`}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
-          >
-            <img 
-              src={viewingImage} 
-              alt="Receipt Fullscreen" 
-              style={{ 
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transition: isDragging ? 'none' : 'transform 0.2s ease-out',
-                maxWidth: '90%',
-                maxHeight: '90%'
-              }}
-              className="object-contain"
-              draggable={false}
-            />
-          </div>
-          
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/50 text-xs pointer-events-none">
-            Usa el scroll para hacer zoom y arrastra para mover
-          </div>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/90 p-4" onClick={() => setViewingImage(null)}>
+          <button type="button" onClick={() => setViewingImage(null)} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white" aria-label="Cerrar ticket"><X size={20} /></button>
+          <img src={viewingImage} alt="Justificante del gasto" className="max-h-[86vh] max-w-full rounded-xl object-contain" onClick={(event) => event.stopPropagation()} />
         </div>
       )}
 
-      {/* Gas Station Capture Modal */}
-      <GasStationCaptureModal
-        isOpen={isGasModalOpen}
-        onClose={() => setIsGasModalOpen(false)}
-      />
+      {!isManager && <GasStationCaptureModal isOpen={isGasModalOpen} onClose={() => setIsGasModalOpen(false)} />}
+
+      <style>{`.field-input{width:100%;border:1px solid #DDD4C8;background:#fff;border-radius:13px;padding:.65rem .75rem;font-size:.875rem;outline:none}.field-input:focus{border-color:#789582;box-shadow:0 0 0 2px rgba(221,233,225,.7)}`}</style>
     </div>
   );
 };
+
+const ActionCard = ({ icon: Icon, title, text, tone, onClick, loading = false, wide = false }: any) => {
+  const toneClass = tone === 'clay'
+    ? 'bg-[#F8EDE7] text-[#B95635] border-[#F0D8CD]'
+    : tone === 'green'
+      ? 'bg-[#E7F0EA] text-[#214E3A] border-[#D2E3D8]'
+      : 'bg-[#F1ECE3] text-stone-600 border-[#E4DDD3]';
+  return (
+    <button onClick={onClick} disabled={loading} className={`labora-card labora-card-interactive min-w-0 p-3.5 text-left disabled:opacity-60 ${wide ? 'col-span-2 sm:col-span-1' : ''}`}>
+      <div className={`flex h-10 w-10 items-center justify-center rounded-[13px] border ${toneClass}`}>{loading ? <Loader2 size={18} className="animate-spin" /> : <Icon size={18} />}</div>
+      <p className="mt-2 text-sm font-extrabold text-[#1E231F]">{title}</p>
+      <p className="mt-0.5 text-[11px] font-medium text-stone-500">{text}</p>
+    </button>
+  );
+};
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <label className="block space-y-1.5"><span className="text-xs font-extrabold text-stone-600">{label}</span>{children}</label>
+);
 
 export default ExpenseTracker;

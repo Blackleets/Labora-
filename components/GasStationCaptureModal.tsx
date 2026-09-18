@@ -1,412 +1,331 @@
-import React, { useState, useRef } from 'react';
-import { Camera, Upload, Fuel, CheckCircle, AlertCircle, X, Shield, Sparkles, MapPin, Zap, Loader2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import {
+  AlertTriangle,
+  Camera,
+  CheckCircle2,
+  ChevronDown,
+  FileImage,
+  Fuel,
+  Loader2,
+  ShieldCheck,
+  X
+} from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { ExpenseCategory } from '../types';
 import { GAS_STATION_PRESETS } from '../modules/delivery/data/platforms';
-import { analyzeReceipt } from '../services/geminiService';
+import { analyzeReceipt, ReceiptAnalysis } from '../services/geminiService';
 
 interface GasStationCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ isOpen, onClose }) => {
-  const { addExpense, vehicle, currentUser, showNotification } = useData();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const hashBuffer = async (buffer: ArrayBuffer) => {
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+};
 
-  const [selectedStation, setSelectedStation] = useState<string>('Repsol');
-  const [customStation, setCustomStation] = useState<string>('');
-  const [fuelType, setFuelType] = useState<string>('Gasolina 95');
-  const [totalAmount, setTotalAmount] = useState<string>('35.00');
-  const [fuelLitres, setFuelLitres] = useState<string>('21.5');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [plate, setPlate] = useState<string>(currentUser?.vehiclePlate || vehicle?.plate || '4521 LBR');
-  const [notes, setNotes] = useState<string>('Repostaje jornada de reparto');
+const readAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => typeof reader.result === 'string'
+    ? resolve(reader.result)
+    : reject(new Error('No se pudo leer la imagen.'));
+  reader.onerror = () => reject(reader.error || new Error('No se pudo leer la imagen.'));
+  reader.readAsDataURL(file);
+});
+
+export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ isOpen, onClose }) => {
+  const { addExpense, expenses, vehicle, currentUser, showNotification } = useData();
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const [selectedStation, setSelectedStation] = useState('');
+  const [customStation, setCustomStation] = useState('');
+  const [fuelType, setFuelType] = useState('');
+  const [totalAmount, setTotalAmount] = useState('');
+  const [fuelLitres, setFuelLitres] = useState('');
+  const [date, setDate] = useState('');
+  const [plate, setPlate] = useState(currentUser?.vehiclePlate || vehicle?.plate || '');
+  const [notes, setNotes] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [receiptHash, setReceiptHash] = useState<string | undefined>();
+  const [receiptMimeType, setReceiptMimeType] = useState<string | undefined>();
+  const [ocr, setOcr] = useState<ReceiptAnalysis | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (!isOpen) return null;
 
-  const currentMerchantName = selectedStation === 'Otro' ? (customStation || 'Gasolinera') : selectedStation;
-  const numAmount = parseFloat(totalAmount) || 0;
-  const baseImponible = Number((numAmount / 1.21).toFixed(2));
-  const cuotaIva = Number((numAmount - baseImponible).toFixed(2));
+  const merchant = selectedStation === 'Otro' ? customStation.trim() : selectedStation.trim();
+  const amount = Number(totalAmount || 0);
+  const confidencePct = ocr ? Math.round(ocr.confidence * 100) : null;
+  const canSave = Boolean(previewImage && receiptHash && merchant && date && Number.isFinite(amount) && amount > 0 && !isProcessing);
 
-  const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const resetImage = () => {
+    setPreviewImage(null);
+    setReceiptHash(undefined);
+    setReceiptMimeType(undefined);
+    setOcr(null);
+  };
+
+  const handleImageCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file || !currentUser) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      showNotification('error', 'Usa una foto JPG, PNG o WebP.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showNotification('error', 'La foto supera el límite de 10 MB.');
+      input.value = '';
+      return;
+    }
 
     setIsProcessing(true);
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const result = event.target?.result as string;
-      setPreviewImage(result);
-      showNotification('info', 'Foto guardada. Extrayendo datos con IA...');
+    try {
+      const buffer = await file.arrayBuffer();
+      const hash = await hashBuffer(buffer);
+      const duplicate = expenses.some(
+        (expense) => expense.userId === currentUser.id && expense.receiptHash === hash
+      );
+      if (duplicate) {
+        resetImage();
+        showNotification('error', 'Este ticket exacto ya está registrado.');
+        return;
+      }
+
+      const dataUrl = await readAsDataUrl(file);
+      setPreviewImage(dataUrl);
+      setReceiptHash(hash);
+      setReceiptMimeType(file.type);
+      setOcr(null);
+      window.setTimeout(() => contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' }), 60);
 
       try {
-        // Strip data:image/...;base64, for Gemini API
-        const base64Clean = result.split(',')[1] || result;
-        const analysis = await analyzeReceipt(base64Clean);
+        const base64 = dataUrl.split(',')[1] || '';
+        const analysis = await analyzeReceipt(base64, file.type);
+        setOcr(analysis);
 
-        if (analysis.amount && analysis.amount > 0) {
-          setTotalAmount(analysis.amount.toFixed(2));
-          // Calculate approx litres based on avg Spanish price 1.62€/L
-          const approxLitres = (analysis.amount / 1.62).toFixed(1);
-          setFuelLitres(approxLitres);
-        }
-
-        if (analysis.date) {
-          setDate(analysis.date);
-        }
-
+        if (analysis.amount > 0) setTotalAmount(analysis.amount.toFixed(2));
+        if (analysis.date) setDate(analysis.date);
         if (analysis.merchantName) {
-          const upperMerchant = analysis.merchantName.toUpperCase();
-          const match = GAS_STATION_PRESETS.find(p => upperMerchant.includes(p.name.toUpperCase()));
-          if (match) {
-            setSelectedStation(match.name);
+          const upper = analysis.merchantName.toUpperCase();
+          const known = GAS_STATION_PRESETS.find((preset) => upper.includes(preset.name.toUpperCase()));
+          if (known) {
+            setSelectedStation(known.name);
+            setCustomStation('');
           } else {
             setSelectedStation('Otro');
             setCustomStation(analysis.merchantName);
           }
         }
 
-        showNotification('success', `Datos detectados: ${analysis.merchantName} - ${analysis.amount}€`);
-      } catch (err) {
-        console.warn("Auto-OCR non-blocking fallback:", err);
-      } finally {
-        setIsProcessing(false);
+        const pct = Math.round(analysis.confidence * 100);
+        showNotification(
+          analysis.needsReview ? 'info' : 'success',
+          analysis.needsReview
+            ? `Ticket leído al ${pct}%. Revisa los campos marcados.`
+            : `Ticket leído al ${pct}%. Confirma los datos antes de guardar.`
+        );
+      } catch (ocrError) {
+        console.warn('OCR unavailable or failed:', ocrError);
+        showNotification('info', 'La foto quedó cargada. Completa los datos manualmente.');
       }
-    };
-    reader.onerror = () => {
+    } catch (error) {
+      console.error(error);
+      resetImage();
+      showNotification('error', 'No se pudo procesar la foto. Prueba de nuevo o elige la imagen desde la galería.');
+    } finally {
       setIsProcessing(false);
-      showNotification('error', 'Error al procesar la imagen');
-    };
-    reader.readAsDataURL(file);
+      input.value = '';
+    }
   };
 
-  const handleGenerateSampleReceipt = () => {
-    // Generate a high-fidelity SVG ticket proof if user is on desktop without camera
-    const stationName = currentMerchantName.toUpperCase();
-    const mockSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600" fill="%23FFFFFF"><rect width="400" height="600" fill="%23FFFBEB" stroke="%23D97706" stroke-width="4"/><text x="200" y="50" font-family="monospace" font-size="18" font-weight="bold" fill="%23B45309" text-anchor="middle">${stationName}</text><text x="200" y="80" font-family="monospace" font-size="11" fill="%234B5563" text-anchor="middle">ESTACIÓN DE SERVICIO OFICIAL</text><line x1="20" y1="100" x2="380" y2="100" stroke="%23D97706" stroke-dasharray="4"/><text x="40" y="140" font-family="monospace" font-size="14" fill="%231F2937">COMBUSTIBLE: ${fuelType.toUpperCase()}</text><text x="40" y="170" font-family="monospace" font-size="14" fill="%231F2937">VOLUMEN: ${fuelLitres} L</text><text x="40" y="200" font-family="monospace" font-size="14" fill="%231F2937">BASE IMPONIBLE: ${baseImponible.toFixed(2)} €</text><text x="40" y="230" font-family="monospace" font-size="14" fill="%231F2937">IVA (21%): ${cuotaIva.toFixed(2)} €</text><text x="40" y="270" font-family="monospace" font-size="22" font-weight="bold" fill="%23B45309">TOTAL: ${numAmount.toFixed(2)} €</text><text x="40" y="310" font-family="monospace" font-size="13" fill="%236B7280">MATRÍCULA: ${plate}</text><text x="40" y="340" font-family="monospace" font-size="13" fill="%236B7280">FECHA: ${date}</text><line x1="20" y1="370" x2="380" y2="370" stroke="%23D97706" stroke-dasharray="4"/><text x="200" y="420" font-family="monospace" font-size="14" font-weight="bold" fill="%23059669" text-anchor="middle">COPIA ELECTRÓNICA DE RESPALDO</text><text x="200" y="445" font-family="monospace" font-size="11" fill="%234B5563" text-anchor="middle">VALIDEZ FISCAL GARANTIZADA ANTE PÉRDIDA</text></svg>`;
-    setPreviewImage(mockSvg);
-    showNotification('info', 'Generada copia electrónica de respaldo');
-  };
+  const handleSave = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!currentUser) return;
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (numAmount <= 0) {
-      showNotification('error', 'Introduce un importe válido');
+    if (!previewImage || !receiptHash) {
+      showNotification('error', 'Primero toma una foto o elige el ticket desde la galería.');
+      return;
+    }
+    if (!merchant) {
+      showNotification('error', 'Indica la gasolinera que aparece en el ticket.');
+      return;
+    }
+    if (!date) {
+      showNotification('error', 'Indica la fecha del ticket.');
+      return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      showNotification('error', 'Introduce el importe total visible en el ticket.');
+      return;
+    }
+
+    const duplicate = expenses.some(
+      (expense) => expense.userId === currentUser.id && expense.receiptHash === receiptHash
+    );
+    if (duplicate) {
+      showNotification('error', 'Este ticket exacto ya está registrado.');
       return;
     }
 
     addExpense({
       category: ExpenseCategory.GASOLINA,
-      merchant: currentMerchantName,
+      merchant,
       date,
-      amount: numAmount,
-      fuelLitres: parseFloat(fuelLitres) || undefined,
-      fuelType,
-      vatRate: 21,
-      vatAmount: cuotaIva,
-      deductiblePercentage: 100,
-      notes: `${notes} - Matrícula: ${plate}`,
-      receiptUrl: previewImage || undefined,
-      status: 'pending_review',
-      invoiceNumber: `TICK-${Date.now().toString().slice(-6)}`
+      amount,
+      fuelLitres: fuelLitres ? Number(fuelLitres) : undefined,
+      fuelType: fuelType || undefined,
+      vatRate: 0,
+      vatAmount: 0,
+      deductiblePercentage: 0,
+      notes: [
+        notes.trim(),
+        plate.trim() ? `Matrícula: ${plate.trim().toUpperCase()}` : ''
+      ].filter(Boolean).join(' · ') || undefined,
+      receiptUrl: previewImage,
+      receiptHash,
+      receiptMimeType,
+      ocrConfidence: ocr?.confidence,
+      ocrNeedsReview: ocr ? ocr.needsReview : true,
+      ocrUncertainFields: ocr?.uncertainFields,
+      status: 'pending_review'
     });
 
+    showNotification('success', 'Repostaje guardado y enviado a revisión.');
     onClose();
   };
 
   return (
-    <div id="gas-station-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-[#FAF7F2] rounded-3xl shadow-2xl max-w-2xl w-full border border-[#E8DFC8] overflow-hidden my-8 animate-in fade-in zoom-in duration-200">
-        {/* Header (Warm Terracotta / Earth Ghibli Style) */}
-        <div className="bg-[#C96846] p-6 text-white flex items-start justify-between">
-          <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-white/15 backdrop-blur-md rounded-2xl">
-              <Fuel className="w-7 h-7 text-[#FED7AA]" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-xl font-serif font-bold tracking-tight text-white">Respaldo Digital de Repostaje</h2>
-                <span className="px-2.5 py-0.5 bg-white/20 text-[#FFF5EB] text-xs font-serif font-semibold rounded-full border border-white/25">
-                  Antipérdida Fiscal
-                </span>
+    <div className="fixed inset-0 z-50 bg-[#18211C]/65 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4">
+      <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#FFFDF9] sm:h-auto sm:max-h-[92dvh] sm:max-w-2xl sm:rounded-[28px] sm:border sm:border-[#E3DBD0] sm:shadow-2xl">
+        <header className="relative shrink-0 overflow-hidden bg-[#214E3A] px-4 py-4 text-white sm:px-6 sm:py-5">
+          <div className="absolute -right-10 -top-14 h-36 w-36 rounded-full bg-[#52AA83]/20" />
+          <div className="relative flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-white/10 text-[#F1C56B]"><Fuel size={20} /></div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/55">Repostaje</p>
+                <h2 className="truncate text-lg font-extrabold">Añadir ticket</h2>
               </div>
-              <p className="text-orange-100/90 text-xs sm:text-sm mt-1 leading-relaxed">
-                Fotografía el ticket de gasolinera: aunque el papel térmico se borre o se pierda, tu deducción queda blindada ante Hacienda.
-              </p>
             </div>
+            <button type="button" onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10" aria-label="Cerrar"><X size={18} /></button>
           </div>
-          <button 
-            id="close-gas-modal-btn"
-            onClick={onClose}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        </header>
 
-        <form onSubmit={handleSave} className="p-6 space-y-6">
-          {/* Photo Capture Section */}
-          <div className="bg-[#FCFAF7] border-2 border-dashed border-[#DFD5C6] rounded-2xl p-4 text-center hover:border-[#C96846] transition-colors">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              accept="image/*" 
-              capture="environment" 
-              onChange={handleImageCapture} 
-              className="hidden" 
-              id="camera-receipt-input"
-            />
+        <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col">
+          <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5">
+            <input id="labora-fuel-camera" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="sr-only" onChange={(event) => void handleImageCapture(event)} />
+            <input id="labora-fuel-gallery" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => void handleImageCapture(event)} />
 
-            {previewImage ? (
-              <div className="space-y-3">
-                <div className="relative inline-block max-h-64 overflow-hidden rounded-xl border border-[#E3DBD0] shadow-sm">
-                  <img 
-                    src={previewImage} 
-                    alt="Ticket de gasolinera" 
-                    className="max-h-64 object-contain mx-auto"
-                  />
-                  <div className="absolute top-2 right-2 flex space-x-1">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewImage(null)}
-                      className="p-1.5 bg-stone-900/80 hover:bg-stone-900 text-white rounded-full text-xs transition-colors"
-                      title="Eliminar foto"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="absolute bottom-2 left-2 right-2 bg-[#234233]/90 text-[#D8EADB] text-xs px-2.5 py-1 rounded-lg backdrop-blur-sm flex items-center justify-center space-x-1.5 font-serif font-medium">
-                    <Shield className="w-3.5 h-3.5 text-[#A3D9B5]" />
-                    <span>Copia fotográfica encriptada y archivada</span>
-                  </div>
+            {!previewImage ? (
+              <section className="rounded-[22px] border border-[#D9E4DD] bg-[#F3F8F5] p-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-white text-[#214E3A] shadow-sm">
+                  {isProcessing ? <Loader2 size={27} className="animate-spin" /> : <Camera size={27} />}
                 </div>
-                <div className="flex justify-center space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-xs font-serif font-semibold text-[#C96846] hover:text-[#A84A2A] flex items-center space-x-1"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>Volver a tomar foto</span>
-                  </button>
+                <div className="mt-3 text-center">
+                  <h3 className="text-base font-extrabold text-[#1E231F]">Primero, añade el ticket</h3>
+                  <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-stone-500">Haz una foto clara o usa una imagen que ya tengas. Después podrás revisar lo que detecte la IA.</p>
                 </div>
-              </div>
+                <div className="mt-4 grid grid-cols-2 gap-2.5">
+                  <label htmlFor="labora-fuel-camera" className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-[#D66C47] px-3 py-3 text-sm font-extrabold text-white ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
+                    <Camera size={17} /> Tomar foto
+                  </label>
+                  <label htmlFor="labora-fuel-gallery" className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-[#D7DED9] bg-white px-3 py-3 text-sm font-extrabold text-[#214E3A] ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
+                    <FileImage size={17} /> Galería
+                  </label>
+                </div>
+                <p className="mt-3 text-center text-[10px] text-stone-400">JPG, PNG o WebP · máximo 10 MB</p>
+              </section>
             ) : (
-              <div className="py-6 space-y-3">
-                <div className="mx-auto w-12 h-12 bg-[#FAF3EE] text-[#C96846] rounded-2xl flex items-center justify-center border border-[#EAD6C9]">
-                  <Camera className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-serif font-bold text-stone-900">Fotografía o sube tu ticket de gasolina</h4>
-                  <p className="text-xs text-stone-500 max-w-sm mx-auto mt-1">
-                    Usa la cámara del móvil o sube el archivo. El gestor lo auditará y lo incluirá en tu Modelo 303 e IRPF.
-                  </p>
-                </div>
-                <div className="flex justify-center items-center space-x-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 bg-[#C96846] hover:bg-[#A84A2A] text-white text-xs font-serif font-semibold rounded-xl shadow-sm flex items-center space-x-2 transition-all"
-                  >
-                    <Camera className="w-4 h-4" />
-                    <span>Tomar Foto / Subir Archivo</span>
+              <section className="rounded-[20px] border border-[#D9E4DD] bg-[#F3F8F5] p-3">
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => window.open(previewImage, '_blank')} className="h-24 w-20 shrink-0 overflow-hidden rounded-[14px] border border-[#D6DED8] bg-white">
+                    <img src={previewImage} alt="Ticket cargado" className="h-full w-full object-cover" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleGenerateSampleReceipt}
-                    className="px-3 py-2 bg-[#F2EDE4] hover:bg-[#EBE4D8] text-stone-700 text-xs font-serif font-semibold rounded-xl border border-[#DFD5C6] flex items-center space-x-1.5 transition-colors"
-                    title="Simular captura fotográfica si no dispones de cámara en este dispositivo"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-[#C96846]" />
-                    <span>Ticket Digital Demo</span>
-                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 text-[#214E3A]"><CheckCircle2 size={16} /><p className="text-sm font-extrabold">Ticket cargado</p></div>
+                    <p className="mt-1 text-xs leading-relaxed text-stone-500">Toca la miniatura para verlo grande. Puedes reemplazarlo antes de guardar.</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <label htmlFor="labora-fuel-camera" className="cursor-pointer rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-[#D66C47] shadow-sm">Nueva foto</label>
+                      <label htmlFor="labora-fuel-gallery" className="cursor-pointer rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-[#214E3A] shadow-sm">Cambiar imagen</label>
+                      <button type="button" onClick={resetImage} className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-stone-400">Quitar</button>
+                    </div>
+                  </div>
                 </div>
+              </section>
+            )}
+
+            {isProcessing && (
+              <div className="mt-3 flex items-center gap-2 rounded-[14px] border border-[#DCE5DF] bg-white px-3 py-3 text-xs font-bold text-stone-600">
+                <Loader2 size={15} className="animate-spin text-[#52AA83]" /> Leyendo el ticket…
               </div>
             )}
-          </div>
 
-          {/* Gas Station Brand Select */}
-          <div>
-            <label className="block text-xs font-serif font-bold uppercase tracking-wider text-stone-700 mb-2">
-              Estación de Servicio / Gasolinera
-            </label>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {GAS_STATION_PRESETS.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
-                  onClick={() => setSelectedStation(preset.name)}
-                  className={`px-3 py-2 text-xs font-serif font-semibold rounded-xl border transition-all text-center truncate ${
-                    selectedStation === preset.name
-                      ? 'border-[#C96846] bg-[#FAF3EE] text-[#9C4B30] shadow-sm ring-1 ring-[#C96846]'
-                      : 'border-[#DFD5C6] hover:border-stone-400 text-stone-700 bg-white'
-                  }`}
-                >
-                  {preset.name}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setSelectedStation('Otro')}
-                className={`px-3 py-2 text-xs font-serif font-semibold rounded-xl border transition-all text-center ${
-                  selectedStation === 'Otro'
-                    ? 'border-[#C96846] bg-[#FAF3EE] text-[#9C4B30] shadow-sm ring-1 ring-[#C96846]'
-                    : 'border-[#DFD5C6] hover:border-stone-400 text-stone-700 bg-white'
-                }`}
-              >
-                Otra estación
-              </button>
-            </div>
-
-            {selectedStation === 'Otro' && (
-              <div className="mt-3">
-                <input
-                  type="text"
-                  placeholder="Nombre de la estación (ej. Gasolinera M-30)"
-                  value={customStation}
-                  onChange={(e) => setCustomStation(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-[#DFD5C6] rounded-xl focus:ring-2 focus:ring-[#C96846] focus:outline-none bg-white"
-                  required
-                />
-              </div>
+            {ocr && (
+              <section className={`mt-3 rounded-[14px] border p-3.5 ${ocr.needsReview ? 'border-[#EACFA9] bg-[#FFF8EC]' : 'border-[#BFDCCD] bg-[#EEF8F3]'}`}>
+                <div className="flex items-center gap-2">
+                  {ocr.needsReview ? <AlertTriangle size={16} className="text-[#9A672C]" /> : <CheckCircle2 size={16} className="text-[#2F6B50]" />}
+                  <p className="text-xs font-extrabold text-[#1E231F]">Lectura IA · confianza {confidencePct}%</p>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-600">{ocr.needsReview ? 'Comprueba los datos antes de guardar.' : 'La lectura parece clara; confirma los datos igualmente.'}</p>
+                {ocr.uncertainFields.length > 0 && <p className="mt-1 text-[10px] text-stone-500">Campos dudosos: {ocr.uncertainFields.join(', ')}</p>}
+              </section>
             )}
-          </div>
 
-          {/* Core Numerical & Fiscal Inputs */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-serif font-semibold text-stone-700 mb-1">
-                Importe Total (€ IVA Incl.)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="0.01"
-                  value={totalAmount}
-                  onChange={(e) => setTotalAmount(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 text-base font-serif font-bold text-stone-900 border border-[#DFD5C6] rounded-xl focus:ring-2 focus:ring-[#C96846] focus:outline-none bg-white"
-                  required
-                />
-                <span className="absolute right-3 top-2.5 text-sm font-semibold text-stone-400">€</span>
+            <section className="mt-5 space-y-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-extrabold text-stone-600">Gasolinera</label>
+                <select value={selectedStation} onChange={(event) => { setSelectedStation(event.target.value); if (event.target.value !== 'Otro') setCustomStation(''); }} className="field-input">
+                  <option value="">Selecciona una gasolinera</option>
+                  {GAS_STATION_PRESETS.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
+                  <option value="Otro">Otra</option>
+                </select>
+                {selectedStation === 'Otro' && <input value={customStation} onChange={(event) => setCustomStation(event.target.value)} placeholder="Nombre que aparece en el ticket" className="field-input mt-2" />}
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-serif font-semibold text-stone-700 mb-1">
-                Litros de Combustible
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="0.1"
-                  value={fuelLitres}
-                  onChange={(e) => setFuelLitres(e.target.value)}
-                  placeholder="20.0"
-                  className="w-full pl-3 pr-8 py-2 text-sm font-medium text-stone-900 border border-[#DFD5C6] rounded-xl focus:ring-2 focus:ring-[#C96846] focus:outline-none bg-white"
-                />
-                <span className="absolute right-3 top-2.5 text-xs font-medium text-stone-400">L</span>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Importe total"><div className="relative"><input type="number" min="0" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className="field-input pr-8" placeholder="0,00" /><span className="absolute right-3 top-3 text-sm text-stone-400">€</span></div></Field>
+                <Field label="Fecha"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="field-input" /></Field>
               </div>
-            </div>
+            </section>
 
-            <div>
-              <label className="block text-xs font-serif font-semibold text-stone-700 mb-1">
-                Tipo de Combustible
-              </label>
-              <select
-                value={fuelType}
-                onChange={(e) => setFuelType(e.target.value)}
-                className="w-full px-3 py-2 text-sm text-stone-900 border border-[#DFD5C6] rounded-xl focus:ring-2 focus:ring-[#C96846] focus:outline-none bg-white font-serif"
-              >
-                <option value="Gasolina 95">Gasolina 95</option>
-                <option value="Gasolina 98">Gasolina 98</option>
-                <option value="Diésel / Gasóleo A">Diésel / Gasóleo A</option>
-                <option value="GLP Autogas">GLP Autogas</option>
-                <option value="Electricidad / Carga">Electricidad / Carga</option>
-              </select>
-            </div>
+            <details className="mt-4 rounded-[16px] border border-[#E5DED4] bg-white">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-extrabold text-stone-700">
+                Detalles opcionales <ChevronDown size={16} className="text-stone-400" />
+              </summary>
+              <div className="grid gap-3 border-t border-[#EEE8DF] p-4 sm:grid-cols-2">
+                <Field label="Litros"><input type="number" min="0" step="0.01" value={fuelLitres} onChange={(event) => setFuelLitres(event.target.value)} placeholder="Solo si los confirmas" className="field-input" /></Field>
+                <Field label="Combustible"><select value={fuelType} onChange={(event) => setFuelType(event.target.value)} className="field-input"><option value="">Sin especificar</option><option value="Gasolina 95">Gasolina 95</option><option value="Gasolina 98">Gasolina 98</option><option value="Diésel / Gasóleo A">Diésel / Gasóleo A</option><option value="GLP Autogas">GLP Autogas</option><option value="Electricidad / Carga">Electricidad / Carga</option></select></Field>
+                <Field label="Matrícula"><input value={plate} onChange={(event) => setPlate(event.target.value)} placeholder="Opcional" className="field-input uppercase" /></Field>
+                <Field label="Notas"><input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Opcional" className="field-input" /></Field>
+              </div>
+            </details>
+
+            <section className="mt-4 rounded-[14px] border border-[#D7E5DC] bg-[#F1F7F3] p-3.5">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-[#214E3A]"><ShieldCheck size={15} /> Pendiente de revisión</div>
+              <p className="mt-1 text-[11px] leading-relaxed text-stone-500">Guardar el ticket no lo convierte automáticamente en gasto deducible. Entra con IVA y deducibilidad a 0 hasta revisión.</p>
+            </section>
           </div>
 
-          {/* Breakdown Box (Hacienda 21% IVA) */}
-          <div className="bg-[#FAF3EE] border border-[#EAD6C9] rounded-2xl p-4 flex items-center justify-between text-xs">
-            <div>
-              <span className="font-serif font-bold text-[#8D5B4C]">Desglose Fiscal Hacienda:</span>
-              <p className="text-stone-600 mt-0.5">
-                Base Imponible: <strong className="text-stone-900">{baseImponible.toFixed(2)} €</strong> | IVA Deducible 21%: <strong className="text-[#2E5A44]">{cuotaIva.toFixed(2)} €</strong>
-              </p>
-            </div>
-            <div className="text-right">
-              <span className="inline-block px-3 py-1 bg-[#EBF3ED] text-[#245338] font-serif font-semibold rounded-full border border-[#D0E5D7]">
-                100% Deducible
-              </span>
-            </div>
-          </div>
-
-          {/* Date & Vehicle Plate */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-serif font-semibold text-stone-700 mb-1">
-                Fecha del Repostaje
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-[#DFD5C6] rounded-xl focus:ring-2 focus:ring-[#C96846] focus:outline-none bg-white font-mono"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-serif font-semibold text-stone-700 mb-1">
-                Matrícula del Vehículo de Reparto
-              </label>
-              <input
-                type="text"
-                value={plate}
-                onChange={(e) => setPlate(e.target.value)}
-                placeholder="4521 LBR"
-                className="w-full px-3 py-2 text-sm uppercase font-mono font-medium border border-[#DFD5C6] rounded-xl focus:ring-2 focus:ring-[#C96846] focus:outline-none bg-white"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-serif font-semibold text-stone-700 mb-1">
-              Notas adicionales para el Asesor Fiscal
-            </label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ej. Repostaje durante jornada de lluvia alta demanda"
-              className="w-full px-3 py-2 text-sm border border-[#DFD5C6] rounded-xl focus:ring-2 focus:ring-[#C96846] focus:outline-none bg-white"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-[#E8DFC8]">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 text-sm font-serif font-medium text-stone-600 hover:text-stone-900 hover:bg-[#F2EDE4] rounded-xl transition-colors"
-            >
-              Cancelar
+          <footer className="shrink-0 border-t border-[#E8E1D7] bg-[#FFFDF9]/95 px-4 py-3 backdrop-blur sm:px-6">
+            <button type="submit" disabled={!canSave} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#183D2D] disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400">
+              {isProcessing ? <Loader2 size={17} className="animate-spin" /> : <CheckCircle2 size={17} />} Guardar para revisión
             </button>
-            <button
-              id="save-fuel-receipt-btn"
-              type="submit"
-              className="px-6 py-2.5 bg-[#2E5A44] hover:bg-[#234735] text-white font-serif font-semibold text-sm rounded-xl shadow-md flex items-center space-x-2 transition-all active:scale-95"
-            >
-              <CheckCircle className="w-4 h-4" />
-              <span>Guardar Respaldo y Notificar Gestor</span>
-            </button>
-          </div>
+            {!previewImage && <p className="mt-1.5 text-center text-[10px] text-stone-400">Primero añade una foto del ticket.</p>}
+          </footer>
         </form>
+
+        <style>{`.field-input{width:100%;min-height:46px;border:1px solid #DED7CC;background:#fff;border-radius:13px;padding:.7rem .8rem;font-size:.9rem;outline:none}.field-input:focus{border-color:#52AA83;box-shadow:0 0 0 3px rgba(82,170,131,.14)}summary::-webkit-details-marker{display:none}`}</style>
       </div>
     </div>
   );
 };
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <label><span className="mb-1.5 block text-xs font-extrabold text-stone-600">{label}</span>{children}</label>
+);

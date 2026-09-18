@@ -212,7 +212,7 @@ export const OFFICIAL_DELIVERY_PLATFORMS: DeliveryPlatformMeta[] = [
   }
 ];
 
-export const SPANISH_TAX_MODELS = [
+const SPANISH_TAX_MODEL_SOURCE = [
   {
     code: '036 / 037',
     name: 'Declaración Censal de Alta de Autónomo',
@@ -267,6 +267,12 @@ export const SPANISH_TAX_MODELS = [
     deadlines: ['Abril a Junio']
   }
 ];
+
+export const SPANISH_TAX_MODELS = SPANISH_TAX_MODEL_SOURCE.map((model) => ({
+  ...model,
+  title: model.name,
+  deadline: model.deadlines?.join(' · ') || model.frequency
+}));
 
 export const GAS_STATION_PRESETS = [
   { name: 'Repsol', domain: 'repsol.es', logoColor: '#F58220' },

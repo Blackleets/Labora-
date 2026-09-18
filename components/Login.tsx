@@ -1,568 +1,339 @@
-import React, { useState } from 'react';
-import { useData } from '../contexts/DataContext';
-import { UserRole } from '../types';
-import { 
-  Bike, Briefcase, Mail, Lock, User as UserIcon, Phone, ArrowRight, 
-  CheckCircle2, AlertCircle, Sparkles, Shield, Fuel, FileText, Check 
+import React, { useEffect, useState } from 'react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bike,
+  BriefcaseBusiness,
+  CheckCircle2,
+  KeyRound,
+  Loader2,
+  Mail,
+  Phone,
+  ShieldCheck,
+  UserRound
 } from 'lucide-react';
+import { recoverRemoteSession, signInRemote, signUpRemote } from '../services/authWorkspace';
+import { UserRole } from '../types';
+import IdentityImagePicker from './IdentityImagePicker';
 import Logo from './Logo';
-import { OFFICIAL_DELIVERY_PLATFORMS } from '../modules/delivery/data/platforms';
 
 const Login: React.FC = () => {
-  const { login, registerUser, users } = useData();
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [regStep, setRegStep] = useState(1);
-  
-  // Basic Account
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [registerStep, setRegisterStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('+34 612 345 678');
+  const [phone, setPhone] = useState('');
+  const [nif, setNif] = useState('');
   const [role, setRole] = useState<UserRole>(UserRole.RIDER);
-  
-  // Fiscal & Delivery Specifics
-  const [nif, setNif] = useState('48192834K');
-  const [fiscalRegime, setFiscalRegime] = useState('036_037_directa');
-  const [iaeCode, setIaeCode] = useState('849.5 - Servicios de mensajería y reparto');
-  const [socialSecurityType, setSocialSecurityType] = useState('tarifa_plana');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['Uber Eats', 'Glovo']);
-  const [vehicleType, setVehicleType] = useState<'moto' | 'bici' | 'coche' | 'furgoneta' | 'patinete'>('moto');
-  const [vehiclePlate, setVehiclePlate] = useState('4521 LBR');
-  const [vehicleFuel, setVehicleFuel] = useState<'gasolina' | 'diesel' | 'electrico' | 'glp'>('gasolina');
-  
-  // Gestor Specifics
-  const [companyName, setCompanyName] = useState('Gestoría Fiscal & Tributaria S.L.');
-  const [collegiateNumber, setCollegiateNumber] = useState('COL-MAD-9421');
+  const [vehiclePlate, setVehiclePlate] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [collegiateNumber, setCollegiateNumber] = useState('');
+  const [identityImage, setIdentityImage] = useState<string | undefined>();
+  const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [recovering, setRecovering] = useState(true);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let active = true;
+    recoverRemoteSession()
+      .then((restored) => {
+        if (active && restored) window.location.reload();
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setRecovering(false);
+      });
+    return () => { active = false; };
+  }, []);
 
-  const togglePlatform = (platName: string) => {
-    setSelectedPlatforms(prev => 
-      prev.includes(platName) 
-        ? prev.filter(p => p !== platName) 
-        : [...prev, platName]
-    );
+  const normalizeEmail = (value: string) => value.trim().toLowerCase();
+  const inputClass = 'w-full rounded-[15px] border border-[#DED7CC] bg-white px-4 py-3.5 text-[15px] text-[#1E231F] outline-none transition placeholder:text-stone-300 focus:border-[#789582] focus:ring-4 focus:ring-[#DDE9E1]/70';
+  const labelClass = 'mb-2 block text-xs font-extrabold text-stone-600';
+
+  const resetFeedback = () => {
+    setError('');
+    setInfo('');
   };
 
-  const handleSimpleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      setErrors({ email: 'Introduce un correo válido' });
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    resetFeedback();
+
+    if (!normalizeEmail(email) || !password) {
+      setError('Escribe tu correo y contraseña.');
       return;
     }
-    login(email, role);
+
+    setLoading(true);
+    try {
+      await signInRemote(email, password);
+      window.location.reload();
+    } catch (err: any) {
+      const message = String(err?.message || 'No se pudo iniciar sesión.');
+      if (message.toLowerCase().includes('email not confirmed')) {
+        setError('Confirma tu correo antes de entrar. Revisa tu bandeja de entrada.');
+      } else if (message.toLowerCase().includes('invalid login')) {
+        setError('Correo o contraseña incorrectos.');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCompleteRegistration = (e: React.FormEvent) => {
-    e.preventDefault();
-    registerUser({
-      name: name || (role === UserRole.RIDER ? 'Nuevo Rider' : 'Nuevo Gestor'),
-      email: email || `usuario_${Date.now()}@labora.plus`,
-      role,
-      phone,
-      nif,
-      fiscalRegime: role === UserRole.RIDER ? fiscalRegime : undefined,
-      iaeCode: role === UserRole.RIDER ? iaeCode : undefined,
-      socialSecurityType: role === UserRole.RIDER ? socialSecurityType : undefined,
-      vehicleType: role === UserRole.RIDER ? vehicleType : undefined,
-      vehiclePlate: role === UserRole.RIDER ? vehiclePlate : undefined,
-      vehicleFuel: role === UserRole.RIDER ? vehicleFuel : undefined,
-      companyName: role === UserRole.MANAGER ? companyName : undefined,
-      collegiateNumber: role === UserRole.MANAGER ? collegiateNumber : undefined,
-      platforms: role === UserRole.RIDER ? (selectedPlatforms.length ? selectedPlatforms : ['Uber Eats']) : [],
-      managerId: role === UserRole.RIDER ? 'm1' : undefined,
-      countryCode: 'ES'
-    });
+  const continueRegistration = () => {
+    resetFeedback();
+    if (!name.trim()) {
+      setError('Escribe tu nombre para continuar.');
+      return;
+    }
+    if (!normalizeEmail(email)) {
+      setError('Escribe un correo electrónico válido.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    setRegisterStep(2);
   };
 
-  const quickLoginAsRider = () => {
-    const rider = users.find(u => u.role === UserRole.RIDER) || users[0];
-    login(rider.email, UserRole.RIDER);
+  const handleRegister = async (event: React.FormEvent) => {
+    event.preventDefault();
+    resetFeedback();
+    setLoading(true);
+
+    try {
+      const result = await signUpRemote({
+        name: name.trim(),
+        email: normalizeEmail(email),
+        phone: phone.trim() || undefined,
+        nif: nif.trim().toUpperCase() || undefined,
+        role,
+        platforms: [],
+        fiscalRegime: undefined,
+        iaeCode: undefined,
+        socialSecurityType: undefined,
+        vehicleType: undefined,
+        vehiclePlate: role === UserRole.RIDER ? vehiclePlate.trim().toUpperCase() || undefined : undefined,
+        vehicleFuel: undefined,
+        companyName: role === UserRole.MANAGER ? companyName.trim() || name.trim() : undefined,
+        collegiateNumber: role === UserRole.MANAGER ? collegiateNumber.trim() || undefined : undefined,
+        countryCode: 'ES'
+      }, password, identityImage);
+
+      if (result.session) {
+        window.location.reload();
+      } else {
+        setInfo('Cuenta creada. Revisa tu correo y confirma la dirección antes de iniciar sesión.');
+        setMode('login');
+        setRegisterStep(1);
+      }
+    } catch (err: any) {
+      const message = String(err?.message || 'No se pudo crear la cuenta.');
+      if (message.toLowerCase().includes('already registered')) {
+        setError('Ya existe una cuenta con este correo.');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const quickLoginAsGestor = () => {
-    const gestor = users.find(u => u.role === UserRole.MANAGER) || users[1];
-    login(gestor.email, UserRole.MANAGER);
+  const switchMode = (nextMode: 'login' | 'register') => {
+    setMode(nextMode);
+    setRegisterStep(1);
+    resetFeedback();
   };
+
+  if (recovering) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F7F3EA]">
+        <div className="flex items-center gap-2 rounded-2xl border border-[#E5DDD2] bg-white/80 px-4 py-3 text-sm font-bold text-stone-500 shadow-sm">
+          <Loader2 size={18} className="animate-spin" /> Recuperando sesión…
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 md:p-6 relative overflow-hidden font-sans">
-      {/* Background Orbs */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-100 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
-
-      <div className="bg-white rounded-3xl shadow-xl p-6 md:p-8 w-full max-w-2xl relative z-10 border border-slate-100 animate-in fade-in duration-300">
-        
-        {/* Brand Header */}
-        <div className="flex flex-col items-center justify-center mb-6 text-center">
-          <Logo size="lg" animated={true} />
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 mt-4 tracking-tight">
-            Labora<span className="text-emerald-500">+</span>
-          </h1>
-          <p className="text-slate-500 font-semibold text-xs uppercase tracking-widest mt-1">
-            Plataforma Fiscal para Repartidores y Gestorías
-          </p>
-        </div>
-
-        {/* Quick Demo Access Bar */}
-        <div className="mb-6 p-3 bg-gradient-to-r from-blue-50 via-indigo-50 to-amber-50 rounded-2xl border border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-          <div className="text-left">
-            <span className="text-[11px] font-bold text-slate-700 block">Acceso Rápido Demo:</span>
-            <span className="text-[10px] text-slate-500">Prueba los dos lados de la plataforma instantáneamente</span>
-          </div>
-          <div className="flex items-center space-x-2 w-full sm:w-auto">
-            <button
-              onClick={quickLoginAsRider}
-              className="flex-1 sm:flex-none px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center justify-center space-x-1 transition-all"
-            >
-              <Bike className="w-3.5 h-3.5" />
-              <span>Entrar Rider</span>
-            </button>
-            <button
-              onClick={quickLoginAsGestor}
-              className="flex-1 sm:flex-none px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm flex items-center justify-center space-x-1 transition-all"
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>Entrar Gestor</span>
-            </button>
-          </div>
-        </div>
-
-        {!isRegistering ? (
-          /* LOGIN MODE */
-          <div>
-            {/* Role Switcher */}
-            <div className="flex gap-2 mb-6 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setRole(UserRole.RIDER)}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                  role === UserRole.RIDER ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Bike size={16} /> Soy Rider Autónomo
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole(UserRole.MANAGER)}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                  role === UserRole.MANAGER ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Briefcase size={16} /> Soy Gestor / Asesor
-              </button>
-            </div>
-
-            <form onSubmit={handleSimpleLogin} className="space-y-4">
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type="email"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                  placeholder={role === UserRole.RIDER ? "alex@labora.plus" : "info@gestoriaperez.com"}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  type="password"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium"
-                  placeholder="Contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-sm tracking-wide shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 transition-all"
-              >
-                <span>Acceder a mi panel</span>
-                <ArrowRight size={16} />
-              </button>
-            </form>
-
-            <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-              <p className="text-xs text-slate-500 font-medium">
-                ¿No tienes cuenta?
-                <button 
-                  onClick={() => { setIsRegistering(true); setRegStep(1); }}
-                  className="text-blue-600 font-bold ml-1.5 hover:underline"
-                >
-                  Regístrate gratis con tu perfil fiscal
-                </button>
+    <div className="min-h-screen px-4 py-5 sm:py-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-6xl items-stretch gap-5 lg:grid-cols-[minmax(0,1.05fr)_440px]">
+        <section className="labora-hero hidden p-8 lg:flex lg:flex-col lg:justify-between xl:p-10">
+          <div className="relative z-10">
+            <Logo size="lg" showText variant="dark" animated />
+            <div className="mt-16 max-w-xl">
+              <span className="labora-chip labora-kicker text-[#EAF4EE]">Rider + Gestoría</span>
+              <h1 className="labora-display mt-5 text-[3.2rem] font-semibold leading-[0.98] text-white">
+                Menos ruido. Más control sobre tu trabajo.
+              </h1>
+              <p className="mt-5 max-w-lg text-base leading-relaxed text-white/72">
+                Labora+ une identidad, gastos, documentos, modelos, peticiones y mensajes sin fingir integraciones que todavía no existen.
               </p>
             </div>
           </div>
-        ) : (
-          /* REGISTRATION WORKFLOW WITH OFFICIAL PLATFORMS & FISCAL SETUP */
-          <div className="space-y-5">
-            {/* Step Indicators */}
-            <div className="flex items-center justify-between mb-4 px-2">
-              <div className="flex items-center space-x-2">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  regStep >= 1 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
-                }`}>1</span>
-                <span className="text-xs font-semibold text-slate-700">Datos Básicos</span>
-              </div>
-              <div className="w-8 h-0.5 bg-slate-200"></div>
-              <div className="flex items-center space-x-2">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  regStep >= 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
-                }`}>2</span>
-                <span className="text-xs font-semibold text-slate-700">
-                  {role === UserRole.RIDER ? 'Plataformas & Vehículo' : 'Datos Gestoría'}
-                </span>
-              </div>
-              <div className="w-8 h-0.5 bg-slate-200"></div>
-              <div className="flex items-center space-x-2">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  regStep >= 3 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
-                }`}>3</span>
-                <span className="text-xs font-semibold text-slate-700">Situación Censal</span>
-              </div>
+
+          <div className="relative z-10 grid grid-cols-3 gap-3">
+            <Feature icon={ShieldCheck} title="Datos privados" text="Permisos por relación" />
+            <Feature icon={CheckCircle2} title="Sin simulación" text="Estados verificables" />
+            <Feature icon={BriefcaseBusiness} title="Dos espacios" text="Rider y gestoría" />
+          </div>
+        </section>
+
+        <main className="flex w-full items-center justify-center">
+          <div className="w-full max-w-md">
+            <div className="mb-5 flex items-center justify-between lg:hidden">
+              <Logo size="md" showText animated />
+              <span className="rounded-full border border-[#E0D8CD] bg-white/75 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-stone-400">Acceso seguro</span>
             </div>
 
-            {/* Step 1: Basics & Role */}
-            {regStep === 1 && (
-              <div className="space-y-4">
-                <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setRole(UserRole.RIDER)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                      role === UserRole.RIDER ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'
-                    }`}
-                  >
-                    Rider Autónomo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole(UserRole.MANAGER)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                      role === UserRole.MANAGER ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'
-                    }`}
-                  >
-                    Gestoría / Asesor Fiscal
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Nombre Completo</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      placeholder={role === UserRole.RIDER ? "Ej. Javier Morales" : "Ej. Asesoría Morales & Pérez"}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">DNI / NIE / NIF</label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase"
-                      placeholder="48192834K"
-                      value={nif}
-                      onChange={(e) => setNif(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico</label>
-                    <input
-                      type="email"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      placeholder="correo@ejemplo.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Teléfono</label>
-                    <input
-                      type="tel"
-                      className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      placeholder="+34 600 000 000"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setRegStep(2)}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center space-x-1.5"
-                  >
-                    <span>Siguiente paso</span>
-                    <ArrowRight size={14} />
-                  </button>
-                </div>
+            <section className="labora-card p-5 sm:p-7">
+              <div className="mb-6 grid grid-cols-2 rounded-[15px] bg-[#F1ECE3] p-1">
+                <button
+                  type="button"
+                  onClick={() => switchMode('login')}
+                  className={`rounded-[12px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'login' ? 'bg-white text-[#1E231F] shadow-sm' : 'text-stone-500'}`}
+                >
+                  Entrar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMode('register')}
+                  className={`rounded-[12px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'register' ? 'bg-white text-[#1E231F] shadow-sm' : 'text-stone-500'}`}
+                >
+                  Crear cuenta
+                </button>
               </div>
-            )}
 
-            {/* Step 2: Role Specifics (Platform Selection with original logos) */}
-            {regStep === 2 && (
-              <div className="space-y-4">
-                {role === UserRole.RIDER ? (
-                  <>
+              {mode === 'login' ? (
+                <>
+                  <div className="mb-7">
+                    <p className="labora-kicker text-[#789582]">Labora+</p>
+                    <h2 className="labora-display mt-2 text-3xl font-semibold text-[#1E231F]">Qué bueno verte.</h2>
+                    <p className="mt-2 text-sm leading-relaxed text-stone-500">Entra a tu espacio de autónomo o gestoría.</p>
+                  </div>
+
+                  <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                        Elige tus plataformas de reparto
-                      </label>
-                      <p className="text-[11px] text-slate-500 mb-2">
-                        Selecciona las aplicaciones con las que trabajas para organizar tus facturas e ingresos (sin inventar logos).
+                      <label className={labelClass}>Correo electrónico</label>
+                      <div className="relative">
+                        <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+                        <input type="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); resetFeedback(); }} placeholder="tu@correo.com" className={`${inputClass} pl-12`} required />
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Contraseña</label>
+                      <div className="relative">
+                        <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+                        <input type="password" autoComplete="current-password" value={password} onChange={(e) => { setPassword(e.target.value); resetFeedback(); }} placeholder="Tu contraseña" className={`${inputClass} pl-12`} required />
+                      </div>
+                    </div>
+
+                    {error && <p className="rounded-[14px] border border-[#F0D8D1] bg-[#FFF5F2] p-3.5 text-xs font-bold text-[#944B3D]">{error}</p>}
+                    {info && <p className="rounded-[14px] border border-[#CFE1D6] bg-[#F0F7F2] p-3.5 text-xs font-bold text-[#214E3A]">{info}</p>}
+
+                    <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#183D2D] disabled:opacity-60">
+                      {loading ? <Loader2 size={17} className="animate-spin" /> : <>Entrar <ArrowRight size={17} /></>}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <div className="mb-6 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="labora-kicker text-[#789582]">Nueva cuenta</p>
+                      <h2 className="labora-display mt-2 text-3xl font-semibold text-[#1E231F]">
+                        {registerStep === 1 ? 'Crea tu espacio.' : 'Hazlo reconocible.'}
+                      </h2>
+                      <p className="mt-2 text-sm leading-relaxed text-stone-500">
+                        {registerStep === 1 ? 'Elige cómo usarás Labora+ y crea tu acceso.' : 'Añade la identidad que verá la otra parte.'}
                       </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-1">
-                        {OFFICIAL_DELIVERY_PLATFORMS.map((plat) => {
-                          const isSelected = selectedPlatforms.includes(plat.name);
-                          return (
-                            <button
-                              key={plat.id}
-                              type="button"
-                              onClick={() => togglePlatform(plat.name)}
-                              className={`p-2.5 rounded-xl border text-left flex items-center space-x-2 transition-all ${
-                                isSelected 
-                                  ? 'border-blue-600 bg-blue-50/70 shadow-sm ring-1 ring-blue-500' 
-                                  : 'border-slate-200 hover:border-slate-300 bg-white'
-                              }`}
-                            >
-                              <div 
-                                className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 shadow-sm"
-                                style={{ backgroundColor: plat.brandColor, color: plat.textColor }}
-                              >
-                                {plat.name.substring(0, 2).toUpperCase()}
-                              </div>
-                              <div className="truncate min-w-0">
-                                <div className="text-xs font-bold text-slate-800 truncate">{plat.name}</div>
-                                <div className="text-[10px] text-slate-400 capitalize">{plat.paymentCycle}</div>
-                              </div>
-                              {isSelected && <Check className="w-4 h-4 text-blue-600 ml-auto shrink-0" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Vehicle */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Vehículo de Reparto</label>
-                        <select
-                          value={vehicleType}
-                          onChange={(e) => setVehicleType(e.target.value as any)}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white"
-                        >
-                          <option value="moto">Moto / Ciclomotor</option>
-                          <option value="bici">Bicicleta / E-Bike</option>
-                          <option value="coche">Coche</option>
-                          <option value="furgoneta">Furgoneta</option>
-                          <option value="patinete">Patinete Eléctrico</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Matrícula</label>
-                        <input
-                          type="text"
-                          value={vehiclePlate}
-                          onChange={(e) => setVehiclePlate(e.target.value)}
-                          placeholder="4521 LBR"
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold uppercase focus:bg-white"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Combustible</label>
-                        <select
-                          value={vehicleFuel}
-                          onChange={(e) => setVehicleFuel(e.target.value as any)}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white"
-                        >
-                          <option value="gasolina">Gasolina 95/98</option>
-                          <option value="diesel">Diésel</option>
-                          <option value="electrico">Eléctrico</option>
-                          <option value="glp">GLP / Gas</option>
-                        </select>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  /* Gestor Details */
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Nombre del Despacho / Asesoría</label>
-                      <input
-                        type="text"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="Ej. Gestoría Fiscal Morales & Pérez S.L."
-                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white"
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Número de Colegiado</label>
-                        <input
-                          type="text"
-                          value={collegiateNumber}
-                          onChange={(e) => setCollegiateNumber(e.target.value)}
-                          placeholder="COL-MAD-9421"
-                          className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-medium focus:bg-white uppercase"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">País de Actuación</label>
-                        <select className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white">
-                          <option value="ES">España (Hacienda AEAT / TGSS)</option>
-                          <option value="MX">México (SAT Plataformas)</option>
-                          <option value="CO">Colombia (DIAN)</option>
-                          <option value="US">EE.UU. (IRS 1099-NEC)</option>
-                        </select>
-                      </div>
                     </div>
                   </div>
-                )}
 
-                <div className="flex justify-between pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setRegStep(1)}
-                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
-                  >
-                    Atrás
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRegStep(3)}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center space-x-1.5"
-                  >
-                    <span>Siguiente paso</span>
-                    <ArrowRight size={14} />
-                  </button>
-                </div>
-              </div>
-            )}
+                  <div className="mb-6 flex items-center gap-2">
+                    <span className="h-1.5 flex-1 rounded-full bg-[#214E3A]" />
+                    <span className={`h-1.5 flex-1 rounded-full transition ${registerStep === 2 ? 'bg-[#D66C47]' : 'bg-[#E8E2D8]'}`} />
+                  </div>
 
-            {/* Step 3: Fiscal Setup (036 / 037 / RETA) */}
-            {regStep === 3 && (
-              <form onSubmit={handleCompleteRegistration} className="space-y-4">
-                {role === UserRole.RIDER ? (
-                  <>
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
-                      <div className="flex items-center space-x-2 text-xs font-bold text-slate-800">
-                        <FileText className="w-4 h-4 text-blue-600" />
-                        <span>Declaración Censal Modelo 036 / 037</span>
-                      </div>
-                      
+                  {registerStep === 1 ? (
+                    <div className="space-y-5">
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Epígrafe IAE (Impuesto de Actividades Económicas)
-                        </label>
-                        <select
-                          value={iaeCode}
-                          onChange={(e) => setIaeCode(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="849.5 - Servicios de mensajería y reparto">
-                            849.5 - Servicios de mensajería, recadería y reparto
-                          </option>
-                          <option value="722 - Transporte de mercancías">
-                            722 - Transporte de mercancías por carretera
-                          </option>
-                          <option value="849.9 - Otros servicios independientes">
-                            849.9 - Otros servicios independientes
-                          </option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Régimen de Cotización Seguridad Social (RETA)
-                        </label>
-                        <select
-                          value={socialSecurityType}
-                          onChange={(e) => setSocialSecurityType(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="tarifa_plana">Tarifa Plana Reducida (80 €/mes primer año)</option>
-                          <option value="tramos_reales">Cotización por Ingresos Reales Netos</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Gestoría / Asesor Fiscal Asignado
-                        </label>
-                        <div className="p-2.5 bg-white border border-blue-200 rounded-xl flex items-center justify-between text-xs">
-                          <div>
-                            <span className="font-bold text-slate-800">Gestoría Fiscal Pérez & Asociados</span>
-                            <p className="text-[11px] text-slate-500">Col. 9421 • Especialistas en fiscalidad de reparto</p>
-                          </div>
-                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded text-[10px]">
-                            Conectado
-                          </span>
+                        <label className={labelClass}>¿Cómo vas a usar Labora+?</label>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <button type="button" onClick={() => setRole(UserRole.RIDER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.RIDER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#214E3A] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
+                            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/75"><Bike size={18} /></div>
+                            <p className="mt-2 text-sm font-extrabold">Autónomo</p>
+                            <p className="mt-0.5 text-[10px] font-medium opacity-70">Gestiono mi actividad</p>
+                          </button>
+                          <button type="button" onClick={() => setRole(UserRole.MANAGER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.MANAGER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#214E3A] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
+                            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/75"><BriefcaseBusiness size={18} /></div>
+                            <p className="mt-2 text-sm font-extrabold">Gestoría</p>
+                            <p className="mt-0.5 text-[10px] font-medium opacity-70">Gestiono clientes</p>
+                          </button>
                         </div>
                       </div>
+
+                      <div><label className={labelClass}>{role === UserRole.MANAGER ? 'Nombre de contacto' : 'Nombre y apellidos'}</label><div className="relative"><UserRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} pl-12`} placeholder="Tu nombre" /></div></div>
+                      <div><label className={labelClass}>Correo electrónico</label><div className="relative"><Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-12`} placeholder="tu@correo.com" /></div></div>
+                      <div><label className={labelClass}>Contraseña</label><div className="relative"><KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-12`} placeholder="8 caracteres o más" /></div></div>
+                      {error && <p className="rounded-[14px] bg-[#FFF5F2] px-3.5 py-3 text-xs font-bold text-[#944B3D]">{error}</p>}
+                      <button type="button" onClick={continueRegistration} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white">Continuar <ArrowRight size={17} /></button>
                     </div>
-                  </>
-                ) : (
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
-                    <p className="font-bold text-slate-800">Panel de Control de Clientes Autónomos</p>
-                    <p className="text-slate-600">
-                      Al completar el registro como gestor, podrás revisar tickets de combustible con foto, solicitar justificantes pendientes a tus riders y presentar los Modelos 130 y 303 en la AEAT.
-                    </p>
-                  </div>
-                )}
+                  ) : (
+                    <form onSubmit={handleRegister} className="space-y-4">
+                      <button type="button" onClick={() => { setRegisterStep(1); resetFeedback(); }} className="mb-1 inline-flex items-center gap-1.5 text-xs font-extrabold text-stone-500 hover:text-stone-800"><ArrowLeft size={14} /> Volver</button>
 
-                <div className="flex justify-between pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setRegStep(2)}
-                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
-                  >
-                    Atrás
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center space-x-1.5"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Completar Registro y Entrar</span>
-                  </button>
-                </div>
-              </form>
-            )}
+                      <IdentityImagePicker
+                        mode={role === UserRole.MANAGER ? 'logo' : 'avatar'}
+                        value={identityImage}
+                        onChange={setIdentityImage}
+                        title={role === UserRole.MANAGER ? 'Logo o imagen de la gestoría' : 'Foto de perfil'}
+                        helper={role === UserRole.MANAGER ? 'Tus clientes la verán en mensajes y peticiones.' : 'Tu gestoría la verá al revisar tu actividad.'}
+                      />
 
-            <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={() => setIsRegistering(false)}
-                className="text-xs text-slate-500 hover:text-slate-800 font-medium"
-              >
-                ¿Ya tienes cuenta? Inicia sesión aquí
-              </button>
-            </div>
+                      <div><label className={labelClass}>Teléfono <span className="font-normal text-stone-400">(opcional)</span></label><div className="relative"><Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-12`} placeholder="+34 600 000 000" /></div></div>
+                      <div><label className={labelClass}>NIF / NIE <span className="font-normal text-stone-400">(opcional)</span></label><input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678A" /></div>
+
+                      {role === UserRole.RIDER ? (
+                        <div><label className={labelClass}>Matrícula <span className="font-normal text-stone-400">(opcional)</span></label><input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" /></div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div><label className={labelClass}>Nombre de la gestoría</label><input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputClass} placeholder="Nombre comercial" /></div>
+                          <div><label className={labelClass}>N.º colegiado <span className="font-normal text-stone-400">(opcional)</span></label><input value={collegiateNumber} onChange={(e) => setCollegiateNumber(e.target.value)} className={inputClass} placeholder="Número de colegiado" /></div>
+                        </div>
+                      )}
+
+                      {error && <p className="rounded-[14px] bg-[#FFF5F2] px-3.5 py-3 text-xs font-bold text-[#944B3D]">{error}</p>}
+                      <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white disabled:opacity-60">
+                        {loading ? <Loader2 size={17} className="animate-spin" /> : <>Crear cuenta <ArrowRight size={17} /></>}
+                      </button>
+                    </form>
+                  )}
+                </>
+              )}
+            </section>
+
+            <p className="mt-4 text-center text-[10px] font-medium leading-relaxed text-stone-400">
+              Sesión protegida con Supabase Auth. El acceso a datos se limita mediante RLS.
+            </p>
           </div>
-        )}
-
+        </main>
       </div>
     </div>
   );
 };
+
+const Feature = ({ icon: Icon, title, text }: { icon: React.ComponentType<{ size?: number }>; title: string; text: string }) => (
+  <div className="rounded-[18px] border border-white/12 bg-white/8 p-3.5 backdrop-blur">
+    <Icon size={17} />
+    <p className="mt-2 text-xs font-extrabold text-white">{title}</p>
+    <p className="mt-0.5 text-[10px] font-medium text-white/55">{text}</p>
+  </div>
+);
 
 export default Login;
