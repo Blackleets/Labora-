@@ -195,6 +195,40 @@ export const reviewRemoteIncome = async (
   if (error) throw error;
 };
 
+export const createRemoteRequirement = async (requirement: GestorRequirement) => {
+  const { error } = await supabase.rpc('create_requirement', {
+    p_id: requirement.id,
+    p_rider_id: requirement.riderId,
+    p_title: requirement.title,
+    p_description: requirement.description || '',
+    p_category: requirement.category || 'other',
+    p_deadline: requirement.deadline,
+    p_quarter: requirement.quarter || null
+  });
+  if (error) throw error;
+};
+
+export const submitRemoteRequirement = async (
+  requirementId: string,
+  notes?: string,
+  proofUrl?: string
+) => {
+  const { error } = await supabase.rpc('submit_requirement', {
+    p_requirement_id: requirementId,
+    p_submission_notes: notes || null,
+    p_submission_url: proofUrl || null
+  });
+  if (error) throw error;
+};
+
+export const reviewRemoteRequirement = async (requirementId: string) => {
+  const { error } = await supabase.rpc('review_requirement', {
+    p_requirement_id: requirementId,
+    p_action: 'approved'
+  });
+  if (error) throw error;
+};
+
 export const reviewRemoteExpense = async (
   expenseId: string,
   status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
@@ -385,25 +419,16 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
 
   for (const requirement of requirements) {
     if (requirement.managerId === currentUser.id) {
-      await supabase.from('requirements').upsert({
-        id: requirement.id,
-        manager_id: requirement.managerId,
-        rider_id: requirement.riderId,
-        title: requirement.title,
-        description: requirement.description,
-        category: requirement.category,
-        deadline: requirement.deadline,
-        status: requirement.status,
-        submission_notes: requirement.submissionNotes || null,
-        submission_url: requirement.submissionUrl || null,
-        quarter: requirement.quarter || null
-      });
-    } else if (requirement.riderId === currentUser.id) {
-      await supabase.from('requirements').update({
-        status: requirement.status,
-        submission_notes: requirement.submissionNotes || null,
-        submission_url: requirement.submissionUrl || null
-      }).eq('id', requirement.id);
+      await createRemoteRequirement(requirement);
+      if (requirement.status === 'approved') {
+        await reviewRemoteRequirement(requirement.id);
+      }
+    } else if (requirement.riderId === currentUser.id && requirement.status === 'submitted') {
+      await submitRemoteRequirement(
+        requirement.id,
+        requirement.submissionNotes,
+        requirement.submissionUrl
+      );
     }
   }
 
