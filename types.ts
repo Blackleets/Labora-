@@ -200,6 +200,8 @@ export interface Income {
   confidence?: number;
   needsReview?: boolean;
   importedAt?: string;
+  sourceDocumentId?: string;
+  sourceHash?: string;
 }
 
 export interface WorkSession {
@@ -291,7 +293,7 @@ export interface TaxDeclaration {
 export interface Document {
   id: string;
   userId: string;
-  type: 'Factura' | 'Trimestre' | 'Alta' | 'Otro';
+  type: 'Factura' | 'Liquidación' | 'Trimestre' | 'Alta' | 'Otro';
   name: string;
   date: string;
   content?: string;
