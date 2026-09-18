@@ -185,6 +185,8 @@ export interface MaintenanceRecord {
   nextPlannedKm?: number;
 }
 
+export type IncomeSourceType = 'manual' | 'text_import' | 'document_import' | 'api_sync' | 'bank_import';
+
 export interface Income {
   id: string;
   userId: string;
@@ -192,6 +194,12 @@ export interface Income {
   date: string;
   amount: number;
   retention: number;
+  sourceType?: IncomeSourceType;
+  sourceReference?: string;
+  externalId?: string;
+  confidence?: number;
+  needsReview?: boolean;
+  importedAt?: string;
 }
 
 export enum ExpenseCategory {
