@@ -139,6 +139,7 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     deductibleExpenses: numberValue(row.deductible_expenses),
     netYield: numberValue(row.net_yield),
     taxAmount: numberValue(row.tax_amount),
+    calculationState: 'recorded',
     status: row.status,
     filingReference: row.filing_reference || undefined,
     filedAt: row.filed_at || undefined,
