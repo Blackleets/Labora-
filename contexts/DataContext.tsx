@@ -430,7 +430,11 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const year = getQuarterRange(quarter)?.year || new Date().getFullYear();
 
     const model130: TaxDeclaration = existing130
-      ? { ...existing130, calculationState: 'recorded' }
+      ? {
+          ...existing130,
+          calculationState: existing130.calculationState
+            ?? (existing130.status === 'draft' ? 'requires_review' : 'recorded')
+        }
       : {
           id: `calc_130_${userId}_${quarter.replace(/\s/g, '_')}`,
           userId,
@@ -447,7 +451,11 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
         };
 
     const model303: TaxDeclaration = existing303
-      ? { ...existing303, calculationState: 'recorded' }
+      ? {
+          ...existing303,
+          calculationState: existing303.calculationState
+            ?? (existing303.status === 'draft' ? 'requires_review' : 'recorded')
+        }
       : {
           id: `calc_303_${userId}_${quarter.replace(/\s/g, '_')}`,
           userId,
