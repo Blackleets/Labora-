@@ -1,283 +1,336 @@
-
-import React, { useState } from 'react';
-import { ArrowRight, Check, Smartphone, Sparkles, ShieldCheck, Bike, Globe, Building2, Wallet } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import {
+  ArrowRight,
+  Bike,
+  Check,
+  Globe,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  Wallet
+} from 'lucide-react';
 import CountrySelector from './CountrySelector';
-import { useData } from '../contexts/DataContext';
+import Logo from './Logo';
 import LogoResolver from './LogoResolver';
+import { useData } from '../contexts/DataContext';
+import { useCountry } from '../contexts/CountryContext';
+import {
+  completeRemoteOnboarding,
+  updateRemoteProfile,
+  updateRemoteUserConfig
+} from '../services/authWorkspace';
+
+const platforms = [
+  { id: 'uber_eats', name: 'Uber Eats', domain: 'ubereats.com' },
+  { id: 'glovo', name: 'Glovo', domain: 'glovoapp.com' },
+  { id: 'just_eat', name: 'Just Eat', domain: 'just-eat.com' },
+  { id: 'stuart', name: 'Stuart', domain: 'stuart.com' },
+  { id: 'bolt_food', name: 'Bolt Food', domain: 'bolt.eu' },
+  { id: 'catcher', name: 'Catcher', domain: 'catcher.eu' }
+];
+
+const banks = [
+  { id: 'bbva_es', name: 'BBVA', domain: 'bbva.es' },
+  { id: 'santander_es', name: 'Santander', domain: 'santander.com' },
+  { id: 'caixabank', name: 'CaixaBank', domain: 'caixabank.es' },
+  { id: 'revolut', name: 'Revolut', domain: 'revolut.com' },
+  { id: 'wise', name: 'Wise', domain: 'wise.com' },
+  { id: 'n26', name: 'N26', domain: 'n26.com' },
+  { id: 'sabadell', name: 'Sabadell', domain: 'bancsabadell.com' },
+  { id: 'qonto', name: 'Qonto', domain: 'qonto.com' },
+  { id: 'bunq', name: 'Bunq', domain: 'bunq.com' }
+];
 
 const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
-  const { updateUserConfig } = useData();
+  const {
+    currentUser,
+    updateUserConfig,
+    updateUserFiscalProfile,
+    showNotification
+  } = useData();
+  const { selectedCountry } = useCountry();
+
   const [step, setStep] = useState(1);
-  
-  // State for selections
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [selectedBanks, setSelectedBanks] = useState<string[]>([]);
-  
-  const [connecting, setConnecting] = useState<string | null>(null);
-
-  // Configuration - using IDs that match our catalog where possible
-  const platforms = [
-    { id: 'uber_eats', name: 'Uber Eats', domain: 'ubereats.com' },
-    { id: 'glovo', name: 'Glovo', domain: 'glovoapp.com' },
-    { id: 'just_eat', name: 'Just Eat', domain: 'just-eat.com' },
-    { id: 'stuart', name: 'Stuart', domain: 'stuart.com' },
-    { id: 'bolt_food', name: 'Bolt Food', domain: 'bolt.eu' }, // Added fallback ID
-    { id: 'catcher', name: 'Catcher', domain: 'catcher.eu' },
-  ];
-
-  const banks = [
-    { id: 'bbva_es', name: 'BBVA', domain: 'bbva.es' },
-    { id: 'santander_es', name: 'Santander', domain: 'santander.com' },
-    { id: 'caixabank', name: 'CaixaBank', domain: 'caixabank.es' },
-    { id: 'revolut', name: 'Revolut', domain: 'revolut.com' },
-    { id: 'wise', name: 'Wise', domain: 'wise.com' },
-    { id: 'n26', name: 'N26', domain: 'n26.com' },
-    { id: 'sabadell', name: 'Sabadell', domain: 'bancsabadell.com' },
-    { id: 'qonto', name: 'Qonto', domain: 'qonto.com' },
-    { id: 'bunq', name: 'Bunq', domain: 'bunq.com' },
-  ];
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(currentUser?.platforms || []);
+  const [selectedBanks, setSelectedBanks] = useState<string[]>(currentUser?.banks || []);
+  const [saving, setSaving] = useState(false);
 
   const totalSteps = 4;
+  const selectedServices = selectedPlatforms.length + selectedBanks.length;
+
+  const toggle = (value: string, current: string[], setCurrent: React.Dispatch<React.SetStateAction<string[]>>) => {
+    setCurrent(current.includes(value)
+      ? current.filter((item) => item !== value)
+      : [...current, value]);
+  };
+
+  const finishSetup = async () => {
+    if (!currentUser || saving) return;
+    setSaving(true);
+    try {
+      await Promise.all([
+        updateRemoteUserConfig(selectedPlatforms, selectedBanks),
+        updateRemoteProfile(currentUser.id, { countryCode: selectedCountry.country_code })
+      ]);
+      await completeRemoteOnboarding();
+
+      updateUserConfig(selectedPlatforms, selectedBanks);
+      updateUserFiscalProfile({ countryCode: selectedCountry.country_code });
+      showNotification('success', 'Tu espacio de Labora+ está preparado.');
+      onFinish();
+    } catch (error) {
+      console.error('[LABORA_ONBOARDING_SAVE_FAILED]', error);
+      showNotification('error', 'No se pudo guardar la configuración. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleNext = () => {
     if (step < totalSteps) {
-      setStep(prev => prev + 1);
-    } else {
-      // Step 4 complete: Save and Finish
-      updateUserConfig(selectedPlatforms, selectedBanks);
-      onFinish();
+      setStep((previous) => previous + 1);
+      return;
     }
+    void finishSetup();
   };
 
-  const togglePlatform = (id: string) => {
-    if (selectedPlatforms.includes(id)) {
-      setSelectedPlatforms(prev => prev.filter(s => s !== id));
-    } else {
-      setConnecting(id);
-      setTimeout(() => {
-        setSelectedPlatforms(prev => [...prev, id]);
-        setConnecting(null);
-      }, 500);
-    }
-  };
-
-  const toggleBank = (id: string) => {
-    if (selectedBanks.includes(id)) {
-      setSelectedBanks(prev => prev.filter(s => s !== id));
-    } else {
-      setConnecting(id);
-      setTimeout(() => {
-        setSelectedBanks(prev => [...prev, id]);
-        setConnecting(null);
-      }, 500);
-    }
-  };
-
-  const ServiceCard: React.FC<{ 
-    service: { id: string, name: string, domain: string }, 
-    isSelected: boolean,
-    onToggle: (id: string) => void,
-    category: 'platform' | 'bank'
-  }> = ({ service, isSelected, onToggle, category }) => {
-    const isLoading = connecting === service.id;
-
-    return (
-      <button 
-        onClick={() => onToggle(service.id)}
-        className={`relative p-3 rounded-[20px] border transition-all duration-300 flex flex-col items-center gap-2 group w-full hover:shadow-lg active:scale-95 ${
-          isSelected 
-            ? 'border-blue-500 bg-blue-50/50 shadow-md ring-1 ring-blue-200' 
-            : 'border-gray-100 bg-white hover:border-gray-200'
-        }`}
-      >
-        {isSelected && (
-          <div className="absolute top-1.5 right-1.5 bg-blue-500 text-white rounded-full p-0.5 z-10 shadow-sm animate-in zoom-in">
-            <Check size={10} strokeWidth={4} />
-          </div>
-        )}
-        
-        {/* Logo Container using Resolver */}
-        <LogoResolver 
-          id={service.id} 
-          name={service.name} 
-          domain={service.domain} 
-          category={category === 'platform' ? 'delivery' : 'banking'}
-          size="md"
-          className={isSelected ? 'shadow-sm' : ''}
-        />
-        
-        <span className={`text-[10px] font-bold text-center leading-tight transition-colors ${isSelected ? 'text-blue-700' : 'text-gray-500 group-hover:text-gray-800'}`}>
-          {service.name}
-        </span>
-
-        {isLoading && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center rounded-[20px] z-20">
-             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
-      </button>
-    );
-  };
+  const progress = useMemo(
+    () => Array.from({ length: totalSteps }, (_, index) => index + 1),
+    []
+  );
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-4 md:p-6 animate-in fade-in duration-500 overflow-y-auto">
-      <div className="w-full max-w-4xl space-y-8 text-center my-auto py-10">
-        
-        {/* Progress Bar */}
-        <div className="flex gap-2 justify-center mb-8">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i <= step ? 'w-8 bg-[#2D6CDF]' : 'w-2 bg-gray-200'}`} />
-          ))}
-        </div>
-
-        {/* Step 1: Welcome */}
-        {step === 1 && (
-          <div className="space-y-8 animate-in slide-in-from-right-8 duration-500 max-w-lg mx-auto">
-            <div className="w-32 h-32 bg-gradient-to-tr from-[#2D6CDF] to-[#7B3FE4] rounded-[32px] mx-auto flex items-center justify-center shadow-2xl shadow-blue-500/30 rotate-3 hover:rotate-0 transition-transform duration-500">
-              <Sparkles size={48} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-[#1A1A1A] mb-3 tracking-tight">Labora<span className="text-[#2ECC71]">+</span></h1>
-              <p className="text-gray-500 text-base font-medium leading-relaxed px-4">
-                El ecosistema fiscal definitivo para riders. Automatiza, deduce y ahorra.
-              </p>
-            </div>
+    <div className="min-h-screen bg-[#F7F3EA] px-4 py-5 sm:py-8">
+      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-5xl items-center justify-center">
+        <div className="w-full">
+          <div className="mb-5 flex items-center justify-between">
+            <Logo size="md" showText animated />
+            <span className="rounded-full border border-[#DED7CC] bg-white/75 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-stone-400">
+              Configuración inicial
+            </span>
           </div>
-        )}
 
-        {/* Step 2: Country Selection */}
-        {step === 2 && (
-          <div className="space-y-8 animate-in slide-in-from-right-8 duration-500 max-w-lg mx-auto">
-            <div className="w-24 h-24 bg-blue-50 rounded-full mx-auto flex items-center justify-center text-[#2D6CDF] mb-4">
-              <Globe size={40} />
+          <section className="labora-card overflow-hidden">
+            <div className="border-b border-[#ECE5DB] px-5 py-4 sm:px-7">
+              <div className="flex gap-2">
+                {progress.map((item) => (
+                  <span
+                    key={item}
+                    className={`h-1.5 flex-1 rounded-full transition ${item <= step ? 'bg-[#214E3A]' : 'bg-[#E8E2D8]'}`}
+                  />
+                ))}
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">Tu ubicación fiscal</h2>
-              <p className="text-sm text-gray-500">Selecciona el país donde realizas tu actividad.</p>
-            </div>
-            <div className="text-left bg-gray-50 p-6 rounded-[32px] border border-gray-100">
-              <CountrySelector variant="cards" />
-            </div>
-          </div>
-        )}
 
-        {/* Step 3: Connect Services */}
-        {step === 3 && (
-          <div className="space-y-8 animate-in slide-in-from-right-8 duration-500">
-            <div className="max-w-xl mx-auto">
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">Conecta tu Ecosistema</h2>
-              <p className="text-sm text-gray-500">Selecciona las apps que usas para sincronización automática.</p>
-            </div>
-            
-            {/* Sections */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-5xl mx-auto">
-              
-              {/* Delivery Platforms */}
-              <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                   <div className="p-2.5 bg-white rounded-xl shadow-sm text-orange-500">
-                     <Bike size={18} />
-                   </div>
-                   <div>
-                     <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider">Plataformas</h3>
-                     <p className="text-[10px] text-gray-400 font-bold">Apps de reparto</p>
-                   </div>
+            <div className="p-5 sm:p-7">
+              {step === 1 && (
+                <div className="mx-auto max-w-2xl py-4 text-center sm:py-8">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#E7F0EA] text-[#214E3A]">
+                    <Sparkles size={28} />
+                  </div>
+                  <p className="labora-kicker mt-5 text-[#789582]">Bienvenido a Labora+</p>
+                  <h1 className="labora-display mt-2 text-3xl font-semibold text-[#1E231F] sm:text-[2.4rem]">
+                    Primero ordenamos tu actividad. Luego automatizamos lo que sea real.
+                  </h1>
+                  <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-stone-500">
+                    Labora+ te ayuda a registrar jornada, ingresos, gastos y documentos. No conectaremos ninguna
+                    plataforma o banco sin una integración oficial y tu consentimiento.
+                  </p>
+
+                  <div className="mt-7 grid gap-3 text-left sm:grid-cols-3">
+                    <TruthCard icon={Bike} title="Jornada real" text="Horas y kilómetros registrados por ti." />
+                    <TruthCard icon={ShieldCheck} title="Datos privados" text="Supabase Auth, RLS y Storage privado." />
+                    <TruthCard icon={Wallet} title="Dinero sin ficción" text="Importes con fuente y estado de revisión." />
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {platforms.map((p) => (
-                    <ServiceCard 
-                      key={p.id} 
-                      service={p} 
-                      isSelected={selectedPlatforms.includes(p.id)} 
-                      onToggle={togglePlatform}
-                      category="platform"
+              )}
+
+              {step === 2 && (
+                <div className="mx-auto max-w-2xl py-2">
+                  <div className="mb-6 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A]">
+                      <Globe size={21} />
+                    </div>
+                    <p className="labora-kicker mt-4 text-[#789582]">Contexto fiscal</p>
+                    <h2 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F]">¿Dónde desarrollas tu actividad?</h2>
+                    <p className="mt-2 text-xs leading-relaxed text-stone-500">
+                      Esto adapta moneda y contexto. No genera por sí solo una obligación fiscal ni una declaración.
+                    </p>
+                  </div>
+                  <CountrySelector variant="cards" />
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <p className="labora-kicker text-[#789582]">Tus herramientas</p>
+                    <h2 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F]">¿Qué servicios usas?</h2>
+                    <p className="mx-auto mt-2 max-w-2xl text-xs leading-relaxed text-stone-500">
+                      Seleccionarlos solo guarda una preferencia. <strong>No significa que estén conectados.</strong>
+                      Puedes importar liquidaciones manualmente mientras no exista una API oficial integrada.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <ServiceSection
+                      title="Plataformas de reparto"
+                      helper="Nos ayuda a ordenar tus ingresos y liquidaciones."
+                      items={platforms}
+                      selected={selectedPlatforms}
+                      onToggle={(id) => toggle(id, selectedPlatforms, setSelectedPlatforms)}
+                      category="delivery"
                     />
-                  ))}
-                </div>
-              </div>
-
-              {/* Banks */}
-              <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                   <div className="p-2.5 bg-white rounded-xl shadow-sm text-purple-500">
-                     <Wallet size={18} />
-                   </div>
-                   <div>
-                     <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider">Bancos</h3>
-                     <p className="text-[10px] text-gray-400 font-bold">Conciliación bancaria</p>
-                   </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {banks.map((b) => (
-                    <ServiceCard 
-                      key={b.id} 
-                      service={b} 
-                      isSelected={selectedBanks.includes(b.id)} 
-                      onToggle={toggleBank}
-                      category="bank"
+                    <ServiceSection
+                      title="Bancos que utilizas"
+                      helper="Solo preferencia. Labora+ no solicita ni almacena tus credenciales bancarias."
+                      items={banks}
+                      selected={selectedBanks}
+                      onToggle={(id) => toggle(id, selectedBanks, setSelectedBanks)}
+                      category="banking"
                     />
-                  ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-            </div>
+              {step === 4 && (
+                <div className="mx-auto max-w-2xl py-4 text-center sm:py-7">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#E7F0EA] text-[#214E3A]">
+                    <Check size={28} strokeWidth={2.5} />
+                  </div>
+                  <p className="labora-kicker mt-5 text-[#789582]">Listo para empezar</p>
+                  <h2 className="labora-display mt-1 text-3xl font-semibold text-[#1E231F]">
+                    Tu espacio queda preparado sin conexiones ficticias.
+                  </h2>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-stone-500">
+                    Has indicado {selectedServices} {selectedServices === 1 ? 'servicio' : 'servicios'} que utilizas.
+                    Podrás registrar jornada, importar liquidaciones y guardar justificantes desde el primer día.
+                  </p>
 
-            <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-gray-400 bg-gray-50 py-2 px-4 rounded-full inline-flex mx-auto border border-gray-100">
-              <ShieldCheck size={12} className="text-green-500" />
-              <span>Conexión segura bajo normativa PSD2</span>
-            </div>
-          </div>
-        )}
+                  <div className="mt-6 space-y-2 text-left">
+                    <ReadyRow text="Jornada Labora lista para registrar horas y odómetro." />
+                    <ReadyRow text="Ingresos manuales, por texto y por PDF/captura con revisión antes de guardar." />
+                    <ReadyRow text="Gastos y documentos privados preparados para revisión de gestoría." />
+                    <ReadyRow text="Cálculos fiscales no verificados permanecen marcados como «Por revisar»." />
+                  </div>
+                </div>
+              )}
 
-        {/* Step 4: AI Setup */}
-        {step === 4 && (
-          <div className="space-y-8 animate-in slide-in-from-right-8 duration-500 max-w-md mx-auto">
-             <div className="relative w-28 h-28 mx-auto">
-               <div className="absolute inset-0 border-4 border-t-[#7B3FE4] border-r-[#7B3FE4] border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-               <div className="absolute inset-2 bg-gray-50 rounded-full flex items-center justify-center shadow-inner">
-                 <Smartphone size={32} className="text-[#7B3FE4]" />
-               </div>
-             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">Configurando IA...</h2>
-              <p className="text-sm text-gray-500">Analizando tu perfil fiscal y preparando tu dashboard.</p>
-            </div>
-            <div className="bg-white border border-gray-100 p-5 rounded-2xl text-left space-y-3 shadow-lg transform rotate-1">
-              <div className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-600"><Check size={12} strokeWidth={3} /></div>
-                <span className="text-xs font-bold text-gray-600">Sincronizando {selectedPlatforms.length + selectedBanks.length} servicios</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-600"><Check size={12} strokeWidth={3} /></div>
-                <span className="text-xs font-bold text-gray-600">Detectando IAE y epígrafes</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-600"><Check size={12} strokeWidth={3} /></div>
-                <span className="text-xs font-bold text-gray-600">Calculando IRPF inicial</span>
-              </div>
-            </div>
-          </div>
-        )}
+              <div className="mt-7 flex flex-col-reverse gap-2 border-t border-[#EEE7DD] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={() => setStep((previous) => Math.max(1, previous - 1))}
+                  disabled={step === 1 || saving}
+                  className="min-h-11 rounded-[13px] border border-[#DED7CC] bg-white px-4 text-xs font-extrabold text-stone-500 disabled:invisible"
+                >
+                  Atrás
+                </button>
 
-        {/* Action Button */}
-        <div className="pt-4">
-          <button 
-            onClick={handleNext}
-            className="w-full md:w-auto md:min-w-[240px] bg-[#2D6CDF] text-white py-3.5 px-8 rounded-2xl font-black text-base shadow-xl shadow-blue-500/30 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 mx-auto"
-          >
-            {step === 4 ? 'Ir al Dashboard' : 'Continuar'}
-            <ArrowRight size={18} />
-          </button>
-          {step < 4 && (
-             <p className="text-[10px] text-gray-400 font-bold mt-4 cursor-pointer hover:text-gray-600 uppercase tracking-widest" onClick={onFinish}>
-               Saltar configuración
-             </p>
-          )}
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={saving}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-[#214E3A] px-6 text-sm font-extrabold text-white hover:bg-[#183D2D] disabled:opacity-60"
+                >
+                  {saving ? (
+                    <><Loader2 size={16} className="animate-spin" /> Guardando…</>
+                  ) : step === totalSteps ? (
+                    <>Entrar en Labora+ <ArrowRight size={16} /></>
+                  ) : (
+                    <>Continuar <ArrowRight size={16} /></>
+                  )}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <p className="mt-4 text-center text-[10px] leading-relaxed text-stone-400">
+            Las preferencias pueden cambiarse después. Seleccionar un servicio nunca equivale a autorizar una conexión externa.
+          </p>
         </div>
-
       </div>
     </div>
   );
 };
+
+const TruthCard = ({
+  icon: Icon,
+  title,
+  text
+}: {
+  icon: React.ComponentType<{ size?: number }>;
+  title: string;
+  text: string;
+}) => (
+  <div className="rounded-[16px] border border-[#E7E0D6] bg-[#FAF8F4] p-4">
+    <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]">
+      <Icon size={17} />
+    </div>
+    <p className="mt-3 text-xs font-extrabold text-[#1E231F]">{title}</p>
+    <p className="mt-1 text-[11px] leading-relaxed text-stone-500">{text}</p>
+  </div>
+);
+
+const ReadyRow = ({ text }: { text: string }) => (
+  <div className="flex items-start gap-3 rounded-[14px] border border-[#E7E0D6] bg-[#FAF8F4] px-3.5 py-3">
+    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E7F0EA] text-[#214E3A]">
+      <Check size={12} strokeWidth={3} />
+    </div>
+    <p className="text-xs leading-relaxed text-stone-600">{text}</p>
+  </div>
+);
+
+const ServiceSection = ({
+  title,
+  helper,
+  items,
+  selected,
+  onToggle,
+  category
+}: {
+  title: string;
+  helper: string;
+  items: Array<{ id: string; name: string; domain: string }>;
+  selected: string[];
+  onToggle: (id: string) => void;
+  category: 'delivery' | 'banking';
+}) => (
+  <section className="rounded-[20px] border border-[#E5DDD2] bg-[#FBF9F5] p-4">
+    <h3 className="text-sm font-extrabold text-[#1E231F]">{title}</h3>
+    <p className="mt-1 text-[10px] leading-relaxed text-stone-500">{helper}</p>
+    <div className="mt-4 grid grid-cols-3 gap-2">
+      {items.map((service) => {
+        const active = selected.includes(service.id);
+        return (
+          <button
+            type="button"
+            key={service.id}
+            onClick={() => onToggle(service.id)}
+            className={`relative min-h-[92px] rounded-[15px] border p-2.5 text-center transition ${active
+              ? 'border-[#9AB4A3] bg-[#EAF2ED]'
+              : 'border-[#E5DDD2] bg-white hover:bg-[#F7F4EF]'}`}
+          >
+            {active && (
+              <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#214E3A] text-white">
+                <Check size={10} strokeWidth={3} />
+              </span>
+            )}
+            <LogoResolver
+              id={service.id}
+              name={service.name}
+              domain={service.domain}
+              category={category}
+              size="sm"
+              className="mx-auto"
+            />
+            <p className={`mt-2 text-[10px] font-extrabold leading-tight ${active ? 'text-[#214E3A]' : 'text-stone-600'}`}>
+              {service.name}
+            </p>
+          </button>
+        );
+      })}
+    </div>
+  </section>
+);
 
 export default Onboarding;
