@@ -107,7 +107,15 @@ const RemoteSyncBridge: React.FC = () => {
     const isAlreadyLocal = (table: string, row: any) => {
       if (!row?.id) return false;
       if (table === 'incomes') {
-        return incomes.some((item) => item.id === row.id && item.amount === Number(row.amount) && item.date === row.date && item.platform === row.platform && item.retention === Number(row.retention || 0));
+        return incomes.some((item) =>
+          item.id === row.id
+          && item.amount === Number(row.amount)
+          && item.date === row.date
+          && item.platform === row.platform
+          && item.retention === Number(row.retention || 0)
+          && (item.sourceType || 'manual') === (row.source_type || 'manual')
+          && Boolean(item.needsReview ?? false) === Boolean(row.needs_review ?? false)
+        );
       }
       if (table === 'expenses') {
         return expenses.some((item) => item.id === row.id && item.amount === Number(row.amount) && item.date === row.date && item.category === row.category && (item.status || 'pending_review') === row.status && (item.gestorNotes || null) === (row.gestor_notes || null) && (item.deductiblePercentage ?? 0) === Number(row.deductible_percentage ?? 0));
