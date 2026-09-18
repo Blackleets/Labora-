@@ -29,13 +29,14 @@ const currentQuarter = () => {
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-  const { currentUser, getFiscalSummary, privacyMode, requirements, incomes, showNotification } = useData();
+  const { currentUser, getFiscalSummary, privacyMode, requirements, incomes, expenses, showNotification } = useData();
   const { selectedCountry } = useCountry();
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
   const [activeSession, setActiveSession] = useState<WorkSession | null>(null);
   const [recentSessions, setRecentSessions] = useState<WorkSession[]>([]);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionBusy, setSessionBusy] = useState(false);
+  const [odometerInput, setOdometerInput] = useState('');
   const [clockNow, setClockNow] = useState(Date.now());
 
   useEffect(() => {
@@ -76,6 +77,14 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         currency: selectedCountry.currency || 'EUR',
         maximumFractionDigits: 0
       });
+  const formatCurrencyPrecise = (amount: number) => privacyMode
+    ? '••••'
+    : amount.toLocaleString('es-ES', {
+        style: 'currency',
+        currency: selectedCountry.currency || 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
 
   const nowDate = new Date(clockNow);
   const dayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
@@ -92,6 +101,21 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     .filter((income) => income.userId === currentUser.id && income.date === todayKey)
     .reduce((sum, income) => sum + income.amount, 0);
   const todayGrossPerHour = todayWorkedHours > 0 ? todayRegisteredIncome / todayWorkedHours : 0;
+  const todayKm = recentSessions.reduce((total, session) => {
+    const startedAt = new Date(session.startedAt).getTime();
+    if (startedAt < dayStart || startedAt >= dayEnd) return total;
+    if (session.startOdometerKm == null || session.endOdometerKm == null) return total;
+    return total + Math.max(0, session.endOdometerKm - session.startOdometerKm);
+  }, 0);
+  const todayGrossPerKm = todayKm > 0 ? todayRegisteredIncome / todayKm : 0;
+  const todayFuelCost = expenses
+    .filter((expense) =>
+      expense.userId === currentUser.id
+      && expense.date === todayKey
+      && String(expense.category).toLowerCase().includes('gasolina')
+    )
+    .reduce((sum, expense) => sum + expense.amount, 0);
+  const todayAfterRegisteredFuel = todayRegisteredIncome - todayFuelCost;
 
   const elapsedMinutes = activeSession
     ? Math.max(0, Math.floor((clockNow - new Date(activeSession.startedAt).getTime()) / 60_000))
@@ -102,18 +126,35 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
   const toggleWorkSession = async () => {
     if (sessionBusy) return;
+
+    const parsedOdometer = odometerInput.trim() ? Number(odometerInput) : undefined;
+    if (parsedOdometer !== undefined && (!Number.isFinite(parsedOdometer) || parsedOdometer < 0)) {
+      showNotification('error', 'El odómetro debe ser un número válido.');
+      return;
+    }
+    if (
+      activeSession?.startOdometerKm != null
+      && parsedOdometer !== undefined
+      && parsedOdometer < activeSession.startOdometerKm
+    ) {
+      showNotification('error', 'El kilometraje final no puede ser menor que el inicial.');
+      return;
+    }
+
     setSessionBusy(true);
     try {
       if (activeSession) {
-        await finishWorkSession(activeSession.id);
+        await finishWorkSession(activeSession.id, parsedOdometer);
         setActiveSession(null);
         setRecentSessions(await listRecentWorkSessions(30));
+        setOdometerInput('');
         setClockNow(Date.now());
         showNotification('success', 'Jornada finalizada.');
       } else {
-        const session = await startWorkSession();
+        const session = await startWorkSession(parsedOdometer);
         setActiveSession(session);
         setRecentSessions(await listRecentWorkSessions(30));
+        setOdometerInput('');
         setClockNow(Date.now());
         showNotification('success', 'Jornada iniciada.');
       }
@@ -217,28 +258,47 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void toggleWorkSession()}
-            disabled={sessionLoading || sessionBusy}
-            className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-[13px] px-4 py-2.5 text-xs font-extrabold transition disabled:opacity-50 ${activeSession ? 'border border-[#E7CFC6] bg-[#FFF4EF] text-[#A84F36] hover:bg-[#FCEAE3]' : 'bg-[#214E3A] text-white hover:bg-[#183D2D]'}`}
-          >
-            {sessionBusy ? <Loader2 size={15} className="animate-spin" /> : activeSession ? <Square size={14} /> : <Play size={15} />}
-            {activeSession ? 'Finalizar jornada' : 'Iniciar jornada'}
-          </button>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              inputMode="decimal"
+              value={odometerInput}
+              onChange={(event) => setOdometerInput(event.target.value)}
+              placeholder={activeSession ? 'Km al terminar' : 'Km actuales'}
+              className="min-h-11 min-w-0 flex-1 rounded-[13px] border border-[#DDD5CA] bg-white px-3 text-xs font-bold text-stone-700 outline-none focus:border-[#789582] sm:w-32"
+              aria-label={activeSession ? 'Kilometraje al terminar' : 'Kilometraje al iniciar'}
+            />
+            <button
+              type="button"
+              onClick={() => void toggleWorkSession()}
+              disabled={sessionLoading || sessionBusy}
+              className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[13px] px-4 py-2.5 text-xs font-extrabold transition disabled:opacity-50 ${activeSession ? 'border border-[#E7CFC6] bg-[#FFF4EF] text-[#A84F36] hover:bg-[#FCEAE3]' : 'bg-[#214E3A] text-white hover:bg-[#183D2D]'}`}
+            >
+              {sessionBusy ? <Loader2 size={15} className="animate-spin" /> : activeSession ? <Square size={14} /> : <Play size={15} />}
+              {activeSession ? 'Finalizar' : 'Iniciar'}
+            </button>
+          </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-[#EEE7DD] pt-4">
+        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[#EEE7DD] pt-4 sm:grid-cols-4">
           <MiniMetric label="Horas hoy" value={todayWorkedHours > 0 ? `${todayWorkedHours.toFixed(1)} h` : '0 h'} />
+          <MiniMetric label="Km cerrados" value={todayKm > 0 ? `${todayKm.toFixed(1)} km` : '—'} />
           <MiniMetric label="Ingresos hoy" value={formatCurrency(todayRegisteredIncome)} />
           <MiniMetric
-            label="€/h registrado"
-            value={todayWorkedHours > 0 ? formatCurrency(todayGrossPerHour) : '—'}
+            label="€/h bruto"
+            value={todayWorkedHours > 0 ? formatCurrencyPrecise(todayGrossPerHour) : '—'}
             emphasis
           />
         </div>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-medium text-stone-400">
+          <span>Gasolina registrada hoy: <strong className="text-stone-600">{formatCurrencyPrecise(todayFuelCost)}</strong></span>
+          <span>Ingresos − gasolina: <strong className="text-stone-600">{formatCurrencyPrecise(todayAfterRegisteredFuel)}</strong></span>
+          <span>€/km bruto: <strong className="text-stone-600">{todayKm > 0 ? formatCurrencyPrecise(todayGrossPerKm) : '—'}</strong></span>
+        </div>
         <p className="mt-2 text-[9px] leading-relaxed text-stone-400">
-          €/h usa únicamente ingresos registrados con fecha de hoy y horas de Jornada Labora. No incluye todavía todos los costes ni equivale a beneficio neto.
+          Métricas operativas basadas solo en datos registrados. “Ingresos − gasolina” no es beneficio neto: faltan mantenimiento, seguro, cuota, depreciación, impuestos y otros costes.
         </p>
       </section>
 
