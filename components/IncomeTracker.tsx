@@ -21,6 +21,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   const {
     incomes,
     addIncome,
+    addIncomes,
     currentUser,
     users,
     privacyMode,
@@ -30,6 +31,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
+  const [pendingImports, setPendingImports] = useState<Array<{ platform: string; amount: number; date: string; retention: number }>>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [platform, setPlatform] = useState('');
   const [amount, setAmount] = useState('');
@@ -75,26 +77,37 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
         return;
       }
 
-      extractedData.forEach((item) => {
-        addIncome({
-          platform: item.platform,
-          amount: item.amount,
-          date: item.date,
-          retention: item.retention || 0,
-          sourceType: 'text_import',
-          sourceReference: 'Texto pegado por el usuario',
-          needsReview: true
-        });
-      });
-      showNotification('success', `${extractedData.length} ingresos añadidos para revisión.`);
-      setIsPasteModalOpen(false);
-      setPastedText('');
+      setPendingImports(extractedData.map((item) => ({
+        platform: item.platform,
+        amount: item.amount,
+        date: item.date,
+        retention: item.retention || 0
+      })));
+      showNotification('info', `${extractedData.length} ingresos extraídos. Revisa antes de guardar.`);
     } catch (error: any) {
       console.error(error);
       showNotification('error', String(error?.message || 'No se pudo procesar el texto.'));
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const closeImportModal = () => {
+    setIsPasteModalOpen(false);
+    setPastedText('');
+    setPendingImports([]);
+  };
+
+  const confirmPendingImports = () => {
+    if (!pendingImports.length || isManager) return;
+    addIncomes(pendingImports.map((item) => ({
+      ...item,
+      sourceType: 'text_import',
+      sourceReference: 'Texto pegado por el usuario',
+      needsReview: true
+    })));
+    showNotification('success', `${pendingImports.length} ingresos guardados para revisión.`);
+    closeImportModal();
   };
 
   const handleManualSave = (event: React.FormEvent) => {
@@ -227,10 +240,72 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
       )}
 
       {isPasteModalOpen && !isManager && (
-        <Modal onClose={() => setIsPasteModalOpen(false)} title="Importar desde texto" kicker="Extracción con IA">
-          <p className="mb-4 text-xs leading-relaxed text-stone-500">Pega texto real de una liquidación, email o factura. Si la IA no puede determinar plataforma, fecha o importe, no creará esa fila.</p>
-          <textarea className="h-40 w-full resize-none rounded-[14px] border border-[#DDD5CA] bg-[#FAF7F1] p-3 text-sm outline-none focus:border-[#789582]" placeholder="Pega aquí el texto…" value={pastedText} onChange={(e) => setPastedText(e.target.value)} />
-          <div className="mt-4 flex gap-2"><button onClick={() => setIsPasteModalOpen(false)} className="flex-1 rounded-[13px] border border-[#DDD5CA] bg-white py-2.5 text-xs font-extrabold text-stone-600">Cancelar</button><button onClick={() => void handleAIExtraction()} disabled={isProcessing || !pastedText.trim()} className="flex flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#D66C47] py-2.5 text-xs font-extrabold text-white disabled:opacity-40">{isProcessing ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Extraer</button></div>
+        <Modal onClose={closeImportModal} title="Importar desde texto" kicker="Extracción con IA">
+          {pendingImports.length === 0 ? (
+            <>
+              <p className="mb-4 text-xs leading-relaxed text-stone-500">
+                Pega texto real de una liquidación, email o factura. La IA solo propone filas: nada se guarda hasta que tú confirmes.
+              </p>
+              <textarea
+                className="h-40 w-full resize-none rounded-[14px] border border-[#DDD5CA] bg-[#FAF7F1] p-3 text-sm outline-none focus:border-[#789582]"
+                placeholder="Pega aquí el texto…"
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+              />
+              <div className="mt-4 flex gap-2">
+                <button onClick={closeImportModal} className="flex-1 rounded-[13px] border border-[#DDD5CA] bg-white py-2.5 text-xs font-extrabold text-stone-600">Cancelar</button>
+                <button onClick={() => void handleAIExtraction()} disabled={isProcessing || !pastedText.trim()} className="flex flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#D66C47] py-2.5 text-xs font-extrabold text-white disabled:opacity-40">
+                  {isProcessing ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />} Extraer
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-3 rounded-[13px] border border-[#E8D9C8] bg-[#FFF8EC] px-3 py-2.5 text-[10px] leading-relaxed text-[#805F2B]">
+                Revisa cada fila. Estos datos fueron extraídos automáticamente y seguirán marcados como pendientes de revisión.
+              </div>
+              <div className="max-h-[42vh] space-y-2 overflow-y-auto pr-1">
+                {pendingImports.map((item, index) => (
+                  <div key={`${item.platform}-${item.date}-${index}`} className="rounded-[14px] border border-[#E5DED4] bg-[#FAF8F4] p-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="col-span-2">
+                        <span className="mb-1 block text-[9px] font-extrabold uppercase tracking-[0.08em] text-stone-400">Plataforma</span>
+                        <input
+                          value={item.platform}
+                          onChange={(event) => setPendingImports((previous) => previous.map((row, rowIndex) => rowIndex === index ? { ...row, platform: event.target.value } : row))}
+                          className="field-input"
+                        />
+                      </label>
+                      <label>
+                        <span className="mb-1 block text-[9px] font-extrabold uppercase tracking-[0.08em] text-stone-400">Importe</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.amount}
+                          onChange={(event) => setPendingImports((previous) => previous.map((row, rowIndex) => rowIndex === index ? { ...row, amount: Number(event.target.value) } : row))}
+                          className="field-input"
+                        />
+                      </label>
+                      <label>
+                        <span className="mb-1 block text-[9px] font-extrabold uppercase tracking-[0.08em] text-stone-400">Fecha</span>
+                        <input
+                          type="date"
+                          value={item.date}
+                          onChange={(event) => setPendingImports((previous) => previous.map((row, rowIndex) => rowIndex === index ? { ...row, date: event.target.value } : row))}
+                          className="field-input"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex gap-2">
+                <button onClick={() => setPendingImports([])} className="flex-1 rounded-[13px] border border-[#DDD5CA] bg-white py-2.5 text-xs font-extrabold text-stone-600">Volver</button>
+                <button onClick={confirmPendingImports} className="flex-1 rounded-[13px] bg-[#214E3A] py-2.5 text-xs font-extrabold text-white">Guardar {pendingImports.length}</button>
+              </div>
+            </>
+          )}
         </Modal>
       )}
 
