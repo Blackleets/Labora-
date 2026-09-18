@@ -1,442 +1,388 @@
-# LABORA+ — CANONICAL HERMES HANDOFF
+# LABORA+ — CANONICAL HANDOFF
 
-Updated: 2026-09-16
-Repository: `Blackleets/Labora-`
-Working branch: `feat/labora-e2e-ready`
-Pull request: `#2`
-Known-good app commit before this handoff document: `3a5d623ffb780a82220f0a90d4dd78ef7ab4118c`
+Updated: 2026-09-18  
+Repository: `Blackleets/Labora-`  
+Working branch: `feat/labora-e2e-ready`  
+Pull request: `#2`  
+Known-good code HEAD before this handoff update: `13f96caf91ce7d546c17d536d9ed6a3c6983a53e`  
+Supabase project: `gggtriyvbusbpqohoukv`
 
-## 0. Mission
+## 0. Current status
 
-Continue improving Labora+ as a real two-sided product for:
+**DO NOT MERGE YET.**
 
-- Rider / autonomo: income, expenses, documents, fiscal workspace, requests, messages and profile.
-- Gestoria / manager: linked-client portfolio, expense review, requests, documents, fiscal review and messages.
+GitHub Actions at `13f96caf...` are green for install, TypeScript and Vite build.
 
-Do not turn it back into a demo, template, generic SaaS dashboard or fake integration showcase.
+PR #2 currently reports:
 
-Primary product direction:
+- base: `main`
+- head: `feat/labora-e2e-ready`
+- mergeable: `false`
+- mergeable_state: `dirty`
+
+This means the branch contains working changes but must be reconciled with `main` before merge. Do not force-merge or discard branch changes.
+
+## 1. Mission
+
+Continue Labora+ as a real two-sided product for:
+
+- Rider / autónomo: jornada, ingresos, gastos, documentos, fiscal workspace, requests, messages and profile.
+- Gestoría: linked-client portfolio, evidence review, requests, documents, fiscal review and messages.
+
+Product direction:
 
 **calma premium + fiscal inteligente + humano**
 
-Labora+ must feel distinctive, simple, trustworthy and mobile-first.
+No demos, fake integrations, fake bank connections, invented fiscal truth or silent data rewriting.
 
-## 1. NON-NEGOTIABLE GUARDRAILS
+## 2. Non-negotiable guardrails
 
 Do NOT:
 
 - disable Supabase RLS;
-- add `service_role` or any secret key to the browser;
-- add broad `using (true)` / `with check (true)` policies to make errors disappear;
-- invent fiscal data, merchants, invoices, tickets, VAT, deductibility or filing status;
-- reintroduce demo users, fake receipts, fake gestor clients or fake bank connections;
-- claim AEAT validation when only the gestoria reviewed something;
-- claim a bank, Uber, Glovo, etc. is connected when there is no real API/OAuth connection;
-- expose one manager's clients to another manager;
-- redesign from scratch screens that already work without evidence that the redesign solves a real UX problem;
-- merge to `main` until real mobile QA passes.
+- put service-role/secret keys in the browser;
+- use permissive `using (true)` / `with check (true)` policies as a shortcut;
+- reintroduce fake OAuth or bank callbacks;
+- infer VAT/deductibility universally from a photo or category;
+- mark manager review as AEAT validation;
+- fabricate OCR values;
+- create public signup paths to admin;
+- merge while PR #2 is dirty.
 
 Preserve:
 
 - Supabase Auth;
-- RLS isolation;
 - private Storage;
-- Realtime messaging / operational updates;
-- Rider -> Gestoria linking model;
-- OCR fail-closed behavior;
-- SHA-256 duplicate blocking;
-- fiscal-neutral defaults before explicit review;
-- banking locked until regulated Open Banking integration exists;
-- current visual identity.
+- RLS isolation;
+- Realtime collaboration;
+- SHA-256 duplicate protection;
+- original evidence preservation;
+- OCR fail-closed;
+- fiscal-neutral defaults pending review;
+- current premium green/ivory/terracotta identity.
 
-## 2. CURRENT BLOCKER — FIX FIRST
+## 3. What is now implemented and proven
 
-### Repro
+### Income evidence chain
 
-On Rider Profile / Settings, editing data such as vehicle plate and tapping **Guardar cambios** can surface:
+Imported settlement/document income can now carry:
 
-`new row violates row-level security policy`
+- `source_document_id`
+- `source_hash`
+- preserved original document
+- per-user SHA-256 duplicate protection
+- same-user document ownership enforcement
 
-### Expected
+The original settlement is retained as evidence and linked to imported income rows.
 
-A logged-in user must be able to update their own profile and identity image only.
+### Gestoría income review
 
-### Investigate
+Imported incomes now support audited review metadata:
 
-Trace the complete path:
+- `reviewed_by`
+- `reviewed_at`
+- `review_note`
 
-`components/Settings.tsx`
--> `updateRemoteProfile(...)`
--> Supabase `profiles`
--> any Storage write to `labora-identity`
--> local workspace hydration / session state
+Manager review uses a narrow RPC. Rider self-review was tested and blocked.
 
-Verify:
+### Jornada Labora
 
-1. `auth.uid()` is the same UUID as `currentUser.id`.
-2. The browser is not carrying stale localStorage data from an old local/demo identity.
-3. `profiles` UPDATE has both a SELECT policy and UPDATE `USING` + `WITH CHECK` that permit only `id = auth.uid()` for self updates.
-4. Storage object ownership/path matches the authenticated user (`<uid>/...`).
-5. No profile update accidentally changes protected relationship fields such as `manager_id`, `role` or another user's id.
-6. Signup confirmation / recovered sessions cannot produce a local current user before the remote profile is valid.
-7. Error messages shown to users are friendly; raw PostgreSQL/RLS text should be logged for diagnosis but not exposed as the primary UI message.
+Work sessions now use controlled RPCs instead of direct browser mutation.
 
-### Acceptance test
+Implemented:
 
-- Rider A updates own name/phone/NIF/plate/photo -> succeeds.
-- Rider A cannot update Rider B.
-- Manager A updates own manager profile/logo -> succeeds.
-- Manager A cannot update Rider profile fields directly unless an explicit audited manager operation is designed for that field.
-- Anonymous update fails.
-- Reload / second device retains profile changes.
-- RLS remains enabled.
+- start/finish work session
+- optional odometer start/end
+- km completed
+- €/h gross
+- €/km gross
+- registered fuel cost
+- income minus registered fuel
 
-## 3. CURRENT PRODUCT STATE
+These labels intentionally do **not** claim full net profit.
 
-### Auth and collaboration
+Direct work-session insert/update paths were removed from normal browser permissions.
 
-- Supabase email/password Auth is wired.
-- Browser sessions persist and refresh.
-- Rider can link a Gestoria by the Gestoria account email.
-- Gestoria views are scoped to riders linked through `managerId` / backend relationship.
-- Rider and Gestoria use separate sessions; role switching inside the normal app was removed.
-- Messages use Supabase + Realtime.
+### Economic truth vs fiscal truth
 
-### Identity
+Economic cash and fiscal deductibility are separated.
 
-- Rider can upload a profile photo.
-- Gestoria can upload a logo/image.
-- Identity images use private Storage and signed URLs.
-- Identity appears in navigation, clients and messages.
+- real expense amount affects operating net even while fiscal review is pending;
+- deductible expense amount is tracked separately;
+- losses can appear as negative values;
+- no `Math.max(0, net)` hiding losses;
+- UI uses labels such as `Gastos reales` and `Neto operativo`.
 
-### Expenses / receipts
+### Sync observability
 
-- Generic receipt scan supports image OCR.
-- Fuel receipt flow was rebuilt mobile-first.
-- Fuel mobile flow now starts with two explicit controls: **Tomar foto** and **Galeria**.
-- Uploaded receipt remains visible as a thumbnail while confirming fields.
-- Fuel station selection is compact; advanced details are optional/collapsible.
-- Save action is sticky / easy to reach on mobile.
-- OCR must never fabricate fields when unavailable or uncertain.
-- OCR exposes confidence / review flags.
-- Exact receipt duplicates are blocked with SHA-256.
-- New expense/repostaje defaults must remain fiscal-neutral until review: `vatRate = 0`, `vatAmount = 0`, `deductiblePercentage = 0`, `pending_review`.
+Remote sync failures now surface a throttled user-safe message while logging internal diagnostic codes such as:
 
-### Documents
+- `LABORA_SYNC_HYDRATE_FAILED`
+- `LABORA_SYNC_WRITE_FAILED`
+- `LABORA_SYNC_REALTIME_REFRESH_FAILED`
 
-- PDF, JPG, PNG and WebP supported.
-- PDF multipage content is preserved.
-- SHA-256 duplicate detection.
-- Private Storage + RLS.
-- Remote deletion must delete DB row + Storage object and must not resurrect on hydration.
+No receipt/NIF content is intentionally placed in those messages.
 
-### Fiscal
+### Honest onboarding
 
-- Fiscal screens distinguish estimates from official filings.
-- A manager should only be able to select linked riders.
-- No fixed fake quarter should remain in active flows.
-- Never label manager approval as AEAT validation.
+The old onboarding that visually pretended to:
 
-### Banking
+- connect delivery platforms,
+- connect banks,
+- use PSD2,
+- calculate IRPF,
+- detect IAE,
 
-- NO real bank connection exists yet.
-- Old mock connection behavior was removed/blocked.
-- UI communicates future regulated PSD2 / Open Banking model.
-- Labora+ must never request/store bank credentials.
-- First future phase should be read-only balances/transactions with explicit consent; no payment initiation.
+was removed.
 
-## 4. VISUAL SYSTEM
+The onboarding now stores real preferences only:
 
-Current design direction:
+- country
+- platforms used
+- banks used
 
-- Deep green: `#214E3A`
-- Secondary green: `#2F6B50`
-- Fresh accent chosen during design pass: `#52AA83`
-- Terracotta: `#D66C47`
-- Amber: `#F1C56B`
-- Ivory: `#F7F3EA`
-- Ink: `#1E231F`
+Selecting a platform/bank explicitly does **not** mean it is connected.
 
-Use `#52AA83` as a living interaction/success/accent color, not as the only brand background. Deep green remains the trust/structure anchor. Terracotta is useful for physical capture/actions such as receipts/repostaje.
+Preferences and onboarding state persist in Supabase.
 
-Avoid generic blue/purple SaaS styling.
+### Fake banking removed
 
-Rider should feel calmer and simpler. Gestoria can be denser and more operational, while sharing the same brand language.
+The legacy fake bank OAuth flow containing a fake authorization code was neutralized.
 
-## 5. CONNECTION INVENTORY
+Current banking UX is locked and truthfully states:
 
-### GitHub
+- no real bank integration exists yet;
+- no credentials should be entered into Labora+;
+- future connection must use regulated Open Banking/PSD2;
+- first phase should be read-only.
 
-- Repo: `Blackleets/Labora-`
-- Branch: `feat/labora-e2e-ready`
-- PR: `#2`
-- CI: `.github/workflows/ci.yml`
-- Required before considering merge: install + TypeScript + Vite build green.
+### Profile privilege escalation closed
 
-### Supabase
+This was a real security issue and is now closed.
 
-- Project ref: `gggtriyvbusbpqohoukv`
-- Region previously used: EU / London (`eu-west-2`).
-- Core tables created: `profiles`, `incomes`, `expenses`, `requirements`, `messages`, `documents`, `tax_declarations`, `payments`.
-- RLS enabled on operational tables.
-- Private identity/doc storage used.
-- Realtime used for messages and relevant operational updates.
+Before hardening, an authenticated user had overly broad profile UPDATE privileges and public signup metadata could request `admin`.
 
-Important hygiene improvement:
+Now:
 
-`services/supabaseClient.ts` currently contains the public Supabase URL + publishable browser key directly in source. The publishable key is not a service-role secret, but migrate configuration to Vite environment variables for deployment hygiene. Do NOT replace it with a secret/service-role key in the frontend.
+- public signup may create only `rider` or `manager`;
+- `admin` cannot be assigned through signup metadata;
+- authenticated browser users cannot directly update:
+  - `role`
+  - `manager_id`
+  - `email`
+  - `id`
+- allowed profile fields use column-level UPDATE grants.
 
-Recommended env names:
+Adversarial tests confirmed:
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- normal self profile update: allowed;
+- `role='admin'`: blocked;
+- direct `manager_id` change: blocked;
+- direct email change: blocked.
 
-### Gemini
+### Expense review integrity
 
-`services/geminiService.ts` uses Gemini for OCR / assistance.
+Expense facts and gestor review fields are now separated.
 
-Current code has looked for variants such as:
+Rider can edit factual fields such as:
 
-- `VITE_GEMINI_API_KEY`
-- `VITE_API_KEY`
-- server/process equivalents in supported environments.
+- amount
+- date
+- category
+- merchant
+- receipt
+- notes
+- fuel details
 
-Current OCR model in the recent implementation: `gemini-2.5-flash`.
+Rider cannot directly control review fields:
 
-Rules:
+- `status`
+- `gestor_notes`
+- `deductible_percentage`
 
-- missing API key -> fail closed;
-- model/API error -> no invented records;
-- extracted data is suggestion/review input, not authoritative fiscal truth.
+On INSERT, DB forces:
 
-### Preview
+- `status = pending_review`
+- `deductible_percentage = 0`
+- no gestor note
 
-Known-good mobile preview for the app commit immediately before this handoff doc:
+If a rider edits a previously reviewed expense, DB automatically resets it to:
 
-`https://stackblitz.com/github/Blackleets/Labora-/tree/3a5d623ffb780a82220f0a90d4dd78ef7ab4118c?startScript=dev`
+- `pending_review`
+- deductible 0
+- gestor note cleared
 
-StackBlitz browser chrome is not part of Labora+ UI. Test the app viewport itself.
+A narrow gestor RPC performs expense review.
 
-### Vercel / Render / Replit
+Tested behavior:
 
-- Do not assume Labora+ is already deployed to Vercel production.
-- Previous isolated Render static-site creation attempts failed server-side and did not create a Labora service.
-- Do not overwrite Genesis/Efesto or any unrelated service.
-- Replit is not the canonical source of truth for Labora+.
-- Canonical source of truth is GitHub branch + Supabase.
+- self-inserting `approved + 100%` became `pending_review + 0%`;
+- editing an approved expense amount reset review state correctly.
 
-## 6. HERMES IMPROVEMENT PASS — AFTER RLS FIX
+## 4. Security advisor
 
-After fixing and testing the blocker, audit the whole app and return **recommendations first**, then implement only high-confidence improvements that preserve working behavior.
+Supabase Security Advisor is clean except for:
 
-Review specifically:
+**Leaked Password Protection Disabled**
 
-### A. Mobile UX
+This is an Auth project setting and was not changed from the available connector because no safe configuration operation was exposed.
 
-- no horizontal overflow;
-- no controls hidden under bottom nav;
-- keyboard does not hide primary actions;
-- camera/gallery upload works on Android/iOS browsers;
-- modals/sheets use `100dvh` safely;
-- sticky actions stay reachable;
-- alerts/toasts do not cover critical controls;
-- tap targets >= roughly 44px where practical;
-- loading, empty, error and offline states are explicit.
+Do not claim it is enabled until verified in Supabase Auth settings.
 
-### B. Product coherence
+## 5. Immediate next work
 
-- one visual language across Login, Home, Money, Fiscal, Documents, Requests, Messages, Profile and Gestoria;
-- fewer cards when hierarchy can replace boxes;
-- no developer jargon exposed (`RLS`, bucket, feature flags, etc.) unless inside a diagnostic/admin context;
-- no fake settings or dead controls;
-- no role switcher in production UX;
-- useful empty states guide the next action.
+### Priority 1 — Requirements / Peticiones integrity
 
-### C. Rider <-> Gestoria relationship
+Current DB policy still allows both participants to UPDATE the whole requirement row.
 
-Current email-link method works conceptually but can improve.
+Desired model:
 
-Recommend a safer/better UX, for example:
+**Manager owns request definition**
+- manager_id
+- rider_id
+- title
+- description
+- category
+- deadline
+- quarter
 
-- Gestoria generates invite code/link;
-- Rider accepts the invite;
-- pending / accepted / revoked relationship state;
-- Gestoria cannot silently claim a Rider;
-- Rider can see which Gestoria is linked;
-- unlink/revoke flow requires explicit confirmation and preserves audit history.
+**Rider owns response**
+- submission_notes
+- submission_url
+- transition pending -> submitted
 
-Do not implement an insecure shortcut just for convenience.
+**Manager owns review**
+- transition submitted -> approved / correction state as designed
 
-### D. Documents and invoice workflow
+Rider must never be able to rewrite manager/rider ids, title or deadline through a direct Supabase call.
 
-Suggest improvements for:
+Implement narrow RPCs and column/trigger protections analogous to expense review integrity.
 
-- invoice vs simple receipt distinction;
-- PDF upload and OCR extraction;
-- multi-page OCR strategy;
-- duplicate detection beyond exact hash (possible fuzzy duplicate warning without auto-deleting);
-- original file preservation;
-- extracted fields review screen;
-- audit trail: uploaded -> OCR -> user confirmed -> gestoria reviewed -> correction requested -> approved;
-- document search/filter by supplier, date, amount, status;
-- export without claiming official filing.
+### Priority 2 — Tax declarations integrity
 
-### E. Fiscal safety
+Audit `tax_declarations` UPDATE/INSERT permissions.
 
-Audit every calculation and label.
+Do not allow a rider or manager to silently rewrite official-looking filing facts outside an explicit state machine.
 
-- Keep estimates clearly marked.
-- Do not infer deductibility from category/photo alone.
-- Avoid a universal 21% VAT assumption.
-- Do not mark anything as filed unless a real filing reference/evidence is stored.
-- Consider an explicit `fiscal_review` object/version instead of mutating raw expense facts.
+Recommended direction:
 
-### F. Security
+- draft data
+- gestor review
+- filed only with explicit filing evidence/reference
+- immutable/audited transition metadata
 
-Audit:
+Never equate `reviewed_by_gestor` with filed at AEAT.
 
-- RLS table policies;
-- Storage policies;
-- profile update surface;
-- manager/rider isolation;
-- Realtime subscriptions;
-- signed URL lifetime/refresh;
-- XSS / untrusted text display;
-- file MIME/size validation;
-- localStorage use and stale-session behavior;
-- Gemini/browser API key exposure and whether OCR should move server-side before production;
-- rate limiting / abuse protection needed before launch.
+### Priority 3 — Messages mutation surface
 
-Do not weaken controls to get green tests.
+Current recipient UPDATE policy should be reduced to read-state metadata only.
 
-### G. Observability
+Recipient should not be able to rewrite:
 
-Recommend a small production-ready error model:
+- sender
+- recipient
+- body
+- attachment identity
 
-- user-friendly error messages;
-- internal error codes;
-- correlation/request id where useful;
-- minimal client error logging with no receipts/NIF/email contents in plaintext logs;
-- health/readiness view for development only, not normal Rider UI.
+Use a narrow `mark_message_read` operation.
 
-## 7. REQUIRED OUTPUT FROM HERMES
+## 6. PR conflict reconciliation
 
-At the end, return exactly these sections:
+PR #2 currently has merge conflicts with `main`.
 
-1. `ROOT CAUSE OF RLS BUG`
-2. `FIX APPLIED`
-3. `DATABASE / RLS CHANGES`
-4. `FILES CHANGED`
-5. `TESTS RUN`
-6. `SECURITY CHECK`
-7. `MOBILE QA RESULTS`
-8. `WHAT IS NOW PROVEN`
-9. `WHAT REMAINS UNVERIFIED`
-10. `TOP 10 IMPROVEMENT SUGGESTIONS` ordered by impact/risk reduction
-11. `NEXT 3 IMPLEMENTATIONS` with rationale
-12. `HANDOFF BACK TO CHATGPT`
+Before merge:
 
-Do not claim a test passed unless it was actually run.
+1. inspect the exact conflicting files;
+2. preserve security migrations and hardened branch behavior;
+3. integrate only legitimate newer main changes;
+4. do not resolve by taking `ours` or `theirs` wholesale;
+5. run install + typecheck + build;
+6. rerun Supabase security/adversarial tests;
+7. verify the resulting PR becomes mergeable.
 
-## 8. COPY/PASTE MASTER INSTRUCTION FOR HERMES
+Do not merge simply to get rid of the dirty state.
+
+## 7. Important migrations added in this hardening pass
+
+Recent branch migrations include:
+
+- income evidence linkage
+- income manager review
+- work-session RPC hardening
+- private RPC wrappers
+- profile preferences
+- onboarding state
+- profile column security
+- expense review integrity
+
+Treat GitHub migration files and the live Supabase project together as the source of truth.
+
+## 8. Data truth rules
+
+- Original evidence must remain traceable.
+- Hash duplicate blocking is exact duplicate protection, not semantic/fuzzy duplicate detection.
+- OCR is extraction assistance, not authoritative truth.
+- An uploaded ticket is not automatically deductible.
+- A gestor review is not an AEAT filing.
+- Economic spending and fiscal deductibility are separate concepts.
+- No external service is “connected” until real API/OAuth authorization exists.
+
+## 9. Visual identity
+
+Keep:
+
+- Deep green `#214E3A`
+- Secondary green `#2F6B50`
+- Fresh accent `#52AA83`
+- Terracotta `#D66C47`
+- Amber `#F1C56B`
+- Ivory `#F7F3EA`
+- Ink `#1E231F`
+
+Avoid generic blue/purple SaaS redesigns.
+
+## 10. Start instruction for the next chat / agent
+
+Use this exactly:
 
 ```text
-LABORA+ — HERMES PRODUCT + SECURITY + MOBILE HARDENING PASS
+Continue Labora+ from the canonical repository state.
 
-Work directly on:
 Repository: Blackleets/Labora-
 Branch: feat/labora-e2e-ready
 PR: #2
+Supabase project: gggtriyvbusbpqohoukv
 
-FIRST ACTION:
-Read HERMES_HANDOFF.md completely before modifying anything.
-Then inspect the latest PR state and current branch HEAD.
+FIRST:
+Read HERMES_HANDOFF.md completely and inspect the current PR HEAD/CI before changing anything.
 
-PRIORITY ZERO:
-Reproduce and fix the Profile save error:
-"new row violates row-level security policy"
-
-Do NOT disable RLS, do NOT add service_role to the browser, do NOT add permissive policies as a shortcut.
-Prove that Rider can update only their own profile and Gestoria can update only its own profile/logo.
-Check auth.uid() vs currentUser.id, stale localStorage/session hydration, profiles SELECT/UPDATE policies, Storage object ownership and any protected fields included in the update payload.
-Replace raw database errors in normal UX with a useful Spanish error while preserving diagnostic logging.
-
-AFTER THE BUG IS FIXED:
-Act as Principal Product Engineer, Mobile UX Engineer, Supabase Security Engineer, Data Engineer and Adversarial Reviewer.
-Audit the entire Labora+ product before making broad changes.
-
-Preserve:
-- Supabase Auth
-- RLS isolation
-- private Storage
-- Realtime collaboration
-- Rider -> Gestoria relationship model
-- OCR fail-closed
-- SHA-256 exact duplicate protection
-- fiscal-neutral new expenses before review
-- no fake AEAT validation
-- banking locked until regulated Open Banking exists
-- current Labora+ visual identity
-- working functionality
-
-Never add demo data or fake integrations.
-Never claim an external service is connected without a real API/OAuth connection.
-Never optimize appearance at the cost of security or truthfulness.
-
-Design direction:
-calma premium + fiscal inteligente + humano
-Deep green #214E3A
-Secondary green #2F6B50
-Fresh accent #52AA83
-Terracotta #D66C47
-Amber #F1C56B
-Ivory #F7F3EA
-Ink #1E231F
-Avoid generic blue/purple SaaS dashboards.
-
-Audit and improve:
-- mobile layout and keyboard behavior
-- ticket camera/gallery flow
-- onboarding/login
-- Rider home
-- Gestoria portfolio
-- expenses/income/fiscal/documents
-- requests/messages
-- profile/identity
-- empty/loading/error/offline states
-- accessibility
-- relationship/invite UX
-- invoice/document lifecycle
-- RLS/Storage/session safety
-- Realtime behavior
-- observability
-
-Before changing architecture, give a short diagnosis of the highest-value issues you found.
-Implement only improvements that are high-confidence and testable.
-Keep CI green.
 Do not merge to main.
+Do not disable RLS.
+Do not reintroduce fake integrations or fiscal assumptions.
+Preserve all existing security hardening.
 
-At completion return:
-ROOT CAUSE OF RLS BUG
-FIX APPLIED
-DATABASE / RLS CHANGES
-FILES CHANGED
-TESTS RUN
-SECURITY CHECK
-MOBILE QA RESULTS
-WHAT IS NOW PROVEN
-WHAT REMAINS UNVERIFIED
-TOP 10 IMPROVEMENT SUGGESTIONS
-NEXT 3 IMPLEMENTATIONS
-HANDOFF BACK TO CHATGPT
+Continue from Priority 1:
+harden Requirements/Peticiones so the rider can only submit a response and the manager can only manage/review requests through narrow audited operations.
+
+Then harden tax_declarations and message read-state mutations.
+
+Also inspect PR #2 merge conflicts with main, but do not resolve them by discarding hardened branch changes.
+
+Keep CI green and prove security behavior with rollback/adversarial tests before claiming completion.
 ```
 
-## 9. RETURN PLAN
+## 11. Definition of ready-for-merge
 
-When Hermes finishes, do NOT merge automatically.
+Do not approve merge until all are true:
 
-Bring its final report back to ChatGPT and ask:
-
-`Audita lo que hizo Hermes en Labora+. Verifica GitHub, Supabase, RLS, CI y diferencias reales antes de aprobar merge.`
-
-That second independent pass is intentional.
+- PR no longer dirty/conflicted;
+- CI green on reconciled HEAD;
+- profile escalation remains blocked;
+- expense self-approval remains blocked;
+- requirements participant fields are role-scoped;
+- declaration filing state is auditable;
+- message body/sender cannot be rewritten by recipient;
+- RLS/Storage remain enabled/private;
+- mobile primary flows have real-device QA;
+- no fake bank/API connection exists;
+- Supabase security advisor reviewed again.
