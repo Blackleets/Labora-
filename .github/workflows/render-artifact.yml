@@ -1,0 +1,36 @@
+name: Labora+ Render Artifact
+
+on:
+  push:
+    branches:
+      - chore/render-main-artifact
+
+jobs:
+  render-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm install
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: labora-main-dist
+          path: dist
+          if-no-files-found: error
+          retention-days: 1
