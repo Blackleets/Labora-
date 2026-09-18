@@ -271,6 +271,7 @@ export interface GestorRequirement {
   status: 'pending' | 'submitted' | 'approved';
   submissionNotes?: string;
   submissionUrl?: string;
+  submittedBy?: string;
   submittedAt?: string;
   reviewedBy?: string;
   reviewedAt?: string;
