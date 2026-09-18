@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ClipboardPaste,
   Info,
@@ -6,10 +6,11 @@ import {
   Plus,
   Sparkles,
   TrendingUp,
+  Upload,
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
+import { extractIncomeFromDocument, extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
 import { UserRole } from '../types';
 
 interface IncomeTrackerProps {
@@ -32,7 +33,10 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [pastedText, setPastedText] = useState('');
   const [pendingImports, setPendingImports] = useState<Array<{ platform: string; amount: number; date: string; retention: number }>>([]);
+  const [pendingImportSource, setPendingImportSource] = useState<'text_import' | 'document_import'>('text_import');
+  const [pendingImportReference, setPendingImportReference] = useState('Texto pegado por el usuario');
   const [isProcessing, setIsProcessing] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const [platform, setPlatform] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -77,6 +81,8 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
         return;
       }
 
+      setPendingImportSource('text_import');
+      setPendingImportReference('Texto pegado por el usuario');
       setPendingImports(extractedData.map((item) => ({
         platform: item.platform,
         amount: item.amount,
@@ -96,18 +102,77 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     setIsPasteModalOpen(false);
     setPastedText('');
     setPendingImports([]);
+    setPendingImportSource('text_import');
+    setPendingImportReference('Texto pegado por el usuario');
   };
 
   const confirmPendingImports = () => {
     if (!pendingImports.length || isManager) return;
     addIncomes(pendingImports.map((item) => ({
       ...item,
-      sourceType: 'text_import',
-      sourceReference: 'Texto pegado por el usuario',
+      sourceType: pendingImportSource,
+      sourceReference: pendingImportReference,
       needsReview: true
     })));
     showNotification('success', `${pendingImports.length} ingresos guardados para revisión.`);
     closeImportModal();
+  };
+
+  const handleIncomeFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || isManager) return;
+
+    const allowed = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
+    if (!allowed.has(file.type)) {
+      showNotification('error', 'Usa PDF, JPG, PNG o WebP.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showNotification('error', 'La liquidación supera el límite de 10 MB.');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === 'string'
+          ? resolve(reader.result)
+          : reject(new Error('No se pudo leer el archivo.'));
+        reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo.'));
+        reader.readAsDataURL(file);
+      });
+      const base64Data = dataUrl.split(',')[1] || '';
+      if (!base64Data) throw new Error('No se pudo preparar el archivo.');
+
+      const extractedData = await extractIncomeFromDocument(base64Data, file.type);
+      if (extractedData.length === 0) {
+        showNotification('info', 'No se encontraron ingresos claros en el archivo.');
+        return;
+      }
+
+      setPendingImportSource('document_import');
+      setPendingImportReference(`Archivo importado: ${file.name}`);
+      setPendingImports(extractedData.map((item) => ({
+        platform: item.platform,
+        amount: item.amount,
+        date: item.date,
+        retention: item.retention || 0
+      })));
+      showNotification('info', `${extractedData.length} ingresos extraídos. Revisa antes de guardar.`);
+    } catch (error: any) {
+      console.error('Income document import failed', error);
+      const raw = String(error?.message || '');
+      showNotification(
+        'error',
+        raw.includes('NOT_CONFIGURED')
+          ? 'La extracción IA no está configurada en este entorno.'
+          : 'No se pudo extraer la liquidación. Puedes introducirla manualmente.'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleManualSave = (event: React.FormEvent) => {
@@ -169,7 +234,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
           {!isManager && (
             <div className="flex gap-2">
               <button onClick={() => setIsManualOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] border border-[#DDD5CA] bg-white px-3.5 py-2.5 text-xs font-extrabold text-stone-600 hover:bg-[#F7F4EF]"><Plus size={15} /> Añadir</button>
-              <button onClick={() => setIsPasteModalOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] bg-[#214E3A] px-3.5 py-2.5 text-xs font-extrabold text-white hover:bg-[#183D2D]"><Sparkles size={15} /> Importar texto</button>
+              <button onClick={() => setIsPasteModalOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] bg-[#214E3A] px-3.5 py-2.5 text-xs font-extrabold text-white hover:bg-[#183D2D]"><Sparkles size={15} /> Importar</button>
             </div>
           )}
         </div>
@@ -240,12 +305,31 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
       )}
 
       {isPasteModalOpen && !isManager && (
-        <Modal onClose={closeImportModal} title="Importar desde texto" kicker="Extracción con IA">
+        <Modal onClose={closeImportModal} title="Importar ingresos" kicker="Extracción con IA">
           {pendingImports.length === 0 ? (
             <>
-              <p className="mb-4 text-xs leading-relaxed text-stone-500">
-                Pega texto real de una liquidación, email o factura. La IA solo propone filas: nada se guarda hasta que tú confirmes.
+              <p className="mb-3 text-xs leading-relaxed text-stone-500">
+                Usa una liquidación real en PDF/captura o pega el texto. La IA solo propone filas: nada se guarda hasta que tú confirmes.
               </p>
+              <input
+                ref={importFileRef}
+                type="file"
+                className="hidden"
+                accept="application/pdf,image/jpeg,image/png,image/webp"
+                onChange={(event) => void handleIncomeFile(event)}
+              />
+              <button
+                type="button"
+                onClick={() => importFileRef.current?.click()}
+                disabled={isProcessing}
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#D7E2DA] bg-[#EDF4EF] px-3 py-3 text-xs font-extrabold text-[#214E3A] disabled:opacity-50"
+              >
+                {isProcessing ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+                PDF o captura de liquidación
+              </button>
+              <div className="mb-3 flex items-center gap-2 text-[9px] font-extrabold uppercase tracking-[0.1em] text-stone-300">
+                <span className="h-px flex-1 bg-[#E8E1D7]" /> o pega texto <span className="h-px flex-1 bg-[#E8E1D7]" />
+              </div>
               <textarea
                 className="h-40 w-full resize-none rounded-[14px] border border-[#DDD5CA] bg-[#FAF7F1] p-3 text-sm outline-none focus:border-[#789582]"
                 placeholder="Pega aquí el texto…"
@@ -262,7 +346,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
           ) : (
             <>
               <div className="mb-3 rounded-[13px] border border-[#E8D9C8] bg-[#FFF8EC] px-3 py-2.5 text-[10px] leading-relaxed text-[#805F2B]">
-                Revisa cada fila. Estos datos fueron extraídos automáticamente y seguirán marcados como pendientes de revisión.
+                Revisa cada fila. Origen: {pendingImportSource === 'document_import' ? 'documento/captura' : 'texto pegado'}. Nada se considera verificado automáticamente.
               </div>
               <div className="max-h-[42vh] space-y-2 overflow-y-auto pr-1">
                 {pendingImports.map((item, index) => (
