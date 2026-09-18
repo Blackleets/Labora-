@@ -146,6 +146,7 @@ const RemoteSyncBridge: React.FC = () => {
           && item.deadline === row.deadline
           && (item.submissionNotes || null) === (row.submission_notes || null)
           && (item.submissionUrl || null) === (row.submission_url || null)
+          && (item.submittedBy || null) === (row.submitted_by || null)
           && (item.submittedAt || null) === (row.submitted_at || null)
           && (item.reviewedBy || null) === (row.reviewed_by || null)
           && (item.reviewedAt || null) === (row.reviewed_at || null)
