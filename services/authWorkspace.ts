@@ -27,6 +27,7 @@ type ProfileRow = {
   country_code?: string | null;
   platforms?: string[] | null;
   banks?: string[] | null;
+  onboarding_completed?: boolean | null;
   identity_image_path?: string | null;
   identity_image_kind?: string | null;
 };
@@ -87,17 +88,19 @@ const rowToUser = async (row: ProfileRow): Promise<User> => ({
 export const loadRemoteWorkspace = async (currentUserId: string) => {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id,role,name,email,phone,nif,company_name,collegiate_number,manager_id,fiscal_regime,iae_code,social_security_type,vehicle_type,vehicle_plate,vehicle_fuel,country_code,platforms,banks,identity_image_path,identity_image_kind');
+    .select('id,role,name,email,phone,nif,company_name,collegiate_number,manager_id,fiscal_regime,iae_code,social_security_type,vehicle_type,vehicle_plate,vehicle_fuel,country_code,platforms,banks,onboarding_completed,identity_image_path,identity_image_kind');
 
   if (error) throw error;
 
-  const users = await Promise.all(((data || []) as ProfileRow[]).map(rowToUser));
+  const rows = (data || []) as ProfileRow[];
+  const users = await Promise.all(rows.map(rowToUser));
   const current = users.find((user) => user.id === currentUserId);
-  if (!current) throw new Error('No se encontró el perfil asociado a la sesión.');
+  const currentRow = rows.find((row) => row.id === currentUserId);
+  if (!current || !currentRow) throw new Error('No se encontró el perfil asociado a la sesión.');
 
   localStorage.setItem(LOCAL.users, JSON.stringify(users));
   localStorage.setItem(LOCAL.currentUser, JSON.stringify(current));
-  localStorage.setItem(LOCAL.onboarded, 'true');
+  localStorage.setItem(LOCAL.onboarded, String(Boolean(currentRow.onboarding_completed)));
   return { users, currentUser: current };
 };
 
@@ -243,6 +246,15 @@ export const updateRemoteUserConfig = async (platforms: string[], banks: string[
   if (error) throw error;
 };
 
+export const completeRemoteOnboarding = async () => {
+  const authenticatedUser = await requireAuthenticatedUser();
+  const { error } = await supabase
+    .from('profiles')
+    .update({ onboarding_completed: true })
+    .eq('id', authenticatedUser.id);
+  if (error) throw error;
+};
+
 export const updateRemoteProfile = async (userId: string, patch: Partial<User>) => {
   const authenticatedUser = await requireAuthenticatedUser(userId);
   const payload: Record<string, unknown> = {};
@@ -252,6 +264,7 @@ export const updateRemoteProfile = async (userId: string, patch: Partial<User>) 
   if (patch.companyName !== undefined) payload.company_name = patch.companyName || null;
   if (patch.collegiateNumber !== undefined) payload.collegiate_number = patch.collegiateNumber || null;
   if (patch.vehiclePlate !== undefined) payload.vehicle_plate = patch.vehiclePlate || null;
+  if (patch.countryCode !== undefined) payload.country_code = patch.countryCode || 'ES';
 
   if (Object.keys(payload).length === 0) return;
   const { error } = await supabase
