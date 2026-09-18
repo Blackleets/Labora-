@@ -116,6 +116,7 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     status: row.status,
     submissionNotes: row.submission_notes || undefined,
     submissionUrl: row.submission_url || undefined,
+    submittedBy: row.submitted_by || undefined,
     submittedAt: row.submitted_at || undefined,
     reviewedBy: row.reviewed_by || undefined,
     reviewedAt: row.reviewed_at || undefined,
@@ -201,7 +202,7 @@ export const reviewRemoteIncome = async (
 
 export const createRemoteRequirement = async (requirement: GestorRequirement) => {
   const { error } = await supabase.rpc('create_requirement', {
-    p_requirement_id: requirement.id,
+    p_id: requirement.id,
     p_rider_id: requirement.riderId,
     p_title: requirement.title,
     p_deadline: requirement.deadline,
