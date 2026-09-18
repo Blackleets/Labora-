@@ -195,6 +195,21 @@ export const reviewRemoteIncome = async (
   if (error) throw error;
 };
 
+export const reviewRemoteExpense = async (
+  expenseId: string,
+  status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
+  note?: string,
+  deductiblePercentage = 0
+) => {
+  const { error } = await supabase.rpc('review_expense', {
+    p_expense_id: expenseId,
+    p_status: status,
+    p_note: note || null,
+    p_deductible_percentage: deductiblePercentage
+  });
+  if (error) throw error;
+};
+
 export const deleteRemoteExpense = async (expenseId: string) => {
   const { data, error: readError } = await supabase
     .from('expenses')
@@ -248,6 +263,7 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     if (remoteDocumentIds.error) throw remoteDocumentIds.error;
 
     const localExpenseIds = new Set(ownExpenseItems.map((item) => item.id));
+    const remoteExpenseIdSet = new Set((remoteExpenseIds.data || []).map((item) => item.id));
     const localDocumentIds = new Set(ownDocumentItems.map((item) => item.id));
 
     for (const row of remoteExpenseIds.data || []) {
@@ -257,15 +273,13 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       if (!localDocumentIds.has(row.id)) await deleteRemoteDocument(row.id);
     }
 
-    const ownExpenses: any[] = [];
     for (const item of ownExpenseItems) {
       let receiptPath: string | undefined;
       if (item.receiptUrl?.startsWith('data:')) {
         receiptPath = await uploadOperationalFile(currentUser.id, item.receiptUrl, `expense_${item.id}`);
       }
-      ownExpenses.push({
-        id: item.id,
-        user_id: item.userId,
+
+      const rawExpense = {
         category: item.category,
         merchant: item.merchant || null,
         date: item.date,
@@ -278,19 +292,28 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
         ocr_uncertain_fields: item.ocrUncertainFields || null,
         notes: item.notes || null,
         is_recurring: Boolean(item.isRecurring),
-        vat_rate: item.vatRate ?? null,
-        vat_amount: item.vatAmount ?? null,
+        vat_rate: item.vatRate ?? 0,
+        vat_amount: item.vatAmount ?? 0,
         fuel_litres: item.fuelLitres ?? null,
         fuel_type: item.fuelType || null,
-        status: item.status || 'pending_review',
-        gestor_notes: item.gestorNotes || null,
-        deductible_percentage: item.deductiblePercentage ?? 0,
         invoice_number: item.invoiceNumber || null
-      });
-    }
-    if (ownExpenses.length) {
-      const { error } = await supabase.from('expenses').upsert(ownExpenses);
-      if (error) throw error;
+      };
+
+      if (remoteExpenseIdSet.has(item.id)) {
+        const { error } = await supabase
+          .from('expenses')
+          .update(rawExpense)
+          .eq('id', item.id)
+          .eq('user_id', currentUser.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('expenses').insert({
+          id: item.id,
+          user_id: item.userId,
+          ...rawExpense
+        });
+        if (error) throw error;
+      }
     }
 
     const ownDocuments: any[] = [];
@@ -351,11 +374,12 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     if (ownPayments.length) await supabase.from('payments').upsert(ownPayments);
   } else {
     for (const expense of expenses.filter((item) => linkedIds.has(item.userId))) {
-      await supabase.from('expenses').update({
-        status: expense.status || 'pending_review',
-        gestor_notes: expense.gestorNotes || null,
-        deductible_percentage: expense.deductiblePercentage ?? 0
-      }).eq('id', expense.id);
+      await reviewRemoteExpense(
+        expense.id,
+        expense.status || 'pending_review',
+        expense.gestorNotes,
+        expense.deductiblePercentage ?? 0
+      );
     }
   }
 
