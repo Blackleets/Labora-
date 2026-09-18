@@ -309,6 +309,7 @@ export interface Document {
 export interface FiscalSummary {
   totalIncome: number;
   totalExpenses: number;
+  deductibleExpenses: number;
   netProfit: number;
   estimatedIRPF: number;
   taxEstimateAvailable: boolean;
