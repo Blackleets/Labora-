@@ -252,14 +252,26 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
   const addIncome = (income: Omit<Income, 'id' | 'userId'>) => {
     if (!currentUser) return;
-    const newIncome: Income = { ...income, id: createId('income'), userId: currentUser.id };
+    const newIncome: Income = {
+      ...income,
+      id: createId('income'),
+      userId: currentUser.id,
+      sourceType: income.sourceType || 'manual',
+      needsReview: income.needsReview ?? false
+    };
     setIncomes((previous) => [newIncome, ...previous]);
     showNotification('success', 'Ingreso registrado.');
   };
 
   const addIncomes = (items: Omit<Income, 'id' | 'userId'>[]) => {
     if (!currentUser) return;
-    const newItems = items.map((income) => ({ ...income, id: createId('income'), userId: currentUser.id }));
+    const newItems = items.map((income) => ({
+      ...income,
+      id: createId('income'),
+      userId: currentUser.id,
+      sourceType: income.sourceType || 'manual',
+      needsReview: income.needsReview ?? true
+    }));
     setIncomes((previous) => [...newItems, ...previous]);
     showNotification('success', `${newItems.length} ingresos importados.`);
   };
