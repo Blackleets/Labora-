@@ -75,7 +75,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
         expense.merchant || '',
         expense.amount.toFixed(2),
         (expense.vatAmount || 0).toFixed(2),
-        `${expense.deductiblePercentage ?? 100}%`,
+        `${expense.deductiblePercentage ?? 0}%`,
         expense.status || 'pending_review'
       ])
     ];
@@ -129,8 +129,8 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
 
         {model130 && model303 && (
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <ModelRow code="130" title="Pago fraccionado IRPF" amount={model130.taxAmount} />
-            <ModelRow code="303" title="Autoliquidación IVA" amount={model303.taxAmount} />
+            <ModelRow code="130" title="Pago fraccionado IRPF" amount={model130.taxAmount} requiresReview={model130.calculationState === 'requires_review'} />
+            <ModelRow code="303" title="Autoliquidación IVA" amount={model303.taxAmount} requiresReview={model303.calculationState === 'requires_review'} />
           </div>
         )}
       </section>
@@ -206,12 +206,12 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
   );
 };
 
-const ModelRow = ({ code, title, amount }: { code: string; title: string; amount: number }) => (
+const ModelRow = ({ code, title, amount, requiresReview = false }: { code: string; title: string; amount: number; requiresReview?: boolean }) => (
   <div className="rounded-xl bg-[#F8F5F0] p-3">
     <p className="text-[10px] font-bold uppercase tracking-wide text-[#2E5A44]">Modelo {code}</p>
     <p className="mt-1 text-xs font-semibold text-stone-700">{title}</p>
     <p className="mt-2 text-base font-bold text-stone-900">
-      {amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+      {requiresReview ? 'Por revisar' : amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
     </p>
   </div>
 );
