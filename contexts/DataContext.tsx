@@ -62,7 +62,9 @@ interface DataContextType {
     status: 'approved',
     note?: string
   ) => void;
-  fileTaxDeclaration: (declarationId: string, filingRef: string) => void;
+  saveTaxDeclarationDraft: (declaration: TaxDeclaration) => void;
+  reviewTaxDeclaration: (declarationId: string, note?: string) => void;
+  fileTaxDeclaration: (declarationId: string, filingRef: string, evidenceUrl?: string) => void;
   calculateQuarterlyTaxes: (
     userId: string,
     quarter: string
@@ -464,19 +466,112 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     return { model130, model303 };
   };
 
-  const fileTaxDeclaration = (declarationId: string, filingRef: string) => {
-    setDeclarations((previous) => previous.map((declaration) =>
-      declaration.id === declarationId
+  const canManageTaxDeclaration = (declaration: TaxDeclaration) => {
+    if (!currentUser) return false;
+    if (currentUser.role === UserRole.RIDER) return declaration.userId === currentUser.id;
+    if (currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN) {
+      return users.some(
+        (user) => user.id === declaration.userId
+          && user.role === UserRole.RIDER
+          && user.managerId === currentUser.id
+      );
+    }
+    return false;
+  };
+
+  const saveTaxDeclarationDraft = (declaration: TaxDeclaration) => {
+    if (!canManageTaxDeclaration(declaration)) {
+      showNotification('error', 'No puedes guardar este borrador fiscal.');
+      return;
+    }
+
+    const existing = declarations.find((item) => item.id === declaration.id);
+    if (existing && existing.status !== 'draft') {
+      showNotification('error', 'Un modelo revisado o presentado no puede volver a borrador.');
+      return;
+    }
+
+    const draft: TaxDeclaration = {
+      ...declaration,
+      status: 'draft',
+      calculationState: 'recorded',
+      reviewedBy: undefined,
+      reviewedAt: undefined,
+      reviewNote: undefined,
+      filingReference: undefined,
+      filingEvidenceUrl: undefined,
+      filedBy: undefined,
+      filedAt: undefined,
+      gestorId: undefined
+    };
+
+    setDeclarations((previous) => {
+      const exists = previous.some((item) => item.id === draft.id);
+      return exists
+        ? previous.map((item) => item.id === draft.id ? draft : item)
+        : [draft, ...previous];
+    });
+    showNotification('success', 'Borrador fiscal guardado para revisión.');
+  };
+
+  const reviewTaxDeclaration = (declarationId: string, note?: string) => {
+    if (!currentUser || (currentUser.role !== UserRole.MANAGER && currentUser.role !== UserRole.ADMIN)) {
+      showNotification('error', 'Solo la gestoría vinculada puede revisar este modelo.');
+      return;
+    }
+
+    const declaration = declarations.find((item) => item.id === declarationId);
+    if (!declaration || !canManageTaxDeclaration(declaration) || declaration.status !== 'draft') {
+      showNotification('error', 'Este modelo no está disponible para revisión.');
+      return;
+    }
+
+    setDeclarations((previous) => previous.map((item) =>
+      item.id === declarationId
         ? {
-            ...declaration,
-            status: 'filed_with_tax_agency',
-            filingReference: filingRef,
-            filedAt: new Date().toISOString().split('T')[0],
-            gestorId: currentUser?.id
+            ...item,
+            status: 'reviewed_by_gestor',
+            reviewedBy: currentUser.id,
+            reviewedAt: new Date().toISOString(),
+            reviewNote: note?.trim() || undefined,
+            gestorId: currentUser.id
           }
-        : declaration
+        : item
     ));
-    showNotification('success', 'Referencia de presentación registrada.');
+    showNotification('success', 'Modelo marcado como revisado por la gestoría.');
+  };
+
+  const fileTaxDeclaration = (declarationId: string, filingRef: string, evidenceUrl?: string) => {
+    if (!currentUser || (currentUser.role !== UserRole.MANAGER && currentUser.role !== UserRole.ADMIN)) {
+      showNotification('error', 'Solo la gestoría vinculada puede registrar una presentación.');
+      return;
+    }
+
+    const declaration = declarations.find((item) => item.id === declarationId);
+    const reference = filingRef.trim();
+    if (!declaration || !canManageTaxDeclaration(declaration) || declaration.status !== 'reviewed_by_gestor') {
+      showNotification('error', 'El modelo debe estar revisado antes de registrar su presentación.');
+      return;
+    }
+    if (!reference) {
+      showNotification('error', 'Introduce la referencia real de presentación.');
+      return;
+    }
+
+    setDeclarations((previous) => previous.map((item) =>
+      item.id === declarationId
+        ? {
+            ...item,
+            status: 'filed_with_tax_agency',
+            filingReference: reference,
+            filingEvidenceUrl: evidenceUrl?.trim() || undefined,
+            filedBy: currentUser.id,
+            filedAt: new Date().toISOString().split('T')[0],
+            gestorId: currentUser.id
+          }
+        : item
+    ));
+    showNotification('success', 'Presentación registrada con referencia.');
   };
 
   const getFiscalSummary = (userId: string): FiscalSummary => {
@@ -604,6 +699,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     addRequirement,
     submitRequirement,
     reviewRequirement,
+    saveTaxDeclarationDraft,
+    reviewTaxDeclaration,
     fileTaxDeclaration,
     calculateQuarterlyTaxes,
     getFiscalSummary,
