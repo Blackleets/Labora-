@@ -48,7 +48,7 @@ interface DataContextType {
     status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
     gestorNotes?: string
   ) => void;
-  addDocument: (doc: Omit<Document, 'id' | 'userId'>) => void;
+  addDocument: (doc: Omit<Document, 'id' | 'userId'>) => Document | undefined;
   addPayment: (payment: Omit<Payment, 'id'>) => void;
   updateVehicle: (vehicleData: Vehicle) => void;
   addRequirement: (req: Omit<GestorRequirement, 'id' | 'createdAt'>) => void;
@@ -337,10 +337,11 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   };
 
   const addDocument = (doc: Omit<Document, 'id' | 'userId'>) => {
-    if (!currentUser) return;
+    if (!currentUser) return undefined;
     const newDocument: Document = { ...doc, id: createId('document'), userId: currentUser.id };
     setDocuments((previous) => [newDocument, ...previous]);
     showNotification('success', 'Documento guardado.');
+    return newDocument;
   };
 
   const addPayment = (payment: Omit<Payment, 'id'>) => {
