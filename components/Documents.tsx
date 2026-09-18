@@ -27,7 +27,7 @@ type DisplayItem = {
   sourceUserId: string;
   ownerName: string;
   name: string;
-  category: 'Factura' | 'Trimestre' | 'Alta' | 'Gasolina' | 'Otro';
+  category: 'Factura' | 'Liquidación' | 'Trimestre' | 'Alta' | 'Gasolina' | 'Otro';
   date: string;
   fileType: 'PDF' | 'IMG' | 'FILE';
   mimeType?: string;
@@ -78,6 +78,7 @@ export const Documents: React.FC = () => {
   const {
     documents,
     expenses,
+    incomes,
     declarations,
     currentUser,
     users,
@@ -174,7 +175,7 @@ export const Documents: React.FC = () => {
   const filteredItems = useMemo(() => {
     if (selectedFilter === 'all') return allItems;
     if (selectedFilter === 'receipts') {
-      return allItems.filter((item) => item.category === 'Gasolina' || item.category === 'Factura');
+      return allItems.filter((item) => item.category === 'Gasolina' || item.category === 'Factura' || item.category === 'Liquidación');
     }
     if (selectedFilter === 'taxes') return allItems.filter((item) => item.category === 'Trimestre');
     return allItems.filter((item) => item.category === 'Alta' || item.category === 'Otro');
@@ -282,6 +283,16 @@ export const Documents: React.FC = () => {
 
   const handleDelete = async (item: DisplayItem) => {
     if (!currentUser || item.source !== 'document' || item.sourceUserId !== currentUser.id || isManager) return;
+
+    const linkedIncomeCount = incomes.filter((income) => income.sourceDocumentId === item.id).length;
+    if (linkedIncomeCount > 0) {
+      showNotification(
+        'info',
+        `No puedes eliminar esta liquidación: conserva evidencia de ${linkedIncomeCount} ${linkedIncomeCount === 1 ? 'ingreso' : 'ingresos'}.`
+      );
+      return;
+    }
+
     if (!window.confirm(`¿Eliminar “${item.name}” del expediente?`)) return;
 
     setDeletingId(item.id);
@@ -307,7 +318,7 @@ export const Documents: React.FC = () => {
 
   const filters = [
     ['all', 'Todos', allItems.length],
-    ['receipts', 'Tickets y facturas', allItems.filter((item) => item.category === 'Gasolina' || item.category === 'Factura').length],
+    ['receipts', 'Tickets, facturas y liquidaciones', allItems.filter((item) => item.category === 'Gasolina' || item.category === 'Factura' || item.category === 'Liquidación').length],
     ['taxes', 'Fiscal', allItems.filter((item) => item.category === 'Trimestre').length],
     ['legal', 'Legal y censal', allItems.filter((item) => item.category === 'Alta' || item.category === 'Otro').length]
   ] as const;
@@ -444,7 +455,7 @@ export const Documents: React.FC = () => {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label><span className="mb-1.5 block text-[11px] font-extrabold text-stone-500">Nombre</span><input value={docName} onChange={(event) => setDocName(event.target.value)} className="w-full rounded-[13px] border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" /></label>
-                <label><span className="mb-1.5 block text-[11px] font-extrabold text-stone-500">Tipo</span><select value={docType} onChange={(event) => setDocType(event.target.value as UserDocument['type'])} className="w-full rounded-[13px] border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none"><option value="Factura">Factura</option><option value="Trimestre">Fiscal / trimestre</option><option value="Alta">Alta / censal</option><option value="Otro">Otro</option></select></label>
+                <label><span className="mb-1.5 block text-[11px] font-extrabold text-stone-500">Tipo</span><select value={docType} onChange={(event) => setDocType(event.target.value as UserDocument['type'])} className="w-full rounded-[13px] border border-[#DED7CC] bg-white px-3 py-2.5 text-sm outline-none"><option value="Factura">Factura</option><option value="Liquidación">Liquidación de plataforma</option><option value="Trimestre">Fiscal / trimestre</option><option value="Alta">Alta / censal</option><option value="Otro">Otro</option></select></label>
               </div>
 
               <div className="flex gap-2 pt-1">
