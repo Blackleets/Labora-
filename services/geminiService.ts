@@ -170,6 +170,74 @@ export const extractIncomeFromText = async (textData: string): Promise<{ platfor
   }
 };
 
+export const extractIncomeFromDocument = async (
+  base64Data: string,
+  mimeType: string
+): Promise<{ platform: string; amount: number; date: string; retention: number }[]> => {
+  const ai = getAIClient();
+  if (!ai) throw new Error('INCOME_EXTRACTION_NOT_CONFIGURED');
+
+  const supportedMimeTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
+  if (!supportedMimeTypes.has(mimeType)) throw new Error('INCOME_DOCUMENT_UNSUPPORTED');
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64Data } },
+          {
+            text: `Actúa exclusivamente como extractor de ingresos. Lee SOLO datos visibles en esta liquidación, factura, captura o PDF y no inventes nada.
+
+Devuelve una fila únicamente cuando puedas determinar:
+- platform: plataforma/pagador visible;
+- amount: importe bruto o ingreso visible mayor que 0;
+- date: fecha visible en formato YYYY-MM-DD;
+- retention: retención explícitamente visible; si no aparece, 0.
+
+Reglas estrictas:
+1. No uses la fecha actual para completar fechas ausentes.
+2. No deduzcas una plataforma por colores, logos dudosos o contexto externo.
+3. No sumes importes salvo que el documento muestre claramente un total de ingresos.
+4. Si fecha o importe no son legibles, omite esa fila.
+5. No interpretes gastos, saldo de cartera o propinas separadas como ingresos adicionales si ya forman parte de un total.
+6. Responde únicamente con JSON.`
+          }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              platform: { type: Type.STRING },
+              amount: { type: Type.NUMBER },
+              date: { type: Type.STRING },
+              retention: { type: Type.NUMBER }
+            },
+            required: ["platform", "amount", "date", "retention"]
+          }
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) return [];
+    const rows = JSON.parse(text) as { platform: string; amount: number; date: string; retention: number }[];
+    return rows.filter((row) =>
+      Boolean(row.platform?.trim())
+      && Number(row.amount) > 0
+      && /^\d{4}-\d{2}-\d{2}$/.test(String(row.date || ''))
+      && Number(row.retention || 0) >= 0
+    );
+  } catch (error) {
+    console.error('Income document extraction failed:', error);
+    throw new Error('INCOME_EXTRACTION_FAILED');
+  }
+};
+
 export const getRetentionExplanation = async (platform: string, amount: number, retention: number): Promise<string> => {
   const ai = getAIClient();
   if (!ai) return 'No se puede explicar automáticamente la retención porque el asistente IA no está configurado.';
