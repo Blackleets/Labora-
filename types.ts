@@ -271,6 +271,10 @@ export interface GestorRequirement {
   status: 'pending' | 'submitted' | 'approved';
   submissionNotes?: string;
   submissionUrl?: string;
+  submittedAt?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
   createdAt: string;
   quarter?: string;
 }
