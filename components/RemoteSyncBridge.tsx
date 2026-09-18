@@ -115,6 +115,8 @@ const RemoteSyncBridge: React.FC = () => {
           && item.retention === Number(row.retention || 0)
           && (item.sourceType || 'manual') === (row.source_type || 'manual')
           && Boolean(item.needsReview ?? false) === Boolean(row.needs_review ?? false)
+          && (item.sourceDocumentId || null) === (row.source_document_id || null)
+          && (item.sourceHash || null) === (row.source_hash || null)
         );
       }
       if (table === 'expenses') {
