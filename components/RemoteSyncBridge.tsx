@@ -117,6 +117,9 @@ const RemoteSyncBridge: React.FC = () => {
           && Boolean(item.needsReview ?? false) === Boolean(row.needs_review ?? false)
           && (item.sourceDocumentId || null) === (row.source_document_id || null)
           && (item.sourceHash || null) === (row.source_hash || null)
+          && (item.reviewedBy || null) === (row.reviewed_by || null)
+          && (item.reviewedAt || null) === (row.reviewed_at || null)
+          && (item.reviewNote || null) === (row.review_note || null)
         );
       }
       if (table === 'expenses') {
