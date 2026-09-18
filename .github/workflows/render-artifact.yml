@@ -8,7 +8,7 @@ on:
 jobs:
   render-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,6 +26,36 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install Chromium
+        run: npx --yes playwright@1.55.0 install --with-deps chromium
+
+      - name: Serve build
+        run: |
+          nohup npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/labora-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/labora-preview.log
+          exit 1
+
+      - name: Capture real UI
+        run: |
+          npx --yes playwright@1.55.0 screenshot --wait-for-timeout=2500 --viewport-size="1440,1000" http://127.0.0.1:4173 labora-real-desktop.png
+          npx --yes playwright@1.55.0 screenshot --wait-for-timeout=2500 --viewport-size="430,932" http://127.0.0.1:4173 labora-real-mobile.png
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: labora-real-screenshots
+          path: |
+            labora-real-desktop.png
+            labora-real-mobile.png
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
