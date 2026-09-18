@@ -151,7 +151,12 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     taxAmount: numberValue(row.tax_amount),
     calculationState: 'recorded',
     status: row.status,
+    reviewedBy: row.reviewed_by || undefined,
+    reviewedAt: row.reviewed_at || undefined,
+    reviewNote: row.review_note || undefined,
     filingReference: row.filing_reference || undefined,
+    filingEvidenceUrl: row.filing_evidence_url || undefined,
+    filedBy: row.filed_by || undefined,
     filedAt: row.filed_at || undefined,
     gestorId: row.gestor_id || undefined
   }));
@@ -246,6 +251,46 @@ export const reviewRemoteRequirement = async (
     p_requirement_id: requirementId,
     p_action: 'approved',
     p_note: note || null
+  });
+  if (error) throw error;
+};
+
+export const saveRemoteTaxDeclarationDraft = async (declaration: TaxDeclaration) => {
+  const { error } = await supabase.rpc('save_tax_declaration_draft', {
+    p_id: declaration.id,
+    p_user_id: declaration.userId,
+    p_quarter: declaration.quarter,
+    p_year: declaration.year,
+    p_model_type: declaration.modelType,
+    p_title: declaration.title,
+    p_gross_income: declaration.grossIncome,
+    p_deductible_expenses: declaration.deductibleExpenses,
+    p_net_yield: declaration.netYield,
+    p_tax_amount: declaration.taxAmount
+  });
+  if (error) throw error;
+};
+
+export const reviewRemoteTaxDeclaration = async (
+  declarationId: string,
+  note?: string
+) => {
+  const { error } = await supabase.rpc('review_tax_declaration', {
+    p_declaration_id: declarationId,
+    p_note: note || null
+  });
+  if (error) throw error;
+};
+
+export const fileRemoteTaxDeclaration = async (
+  declarationId: string,
+  filingReference: string,
+  evidenceUrl?: string
+) => {
+  const { error } = await supabase.rpc('file_tax_declaration', {
+    p_declaration_id: declarationId,
+    p_filing_reference: filingReference,
+    p_evidence_url: evidenceUrl || null
   });
   if (error) throw error;
 };
@@ -489,24 +534,70 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     }
   }
 
-  for (const declaration of declarations.filter((item) => item.userId === currentUser.id || linkedIds.has(item.userId))) {
-    const payload = {
-      id: declaration.id,
-      user_id: declaration.userId,
-      quarter: declaration.quarter,
-      year: declaration.year,
-      model_type: declaration.modelType,
-      title: declaration.title,
-      gross_income: declaration.grossIncome,
-      deductible_expenses: declaration.deductibleExpenses,
-      net_yield: declaration.netYield,
-      tax_amount: declaration.taxAmount,
-      status: declaration.status,
-      filing_reference: declaration.filingReference || null,
-      filed_at: declaration.filedAt || null,
-      gestor_id: declaration.gestorId || null
-    };
-    if (declaration.userId === currentUser.id) await supabase.from('tax_declarations').upsert(payload);
-    else if (isManager) await supabase.from('tax_declarations').update(payload).eq('id', declaration.id);
+  const { data: remoteDeclarationRows, error: remoteDeclarationError } = await supabase
+    .from('tax_declarations')
+    .select('id, user_id, quarter, year, model_type, title, gross_income, deductible_expenses, net_yield, tax_amount, status, reviewed_by, reviewed_at, review_note, filing_reference, filing_evidence_url, filed_by, filed_at, gestor_id');
+  if (remoteDeclarationError) throw remoteDeclarationError;
+
+  const remoteDeclarationsById = new Map(
+    (remoteDeclarationRows || []).map((row: any) => [row.id, row])
+  );
+
+  for (const declaration of declarations.filter(
+    (item) => item.userId === currentUser.id || linkedIds.has(item.userId)
+  )) {
+    const remote = remoteDeclarationsById.get(declaration.id) as any | undefined;
+    const isOwner = declaration.userId === currentUser.id;
+    const canManageLinked = isManager && linkedIds.has(declaration.userId);
+
+    if (!remote) {
+      if ((isOwner || canManageLinked) && declaration.status === 'draft') {
+        await saveRemoteTaxDeclarationDraft(declaration);
+      }
+      continue;
+    }
+
+    if (remote.user_id !== declaration.userId) continue;
+
+    const draftChanged =
+      remote.quarter !== declaration.quarter
+      || Number(remote.year) !== declaration.year
+      || remote.model_type !== declaration.modelType
+      || remote.title !== declaration.title
+      || Number(remote.gross_income) !== declaration.grossIncome
+      || Number(remote.deductible_expenses) !== declaration.deductibleExpenses
+      || Number(remote.net_yield) !== declaration.netYield
+      || Number(remote.tax_amount) !== declaration.taxAmount;
+
+    if (declaration.status === 'draft' && remote.status === 'draft' && draftChanged) {
+      await saveRemoteTaxDeclarationDraft(declaration);
+      continue;
+    }
+
+    if (!canManageLinked) continue;
+
+    if (declaration.status === 'reviewed_by_gestor' && remote.status === 'draft') {
+      await reviewRemoteTaxDeclaration(declaration.id, declaration.reviewNote);
+      continue;
+    }
+
+    if (declaration.status === 'filed_with_tax_agency') {
+      if (!declaration.filingReference?.trim()) continue;
+
+      if (remote.status === 'draft') {
+        await reviewRemoteTaxDeclaration(declaration.id, declaration.reviewNote);
+        await fileRemoteTaxDeclaration(
+          declaration.id,
+          declaration.filingReference,
+          declaration.filingEvidenceUrl
+        );
+      } else if (remote.status === 'reviewed_by_gestor') {
+        await fileRemoteTaxDeclaration(
+          declaration.id,
+          declaration.filingReference,
+          declaration.filingEvidenceUrl
+        );
+      }
+    }
   }
 };
