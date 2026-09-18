@@ -388,12 +388,6 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       0
     );
     const netYield = Math.max(0, grossIncome - deductibleExpenses);
-    const deductibleVat = quarterExpenses.reduce(
-      (sum, expense) => sum + (expense.vatAmount || 0) * ((expense.deductiblePercentage ?? 0) / 100),
-      0
-    );
-    const estimatedOutputVat = grossIncome * 0.21;
-
     const existing130 = declarations.find(
       (declaration) => declaration.userId === userId && declaration.quarter === quarter && declaration.modelType === '130'
     );
@@ -402,33 +396,39 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     );
     const year = getQuarterRange(quarter)?.year || new Date().getFullYear();
 
-    const model130: TaxDeclaration = existing130 || {
-      id: `calc_130_${userId}_${quarter.replace(/\s/g, '_')}`,
-      userId,
-      quarter,
-      year,
-      modelType: '130',
-      title: `Modelo 130 · ${quarter}`,
-      grossIncome,
-      deductibleExpenses,
-      netYield,
-      taxAmount: Number((netYield * 0.2).toFixed(2)),
-      status: 'draft'
-    };
+    const model130: TaxDeclaration = existing130
+      ? { ...existing130, calculationState: 'recorded' }
+      : {
+          id: `calc_130_${userId}_${quarter.replace(/\s/g, '_')}`,
+          userId,
+          quarter,
+          year,
+          modelType: '130',
+          title: `Modelo 130 · ${quarter}`,
+          grossIncome,
+          deductibleExpenses,
+          netYield,
+          taxAmount: 0,
+          calculationState: 'requires_review',
+          status: 'draft'
+        };
 
-    const model303: TaxDeclaration = existing303 || {
-      id: `calc_303_${userId}_${quarter.replace(/\s/g, '_')}`,
-      userId,
-      quarter,
-      year,
-      modelType: '303',
-      title: `Modelo 303 · ${quarter}`,
-      grossIncome,
-      deductibleExpenses,
-      netYield,
-      taxAmount: Number(Math.max(0, estimatedOutputVat - deductibleVat).toFixed(2)),
-      status: 'draft'
-    };
+    const model303: TaxDeclaration = existing303
+      ? { ...existing303, calculationState: 'recorded' }
+      : {
+          id: `calc_303_${userId}_${quarter.replace(/\s/g, '_')}`,
+          userId,
+          quarter,
+          year,
+          modelType: '303',
+          title: `Modelo 303 · ${quarter}`,
+          grossIncome,
+          deductibleExpenses,
+          netYield,
+          taxAmount: 0,
+          calculationState: 'requires_review',
+          status: 'draft'
+        };
 
     return { model130, model303 };
   };
@@ -462,8 +462,9 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       totalIncome,
       totalExpenses,
       netProfit,
-      estimatedIRPF: Number((netProfit * 0.2).toFixed(2)),
-      quarter: '3T 2026'
+      estimatedIRPF: 0,
+      taxEstimateAvailable: false,
+      quarter: currentQuarter()
     };
   };
 
