@@ -52,11 +52,15 @@ interface DataContextType {
   addPayment: (payment: Omit<Payment, 'id'>) => void;
   updateVehicle: (vehicleData: Vehicle) => void;
   addRequirement: (req: Omit<GestorRequirement, 'id' | 'createdAt'>) => void;
-  updateRequirementStatus: (
+  submitRequirement: (
     id: string,
-    status: 'pending' | 'submitted' | 'approved',
     notes?: string,
     proofUrl?: string
+  ) => void;
+  reviewRequirement: (
+    id: string,
+    status: 'approved',
+    note?: string
   ) => void;
   fileTaxDeclaration: (declarationId: string, filingRef: string) => void;
   calculateQuarterlyTaxes: (
@@ -363,23 +367,44 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     showNotification('success', 'Petición enviada.');
   };
 
-  const updateRequirementStatus = (
+  const submitRequirement = (
     id: string,
-    status: 'pending' | 'submitted' | 'approved',
     notes?: string,
     proofUrl?: string
   ) => {
+    if (!currentUser || currentUser.role !== UserRole.RIDER) return;
     setRequirements((previous) => previous.map((requirement) =>
-      requirement.id === id
+      requirement.id === id && requirement.riderId === currentUser.id && requirement.status === 'pending'
         ? {
             ...requirement,
-            status,
+            status: 'submitted',
             submissionNotes: notes ?? requirement.submissionNotes,
-            submissionUrl: proofUrl ?? requirement.submissionUrl
+            submissionUrl: proofUrl ?? requirement.submissionUrl,
+            submittedAt: new Date().toISOString()
           }
         : requirement
     ));
-    showNotification('success', 'Petición actualizada.');
+    showNotification('success', 'Respuesta enviada a tu gestoría.');
+  };
+
+  const reviewRequirement = (
+    id: string,
+    status: 'approved',
+    note?: string
+  ) => {
+    if (!currentUser || (currentUser.role !== UserRole.MANAGER && currentUser.role !== UserRole.ADMIN)) return;
+    setRequirements((previous) => previous.map((requirement) =>
+      requirement.id === id && requirement.managerId === currentUser.id && requirement.status === 'submitted'
+        ? {
+            ...requirement,
+            status,
+            reviewedBy: currentUser.id,
+            reviewedAt: new Date().toISOString(),
+            reviewNote: note
+          }
+        : requirement
+    ));
+    showNotification('success', 'Petición revisada.');
   };
 
   const calculateQuarterlyTaxes = (userId: string, quarter: string) => {
@@ -577,7 +602,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     addPayment,
     updateVehicle,
     addRequirement,
-    updateRequirementStatus,
+    submitRequirement,
+    reviewRequirement,
     fileTaxDeclaration,
     calculateQuarterlyTaxes,
     getFiscalSummary,
