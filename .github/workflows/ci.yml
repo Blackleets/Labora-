@@ -6,6 +6,7 @@ on:
       - main
       - feat/labora-functional-closeout
       - feat/labora-completion-close
+      - feat/labora-release-gates
   pull_request:
     branches:
       - main
@@ -28,6 +29,9 @@ jobs:
 
       - name: Typecheck
         run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
 
       - name: Build
         run: npm run build
