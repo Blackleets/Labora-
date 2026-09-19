@@ -196,40 +196,40 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_230px] lg:items-end">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="labora-chip labora-kicker text-[#EAF4EE]">Autónomo · {period}</span>
+              <span className="labora-chip labora-kicker text-[#2F5D4A]">Autónomo · {period}</span>
               {pendingRequirements.length === 0 ? (
-                <span className="labora-chip text-[11px] font-bold text-[#F8E9B7]">
+                <span className="labora-chip text-[11px] font-bold text-[#B87A24]">
                   <CheckCircle2 size={13} /> Sin tareas pendientes
                 </span>
               ) : (
-                <span className="labora-chip text-[11px] font-bold text-[#FFE1D5]">
+                <span className="labora-chip text-[11px] font-bold text-[#C96846]">
                   <Bell size={13} /> {pendingRequirements.length} {pendingRequirements.length === 1 ? 'tarea pendiente' : 'tareas pendientes'}
                 </span>
               )}
             </div>
 
-            <p className="mt-5 text-sm font-semibold text-white/70">Hola, {firstName}</p>
-            <h1 className="labora-display mt-1 max-w-2xl text-[2rem] font-semibold leading-[1.04] text-white sm:text-[2.65rem]">
-              Tu trimestre, claro y bajo control.
+            <p className="mt-5 text-sm font-semibold text-[#6B645C]">Hola, {firstName}</p>
+            <h1 className="labora-display mt-1 max-w-2xl text-[2rem] font-semibold leading-[1.04] text-[#1E2A24] sm:text-[2.65rem]">
+              Tu trimestre, con luz clara y cuidado.
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/72 sm:text-[15px]">
-              Gastos, modelos, documentos y tu gestoría conectados sin llenar la pantalla de ruido.
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#5C6E64] sm:text-[15px]">
+              Gastos, modelos y gestoría en un mismo espacio calmado — sin ruido innecesario.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold text-white/70">
-              {currentUser.iaeCode && <span>IAE <strong className="text-white">{currentUser.iaeCode}</strong></span>}
-              {currentUser.vehicleType && <span>Vehículo <strong className="capitalize text-white">{currentUser.vehicleType}</strong></span>}
-              {currentUser.nif && <span>NIF <strong className="text-white">{currentUser.nif}</strong></span>}
+            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold text-[#6B645C]">
+              {currentUser.iaeCode && <span>IAE <strong className="text-[#1E2A24]">{currentUser.iaeCode}</strong></span>}
+              {currentUser.vehicleType && <span>Vehículo <strong className="capitalize text-[#1E2A24]">{currentUser.vehicleType}</strong></span>}
+              {currentUser.nif && <span>NIF <strong className="text-[#1E2A24]">{currentUser.nif}</strong></span>}
             </div>
           </div>
 
           <button
             onClick={() => setView?.('money')}
-            className="relative z-10 rounded-[22px] border border-white/15 bg-white/10 p-4 text-left backdrop-blur transition hover:bg-white/15"
+            className="relative z-10 rounded-[22px] border border-[#E8DFC8] bg-white/75 p-4 text-left shadow-sm backdrop-blur transition hover:bg-white"
           >
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/55">Neto operativo</p>
-            <p className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-white">{formatCurrency(summary.netProfit)}</p>
-            <div className="mt-4 flex items-center justify-between text-xs font-bold text-[#F7D99B]">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8A8278]">Neto operativo</p>
+            <p className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-[#1E2A24]">{formatCurrency(summary.netProfit)}</p>
+            <div className="mt-4 flex items-center justify-between text-xs font-bold text-[#2F5D4A]">
               <span>Ver dinero</span>
               <ChevronRight size={15} />
             </div>

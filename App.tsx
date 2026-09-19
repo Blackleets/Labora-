@@ -10,6 +10,7 @@ import { UserRole } from './types';
 import Dashboard from './components/Dashboard';
 import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 import Login from './components/Login';
+import { GhibliLightingControl } from './components/GhibliLightingControl';
 import Logo from './components/Logo';
 import { ManagerDashboard } from './components/ManagerDashboard';
 import Onboarding from './components/Onboarding';
@@ -102,7 +103,7 @@ const MainLayout: React.FC = () => {
   ];
 
   const Identity = ({ small = false }: { small?: boolean }) => (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[#DDD4C8] bg-white text-[#0F3D2E] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[#E8DFC8] bg-white text-[#2F5D4A] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
       {identityImage ? (
         <img src={identityImage} alt="Identidad" className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`} />
       ) : (
@@ -112,7 +113,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#F0EDE6] font-sans text-[#0A1210] selection:bg-[#C9A227]/35 selection:text-[#0A1210]">
+    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#F7F3EA] font-sans text-[#1E2A24] selection:bg-[#B87A24]/25 selection:text-[#1E2A24]">
       <Toast />
       <Sidebar
         currentView={currentView}
@@ -126,7 +127,7 @@ const MainLayout: React.FC = () => {
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-black/8 bg-white text-[#0A1210] shadow-sm lg:hidden"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#E8DFC8] bg-white text-[#1E2A24] shadow-sm lg:hidden"
               aria-label="Abrir menú"
             >
               <Menu size={20} />
@@ -137,22 +138,25 @@ const MainLayout: React.FC = () => {
             </div>
 
             <div className="min-w-0">
-              <p className="hidden text-[9px] font-bold uppercase tracking-[0.18em] text-[#C9A227] lg:block">
+              <p className="hidden text-[9px] font-bold uppercase tracking-[0.16em] text-[#3B7258] lg:block">
                 {isManager ? 'Gestoría' : 'Autónomo'}
               </p>
-              <span className="block truncate font-serif text-[1.15rem] font-semibold tracking-[-0.03em] text-[#0A1210]">
+              <span className="block truncate font-serif text-[1.15rem] font-semibold tracking-[-0.03em] text-[#1E2A24]">
                 {getViewTitle()}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <GhibliLightingControl />
+            </div>
             <button
               onClick={togglePrivacyMode}
               className={`flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
                 privacyMode
-                  ? 'border-[#C9A227]/40 bg-[#FFF8E8] text-[#8B652B]'
-                  : 'border-black/8 bg-white text-stone-500 hover:text-[#0F3D2E]'
+                  ? 'border-[#B87A24]/35 bg-[#FEF7EB] text-[#B87A24]'
+                  : 'border-[#E8DFC8] bg-white text-stone-500 hover:text-[#2F5D4A]'
               }`}
               title={privacyMode ? 'Mostrar importes' : 'Ocultar importes'}
             >
@@ -161,11 +165,11 @@ const MainLayout: React.FC = () => {
 
             <button
               onClick={() => setView('settings')}
-              className="flex items-center gap-2 rounded-2xl border border-black/8 bg-white p-1 pr-3 text-left shadow-sm transition hover:border-[#C9A227]/35"
+              className="flex items-center gap-2 rounded-2xl border border-[#E8DFC8] bg-white p-1 pr-3 text-left shadow-sm transition hover:border-[#2F5D4A]/30"
             >
               <Identity />
               <div className="hidden text-right sm:block">
-                <p className="max-w-[190px] truncate text-xs font-extrabold text-[#0A1210]">
+                <p className="max-w-[190px] truncate text-xs font-extrabold text-[#1E2A24]">
                   {currentUser.companyName || currentUser.name}
                 </p>
                 <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400">
@@ -190,16 +194,16 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
-                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#0F3D2E]' : 'text-stone-400'}`}
+                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#2F5D4A]' : 'text-stone-400'}`}
                 >
-                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[12px] px-2 transition ${active ? 'bg-[#E3EFE8] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.06)]' : ''}`}>
+                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[12px] px-2 transition ${active ? 'bg-[#EBF3ED] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.08)]' : ''}`}>
                     {item.id === 'settings' && identityImage ? (
                       <Identity small />
                     ) : (
                       <Icon size={18} strokeWidth={active ? 2.45 : 2} />
                     )}
                     {Boolean(item.badge && item.badge > 0) && (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white bg-[#E85D3B] px-1 text-[9px] font-extrabold text-white">
+                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white bg-[#C96846] px-1 text-[9px] font-extrabold text-white">
                         {item.badge}
                       </span>
                     )}
