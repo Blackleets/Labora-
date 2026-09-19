@@ -42,9 +42,9 @@ export const PeopleHub: React.FC = () => {
     const clientRequirements = requirements.filter((requirement) => requirement.riderId === selectedClient.id);
     return {
       totalIncome: clientIncomes.reduce((sum, income) => sum + income.amount, 0),
-      totalExpenses: clientExpenses.filter((expense) => expense.status !== 'rejected').reduce((sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 100) / 100), 0),
+      totalExpenses: clientExpenses.filter((expense) => expense.status !== 'rejected').reduce((sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100), 0),
       pendingExpenses: clientExpenses.filter((expense) => expense.status === 'pending_review' || expense.status === 'needs_fix').length,
-      pendingRequirements: clientRequirements.filter((requirement) => requirement.status === 'pending').length,
+      pendingRequirements: clientRequirements.filter((requirement) => requirement.status === 'pending' || requirement.status === 'submitted').length,
       platforms: selectedClient.platforms
     };
   }, [selectedClient, incomes, expenses, requirements]);
