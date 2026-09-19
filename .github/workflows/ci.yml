@@ -3,7 +3,9 @@ name: Labora+ CI
 on:
   push:
     branches:
+      - main
       - feat/labora-functional-closeout
+      - feat/labora-completion-close
   pull_request:
     branches:
       - main

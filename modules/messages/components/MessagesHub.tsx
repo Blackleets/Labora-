@@ -77,6 +77,37 @@ export const MessagesHub: React.FC = () => {
     }
   }, [contacts, selectedContactId]);
 
+  useEffect(() => {
+    if (!currentUser || !selectedContactId) return;
+
+    const unreadIncoming = messages.filter(
+      (message) =>
+        message.recipientId === currentUser.id
+        && message.senderId === selectedContactId
+        && message.status === 'sent'
+    );
+    if (!unreadIncoming.length) return;
+
+    let cancelled = false;
+    void (async () => {
+      for (const message of unreadIncoming) {
+        try {
+          await messageRepository.markRead(message.id);
+          if (cancelled) return;
+          setMessages((previous) =>
+            previous.map((item) => (item.id === message.id ? { ...item, status: 'read' } : item))
+          );
+        } catch (error) {
+          console.error('[LABORA_MESSAGE_MARK_READ_FAILED]', error);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, selectedContactId, messages]);
+
   const selectedContact = contacts.find((contact) => contact.id === selectedContactId);
   const conversation = useMemo(() => {
     if (!currentUser || !selectedContactId) return [];

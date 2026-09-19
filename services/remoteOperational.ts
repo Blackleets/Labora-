@@ -10,7 +10,16 @@ import {
 } from '../types';
 import { supabase } from './supabaseClient';
 
-const KEYS = {
+const LEGACY_KEYS = [
+  'labora_incomes',
+  'labora_expenses',
+  'labora_docs',
+  'labora_payments',
+  'labora_requirements',
+  'labora_declarations'
+] as const;
+
+const KEY_BASE = {
   incomes: 'labora_incomes',
   expenses: 'labora_expenses',
   documents: 'labora_docs',
@@ -18,6 +27,39 @@ const KEYS = {
   requirements: 'labora_requirements',
   declarations: 'labora_declarations'
 } as const;
+
+const scopedOperationalKey = (base: string, userId: string) => `${base}:${userId}`;
+
+const purgeLegacyOperationalCache = () => {
+  for (const key of LEGACY_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
+};
+
+const writeOperationalCache = (userId: string, payload: {
+  incomes: unknown;
+  expenses: unknown;
+  requirements: unknown;
+  documents: unknown;
+  declarations: unknown;
+  payments: unknown;
+}) => {
+  purgeLegacyOperationalCache();
+  try {
+    localStorage.setItem(scopedOperationalKey(KEY_BASE.incomes, userId), JSON.stringify(payload.incomes));
+    localStorage.setItem(scopedOperationalKey(KEY_BASE.expenses, userId), JSON.stringify(payload.expenses));
+    localStorage.setItem(scopedOperationalKey(KEY_BASE.requirements, userId), JSON.stringify(payload.requirements));
+    localStorage.setItem(scopedOperationalKey(KEY_BASE.documents, userId), JSON.stringify(payload.documents));
+    localStorage.setItem(scopedOperationalKey(KEY_BASE.declarations, userId), JSON.stringify(payload.declarations));
+    localStorage.setItem(scopedOperationalKey(KEY_BASE.payments, userId), JSON.stringify(payload.payments));
+  } catch {
+    /* cache is optional */
+  }
+};
 
 const numberValue = (value: any) => Number(value ?? 0);
 
@@ -29,6 +71,10 @@ const signedDocumentUrl = async (path?: string | null) => {
 };
 
 export const uploadOperationalFile = async (userId: string, dataUrl: string, prefix: string) => {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user?.id) throw new Error('Sesión requerida para subir archivos.');
+  if (authData.user.id !== userId) throw new Error('No puedes subir archivos al almacenamiento de otro usuario.');
+
   const response = await fetch(dataUrl);
   const blob = await response.blob();
   const contentType = blob.type || 'image/jpeg';
@@ -149,7 +195,7 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     deductibleExpenses: numberValue(row.deductible_expenses),
     netYield: numberValue(row.net_yield),
     taxAmount: numberValue(row.tax_amount),
-    calculationState: 'recorded',
+    calculationState: row.status === 'draft' ? 'requires_review' : 'recorded',
     status: row.status,
     reviewedBy: row.reviewed_by || undefined,
     reviewedAt: row.reviewed_at || undefined,
@@ -171,12 +217,20 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     domain: row.domain || undefined
   }));
 
-  localStorage.setItem(KEYS.incomes, JSON.stringify(incomes));
-  localStorage.setItem(KEYS.expenses, JSON.stringify(expenses));
-  localStorage.setItem(KEYS.requirements, JSON.stringify(requirements));
-  localStorage.setItem(KEYS.documents, JSON.stringify(documents));
-  localStorage.setItem(KEYS.declarations, JSON.stringify(declarations));
-  localStorage.setItem(KEYS.payments, JSON.stringify(payments));
+  const { data: authData } = await supabase.auth.getUser();
+  const sessionUserId = authData.user?.id;
+  if (sessionUserId) {
+    writeOperationalCache(sessionUserId, {
+      incomes,
+      expenses,
+      requirements,
+      documents,
+      declarations,
+      payments
+    });
+  } else {
+    purgeLegacyOperationalCache();
+  }
 
   return { incomes, expenses, requirements, documents, declarations, payments };
 };
