@@ -112,7 +112,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden font-sans text-[#0A1210] selection:bg-[#E8D48A]/40 selection:text-[#0A1210]">
+    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#F0EDE6] font-sans text-[#0A1210] selection:bg-[#C9A227]/35 selection:text-[#0A1210]">
       <Toast />
       <Sidebar
         currentView={currentView}
@@ -122,11 +122,11 @@ const MainLayout: React.FC = () => {
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="safe-area-top z-20 flex h-16 shrink-0 items-center justify-between border-b px-3 backdrop-blur-xl sm:px-5 md:px-8">
-          <div className="flex min-w-0 items-center gap-2.5">
+        <header className="safe-area-top z-20 flex h-[68px] shrink-0 items-center justify-between border-b border-black/5 bg-[#FFFEFB]/85 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[#E5DDD2] bg-white/80 text-stone-600 shadow-sm lg:hidden"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-black/8 bg-white text-[#0A1210] shadow-sm lg:hidden"
               aria-label="Abrir menú"
             >
               <Menu size={20} />
@@ -137,10 +137,10 @@ const MainLayout: React.FC = () => {
             </div>
 
             <div className="min-w-0">
-              <p className="hidden text-[9px] font-extrabold uppercase tracking-[0.16em] text-stone-400 lg:block">
+              <p className="hidden text-[9px] font-bold uppercase tracking-[0.18em] text-[#C9A227] lg:block">
                 {isManager ? 'Gestoría' : 'Autónomo'}
               </p>
-              <span className="block truncate text-sm font-extrabold tracking-[-0.015em] text-[#0A1210]">
+              <span className="block truncate font-serif text-[1.15rem] font-semibold tracking-[-0.03em] text-[#0A1210]">
                 {getViewTitle()}
               </span>
             </div>
@@ -149,10 +149,10 @@ const MainLayout: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={togglePrivacyMode}
-              className={`flex h-9 w-9 items-center justify-center rounded-[12px] border transition ${
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
                 privacyMode
-                  ? 'border-[#EAD9B8] bg-[#FFF7EA] text-[#8B652B]'
-                  : 'border-[#E2DAD0] bg-white/80 text-stone-500 hover:text-[#0F3D2E]'
+                  ? 'border-[#C9A227]/40 bg-[#FFF8E8] text-[#8B652B]'
+                  : 'border-black/8 bg-white text-stone-500 hover:text-[#0F3D2E]'
               }`}
               title={privacyMode ? 'Mostrar importes' : 'Ocultar importes'}
             >
@@ -161,14 +161,14 @@ const MainLayout: React.FC = () => {
 
             <button
               onClick={() => setView('settings')}
-              className="flex items-center gap-2 rounded-[14px] border border-transparent p-1 text-left transition hover:border-[#E6DED3] hover:bg-white/70"
+              className="flex items-center gap-2 rounded-2xl border border-black/8 bg-white p-1 pr-3 text-left shadow-sm transition hover:border-[#C9A227]/35"
             >
               <Identity />
               <div className="hidden text-right sm:block">
-                <p className="max-w-[190px] truncate text-xs font-extrabold text-[#2C312D]">
+                <p className="max-w-[190px] truncate text-xs font-extrabold text-[#0A1210]">
                   {currentUser.companyName || currentUser.name}
                 </p>
-                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-stone-400">
+                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400">
                   {isManager ? 'Gestoría' : 'Autónomo'}
                 </p>
               </div>
@@ -176,11 +176,11 @@ const MainLayout: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 md:px-8 md:py-7">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 md:px-8 md:py-8">
           <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
         </div>
 
-        <nav className="safe-area-bottom shrink-0 border-t px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
+        <nav className="safe-area-bottom shrink-0 border-t border-black/5 bg-[#FFFEFB]/95 px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
           <div className="grid grid-cols-5 gap-0.5">
             {navItems.map((item) => {
               const Icon = item.icon;

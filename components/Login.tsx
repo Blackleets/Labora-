@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Bike,
   BriefcaseBusiness,
-  CheckCircle2,
   KeyRound,
   Loader2,
   Mail,
@@ -49,8 +48,8 @@ const Login: React.FC = () => {
   }, []);
 
   const normalizeEmail = (value: string) => value.trim().toLowerCase();
-  const inputClass = 'w-full rounded-[14px] border border-[#D8D1C6] bg-[#FFFEFB] px-4 py-3.5 text-[15px] text-[#0A1210] outline-none transition placeholder:text-stone-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] focus:border-[#1A5C42] focus:ring-4 focus:ring-[#C9A227]/25';
-  const labelClass = 'mb-2 block text-xs font-extrabold text-stone-600';
+  const inputClass = 'w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-[15px] text-white outline-none transition placeholder:text-white/25 focus:border-[#C9A227]/55 focus:bg-white/[0.06] focus:ring-4 focus:ring-[#C9A227]/12';
+  const labelClass = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-white/40';
 
   const resetFeedback = () => {
     setError('');
@@ -150,191 +149,270 @@ const Login: React.FC = () => {
     resetFeedback();
   };
 
+
   if (recovering) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F4F1EA]">
-        <div className="flex items-center gap-2 rounded-2xl border border-[#DDD6CB] bg-white/85 px-4 py-3 text-sm font-bold text-[#5E6862] shadow-sm">
-          <Loader2 size={18} className="animate-spin" /> Recuperando sesión…
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#070C0A]">
+        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-sm font-semibold text-white/80 backdrop-blur">
+          <Loader2 size={18} className="animate-spin text-[#C9A227]" /> Recuperando sesión…
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] px-4 py-5 sm:py-8">
-      <div className="mx-auto grid min-h-[calc(100dvh-2.5rem)] max-w-6xl items-stretch gap-5 lg:grid-cols-[minmax(0,1.1fr)_448px]">
-        <section className="labora-hero hidden p-8 lg:flex lg:flex-col lg:justify-between xl:p-11">
-          <div className="relative z-10">
-            <Logo size="lg" showText variant="dark" animated />
-            <div className="mt-16 max-w-xl">
-              <span className="labora-chip labora-kicker text-[#E8D48A]">Autónomo + Gestoría</span>
-              <div className="labora-gold-line mt-6" />
-              <h1 className="labora-display mt-5 text-[3.35rem] font-semibold leading-[0.96] text-white">
-                Infraestructura seria para dinero real.
-              </h1>
-              <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-white/70">
-                Identidad, gastos, documentos, modelos, peticiones y mensajes — con evidencia, permisos y sin fingir APIs que aún no existen.
-              </p>
-            </div>
-          </div>
+    <div className="min-h-[100dvh] bg-[#070C0A] text-[#FFFEFB]">
+      <div className="mx-auto grid min-h-[100dvh] lg:grid-cols-[1.15fr_minmax(380px,480px)]">
+        {/* Product stage — real composition change */}
+        <section className="relative hidden overflow-hidden lg:flex lg:flex-col">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(26,92,66,0.45),transparent_55%),radial-gradient(ellipse_at_90%_20%,rgba(201,162,39,0.18),transparent_40%),linear-gradient(165deg,#050807_0%,#0A1F18_45%,#0F3D2E_100%)]" />
+          <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.55\'/%3E%3C/svg%3E")' }} />
 
-          <div className="relative z-10 grid grid-cols-3 gap-3">
-            <Feature icon={ShieldCheck} title="Datos privados" text="Permisos por relación" />
-            <Feature icon={CheckCircle2} title="Sin simulación" text="Estados verificables" />
-            <Feature icon={BriefcaseBusiness} title="Dos espacios" text="Rider y gestoría" />
+          <div className="relative z-10 flex flex-1 flex-col justify-between p-10 xl:p-14">
+            <div className="flex items-center justify-between">
+              <Logo size="lg" showText variant="dark" />
+              <span className="rounded-full border border-white/12 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#E8D48A]">
+                Production grade
+              </span>
+            </div>
+
+            <div className="max-w-xl">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#C9A227]">Sistema operativo fiscal</p>
+              <h1 className="mt-4 font-serif text-[3.6rem] font-semibold leading-[0.95] tracking-[-0.04em] text-white xl:text-[4.1rem]">
+                El panel que una gestoría seria pondría delante de un cliente.
+              </h1>
+              <p className="mt-6 max-w-md text-[15px] leading-relaxed text-white/60">
+                Evidencia, permisos y estados reales. Sin bots de “conectar banco” inventados. Sin dashboards de juguete.
+              </p>
+
+              <div className="mt-10 grid max-w-lg grid-cols-3 gap-3">
+                {[
+                  { k: 'Auth', v: 'Supabase + RLS' },
+                  { k: 'Docs', v: 'Storage privado' },
+                  { k: 'Fiscal', v: 'Estados auditables' }
+                ].map((item) => (
+                  <div key={item.k} className="rounded-2xl border border-white/10 bg-black/25 px-3.5 py-3 backdrop-blur-md">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#C9A227]">{item.k}</p>
+                    <p className="mt-1 text-xs font-semibold text-white/85">{item.v}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Fake product frame — layout device, not fake data claims */}
+            <div className="relative mt-10 max-w-2xl">
+              <div className="rounded-[28px] border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] p-3 shadow-[0_40px_100px_rgba(0,0,0,0.45)] backdrop-blur">
+                <div className="overflow-hidden rounded-[22px] border border-white/8 bg-[#0C1612]">
+                  <div className="flex items-center gap-2 border-b border-white/8 px-4 py-3">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#E85D3B]/80" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#C9A227]/70" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#1A5C42]" />
+                    <span className="ml-3 text-[10px] font-semibold tracking-wide text-white/35">labora.app / dinero</span>
+                  </div>
+                  <div className="grid grid-cols-[140px_1fr] gap-0">
+                    <div className="space-y-2 border-r border-white/8 bg-black/30 p-4">
+                      {['Inicio', 'Dinero', 'Modelos', 'Avisos'].map((label, i) => (
+                        <div key={label} className={`rounded-xl px-3 py-2 text-[11px] font-semibold ${i === 1 ? 'bg-[#1A5C42] text-white' : 'text-white/45'}`}>{label}</div>
+                      ))}
+                    </div>
+                    <div className="space-y-3 p-4">
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">Este mes</p>
+                          <p className="mt-1 font-serif text-3xl font-semibold tracking-tight text-white">€ —</p>
+                        </div>
+                        <div className="rounded-full bg-[#E85D3B]/15 px-2.5 py-1 text-[10px] font-bold text-[#F3A08A]">Sin cifras inventadas</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="h-20 rounded-2xl border border-white/8 bg-white/[0.04]" />
+                        <div className="h-20 rounded-2xl border border-white/8 bg-white/[0.04]" />
+                      </div>
+                      <div className="h-16 rounded-2xl border border-dashed border-white/10 bg-transparent" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <main className="flex w-full items-center justify-center">
-          <div className="w-full max-w-md">
-            <div className="mb-5 flex items-center justify-between lg:hidden">
-              <Logo size="md" showText animated />
-              <span className="rounded-full border border-[#D8D1C6] bg-white/80 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#5E6862]">Acceso seguro</span>
+        {/* Auth column */}
+        <section className="relative flex items-center justify-center px-4 py-8 sm:px-8">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(26,92,66,0.2),transparent_50%)] lg:bg-none" />
+          <div className="relative w-full max-w-[420px]">
+            <div className="mb-8 flex items-center justify-between lg:hidden">
+              <Logo size="md" showText variant="dark" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#C9A227]">Secure</span>
             </div>
 
-            <section className="labora-card-premium p-5 sm:p-8">
-              <div className="mb-6 grid grid-cols-2 rounded-[14px] bg-[#EFEBE3] p-1">
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className={`rounded-[11px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'login' ? 'bg-[#FFFEFB] text-[#0A1210] shadow-[0_4px_14px_rgba(10,18,16,0.08)]' : 'text-[#5E6862]'}`}
-                >
-                  Entrar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchMode('register')}
-                  className={`rounded-[11px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'register' ? 'bg-[#FFFEFB] text-[#0A1210] shadow-[0_4px_14px_rgba(10,18,16,0.08)]' : 'text-[#5E6862]'}`}
-                >
-                  Crear cuenta
-                </button>
+            <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[#0E1512]/90 shadow-[0_30px_80px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+              <div className="border-b border-white/8 px-2 pt-2">
+                <div className="grid grid-cols-2 gap-1 p-1">
+                  <button
+                    type="button"
+                    onClick={() => switchMode('login')}
+                    className={`rounded-2xl py-3 text-xs font-bold transition ${mode === 'login' ? 'bg-white text-[#070C0A]' : 'text-white/45 hover:text-white/70'}`}
+                  >
+                    Entrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchMode('register')}
+                    className={`rounded-2xl py-3 text-xs font-bold transition ${mode === 'register' ? 'bg-white text-[#070C0A]' : 'text-white/45 hover:text-white/70'}`}
+                  >
+                    Crear cuenta
+                  </button>
+                </div>
               </div>
 
-              {mode === 'login' ? (
-                <>
-                  <div className="mb-7">
-                    <p className="labora-kicker text-[#1A5C42]">Labora+</p>
-                    <h2 className="labora-display mt-2 text-3xl font-semibold text-[#0A1210]">Qué bueno verte.</h2>
-                    <p className="mt-2 text-sm leading-relaxed text-[#5E6862]">Entra a tu espacio de autónomo o gestoría.</p>
-                  </div>
+              <div className="p-6 sm:p-8">
+                {mode === 'login' ? (
+                  <>
+                    <h2 className="font-serif text-[2rem] font-semibold leading-none tracking-tight text-white">Bienvenido de nuevo</h2>
+                    <p className="mt-2 text-sm text-white/45">Accede a tu espacio de autónomo o gestoría.</p>
 
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div>
-                      <label className={labelClass}>Correo electrónico</label>
-                      <div className="relative">
-                        <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input type="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); resetFeedback(); }} placeholder="tu@correo.com" className={`${inputClass} pl-12`} required />
-                      </div>
-                    </div>
-                    <div>
-                      <label className={labelClass}>Contraseña</label>
-                      <div className="relative">
-                        <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input type="password" autoComplete="current-password" value={password} onChange={(e) => { setPassword(e.target.value); resetFeedback(); }} placeholder="Tu contraseña" className={`${inputClass} pl-12`} required />
-                      </div>
-                    </div>
-
-                    {error && <p className="rounded-[14px] border border-[#F0D8D1] bg-[#FFF5F2] p-3.5 text-xs font-bold text-[#944B3D]">{error}</p>}
-                    {info && <p className="rounded-[14px] border border-[#CFE1D6] bg-[#F0F7F2] p-3.5 text-xs font-bold text-[#0F3D2E]">{info}</p>}
-
-                    <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#0F3D2E] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#0A2E22] disabled:opacity-60">
-                      {loading ? <Loader2 size={17} className="animate-spin" /> : <>Entrar <ArrowRight size={17} /></>}
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <div className="mb-6 flex items-start justify-between gap-4">
-                    <div>
-                      <p className="labora-kicker text-[#789582]">Nueva cuenta</p>
-                      <h2 className="labora-display mt-2 text-3xl font-semibold text-[#0A1210]">
-                        {registerStep === 1 ? 'Crea tu espacio.' : 'Hazlo reconocible.'}
-                      </h2>
-                      <p className="mt-2 text-sm leading-relaxed text-stone-500">
-                        {registerStep === 1 ? 'Elige cómo usarás Labora+ y crea tu acceso.' : 'Añade la identidad que verá la otra parte.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6 flex items-center gap-2">
-                    <span className="h-1.5 flex-1 rounded-full bg-[#0F3D2E]" />
-                    <span className={`h-1.5 flex-1 rounded-full transition ${registerStep === 2 ? 'bg-[#E85D3B]' : 'bg-[#E8E2D8]'}`} />
-                  </div>
-
-                  {registerStep === 1 ? (
-                    <div className="space-y-5">
+                    <form onSubmit={handleLogin} className="mt-8 space-y-4">
                       <div>
-                        <label className={labelClass}>¿Cómo vas a usar Labora+?</label>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          <button type="button" onClick={() => setRole(UserRole.RIDER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.RIDER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#0F3D2E] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
-                            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/75"><Bike size={18} /></div>
-                            <p className="mt-2 text-sm font-extrabold">Autónomo</p>
-                            <p className="mt-0.5 text-[10px] font-medium opacity-70">Gestiono mi actividad</p>
-                          </button>
-                          <button type="button" onClick={() => setRole(UserRole.MANAGER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.MANAGER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#0F3D2E] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
-                            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/75"><BriefcaseBusiness size={18} /></div>
-                            <p className="mt-2 text-sm font-extrabold">Gestoría</p>
-                            <p className="mt-0.5 text-[10px] font-medium opacity-70">Gestiono clientes</p>
-                          </button>
+                        <label className={labelClass}>Correo</label>
+                        <div className="relative">
+                          <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                          <input type="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); resetFeedback(); }} placeholder="tu@correo.com" className={`${inputClass} pl-11`} required />
                         </div>
                       </div>
-
-                      <div><label className={labelClass}>{role === UserRole.MANAGER ? 'Nombre de contacto' : 'Nombre y apellidos'}</label><div className="relative"><UserRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} pl-12`} placeholder="Tu nombre" /></div></div>
-                      <div><label className={labelClass}>Correo electrónico</label><div className="relative"><Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-12`} placeholder="tu@correo.com" /></div></div>
-                      <div><label className={labelClass}>Contraseña</label><div className="relative"><KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-12`} placeholder="8 caracteres o más" /></div></div>
-                      {error && <p className="rounded-[14px] bg-[#FFF5F2] px-3.5 py-3 text-xs font-bold text-[#944B3D]">{error}</p>}
-                      <button type="button" onClick={continueRegistration} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#0F3D2E] py-3.5 text-sm font-extrabold text-white">Continuar <ArrowRight size={17} /></button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleRegister} className="space-y-4">
-                      <button type="button" onClick={() => { setRegisterStep(1); resetFeedback(); }} className="mb-1 inline-flex items-center gap-1.5 text-xs font-extrabold text-stone-500 hover:text-stone-800"><ArrowLeft size={14} /> Volver</button>
-
-                      <IdentityImagePicker
-                        mode={role === UserRole.MANAGER ? 'logo' : 'avatar'}
-                        value={identityImage}
-                        onChange={setIdentityImage}
-                        title={role === UserRole.MANAGER ? 'Logo o imagen de la gestoría' : 'Foto de perfil'}
-                        helper={role === UserRole.MANAGER ? 'Tus clientes la verán en mensajes y peticiones.' : 'Tu gestoría la verá al revisar tu actividad.'}
-                      />
-
-                      <div><label className={labelClass}>Teléfono <span className="font-normal text-stone-400">(opcional)</span></label><div className="relative"><Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-12`} placeholder="+34 600 000 000" /></div></div>
-                      <div><label className={labelClass}>NIF / NIE <span className="font-normal text-stone-400">(opcional)</span></label><input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678A" /></div>
-
-                      {role === UserRole.RIDER ? (
-                        <div><label className={labelClass}>Matrícula <span className="font-normal text-stone-400">(opcional)</span></label><input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" /></div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div><label className={labelClass}>Nombre de la gestoría</label><input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputClass} placeholder="Nombre comercial" /></div>
-                          <div><label className={labelClass}>N.º colegiado <span className="font-normal text-stone-400">(opcional)</span></label><input value={collegiateNumber} onChange={(e) => setCollegiateNumber(e.target.value)} className={inputClass} placeholder="Número de colegiado" /></div>
+                      <div>
+                        <label className={labelClass}>Contraseña</label>
+                        <div className="relative">
+                          <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                          <input type="password" autoComplete="current-password" value={password} onChange={(e) => { setPassword(e.target.value); resetFeedback(); }} placeholder="Tu contraseña" className={`${inputClass} pl-11`} required />
                         </div>
-                      )}
-
-                      {error && <p className="rounded-[14px] bg-[#FFF5F2] px-3.5 py-3 text-xs font-bold text-[#944B3D]">{error}</p>}
-                      <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#0F3D2E] py-3.5 text-sm font-extrabold text-white disabled:opacity-60">
-                        {loading ? <Loader2 size={17} className="animate-spin" /> : <>Crear cuenta <ArrowRight size={17} /></>}
+                      </div>
+                      {error && <p className="rounded-2xl border border-[#E85D3B]/30 bg-[#E85D3B]/10 px-3.5 py-3 text-xs font-semibold text-[#F3A08A]">{error}</p>}
+                      {info && <p className="rounded-2xl border border-[#C9A227]/25 bg-[#C9A227]/10 px-3.5 py-3 text-xs font-semibold text-[#E8D48A]">{info}</p>}
+                      <button type="submit" disabled={loading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[#E96B4B] to-[#E85D3B] py-3.5 text-sm font-extrabold text-white shadow-[0_12px_32px_rgba(232,93,59,0.35)] transition hover:brightness-110 disabled:opacity-60">
+                        {loading ? <Loader2 size={17} className="animate-spin" /> : <>Entrar <ArrowRight size={17} /></>}
                       </button>
                     </form>
-                  )}
-                </>
-              )}
-            </section>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-6 flex items-center justify-between">
+                      <div>
+                        <h2 className="font-serif text-[2rem] font-semibold leading-none tracking-tight text-white">Crea tu espacio</h2>
+                        <p className="mt-2 text-sm text-white/45">Paso {registerStep} de 2</p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <span className={`h-1.5 w-8 rounded-full ${registerStep >= 1 ? 'bg-[#E85D3B]' : 'bg-white/15'}`} />
+                        <span className={`h-1.5 w-8 rounded-full ${registerStep >= 2 ? 'bg-[#E85D3B]' : 'bg-white/15'}`} />
+                      </div>
+                    </div>
 
-            <p className="mt-4 text-center text-[10px] font-medium leading-relaxed text-stone-400">
-              Sesión protegida con Supabase Auth. El acceso a datos se limita mediante RLS.
-            </p>
+                    {registerStep === 1 ? (
+                      <div className="space-y-5">
+                        <div>
+                          <label className={labelClass}>Tipo de cuenta</label>
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <button type="button" onClick={() => setRole(UserRole.RIDER)} className={`rounded-2xl border p-3.5 text-left transition ${role === UserRole.RIDER ? 'border-[#C9A227]/50 bg-[#1A5C42]/40 text-white' : 'border-white/10 bg-white/[0.03] text-white/55'}`}>
+                              <Bike size={18} className={role === UserRole.RIDER ? 'text-[#C9A227]' : ''} />
+                              <p className="mt-2 text-sm font-extrabold">Autónomo</p>
+                              <p className="mt-0.5 text-[10px] opacity-70">Mi actividad</p>
+                            </button>
+                            <button type="button" onClick={() => setRole(UserRole.MANAGER)} className={`rounded-2xl border p-3.5 text-left transition ${role === UserRole.MANAGER ? 'border-[#C9A227]/50 bg-[#1A5C42]/40 text-white' : 'border-white/10 bg-white/[0.03] text-white/55'}`}>
+                              <BriefcaseBusiness size={18} className={role === UserRole.MANAGER ? 'text-[#C9A227]' : ''} />
+                              <p className="mt-2 text-sm font-extrabold">Gestoría</p>
+                              <p className="mt-0.5 text-[10px] opacity-70">Mis clientes</p>
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className={labelClass}>{role === UserRole.MANAGER ? 'Nombre de contacto' : 'Nombre y apellidos'}</label>
+                          <div className="relative">
+                            <UserRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                            <input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} pl-11`} placeholder="Tu nombre" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className={labelClass}>Correo electrónico</label>
+                          <div className="relative">
+                            <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                            <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-11`} placeholder="tu@correo.com" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className={labelClass}>Contraseña</label>
+                          <div className="relative">
+                            <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                            <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-11`} placeholder="8 caracteres o más" />
+                          </div>
+                        </div>
+                        {error && <p className="rounded-2xl border border-[#E85D3B]/30 bg-[#E85D3B]/10 px-3.5 py-3 text-xs font-semibold text-[#F3A08A]">{error}</p>}
+                        <button type="button" onClick={continueRegistration} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3.5 text-sm font-extrabold text-[#070C0A] transition hover:bg-[#E8D48A]">
+                          Continuar <ArrowRight size={17} />
+                        </button>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleRegister} className="space-y-4">
+                        <button type="button" onClick={() => { setRegisterStep(1); resetFeedback(); }} className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold text-white/45 hover:text-white">
+                          <ArrowLeft size={14} /> Volver
+                        </button>
+
+                        <IdentityImagePicker
+                          mode={role === UserRole.MANAGER ? 'logo' : 'avatar'}
+                          value={identityImage}
+                          onChange={setIdentityImage}
+                          title={role === UserRole.MANAGER ? 'Logo o imagen de la gestoría' : 'Foto de perfil'}
+                          helper={role === UserRole.MANAGER ? 'Tus clientes la verán en mensajes y peticiones.' : 'Tu gestoría la verá al revisar tu actividad.'}
+                        />
+
+                        <div>
+                          <label className={labelClass}>Teléfono <span className="font-normal text-white/30">(opcional)</span></label>
+                          <div className="relative">
+                            <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                            <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-11`} placeholder="+34 600 000 000" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className={labelClass}>NIF / NIE <span className="font-normal text-white/30">(opcional)</span></label>
+                          <input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678A" />
+                        </div>
+
+                        {role === UserRole.RIDER ? (
+                          <div>
+                            <label className={labelClass}>Matrícula <span className="font-normal text-white/30">(opcional)</span></label>
+                            <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" />
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            <div>
+                              <label className={labelClass}>Nombre de la gestoría</label>
+                              <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputClass} placeholder="Nombre comercial" />
+                            </div>
+                            <div>
+                              <label className={labelClass}>N.º colegiado <span className="font-normal text-white/30">(opcional)</span></label>
+                              <input value={collegiateNumber} onChange={(e) => setCollegiateNumber(e.target.value)} className={inputClass} placeholder="Número de colegiado" />
+                            </div>
+                          </div>
+                        )}
+
+                        {error && <p className="rounded-2xl border border-[#E85D3B]/30 bg-[#E85D3B]/10 px-3.5 py-3 text-xs font-semibold text-[#F3A08A]">{error}</p>}
+                        <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[#E96B4B] to-[#E85D3B] py-3.5 text-sm font-extrabold text-white shadow-[0_12px_32px_rgba(232,93,59,0.35)] disabled:opacity-60">
+                          {loading ? <Loader2 size={17} className="animate-spin" /> : <>Crear cuenta <ArrowRight size={17} /></>}
+                        </button>
+                      </form>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-medium text-white/30">
+              <ShieldCheck size={12} className="text-[#C9A227]/70" />
+              Supabase Auth · RLS · sin datos inventados
+            </div>
           </div>
-        </main>
+        </section>
       </div>
     </div>
   );
 };
-
-const Feature = ({ icon: Icon, title, text }: { icon: React.ComponentType<{ size?: number }>; title: string; text: string }) => (
-  <div className="rounded-[18px] border border-white/12 bg-white/8 p-3.5 backdrop-blur">
-    <Icon size={17} />
-    <p className="mt-2 text-xs font-extrabold text-white">{title}</p>
-    <p className="mt-0.5 text-[10px] font-medium text-white/55">{text}</p>
-  </div>
-);
 
 export default Login;
