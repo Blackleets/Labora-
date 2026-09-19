@@ -1,31 +1,40 @@
 :root {
-  --labora-ink: #1E231F;
-  --labora-primary: #214E3A;
-  --labora-primary-2: #2F6B50;
-  --labora-clay: #D66C47;
-  --labora-amber: #F1C56B;
-  --labora-canvas: #F7F3EA;
-  --labora-surface: #FFFDF9;
-  --labora-surface-2: #F1ECE3;
-  --labora-border: #E5DDD2;
-  --labora-muted: #6E756F;
-  --labora-soft-green: #E6F0EA;
-  --labora-soft-clay: #F8EDE7;
-  --labora-shadow: 0 18px 60px rgba(33, 78, 58, 0.10);
-  --labora-shadow-soft: 0 8px 30px rgba(30, 35, 31, 0.06);
-  --labora-radius: 24px;
+  --labora-ink: #0A1210;
+  --labora-ink-soft: #1A2420;
+  --labora-primary: #0F3D2E;
+  --labora-primary-2: #1A5C42;
+  --labora-primary-3: #247A56;
+  --labora-clay: #E85D3B;
+  --labora-clay-deep: #C94A2E;
+  --labora-gold: #C9A227;
+  --labora-gold-soft: #E8D48A;
+  --labora-canvas: #F4F1EA;
+  --labora-surface: #FFFEFB;
+  --labora-surface-2: #EFEBE3;
+  --labora-border: #DDD6CB;
+  --labora-muted: #5E6862;
+  --labora-soft-green: #E3EFE8;
+  --labora-soft-clay: #FBECE7;
+  --labora-shadow: 0 24px 80px rgba(10, 18, 16, 0.14);
+  --labora-shadow-soft: 0 10px 36px rgba(10, 18, 16, 0.07);
+  --labora-shadow-glow: 0 0 0 1px rgba(201, 162, 39, 0.18), 0 20px 50px rgba(15, 61, 46, 0.18);
+  --labora-radius: 22px;
+  --labora-radius-sm: 14px;
 }
 
 html {
   background: var(--labora-canvas);
+  color: var(--labora-ink);
 }
 
 body:not(.dark) {
   background:
-    radial-gradient(circle at 12% -4%, rgba(241, 197, 107, 0.18), transparent 26rem),
-    radial-gradient(circle at 95% 14%, rgba(47, 107, 80, 0.10), transparent 24rem),
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(201, 162, 39, 0.16), transparent 50%),
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(15, 61, 46, 0.12), transparent 48%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(232, 93, 59, 0.06), transparent 45%),
     var(--labora-canvas);
   color: var(--labora-ink);
+  font-feature-settings: 'ss01' on, 'cv11' on;
 }
 
 body:not(.dark) .bg-white {
@@ -37,26 +46,28 @@ body:not(.dark) main {
 }
 
 body:not(.dark) main > header {
-  background: color-mix(in srgb, var(--labora-surface) 90%, transparent) !important;
-  border-color: rgba(137, 123, 107, 0.20) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.75) inset;
+  background: color-mix(in srgb, var(--labora-surface) 88%, transparent) !important;
+  border-color: rgba(10, 18, 16, 0.08) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  backdrop-filter: blur(16px);
 }
 
 body:not(.dark) aside {
   background:
-    linear-gradient(180deg, rgba(255,253,249,0.98), rgba(249,245,238,0.98)) !important;
-  border-color: rgba(137, 123, 107, 0.20) !important;
+    linear-gradient(180deg, rgba(255, 254, 251, 0.98), rgba(244, 241, 234, 0.96)) !important;
+  border-color: rgba(10, 18, 16, 0.08) !important;
 }
 
 body:not(.dark) main > nav {
-  background: rgba(255,253,249,0.96) !important;
-  border-color: rgba(137, 123, 107, 0.18) !important;
-  box-shadow: 0 -12px 40px rgba(30,35,31,0.05);
+  background: rgba(255, 254, 251, 0.94) !important;
+  border-color: rgba(10, 18, 16, 0.08) !important;
+  box-shadow: 0 -16px 48px rgba(10, 18, 16, 0.06);
+  backdrop-filter: blur(18px);
 }
 
 ::selection {
-  background: rgba(47,107,80,0.18);
-  color: var(--labora-primary);
+  background: rgba(201, 162, 39, 0.28);
+  color: var(--labora-ink);
 }
 
 button, a, input, select, textarea {
@@ -68,39 +79,63 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(241, 197, 107, 0.55);
+  outline: 2px solid rgba(201, 162, 39, 0.75);
   outline-offset: 2px;
 }
 
 .labora-hero {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(33,78,58,0.16);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: calc(var(--labora-radius) + 8px);
   background:
-    radial-gradient(circle at 83% 14%, rgba(241,197,107,0.32), transparent 14rem),
-    linear-gradient(135deg, #214E3A 0%, #2B6048 58%, #3B7258 100%);
+    radial-gradient(circle at 88% 12%, rgba(201, 162, 39, 0.28), transparent 28%),
+    radial-gradient(circle at 12% 88%, rgba(232, 93, 59, 0.18), transparent 32%),
+    linear-gradient(145deg, #0A1F18 0%, #0F3D2E 42%, #1A5C42 78%, #164A36 100%);
   color: #fff;
-  border-radius: 28px;
-  box-shadow: var(--labora-shadow);
+  box-shadow: var(--labora-shadow-glow);
+}
+
+.labora-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+  pointer-events: none;
 }
 
 .labora-hero::after {
   content: '';
   position: absolute;
-  width: 220px;
-  height: 220px;
-  right: -78px;
-  bottom: -112px;
-  border: 1px solid rgba(255,255,255,0.16);
-  border-radius: 44% 56% 58% 42%;
-  transform: rotate(-12deg);
+  width: 420px;
+  height: 420px;
+  right: -120px;
+  bottom: -140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 162, 39, 0.22), transparent 68%);
+  pointer-events: none;
 }
 
 .labora-card {
-  border: 1px solid var(--labora-border);
-  background: var(--labora-surface);
+  border: 1px solid rgba(10, 18, 16, 0.08);
+  background: color-mix(in srgb, var(--labora-surface) 92%, white);
   border-radius: var(--labora-radius);
   box-shadow: var(--labora-shadow-soft);
+  backdrop-filter: blur(10px);
+}
+
+.labora-card-premium {
+  border: 1px solid rgba(10, 18, 16, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255,254,251,0.98), rgba(255,254,251,0.94));
+  border-radius: calc(var(--labora-radius) + 4px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    var(--labora-shadow);
 }
 
 .labora-card-interactive {
@@ -109,73 +144,69 @@ textarea:focus-visible {
 
 .labora-card-interactive:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 36px rgba(30,35,31,0.08);
-  border-color: rgba(33,78,58,0.24);
+  border-color: rgba(15, 61, 46, 0.22);
+  box-shadow: 0 18px 50px rgba(15, 61, 46, 0.12);
 }
 
 .labora-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  border: 1px solid rgba(255,255,255,0.20);
-  background: rgba(255,255,255,0.10);
+  gap: 0.35rem;
   border-radius: 999px;
-  padding: 0.38rem 0.7rem;
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.35rem 0.75rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .labora-kicker {
+  font-size: 10px;
+  font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  font-size: 0.68rem;
-  font-weight: 800;
 }
 
 .labora-display {
   font-family: 'Fraunces', Georgia, serif;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.03em;
+  font-optical-sizing: auto;
 }
 
 .labora-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(33,78,58,0.16), transparent);
+  background: linear-gradient(90deg, transparent, rgba(10,18,16,0.12), transparent);
 }
 
 .labora-soft-grid {
   background-image:
-    linear-gradient(rgba(33,78,58,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(33,78,58,0.035) 1px, transparent 1px);
-  background-size: 24px 24px;
+    linear-gradient(rgba(15, 61, 46, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 61, 46, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
-#rider-dashboard {
-  position: relative;
+.labora-btn-primary {
+  background: linear-gradient(180deg, #1A5C42, #0F3D2E);
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(15, 61, 46, 0.28);
 }
 
-#rider-dashboard > section {
-  scroll-margin-top: 84px;
+.labora-btn-accent {
+  background: linear-gradient(180deg, #F06A48, #E85D3B);
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(232, 93, 59, 0.28);
 }
 
-@media (max-width: 640px) {
-  :root {
-    --labora-radius: 20px;
-  }
-
-  .labora-hero {
-    border-radius: 24px;
-  }
+.labora-gold-line {
+  height: 2px;
+  width: 48px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--labora-gold), transparent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Mobile shell: prevent accidental horizontal scroll and honor notches */
+/* Mobile shell */
 html,
 body,
 #root {
@@ -183,9 +214,7 @@ body,
   overflow-x: hidden;
 }
 
-html {
-  height: 100%;
-}
+html { height: 100%; }
 
 body,
 #root {
@@ -193,29 +222,20 @@ body,
   min-height: 100dvh;
 }
 
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-.safe-area-bottom {
-  padding-bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
-}
-
+.safe-area-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-area-bottom { padding-bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px)); }
 .safe-area-x {
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
 }
 
 @media (max-width: 640px) {
-  button,
-  a,
-  [role='button'] {
-    touch-action: manipulation;
-  }
+  :root { --labora-radius: 18px; }
+  .labora-hero { border-radius: 20px; }
+  button, a, [role='button'] { touch-action: manipulation; }
+  input, select, textarea { font-size: 16px; }
+}
 
-  input,
-  select,
-  textarea {
-    font-size: 16px; /* avoid iOS zoom-on-focus */
-  }
+@media (prefers-reduced-motion: reduce) {
+  .labora-card-interactive { transition: none; }
 }

@@ -49,7 +49,7 @@ const Login: React.FC = () => {
   }, []);
 
   const normalizeEmail = (value: string) => value.trim().toLowerCase();
-  const inputClass = 'w-full rounded-[15px] border border-[#DED7CC] bg-white px-4 py-3.5 text-[15px] text-[#1E231F] outline-none transition placeholder:text-stone-300 focus:border-[#789582] focus:ring-4 focus:ring-[#DDE9E1]/70';
+  const inputClass = 'w-full rounded-[14px] border border-[#D8D1C6] bg-[#FFFEFB] px-4 py-3.5 text-[15px] text-[#0A1210] outline-none transition placeholder:text-stone-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] focus:border-[#1A5C42] focus:ring-4 focus:ring-[#C9A227]/25';
   const labelClass = 'mb-2 block text-xs font-extrabold text-stone-600';
 
   const resetFeedback = () => {
@@ -152,8 +152,8 @@ const Login: React.FC = () => {
 
   if (recovering) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F7F3EA]">
-        <div className="flex items-center gap-2 rounded-2xl border border-[#E5DDD2] bg-white/80 px-4 py-3 text-sm font-bold text-stone-500 shadow-sm">
+      <div className="flex min-h-screen items-center justify-center bg-[#F4F1EA]">
+        <div className="flex items-center gap-2 rounded-2xl border border-[#DDD6CB] bg-white/85 px-4 py-3 text-sm font-bold text-[#5E6862] shadow-sm">
           <Loader2 size={18} className="animate-spin" /> Recuperando sesión…
         </div>
       </div>
@@ -161,18 +161,19 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen px-4 py-5 sm:py-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-6xl items-stretch gap-5 lg:grid-cols-[minmax(0,1.05fr)_440px]">
-        <section className="labora-hero hidden p-8 lg:flex lg:flex-col lg:justify-between xl:p-10">
+    <div className="min-h-[100dvh] px-4 py-5 sm:py-8">
+      <div className="mx-auto grid min-h-[calc(100dvh-2.5rem)] max-w-6xl items-stretch gap-5 lg:grid-cols-[minmax(0,1.1fr)_448px]">
+        <section className="labora-hero hidden p-8 lg:flex lg:flex-col lg:justify-between xl:p-11">
           <div className="relative z-10">
             <Logo size="lg" showText variant="dark" animated />
             <div className="mt-16 max-w-xl">
-              <span className="labora-chip labora-kicker text-[#EAF4EE]">Rider + Gestoría</span>
-              <h1 className="labora-display mt-5 text-[3.2rem] font-semibold leading-[0.98] text-white">
-                Menos ruido. Más control sobre tu trabajo.
+              <span className="labora-chip labora-kicker text-[#E8D48A]">Autónomo + Gestoría</span>
+              <div className="labora-gold-line mt-6" />
+              <h1 className="labora-display mt-5 text-[3.35rem] font-semibold leading-[0.96] text-white">
+                Infraestructura seria para dinero real.
               </h1>
-              <p className="mt-5 max-w-lg text-base leading-relaxed text-white/72">
-                Labora+ une identidad, gastos, documentos, modelos, peticiones y mensajes sin fingir integraciones que todavía no existen.
+              <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-white/70">
+                Identidad, gastos, documentos, modelos, peticiones y mensajes — con evidencia, permisos y sin fingir APIs que aún no existen.
               </p>
             </div>
           </div>
@@ -188,22 +189,22 @@ const Login: React.FC = () => {
           <div className="w-full max-w-md">
             <div className="mb-5 flex items-center justify-between lg:hidden">
               <Logo size="md" showText animated />
-              <span className="rounded-full border border-[#E0D8CD] bg-white/75 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-stone-400">Acceso seguro</span>
+              <span className="rounded-full border border-[#D8D1C6] bg-white/80 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#5E6862]">Acceso seguro</span>
             </div>
 
-            <section className="labora-card p-5 sm:p-7">
-              <div className="mb-6 grid grid-cols-2 rounded-[15px] bg-[#F1ECE3] p-1">
+            <section className="labora-card-premium p-5 sm:p-8">
+              <div className="mb-6 grid grid-cols-2 rounded-[14px] bg-[#EFEBE3] p-1">
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className={`rounded-[12px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'login' ? 'bg-white text-[#1E231F] shadow-sm' : 'text-stone-500'}`}
+                  className={`rounded-[11px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'login' ? 'bg-[#FFFEFB] text-[#0A1210] shadow-[0_4px_14px_rgba(10,18,16,0.08)]' : 'text-[#5E6862]'}`}
                 >
                   Entrar
                 </button>
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className={`rounded-[12px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'register' ? 'bg-white text-[#1E231F] shadow-sm' : 'text-stone-500'}`}
+                  className={`rounded-[11px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'register' ? 'bg-[#FFFEFB] text-[#0A1210] shadow-[0_4px_14px_rgba(10,18,16,0.08)]' : 'text-[#5E6862]'}`}
                 >
                   Crear cuenta
                 </button>
@@ -212,9 +213,9 @@ const Login: React.FC = () => {
               {mode === 'login' ? (
                 <>
                   <div className="mb-7">
-                    <p className="labora-kicker text-[#789582]">Labora+</p>
-                    <h2 className="labora-display mt-2 text-3xl font-semibold text-[#1E231F]">Qué bueno verte.</h2>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-500">Entra a tu espacio de autónomo o gestoría.</p>
+                    <p className="labora-kicker text-[#1A5C42]">Labora+</p>
+                    <h2 className="labora-display mt-2 text-3xl font-semibold text-[#0A1210]">Qué bueno verte.</h2>
+                    <p className="mt-2 text-sm leading-relaxed text-[#5E6862]">Entra a tu espacio de autónomo o gestoría.</p>
                   </div>
 
                   <form onSubmit={handleLogin} className="space-y-4">
@@ -234,9 +235,9 @@ const Login: React.FC = () => {
                     </div>
 
                     {error && <p className="rounded-[14px] border border-[#F0D8D1] bg-[#FFF5F2] p-3.5 text-xs font-bold text-[#944B3D]">{error}</p>}
-                    {info && <p className="rounded-[14px] border border-[#CFE1D6] bg-[#F0F7F2] p-3.5 text-xs font-bold text-[#214E3A]">{info}</p>}
+                    {info && <p className="rounded-[14px] border border-[#CFE1D6] bg-[#F0F7F2] p-3.5 text-xs font-bold text-[#0F3D2E]">{info}</p>}
 
-                    <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#183D2D] disabled:opacity-60">
+                    <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#0F3D2E] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#0A2E22] disabled:opacity-60">
                       {loading ? <Loader2 size={17} className="animate-spin" /> : <>Entrar <ArrowRight size={17} /></>}
                     </button>
                   </form>
@@ -246,7 +247,7 @@ const Login: React.FC = () => {
                   <div className="mb-6 flex items-start justify-between gap-4">
                     <div>
                       <p className="labora-kicker text-[#789582]">Nueva cuenta</p>
-                      <h2 className="labora-display mt-2 text-3xl font-semibold text-[#1E231F]">
+                      <h2 className="labora-display mt-2 text-3xl font-semibold text-[#0A1210]">
                         {registerStep === 1 ? 'Crea tu espacio.' : 'Hazlo reconocible.'}
                       </h2>
                       <p className="mt-2 text-sm leading-relaxed text-stone-500">
@@ -256,8 +257,8 @@ const Login: React.FC = () => {
                   </div>
 
                   <div className="mb-6 flex items-center gap-2">
-                    <span className="h-1.5 flex-1 rounded-full bg-[#214E3A]" />
-                    <span className={`h-1.5 flex-1 rounded-full transition ${registerStep === 2 ? 'bg-[#D66C47]' : 'bg-[#E8E2D8]'}`} />
+                    <span className="h-1.5 flex-1 rounded-full bg-[#0F3D2E]" />
+                    <span className={`h-1.5 flex-1 rounded-full transition ${registerStep === 2 ? 'bg-[#E85D3B]' : 'bg-[#E8E2D8]'}`} />
                   </div>
 
                   {registerStep === 1 ? (
@@ -265,12 +266,12 @@ const Login: React.FC = () => {
                       <div>
                         <label className={labelClass}>¿Cómo vas a usar Labora+?</label>
                         <div className="grid grid-cols-2 gap-2.5">
-                          <button type="button" onClick={() => setRole(UserRole.RIDER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.RIDER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#214E3A] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
+                          <button type="button" onClick={() => setRole(UserRole.RIDER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.RIDER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#0F3D2E] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
                             <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/75"><Bike size={18} /></div>
                             <p className="mt-2 text-sm font-extrabold">Autónomo</p>
                             <p className="mt-0.5 text-[10px] font-medium opacity-70">Gestiono mi actividad</p>
                           </button>
-                          <button type="button" onClick={() => setRole(UserRole.MANAGER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.MANAGER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#214E3A] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
+                          <button type="button" onClick={() => setRole(UserRole.MANAGER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.MANAGER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#0F3D2E] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
                             <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/75"><BriefcaseBusiness size={18} /></div>
                             <p className="mt-2 text-sm font-extrabold">Gestoría</p>
                             <p className="mt-0.5 text-[10px] font-medium opacity-70">Gestiono clientes</p>
@@ -282,7 +283,7 @@ const Login: React.FC = () => {
                       <div><label className={labelClass}>Correo electrónico</label><div className="relative"><Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-12`} placeholder="tu@correo.com" /></div></div>
                       <div><label className={labelClass}>Contraseña</label><div className="relative"><KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-12`} placeholder="8 caracteres o más" /></div></div>
                       {error && <p className="rounded-[14px] bg-[#FFF5F2] px-3.5 py-3 text-xs font-bold text-[#944B3D]">{error}</p>}
-                      <button type="button" onClick={continueRegistration} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white">Continuar <ArrowRight size={17} /></button>
+                      <button type="button" onClick={continueRegistration} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#0F3D2E] py-3.5 text-sm font-extrabold text-white">Continuar <ArrowRight size={17} /></button>
                     </div>
                   ) : (
                     <form onSubmit={handleRegister} className="space-y-4">
@@ -309,7 +310,7 @@ const Login: React.FC = () => {
                       )}
 
                       {error && <p className="rounded-[14px] bg-[#FFF5F2] px-3.5 py-3 text-xs font-bold text-[#944B3D]">{error}</p>}
-                      <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white disabled:opacity-60">
+                      <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#0F3D2E] py-3.5 text-sm font-extrabold text-white disabled:opacity-60">
                         {loading ? <Loader2 size={17} className="animate-spin" /> : <>Crear cuenta <ArrowRight size={17} /></>}
                       </button>
                     </form>

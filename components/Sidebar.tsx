@@ -99,17 +99,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
         onClick={() => handleNavigate(item.id)}
         className={`group relative flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-left text-sm transition-all ${
           active
-            ? 'bg-[#E7F0EA] font-bold text-[#214E3A] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.08)]'
-            : 'font-semibold text-stone-600 hover:bg-[#F3EFE8] hover:text-[#1E231F]'
+            ? 'bg-[#E7F0EA] font-bold text-[#0F3D2E] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.08)]'
+            : 'font-semibold text-stone-600 hover:bg-[#F3EFE8] hover:text-[#0A1210]'
         }`}
       >
-        <span className={`absolute left-0 h-5 w-1 rounded-r-full transition ${active ? 'bg-[#D66C47]' : 'bg-transparent'}`} />
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] transition ${active ? 'bg-white/80 text-[#214E3A]' : 'text-stone-500 group-hover:bg-white/75'}`}>
+        <span className={`absolute left-0 h-5 w-1 rounded-r-full transition ${active ? 'bg-[#E85D3B]' : 'bg-transparent'}`} />
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] transition ${active ? 'bg-white/80 text-[#0F3D2E]' : 'text-stone-500 group-hover:bg-white/75'}`}>
           <Icon size={17} strokeWidth={active ? 2.35 : 2} />
         </span>
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
         {Boolean(item.badge && item.badge > 0) && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#D66C47] px-1.5 text-[10px] font-extrabold text-white">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E85D3B] px-1.5 text-[10px] font-extrabold text-white">
             {item.badge}
           </span>
         )}
@@ -162,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
                 : 'border-[#E7DFD4] bg-[#F7F3ED] hover:bg-[#F1ECE4]'
             }`}
           >
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border border-[#DDD4C8] bg-white text-[#214E3A] ${isManager ? 'rounded-xl' : 'rounded-full'}`}>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border border-[#DDD4C8] bg-white text-[#0F3D2E] ${isManager ? 'rounded-xl' : 'rounded-full'}`}>
               {identityImage ? (
                 <img src={identityImage} alt="Identidad" className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`} />
               ) : isManager ? (
@@ -172,7 +172,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-extrabold text-[#1E231F]">{currentUser?.companyName || currentUser?.name || 'Usuario'}</p>
+              <p className="truncate text-xs font-extrabold text-[#0A1210]">{currentUser?.companyName || currentUser?.name || 'Usuario'}</p>
               <p className="mt-0.5 truncate text-[10px] font-medium text-stone-500">{isManager ? 'Gestoría' : 'Autónomo'} · {currentUser?.email}</p>
             </div>
             <Settings size={15} className="shrink-0 text-stone-400" />

@@ -102,7 +102,7 @@ const MainLayout: React.FC = () => {
   ];
 
   const Identity = ({ small = false }: { small?: boolean }) => (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[#DDD4C8] bg-white text-[#214E3A] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[#DDD4C8] bg-white text-[#0F3D2E] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
       {identityImage ? (
         <img src={identityImage} alt="Identidad" className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`} />
       ) : (
@@ -112,7 +112,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden font-sans text-[#1E231F] selection:bg-[#DDE9E1] selection:text-[#214E3A]">
+    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden font-sans text-[#0A1210] selection:bg-[#E8D48A]/40 selection:text-[#0A1210]">
       <Toast />
       <Sidebar
         currentView={currentView}
@@ -140,7 +140,7 @@ const MainLayout: React.FC = () => {
               <p className="hidden text-[9px] font-extrabold uppercase tracking-[0.16em] text-stone-400 lg:block">
                 {isManager ? 'Gestoría' : 'Autónomo'}
               </p>
-              <span className="block truncate text-sm font-extrabold tracking-[-0.015em] text-[#1E231F]">
+              <span className="block truncate text-sm font-extrabold tracking-[-0.015em] text-[#0A1210]">
                 {getViewTitle()}
               </span>
             </div>
@@ -152,7 +152,7 @@ const MainLayout: React.FC = () => {
               className={`flex h-9 w-9 items-center justify-center rounded-[12px] border transition ${
                 privacyMode
                   ? 'border-[#EAD9B8] bg-[#FFF7EA] text-[#8B652B]'
-                  : 'border-[#E2DAD0] bg-white/80 text-stone-500 hover:text-[#214E3A]'
+                  : 'border-[#E2DAD0] bg-white/80 text-stone-500 hover:text-[#0F3D2E]'
               }`}
               title={privacyMode ? 'Mostrar importes' : 'Ocultar importes'}
             >
@@ -190,16 +190,16 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
-                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#214E3A]' : 'text-stone-400'}`}
+                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#0F3D2E]' : 'text-stone-400'}`}
                 >
-                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[12px] px-2 transition ${active ? 'bg-[#E6F0EA] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.06)]' : ''}`}>
+                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[12px] px-2 transition ${active ? 'bg-[#E3EFE8] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.06)]' : ''}`}>
                     {item.id === 'settings' && identityImage ? (
                       <Identity small />
                     ) : (
                       <Icon size={18} strokeWidth={active ? 2.45 : 2} />
                     )}
                     {Boolean(item.badge && item.badge > 0) && (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white bg-[#D66C47] px-1 text-[9px] font-extrabold text-white">
+                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white bg-[#E85D3B] px-1 text-[9px] font-extrabold text-white">
                         {item.badge}
                       </span>
                     )}
