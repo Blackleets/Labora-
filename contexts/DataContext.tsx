@@ -420,7 +420,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       (sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100),
       0
     );
-    const netYield = Math.max(0, grossIncome - deductibleExpenses);
+    const netYield = grossIncome - deductibleExpenses;
     const existing130 = declarations.find(
       (declaration) => declaration.userId === userId && declaration.quarter === quarter && declaration.modelType === '130'
     );
@@ -502,7 +502,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const draft: TaxDeclaration = {
       ...declaration,
       status: 'draft',
-      calculationState: 'recorded',
+      calculationState: 'requires_review',
       reviewedBy: undefined,
       reviewedAt: undefined,
       reviewNote: undefined,
