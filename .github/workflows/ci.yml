@@ -44,7 +44,7 @@ jobs:
 
       - name: Check Supabase Edge Functions
         run: |
-          deno check supabase/functions/create-checkout-session/index.ts
-          deno check supabase/functions/create-billing-portal-session/index.ts
-          deno check supabase/functions/stripe-webhook/index.ts
-          deno check supabase/functions/labora-ai/index.ts
+          deno check --node-modules-dir=auto supabase/functions/create-checkout-session/index.ts
+          deno check --node-modules-dir=auto supabase/functions/create-billing-portal-session/index.ts
+          deno check --node-modules-dir=auto supabase/functions/stripe-webhook/index.ts
+          deno check --node-modules-dir=auto supabase/functions/labora-ai/index.ts
