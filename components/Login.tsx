@@ -16,6 +16,7 @@ import { recoverRemoteSession, signInRemote, signUpRemote } from '../services/au
 import { UserRole } from '../types';
 import IdentityImagePicker from './IdentityImagePicker';
 import Logo from './Logo';
+import MeadowLandscape from './MeadowLandscape';
 
 const Login: React.FC = () => {
   const { palette, title, subtitle } = useGhibliAtmosphere();
@@ -171,35 +172,25 @@ const Login: React.FC = () => {
             className="absolute inset-0"
             style={{
               background: `
-                radial-gradient(ellipse at 78% 18%, ${palette.sunGlow}aa, transparent 42%),
-                radial-gradient(ellipse at 12% 8%, rgba(180, 210, 230, 0.35), transparent 48%),
-                linear-gradient(180deg, #D8E8F2 0%, #E8F0E6 38%, ${palette.parchment} 72%, ${palette.warmearth} 100%)
+                radial-gradient(ellipse at 78% 14%, ${palette.sunGlow}cc, transparent 38%),
+                radial-gradient(ellipse at 18% 10%, rgba(180, 210, 230, 0.42), transparent 46%),
+                radial-gradient(ellipse at 50% 70%, ${palette.hillNear}66, transparent 55%),
+                linear-gradient(180deg, #C9DDEE 0%, #DCEAE6 28%, #E8F0E0 52%, ${palette.parchment} 78%, ${palette.warmearth} 100%)
               `
             }}
           />
 
           {/* Watercolor wash */}
           <div
-            className="pointer-events-none absolute inset-0 opacity-40"
+            className="pointer-events-none absolute inset-0 opacity-45"
             style={{ background: palette.ambientGradient }}
           />
 
-          {/* Illustrated meadow / hills */}
-          <svg
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] w-full"
-            viewBox="0 0 800 420"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <ellipse cx="640" cy="70" rx="56" ry="56" fill={palette.sunGlow} opacity="0.55" />
-            <circle cx="640" cy="70" r="34" fill={palette.sunFill} />
-            <path d="M0 220 C120 180 220 200 320 230 C420 260 520 190 640 210 C720 222 760 240 800 250 L800 420 L0 420 Z" fill={palette.hillFar} opacity="0.55" />
-            <path d="M0 280 C140 240 260 270 380 300 C500 330 600 250 720 280 C760 290 790 300 800 310 L800 420 L0 420 Z" fill={palette.hillMid} opacity="0.75" />
-            <path d="M0 340 C160 310 280 350 420 360 C560 370 660 320 800 350 L800 420 L0 420 Z" fill={palette.hillNear} />
-            <path d="M120 360 Q130 300 145 360" stroke={palette.deepforest} strokeWidth="3" fill="none" opacity="0.35" />
-            <path d="M145 330 Q160 280 175 330" stroke={palette.forest} strokeWidth="2.5" fill="none" opacity="0.4" />
-            <ellipse cx="148" cy="278" rx="28" ry="18" fill={palette.moss} opacity="0.5" />
-          </svg>
+          {/* Rich meadow landscape illustration */}
+          <MeadowLandscape
+            variant="panel"
+            className="pointer-events-none absolute inset-0 h-full w-full"
+          />
 
           <div className="relative z-10 flex flex-1 flex-col justify-between p-10 xl:p-14">
             <div className="flex items-center justify-between">
@@ -224,10 +215,10 @@ const Login: React.FC = () => {
                 {title}
               </p>
               <h1 className="mt-4 font-serif text-[3.2rem] font-semibold leading-[1.02] tracking-[-0.03em] text-[#1E2A24] xl:text-[3.7rem]">
-                Trabajo claro, con la calma de un prado al sol.
+                Trabajo claro, entre colinas y hierba al sol.
               </h1>
               <p className="mt-5 max-w-md text-[15px] leading-relaxed text-[#5C6E64]">
-                {subtitle}. Fiscalidad y gestoría sin ruido: evidencia real, permisos limpios y un espacio que se siente cuidado.
+                {subtitle}. Fiscalidad y gestoría sin ruido: evidencia real, permisos limpios y un espacio con la calma de un prado.
               </p>
 
               <div className="mt-9 grid max-w-lg grid-cols-3 gap-3">
@@ -264,11 +255,34 @@ const Login: React.FC = () => {
             }}
           />
           <div className="relative w-full max-w-[420px]">
-            <div className="mb-8 flex items-center justify-between lg:hidden">
-              <Logo size="md" showText variant="light" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2F5D4A]">
-                Cuidado
-              </span>
+            <div className="mb-6 overflow-hidden rounded-[22px] border lg:hidden" style={{ borderColor: palette.border }}>
+              <div
+                className="relative h-[112px] overflow-hidden"
+                style={{
+                  background: `
+                    radial-gradient(ellipse at 80% 20%, ${palette.sunGlow}bb, transparent 40%),
+                    linear-gradient(180deg, #D2E4F0 0%, #E4EFE4 55%, ${palette.hillNear} 100%)
+                  `
+                }}
+              >
+                <MeadowLandscape
+                  variant="strip"
+                  className="pointer-events-none absolute inset-0 h-full w-full"
+                />
+                <div className="relative z-10 flex h-full items-start justify-between p-3.5">
+                  <Logo size="md" showText variant="light" />
+                  <span
+                    className="rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em]"
+                    style={{
+                      borderColor: palette.bordergreen,
+                      background: 'rgba(255,254,251,0.82)',
+                      color: palette.forest
+                    }}
+                  >
+                    Prado
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div

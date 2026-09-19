@@ -112,9 +112,11 @@ textarea:focus-visible {
   border: 1px solid var(--ghibli-border, #E8DFC8);
   border-radius: calc(var(--labora-radius) + 8px);
   background:
-    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 55%, transparent), transparent 32%),
-    radial-gradient(circle at 12% 88%, color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 80%, transparent), transparent 36%),
-    linear-gradient(145deg, var(--ghibli-parchment, #FAF6EE) 0%, var(--ghibli-warmearth, #FAF3EE) 42%, var(--ghibli-softgreen, #EBF3ED) 100%);
+    radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 70%, transparent), transparent 34%),
+    radial-gradient(ellipse at 18% 0%, color-mix(in srgb, #C9DDEE 55%, transparent), transparent 42%),
+    radial-gradient(circle at 8% 92%, color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 90%, transparent), transparent 40%),
+    radial-gradient(ellipse at 70% 100%, color-mix(in srgb, var(--ghibli-moss, #3B7258) 16%, transparent), transparent 48%),
+    linear-gradient(155deg, var(--ghibli-parchment, #FAF6EE) 0%, #F3F6EC 38%, var(--ghibli-warmearth, #FAF3EE) 62%, var(--ghibli-softgreen, #EBF3ED) 100%);
   color: var(--labora-ink);
   box-shadow: var(--labora-shadow-soft);
 }
@@ -124,20 +126,24 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(ellipse at 70% 20%, rgba(255, 255, 255, 0.45), transparent 50%);
+    radial-gradient(ellipse at 72% 16%, rgba(255, 255, 255, 0.5), transparent 48%),
+    linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 35%, transparent) 100%);
   pointer-events: none;
+  z-index: 0;
 }
 
 .labora-hero::after {
   content: '';
   position: absolute;
-  width: 380px;
-  height: 380px;
-  right: -100px;
-  bottom: -160px;
+  width: 420px;
+  height: 280px;
+  right: -80px;
+  bottom: -120px;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--ghibli-moss, #3B7258) 18%, transparent), transparent 68%);
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--ghibli-moss, #3B7258) 22%, transparent), transparent 68%);
   pointer-events: none;
+  z-index: 0;
 }
 
 .labora-card {

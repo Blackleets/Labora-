@@ -17,6 +17,7 @@ import {
 import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
+import MeadowLandscape from './MeadowLandscape';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
 
@@ -193,6 +194,10 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   return (
     <div id="rider-dashboard" className="mx-auto max-w-5xl space-y-5 pb-8">
       <section className="labora-hero p-5 sm:p-7">
+        <MeadowLandscape
+          variant="hero"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] w-full opacity-[0.42]"
+        />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_230px] lg:items-end">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -210,10 +215,10 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
             <p className="mt-5 text-sm font-semibold text-[#6B645C]">Hola, {firstName}</p>
             <h1 className="labora-display mt-1 max-w-2xl text-[2rem] font-semibold leading-[1.04] text-[#1E2A24] sm:text-[2.65rem]">
-              Tu trimestre, con luz clara y cuidado.
+              Tu trimestre, con luz de prado y cuidado.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#5C6E64] sm:text-[15px]">
-              Gastos, modelos y gestoría en un mismo espacio calmado — sin ruido innecesario.
+              Gastos, modelos y gestoría en un mismo espacio calmado — como un prado al sol, sin ruido.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold text-[#6B645C]">
