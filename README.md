@@ -2,30 +2,61 @@
 
 Labora+ organiza la actividad de autónomos y su relación con gestorías: ingresos, gastos, justificantes, modelos fiscales, peticiones y mensajería.
 
-## Estado actual
+**Versión actual:** `0.1.0-rc.1` (release candidate web).  
+**Store Android / Play:** aún no empaquetado (no hay Capacitor/Android en este repo).
 
-La rama `feat/labora-e2e-ready` conecta:
+## Arranque local
 
-- Supabase Auth para sesiones reales;
-- RLS para aislamiento de datos;
-- vínculo Autónomo ↔ Gestoría por correo;
-- Storage privado para identidad y justificantes;
-- Realtime para mensajes y cambios operativos;
-- carga de foto para autónomos y logo/imagen para gestorías.
+Requisitos: Node.js 22+.
+
+```bash
+cp .env.example .env.local
+# Rellena VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY
+npm ci
+npm run dev
+```
+
+Checks:
+
+```bash
+npm run typecheck   # o: npx tsc --noEmit
+npm test
+npm run build
+```
+
+## Estado del producto (honesto)
+
+Ya en `main`:
+
+- Auth Supabase + RLS
+- Perfil, documentos (storage privado + hash), peticiones gestor, mensajería
+- Modelos fiscales con máquina de estados (borrador → revisado → presentado)
+- Jornadas vía RPC
+- Ingresos/gastos con procedencia; sin sync falso de plataformas
+- Banca / Open Banking: **fail-closed** (sin tokens ni saldos inventados)
+- Billing Stripe Pro: código + edge functions listos; UI **apagada** hasta `VITE_BILLING_ENABLED=true` tras UAT sandbox
+- CI: install + typecheck + unit tests + build + Deno edge functions
+
+Pendiente externo / UAT:
+
+- Dual-cuenta real (rider + gestoría) en dispositivo
+- Secrets Stripe + Gemini en Supabase (nunca `VITE_*` de secretos)
+- Adversarial RLS en el proyecto Supabase live
+- Empaquetado Play Store **después** de pasar esos gates
 
 ## Integraciones externas
 
-Labora+ diferencia entre **usar una plataforma** y **tener una integración API real**.
+Labora+ distingue **preferencia de plataforma** vs **integración API real**.
 
-- Delivery/Movilidad: una plataforma puede añadirse al perfil para clasificar actividad; esto no implica sincronización automática.
-- Bancos: la conexión real permanece deshabilitada hasta integrar un proveedor Open Banking regulado PSD2. Labora+ no debe pedir ni guardar contraseñas bancarias.
-- Pagos/Contabilidad: permanecen como catálogo hasta disponer de OAuth/API real.
-- Logos de terceros: actualmente se resuelven por dominio y no se consideran todavía un paquete auditado de assets oficiales. Para afirmar que un logo es oficial debe verificarse y almacenarse desde el brand kit correspondiente.
+- Delivery/movilidad: se puede marcar actividad; no implica OAuth/sync
+- Bancos: bloqueados hasta PSD2 regulado
+- Pagos/contabilidad de terceros: catálogo, no conectados
+- Labora+ Pro: Stripe Checkout + Portal + webhook; sin auto-concesión desde el cliente
 
 ## Seguridad
 
-Los buckets `labora-identity` y `labora-documents` son privados. Las tablas operativas utilizan Row Level Security. El Security Advisor de Supabase no reporta avisos en el estado actual del esquema.
+Buckets `labora-identity` y `labora-documents` privados. Tablas operativas con RLS. El cliente no usa `service_role`.
 
 ## QA
 
-Consulta `LABORA_TESTING.md` para probar el flujo completo con dos cuentas y dispositivos separados.
+Ver `LABORA_TESTING.md` para el plan dual-cuenta. No marques PASS sin ejecutarlo.
