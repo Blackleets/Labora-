@@ -48,7 +48,7 @@ export const ModulesCenter: React.FC<ModulesCenterProps> = ({ setView }) => {
       title: "Finanzas & Dinero",
       modules: [
         { id: 'payroll', title: 'Nóminas (Payroll)', desc: 'Cálculo de recibos, IRPF y Seguridad Social.', icon: DollarSign, color: 'bg-green-50 text-green-600', tags: ['MoneyHub', 'RRHH'] },
-        { id: 'banking', title: 'Bancos Conectados', desc: 'Sincronización PSD2 con BBVA, Santander, Revolut, etc.', icon: Building, color: 'bg-blue-50 text-blue-600', tags: ['MoneyHub', 'API'] },
+        { id: 'banking', title: 'Bancos Conectados', desc: 'Open Banking regulado: pendiente. Hoy solo preferencias, sin conexión bancaria real.', icon: Building, color: 'bg-blue-50 text-blue-600', tags: ['MoneyHub', 'API'] },
         { id: 'movements', title: 'Movimientos', desc: 'Control de ingresos y gastos deducibles.', icon: Wallet, color: 'bg-purple-50 text-purple-600', tags: ['MoneyHub', 'Contabilidad'] },
         { id: 'docs', title: 'Documentos', desc: 'Archivo digital de facturas y modelos fiscales.', icon: FileText, color: 'bg-orange-50 text-orange-600', tags: ['MoneyHub', 'Legal'] },
       ]
@@ -56,11 +56,11 @@ export const ModulesCenter: React.FC<ModulesCenterProps> = ({ setView }) => {
     {
       title: "Operaciones & Reparto",
       modules: [
-        { id: 'delivery', title: 'Live Delivery', desc: 'Tracking de pedidos y estado de flota en tiempo real.', icon: Package, color: 'bg-indigo-50 text-indigo-600', tags: ['OpsHub', 'RealTime'] },
-        { id: 'operations', title: 'Mapa Operativo', desc: 'Visualización geoespacial de activos y rutas.', icon: Map, color: 'bg-cyan-50 text-cyan-600', tags: ['OpsHub', 'GPS'] },
-        { id: 'risks', title: 'Monitor de Riesgos', desc: 'Alertas de clima, tráfico y seguridad.', icon: AlertTriangle, color: 'bg-red-50 text-red-600', tags: ['OpsHub', 'Safety'] },
-        { id: 'hot-zones', title: 'Zonas Calientes', desc: 'Predicción de demanda y multiplicadores.', icon: Zap, color: 'bg-yellow-50 text-yellow-600', tags: ['OpsHub', 'Demand'] },
-        { id: 'routes', title: 'Optimizador Rutas', desc: 'Calculadora de rentabilidad por trayecto.', icon: Navigation, color: 'bg-emerald-50 text-emerald-600', tags: ['OpsHub', 'Efficiency'] },
+        { id: 'delivery', title: 'Live Delivery', desc: 'Pedidos en vivo: no disponible. Sin telemetría ni API de plataforma.', icon: Package, color: 'bg-indigo-50 text-indigo-600', tags: ['OpsHub', 'RealTime'] },
+        { id: 'operations', title: 'Mapa Operativo', desc: 'Mapa operativo: bloqueado hasta datos reales de flota.', icon: Map, color: 'bg-cyan-50 text-cyan-600', tags: ['OpsHub', 'GPS'] },
+        { id: 'risks', title: 'Monitor de Riesgos', desc: 'Monitor de riesgos: no cableado a fuentes reales todavía.', icon: AlertTriangle, color: 'bg-red-50 text-red-600', tags: ['OpsHub', 'Safety'] },
+        { id: 'hot-zones', title: 'Zonas Calientes', desc: 'Zonas calientes: sin predicción real; no uses datos inventados.', icon: Zap, color: 'bg-yellow-50 text-yellow-600', tags: ['OpsHub', 'Demand'] },
+        { id: 'routes', title: 'Optimizador Rutas', desc: 'Optimizador de rutas: herramienta local/estimación, no flota en vivo.', icon: Navigation, color: 'bg-emerald-50 text-emerald-600', tags: ['OpsHub', 'Efficiency'] },
       ]
     },
     {
@@ -74,7 +74,7 @@ export const ModulesCenter: React.FC<ModulesCenterProps> = ({ setView }) => {
     {
       title: "Sistema & Configuración",
       modules: [
-        { id: 'integrations', title: 'Integraciones', desc: 'Conexión con Apps de Reparto (Uber, Glovo) y herramientas.', icon: Plug, color: 'bg-teal-50 text-teal-600', tags: ['Catalog', 'Apps'] },
+        { id: 'integrations', title: 'Integraciones', desc: 'Catálogo de plataformas: preferencias de actividad, no OAuth/sync.', icon: Plug, color: 'bg-teal-50 text-teal-600', tags: ['Catalog', 'Apps'] },
         { id: 'people', title: 'Personas (Clientes)', desc: 'Gestión de usuarios, riders y perfiles.', icon: Users, color: 'bg-pink-50 text-pink-600', tags: ['CRM', 'Management'] },
         { id: 'countries', title: 'Config. Países', desc: 'Editor de variables fiscales y normativas por región.', icon: Globe, color: 'bg-blue-50 text-blue-800', tags: ['SettingsHub', 'Global'] },
         { id: 'audit', title: 'Audit Log', desc: 'Registro inmutable de eventos del sistema.', icon: Activity, color: 'bg-gray-100 text-gray-700', tags: ['SettingsHub', 'Compliance'] },
