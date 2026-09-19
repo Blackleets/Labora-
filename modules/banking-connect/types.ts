@@ -32,5 +32,4 @@ export interface BankProviderAdapter {
   completeConnection(params: any): Promise<{ accessToken: string, connectionId: string }>;
   getAccounts(connectionId: string): Promise<BankAccount[]>;
   getBalance(accountId: string): Promise<number>;
-  createTransfer(params: { fromAccountId: string; amount: number; currency: string; description?: string }): Promise<{ transactionId: string; status: 'pending' | 'completed' }>;
 }
