@@ -14,6 +14,24 @@ interface TaxDeclarationsViewerProps {
   userId?: string;
 }
 
+const currentQuarterLabel = () => {
+  const now = new Date();
+  return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
+};
+
+const dateInQuarter = (date: string, quarter: string) => {
+  const match = quarter.match(/^([1-4])T\s+(\d{4})$/i);
+  if (!match) return false;
+
+  const parsed = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return false;
+
+  const expectedQuarter = Number(match[1]);
+  const expectedYear = Number(match[2]);
+  const actualQuarter = Math.floor(parsed.getMonth() / 3) + 1;
+  return parsed.getFullYear() === expectedYear && actualQuarter === expectedQuarter;
+};
+
 export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ userId }) => {
   const {
     currentUser,
@@ -43,7 +61,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
         || (isManager && effectiveUser.managerId === currentUser.id)
       )
   );
-  const [selectedQuarter, setSelectedQuarter] = useState('3T 2026');
+  const [selectedQuarter, setSelectedQuarter] = useState(currentQuarterLabel());
   const [filingModalDec, setFilingModalDec] = useState<TaxDeclaration | null>(null);
   const [filingReference, setFilingReference] = useState('');
 
@@ -58,6 +76,20 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
     () => declarations.filter((declaration) => declaration.userId === effectiveUserId),
     [declarations, effectiveUserId]
   );
+
+  const quarterOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = new Set<number>([
+      currentYear,
+      ...userDeclarations
+        .map((declaration) => Number(declaration.year))
+        .filter((year) => Number.isInteger(year) && year >= 2000 && year <= 2100)
+    ]);
+
+    return Array.from(years)
+      .sort((a, b) => b - a)
+      .flatMap((year) => [1, 2, 3, 4].map((quarter) => `${quarter}T ${year}`));
+  }, [userDeclarations]);
 
   const userExpenses = useMemo(
     () => expenses.filter((expense) => expense.userId === effectiveUserId),
@@ -131,7 +163,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
   const exportExpenses = () => {
     const rows: Array<Array<string | number>> = [
       ['Fecha', 'Categoría', 'Proveedor', 'Importe', 'IVA', 'Deducibilidad', 'Estado'],
-      ...userExpenses.map((expense) => [
+      ...userExpenses.filter((expense) => dateInQuarter(expense.date, selectedQuarter)).map((expense) => [
         expense.date,
         String(expense.category),
         expense.merchant || '',
@@ -148,7 +180,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
   const exportIncomes = () => {
     const rows: Array<Array<string | number>> = [
       ['Fecha', 'Plataforma', 'Importe', 'Retención'],
-      ...userIncomes.map((income) => [
+      ...userIncomes.filter((income) => dateInQuarter(income.date, selectedQuarter)).map((income) => [
         income.date,
         income.platform,
         income.amount.toFixed(2),
@@ -182,10 +214,9 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
             onChange={(event) => setSelectedQuarter(event.target.value)}
             className="rounded-xl border border-[#DED7CC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 outline-none"
           >
-            <option>1T 2026</option>
-            <option>2T 2026</option>
-            <option>3T 2026</option>
-            <option>4T 2026</option>
+            {quarterOptions.map((quarter) => (
+              <option key={quarter} value={quarter}>{quarter}</option>
+            ))}
           </select>
         </div>
 
