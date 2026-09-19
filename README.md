@@ -3,7 +3,7 @@
 Labora+ organiza la actividad de autónomos y su relación con gestorías: ingresos, gastos, justificantes, modelos fiscales, peticiones y mensajería.
 
 **Versión actual:** `0.1.0-rc.1` (release candidate web).  
-**Store Android / Play:** aún no empaquetado (no hay Capacitor/Android en este repo).
+**Store Android / Play:** shell Capacitor en `android/` (`app.labora.plus`) — **no** es un release de Play. Ver `ANDROID.md` para gates y build local.
 
 ## Arranque local
 
@@ -56,6 +56,17 @@ Labora+ distingue **preferencia de plataforma** vs **integración API real**.
 ## Seguridad
 
 Buckets `labora-identity` y `labora-documents` privados. Tablas operativas con RLS. El cliente no usa `service_role`.
+
+
+## Android (pre-Play)
+
+Shell Capacitor listo en el repo. **No subir a Play** hasta completar los gates de `ANDROID.md`.
+
+```bash
+npm ci
+npm run cap:sync
+npm run cap:open
+```
 
 ## QA
 
