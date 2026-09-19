@@ -95,12 +95,43 @@ const STORAGE = {
   darkMode: 'labora_darkmode'
 } as const;
 
+const LEGACY_OPERATIONAL_KEYS = [
+  STORAGE.incomes,
+  STORAGE.expenses,
+  STORAGE.documents,
+  STORAGE.payments,
+  STORAGE.requirements,
+  STORAGE.declarations
+] as const;
+
+const scopedKey = (base: string, userId: string) => `${base}:${userId}`;
+
 const parseStored = <T,>(key: string, fallback: T): T => {
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) as T : fallback;
   } catch {
     return fallback;
+  }
+};
+
+const purgeLegacyOperationalKeys = () => {
+  for (const key of LEGACY_OPERATIONAL_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
+};
+
+const clearScopedOperationalKeys = (userId: string) => {
+  for (const key of LEGACY_OPERATIONAL_KEYS) {
+    try {
+      localStorage.removeItem(scopedKey(key, userId));
+    } catch {
+      /* ignore */
+    }
   }
 };
 
@@ -129,14 +160,35 @@ const dateInQuarter = (date: string, quarter: string) => {
 };
 
 export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => parseStored<User | null>(STORAGE.currentUser, null));
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    purgeLegacyOperationalKeys();
+    return parseStored<User | null>(STORAGE.currentUser, null);
+  });
   const [users, setUsers] = useState<User[]>(() => parseStored<User[]>(STORAGE.users, []));
-  const [incomes, setIncomes] = useState<Income[]>(() => parseStored<Income[]>(STORAGE.incomes, []));
-  const [expenses, setExpenses] = useState<Expense[]>(() => parseStored<Expense[]>(STORAGE.expenses, []));
-  const [documents, setDocuments] = useState<Document[]>(() => parseStored<Document[]>(STORAGE.documents, []));
-  const [payments, setPayments] = useState<Payment[]>(() => parseStored<Payment[]>(STORAGE.payments, []));
-  const [requirements, setRequirements] = useState<GestorRequirement[]>(() => parseStored<GestorRequirement[]>(STORAGE.requirements, []));
-  const [declarations, setDeclarations] = useState<TaxDeclaration[]>(() => parseStored<TaxDeclaration[]>(STORAGE.declarations, []));
+  const [incomes, setIncomes] = useState<Income[]>(() => {
+    const user = parseStored<User | null>(STORAGE.currentUser, null);
+    return user ? parseStored<Income[]>(scopedKey(STORAGE.incomes, user.id), []) : [];
+  });
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    const user = parseStored<User | null>(STORAGE.currentUser, null);
+    return user ? parseStored<Expense[]>(scopedKey(STORAGE.expenses, user.id), []) : [];
+  });
+  const [documents, setDocuments] = useState<Document[]>(() => {
+    const user = parseStored<User | null>(STORAGE.currentUser, null);
+    return user ? parseStored<Document[]>(scopedKey(STORAGE.documents, user.id), []) : [];
+  });
+  const [payments, setPayments] = useState<Payment[]>(() => {
+    const user = parseStored<User | null>(STORAGE.currentUser, null);
+    return user ? parseStored<Payment[]>(scopedKey(STORAGE.payments, user.id), []) : [];
+  });
+  const [requirements, setRequirements] = useState<GestorRequirement[]>(() => {
+    const user = parseStored<User | null>(STORAGE.currentUser, null);
+    return user ? parseStored<GestorRequirement[]>(scopedKey(STORAGE.requirements, user.id), []) : [];
+  });
+  const [declarations, setDeclarations] = useState<TaxDeclaration[]>(() => {
+    const user = parseStored<User | null>(STORAGE.currentUser, null);
+    return user ? parseStored<TaxDeclaration[]>(scopedKey(STORAGE.declarations, user.id), []) : [];
+  });
   const [vehicle, setVehicle] = useState<Vehicle | null>(() => parseStored<Vehicle | null>(STORAGE.vehicle, null));
   const [hasOnboarded, setHasOnboarded] = useState(() => localStorage.getItem(STORAGE.onboarded) === 'true');
   const [privacyMode, setPrivacyMode] = useState(() => localStorage.getItem(STORAGE.privacy) === 'true');
@@ -144,13 +196,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
+    purgeLegacyOperationalKeys();
     localStorage.setItem(STORAGE.users, JSON.stringify(users));
-    localStorage.setItem(STORAGE.incomes, JSON.stringify(incomes));
-    localStorage.setItem(STORAGE.expenses, JSON.stringify(expenses));
-    localStorage.setItem(STORAGE.documents, JSON.stringify(documents));
-    localStorage.setItem(STORAGE.payments, JSON.stringify(payments));
-    localStorage.setItem(STORAGE.requirements, JSON.stringify(requirements));
-    localStorage.setItem(STORAGE.declarations, JSON.stringify(declarations));
     localStorage.setItem(STORAGE.onboarded, String(hasOnboarded));
     localStorage.setItem(STORAGE.privacy, String(privacyMode));
     localStorage.setItem(STORAGE.darkMode, String(darkMode));
@@ -158,8 +205,17 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     if (vehicle) localStorage.setItem(STORAGE.vehicle, JSON.stringify(vehicle));
     else localStorage.removeItem(STORAGE.vehicle);
 
-    if (currentUser) localStorage.setItem(STORAGE.currentUser, JSON.stringify(currentUser));
-    else localStorage.removeItem(STORAGE.currentUser);
+    if (currentUser) {
+      localStorage.setItem(STORAGE.currentUser, JSON.stringify(currentUser));
+      localStorage.setItem(scopedKey(STORAGE.incomes, currentUser.id), JSON.stringify(incomes));
+      localStorage.setItem(scopedKey(STORAGE.expenses, currentUser.id), JSON.stringify(expenses));
+      localStorage.setItem(scopedKey(STORAGE.documents, currentUser.id), JSON.stringify(documents));
+      localStorage.setItem(scopedKey(STORAGE.payments, currentUser.id), JSON.stringify(payments));
+      localStorage.setItem(scopedKey(STORAGE.requirements, currentUser.id), JSON.stringify(requirements));
+      localStorage.setItem(scopedKey(STORAGE.declarations, currentUser.id), JSON.stringify(declarations));
+    } else {
+      localStorage.removeItem(STORAGE.currentUser);
+    }
   }, [users, incomes, expenses, documents, payments, requirements, declarations, vehicle, currentUser, hasOnboarded, privacyMode, darkMode]);
 
   useEffect(() => {
@@ -234,7 +290,16 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   };
 
   const logout = () => {
+    const previousUserId = currentUser?.id;
     setCurrentUser(null);
+    setIncomes([]);
+    setExpenses([]);
+    setDocuments([]);
+    setPayments([]);
+    setRequirements([]);
+    setDeclarations([]);
+    if (previousUserId) clearScopedOperationalKeys(previousUserId);
+    purgeLegacyOperationalKeys();
     showNotification('info', 'Sesión cerrada.');
   };
 
