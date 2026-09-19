@@ -1,412 +1,260 @@
 # LABORA+ — CANONICAL HANDOFF
 
-Updated: 2026-09-18  
+Updated: 2026-09-19  
 Repository: `Blackleets/Labora-`  
-Working branch: `feat/labora-e2e-ready`  
-Pull request: `#2`  
-Current code HEAD before this handoff refresh: `8ddf5891000987e2f3568da672dfd02eb2b6230f`  
+Default branch baseline before this closeout: `main@a226275636141b84c4c71b146e40b9e91c719a18`  
+Working branch: `feat/labora-functional-closeout`  
 Supabase project: `gggtriyvbusbpqohoukv`
 
 ## 0. Current status
 
-**DO NOT MERGE YET.**
+The old PR #2 / PR #3 handoff is obsolete. Both were already merged to `main`.
 
-GitHub Actions at `13f96caf...` were green for install, TypeScript and Vite build. The current Priority 1 HEAD has no workflow run surfaced by the GitHub connector yet, so do not claim current CI is green until a run is visible and passes.
+The current branch is a **functional closeout**, not a redesign. Its purpose is to make the existing rider + gestoría product safer and more internally complete before visual redesign and external integration wiring.
 
-PR #2 currently reports:
+Current CI validates two independent surfaces:
 
-- base: `main`
-- head: `feat/labora-e2e-ready`
-- mergeable: `false`
-- mergeable_state: `dirty`
+- React/Vite frontend: install + TypeScript + production build;
+- Supabase Edge Functions: Deno typecheck for Stripe checkout, Stripe portal, Stripe webhook and Labora AI.
 
-This means the branch contains working changes but must be reconciled with `main` before merge. Do not force-merge or discard branch changes.
+Latest verified closeout HEAD before this handoff update passed both CI jobs.
 
-## 1. Mission
+## 1. Product scope that is real now
 
-Continue Labora+ as a real two-sided product for:
+### Rider / autónomo
 
-- Rider / autónomo: jornada, ingresos, gastos, documentos, fiscal workspace, requests, messages and profile.
-- Gestoría: linked-client portfolio, evidence review, requests, documents, fiscal review and messages.
+- Supabase Auth account/session;
+- onboarding preferences;
+- profile + avatar;
+- optional gestoría link by gestor email;
+- work-session start/finish with optional odometer;
+- registered income;
+- imported income with original evidence and duplicate hash protection;
+- expenses with receipts and review state;
+- documents;
+- models 130/303 workspace with explicit review state;
+- gestor requests / rider responses;
+- messages;
+- platform/activity preferences;
+- privacy mode and local appearance preferences.
 
-Product direction:
+### Gestoría
 
-**calma premium + fiscal inteligente + humano**
+- manager identity/profile;
+- linked-client portfolio;
+- client income/expense review context;
+- audited expense review;
+- audited imported-income review;
+- request creation/definition/review;
+- tax declaration review and filing-record workflow;
+- documents and messages.
 
-No demos, fake integrations, fake bank connections, invented fiscal truth or silent data rewriting.
+## 2. Truth / safety guardrails
 
-## 2. Non-negotiable guardrails
+Do not:
 
-Do NOT:
-
-- disable Supabase RLS;
-- put service-role/secret keys in the browser;
-- use permissive `using (true)` / `with check (true)` policies as a shortcut;
-- reintroduce fake OAuth or bank callbacks;
-- infer VAT/deductibility universally from a photo or category;
-- mark manager review as AEAT validation;
+- disable RLS;
+- expose service-role, Stripe, Gemini or other secret keys in browser code;
+- reintroduce fake bank OAuth;
+- present platform preferences as API connections;
+- infer universal VAT, IRPF or deductibility;
+- label gestor review as AEAT filing;
 - fabricate OCR values;
-- create public signup paths to admin;
-- merge while PR #2 is dirty.
+- allow public signup to create admin;
+- add permissive RLS shortcuts such as `using (true)`;
+- redesign core flows until functional closeout is merged.
 
 Preserve:
 
-- Supabase Auth;
-- private Storage;
-- RLS isolation;
+- original evidence;
+- SHA-256 exact duplicate protection;
+- private storage;
+- fail-closed OCR;
+- fiscal-neutral defaults;
+- explicit tax state transitions;
+- role-scoped requirements;
+- immutable message content;
+- current green/ivory/terracotta identity until redesign phase.
+
+## 3. Functional closeout changes
+
+### AI moved server-side
+
+Browser code no longer imports or initializes `@google/genai`.
+
+The frontend keeps the existing service API but invokes authenticated Supabase Edge Function:
+
+- `labora-ai`
+
+Supported actions:
+
+- receipt OCR;
+- fiscal assistant;
+- income extraction from text;
+- income extraction from PDF/image;
+- retention explanation.
+
+The Edge Function:
+
+- requires an authenticated Supabase user;
+- reads `GEMINI_API_KEY` or `GOOGLE_API_KEY` only from server environment;
+- never exposes the provider key to the browser;
+- rejects unsupported/oversized payloads;
+- uses strict non-hallucination extraction prompts;
+- returns safe error codes and lets manual entry continue when AI is unavailable.
+
+`labora-ai` is deployed to Supabase with `verify_jwt = true`.
+
+If no Gemini server secret is configured, AI features must fail safely; manual money/receipt flows remain usable.
+
+### Fiscal workspace corrections
+
+- quarter selection starts from the actual current quarter, not hard-coded `3T 2026`;
+- quarter choices are generated dynamically from current year + recorded declaration years;
+- expense CSV export is scoped to the selected quarter;
+- income CSV export is scoped to the selected quarter;
+- a saved draft remains `requires_review`, not falsely `recorded`;
+- negative working tax bases are preserved instead of being clamped to zero;
+- tax amount remains unverified / zero until explicit review logic provides evidence.
+
+### Client metrics correction
+
+Gestoría client metrics no longer default unknown deductibility to 100%.
+
+Unknown deductibility defaults to 0%, and open requirements count includes pending + submitted items.
+
+### Anonymous Data API hardening
+
+Live Supabase migration applied:
+
+`20260919075952_labora_revoke_anon_operational_access`
+
+The `anon` role now has no direct table privileges on Labora+ operational tables.
+
+RLS remains enabled and unchanged.
+
+Verified after migration:
+
+- zero `anon` table grants on the operational tables;
+- Security Advisor still shows only the existing Auth setting warning:
+  `Leaked Password Protection Disabled`.
+
+### CI expansion
+
+CI now checks both browser and backend code.
+
+Do not remove the Deno checks or re-expand Vite TypeScript over `supabase/functions`; they are separate runtimes.
+
+## 4. Existing hardening that remains mandatory
+
+Already implemented and live:
+
+- profile privilege escalation prevention;
+- public signup cannot request admin;
+- expense facts separated from gestor review fields;
+- rider cannot self-approve expenses or assign deductibility;
+- editing reviewed expense resets review state;
+- income evidence linkage + duplicate hash;
+- manager income review;
+- work-session RPC hardening;
+- Requirements/Peticiones role/state machine;
+- tax declaration `draft -> reviewed_by_gestor -> filed_with_tax_agency` state machine;
+- filing reference/evidence requirement;
+- filed declarations immutable;
+- message sender/recipient/body immutable;
+- recipient may only mark own message read;
+- private operational storage;
 - Realtime collaboration;
-- SHA-256 duplicate protection;
-- original evidence preservation;
-- OCR fail-closed;
-- fiscal-neutral defaults pending review;
-- current premium green/ivory/terracotta identity.
+- truthful integration labels.
 
-## 3. What is now implemented and proven
+## 5. External wiring intentionally not claimed complete
 
-### Income evidence chain
+These are **not bugs to fake around**. They belong to the wiring phase after functional closeout / redesign:
 
-Imported settlement/document income can now carry:
+### Stripe Pro
 
-- `source_document_id`
-- `source_hash`
-- preserved original document
-- per-user SHA-256 duplicate protection
-- same-user document ownership enforcement
+Code and Edge Functions exist, but keep billing UI disabled until real sandbox configuration is verified.
 
-The original settlement is retained as evidence and linked to imported income rows.
+Required server-side configuration includes Stripe secret, price IDs, webhook secret and Labora app URL.
 
-### Gestoría income review
+Do not enable `VITE_BILLING_ENABLED=true` before end-to-end sandbox checkout + webhook + portal UAT passes.
 
-Imported incomes now support audited review metadata:
+### Gemini
 
-- `reviewed_by`
-- `reviewed_at`
-- `review_note`
+`labora-ai` is ready and deployed. It requires a server-side Gemini secret to produce AI results.
 
-Manager review uses a narrow RPC. Rider self-review was tested and blocked.
+Never add a `VITE_GEMINI_API_KEY`.
 
-### Jornada Labora
+### Banking / PSD2
 
-Work sessions now use controlled RPCs instead of direct browser mutation.
+No real provider is connected yet.
 
-Implemented:
+Keep banking read-only/locked and truthful until a regulated Open Banking provider is selected and real OAuth/API authorization is implemented.
 
-- start/finish work session
-- optional odometer start/end
-- km completed
-- €/h gross
-- €/km gross
-- registered fuel cost
-- income minus registered fuel
+### Delivery platform APIs
 
-These labels intentionally do **not** claim full net profit.
+Platform selection is a user preference, not a live API connection.
 
-Direct work-session insert/update paths were removed from normal browser permissions.
+Keep it that way until real provider authorization exists.
 
-### Economic truth vs fiscal truth
+### Notifications
 
-Economic cash and fiscal deductibility are separated.
+Push/email/WhatsApp channels are not live yet. Do not expose fake notification toggles.
 
-- real expense amount affects operating net even while fiscal review is pending;
-- deductible expense amount is tracked separately;
-- losses can appear as negative values;
-- no `Math.max(0, net)` hiding losses;
-- UI uses labels such as `Gastos reales` and `Neto operativo`.
+## 6. Remaining launch/UAT items
 
-### Sync observability
+Before public launch, still verify with real accounts:
 
-Remote sync failures now surface a throttled user-safe message while logging internal diagnostic codes such as:
+1. rider account signup/login/email confirmation;
+2. manager account signup/login;
+3. rider links manager by manager email;
+4. rider adds income + expense + document;
+5. manager sees linked records;
+6. manager reviews expense/income;
+7. manager creates request;
+8. rider submits request;
+9. manager approves request;
+10. rider/manager message exchange + read-state;
+11. model draft -> manager review -> filing reference;
+12. mobile UAT on two real accounts;
+13. Stripe sandbox only when billing wiring is intentionally enabled;
+14. re-check Supabase Security Advisor.
 
-- `LABORA_SYNC_HYDRATE_FAILED`
-- `LABORA_SYNC_WRITE_FAILED`
-- `LABORA_SYNC_REALTIME_REFRESH_FAILED`
+Current non-code security setting still pending:
 
-No receipt/NIF content is intentionally placed in those messages.
+- enable Supabase Auth Leaked Password Protection in project settings and verify it.
 
-### Honest onboarding
+## 7. Next phase after this branch is merged
 
-The old onboarding that visually pretended to:
+The user's intended sequence is:
 
-- connect delivery platforms,
-- connect banks,
-- use PSD2,
-- calculate IRPF,
-- detect IAE,
+1. finish functional app;
+2. redesign/polish UX;
+3. wire external services that require real provider credentials/contracts.
 
-was removed.
+Therefore the next design pass should **not** change authority models, data truth, RLS or state machines.
 
-The onboarding now stores real preferences only:
+Redesign may change layout, typography, hierarchy and interaction polish while preserving the wired core.
 
-- country
-- platforms used
-- banks used
-
-Selecting a platform/bank explicitly does **not** mean it is connected.
-
-Preferences and onboarding state persist in Supabase.
-
-### Fake banking removed
-
-The legacy fake bank OAuth flow containing a fake authorization code was neutralized.
-
-Current banking UX is locked and truthfully states:
-
-- no real bank integration exists yet;
-- no credentials should be entered into Labora+;
-- future connection must use regulated Open Banking/PSD2;
-- first phase should be read-only.
-
-### Profile privilege escalation closed
-
-This was a real security issue and is now closed.
-
-Before hardening, an authenticated user had overly broad profile UPDATE privileges and public signup metadata could request `admin`.
-
-Now:
-
-- public signup may create only `rider` or `manager`;
-- `admin` cannot be assigned through signup metadata;
-- authenticated browser users cannot directly update:
-  - `role`
-  - `manager_id`
-  - `email`
-  - `id`
-- allowed profile fields use column-level UPDATE grants.
-
-Adversarial tests confirmed:
-
-- normal self profile update: allowed;
-- `role='admin'`: blocked;
-- direct `manager_id` change: blocked;
-- direct email change: blocked.
-
-### Expense review integrity
-
-Expense facts and gestor review fields are now separated.
-
-Rider can edit factual fields such as:
-
-- amount
-- date
-- category
-- merchant
-- receipt
-- notes
-- fuel details
-
-Rider cannot directly control review fields:
-
-- `status`
-- `gestor_notes`
-- `deductible_percentage`
-
-On INSERT, DB forces:
-
-- `status = pending_review`
-- `deductible_percentage = 0`
-- no gestor note
-
-If a rider edits a previously reviewed expense, DB automatically resets it to:
-
-- `pending_review`
-- deductible 0
-- gestor note cleared
-
-A narrow gestor RPC performs expense review.
-
-Tested behavior:
-
-- self-inserting `approved + 100%` became `pending_review + 0%`;
-- editing an approved expense amount reset review state correctly.
-
-## 4. Security advisor
-
-Supabase Security Advisor is clean except for:
-
-**Leaked Password Protection Disabled**
-
-This is an Auth project setting and was not changed from the available connector because no safe configuration operation was exposed.
-
-Do not claim it is enabled until verified in Supabase Auth settings.
-
-## 5. Immediate next work
-
-### Priority 1 — Requirements / Peticiones integrity — DONE / PROVEN
-
-Implemented on 2026-09-18.
-
-Authority model now enforced in Supabase:
-
-**Manager owns request definition**
-- manager/rider identity is fixed at creation;
-- title, description, category, deadline and quarter can only be edited by the linked manager while the request is pending;
-- creation and definition edits go through narrow RPCs.
-
-**Rider owns response**
-- only the assigned rider can transition `pending -> submitted`;
-- rider controls `submission_notes` and `submission_url`;
-- submission records `submitted_by` and `submitted_at`;
-- a submitted request cannot be silently resubmitted/re-written.
-
-**Manager owns review**
-- only the still-linked manager can transition `submitted -> approved`;
-- review records `reviewed_by`, `reviewed_at` and `review_note`;
-- review cannot rewrite the rider response or request definition.
-
-Direct browser INSERT/UPDATE/DELETE on `requirements` is revoked. Anonymous table access is revoked. RLS SELECT is participant-scoped to `authenticated`. A defense-in-depth trigger protects the role/state boundaries if grants regress later.
-
-Frontend sync no longer mutates `requirements` directly. It reconciles remote state and calls only:
-- `create_requirement`
-- `update_requirement_definition`
-- `submit_requirement`
-- `review_requirement`
-
-Adversarial rollback test: **10/10 passed**.
-Verified:
-- manager creates pending request;
-- rider submits with audit metadata;
-- rider resubmit blocked;
-- rider definition edit blocked;
-- rider self-review blocked;
-- unlinked manager review blocked;
-- manager approval preserves rider response and records review metadata;
-- authenticated direct INSERT blocked;
-- authenticated direct UPDATE blocked;
-- anon table access blocked.
-
-A second rollback test confirmed manager definition editing while pending and RPC execute grants. All temporary auth users and requirement rows were rolled back and verified absent.
-
-Supabase Security Advisor after Priority 1: only the pre-existing `Leaked Password Protection Disabled` warning remains.
-Performance Advisor no longer reports unindexed requirement audit foreign keys after adding indexes for `submitted_by` and `reviewed_by`.
-### Priority 2 — Tax declarations integrity
-
-Audit `tax_declarations` UPDATE/INSERT permissions.
-
-Do not allow a rider or manager to silently rewrite official-looking filing facts outside an explicit state machine.
-
-Recommended direction:
-
-- draft data
-- gestor review
-- filed only with explicit filing evidence/reference
-- immutable/audited transition metadata
-
-Never equate `reviewed_by_gestor` with filed at AEAT.
-
-### Priority 3 — Messages mutation surface
-
-Current recipient UPDATE policy should be reduced to read-state metadata only.
-
-Recipient should not be able to rewrite:
-
-- sender
-- recipient
-- body
-- attachment identity
-
-Use a narrow `mark_message_read` operation.
-
-## 6. PR conflict reconciliation
-
-PR #2 currently has merge conflicts with `main`.
-
-Before merge:
-
-1. inspect the exact conflicting files;
-2. preserve security migrations and hardened branch behavior;
-3. integrate only legitimate newer main changes;
-4. do not resolve by taking `ours` or `theirs` wholesale;
-5. run install + typecheck + build;
-6. rerun Supabase security/adversarial tests;
-7. verify the resulting PR becomes mergeable.
-
-Do not merge simply to get rid of the dirty state.
-
-## 7. Important migrations added in this hardening pass
-
-Recent branch migrations include:
-
-- income evidence linkage
-- income manager review
-- work-session RPC hardening
-- private RPC wrappers
-- profile preferences
-- onboarding state
-- profile column security
-- expense review integrity
-- requirements integrity
-- requirements integrity follow-up / trigger hardening
-- requirements audit FK indexes
-
-Treat GitHub migration files and the live Supabase project together as the source of truth.
-
-## 8. Data truth rules
-
-- Original evidence must remain traceable.
-- Hash duplicate blocking is exact duplicate protection, not semantic/fuzzy duplicate detection.
-- OCR is extraction assistance, not authoritative truth.
-- An uploaded ticket is not automatically deductible.
-- A gestor review is not an AEAT filing.
-- Economic spending and fiscal deductibility are separate concepts.
-- No external service is “connected” until real API/OAuth authorization exists.
-
-## 9. Visual identity
-
-Keep:
-
-- Deep green `#214E3A`
-- Secondary green `#2F6B50`
-- Fresh accent `#52AA83`
-- Terracotta `#D66C47`
-- Amber `#F1C56B`
-- Ivory `#F7F3EA`
-- Ink `#1E231F`
-
-Avoid generic blue/purple SaaS redesigns.
-
-## 10. Start instruction for the next chat / agent
-
-Use this exactly:
+## 8. Start instruction for next agent
 
 ```text
-Continue Labora+ from the canonical repository state.
+Continue Labora+ from current main.
 
 Repository: Blackleets/Labora-
-Branch: feat/labora-e2e-ready
-PR: #2
 Supabase project: gggtriyvbusbpqohoukv
 
-FIRST:
-Read HERMES_HANDOFF.md completely and inspect the current PR HEAD/CI before changing anything.
+Read HERMES_HANDOFF.md first.
 
-Do not merge to main.
-Do not disable RLS.
-Do not reintroduce fake integrations or fiscal assumptions.
-Preserve all existing security hardening.
+The functional closeout moved AI server-side, fixed fiscal quarter/export truth,
+expanded CI to Deno Edge Functions, and revoked anonymous operational table access.
 
-Continue from Priority 2:
-harden tax_declarations so draft/review/filed transitions are explicit and filing facts require auditable evidence/reference.
+Do not reintroduce browser API secrets, fake integrations, universal fiscal assumptions,
+or permissive RLS.
 
-Then harden message read-state mutations.
+If functional closeout is already merged and CI is green, begin the redesign phase
+without weakening the existing authority/state/security model.
 
-Priority 1 Requirements/Peticiones is already hardened and adversarially tested. Do not redesign or weaken it without a reproduced defect.
-Also inspect PR #2 merge conflicts with main, but do not resolve them by discarding hardened branch changes.
-
-Keep CI green and prove security behavior with rollback/adversarial tests before claiming completion.
+External wiring (Stripe sandbox, Gemini server secret, PSD2 banking, delivery APIs,
+notification channels) must remain truthful and disabled until real credentials and UAT exist.
 ```
-
-## 11. Definition of ready-for-merge
-
-Do not approve merge until all are true:
-
-- PR no longer dirty/conflicted;
-- CI green on reconciled HEAD;
-- profile escalation remains blocked;
-- expense self-approval remains blocked;
-- requirements participant fields are role-scoped;
-- declaration filing state is auditable;
-- message body/sender cannot be rewritten by recipient;
-- RLS/Storage remain enabled/private;
-- mobile primary flows have real-device QA;
-- no fake bank/API connection exists;
-- Supabase security advisor reviewed again.
