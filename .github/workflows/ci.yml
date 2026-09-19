@@ -3,7 +3,7 @@ name: Labora+ CI
 on:
   push:
     branches:
-      - feat/labora-e2e-ready
+      - feat/labora-functional-closeout
   pull_request:
     branches:
       - main
@@ -29,3 +29,22 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check Supabase Edge Functions
+        run: |
+          deno check supabase/functions/create-checkout-session/index.ts
+          deno check supabase/functions/create-billing-portal-session/index.ts
+          deno check supabase/functions/stripe-webhook/index.ts
+          deno check supabase/functions/labora-ai/index.ts
