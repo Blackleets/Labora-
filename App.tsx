@@ -112,7 +112,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden font-sans text-[#1E231F] selection:bg-[#DDE9E1] selection:text-[#214E3A]">
+    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden font-sans text-[#1E231F] selection:bg-[#DDE9E1] selection:text-[#214E3A]">
       <Toast />
       <Sidebar
         currentView={currentView}
@@ -122,7 +122,7 @@ const MainLayout: React.FC = () => {
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="z-20 flex h-16 shrink-0 items-center justify-between border-b px-3 backdrop-blur-xl sm:px-5 md:px-8">
+        <header className="safe-area-top z-20 flex h-16 shrink-0 items-center justify-between border-b px-3 backdrop-blur-xl sm:px-5 md:px-8">
           <div className="flex min-w-0 items-center gap-2.5">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
