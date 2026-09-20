@@ -15,6 +15,7 @@ Updated: 2026-09-20 (Europe/Paris). Feature work may live on unmerged branches; 
 | Docs | This checklist + `HOW_TO_TEST_AUTONOMO_GESTORIA.md` |
 | CI | `tsc` + vitest must stay green on the feature branch |
 | Agent-safe polish (BASE_URL legal, currency/country, dark remaps, audit ticket/%, platform letter accents, account-deletion honesty) | Done on `feat/agent-safe-polish-pass` — no secrets / OCR / tax fiction |
+| Agent-safe loop 2 (hub CSS vars, Messages dark empty/soft-grid, soft currency, legal relative `/Labora-/`) | Done on `agent/loop2-dark-currency-legal` — billing flag still OFF |
 
 ## Blocked / external (secrets or official data)
 

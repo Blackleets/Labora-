@@ -4,10 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Privacidad · Labora+</title>
-  <link rel="icon" href="/favicon.png" />
+  <link rel="icon" href="favicon.png" />
   <style>
-    :root { color-scheme: light; }
+    :root { color-scheme: light dark; }
     body { margin: 0; font-family: "Plus Jakarta Sans", system-ui, sans-serif; background: #FFFEFB; color: #1E2A24; line-height: 1.55; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #121816; color: #E8EDE9; }
+      p, li { color: #9AABA2; }
+      a { color: #6FAF8E; }
+      .note { background: #1A221E; border-color: #2A3530; color: #C5D0C9; }
+      .kicker { color: #6FAF8E; }
+    }
     main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
     h1 { font-size: 1.75rem; letter-spacing: -0.03em; margin: 0 0 0.35rem; }
     .kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #789582; }
@@ -59,7 +66,7 @@
     <p>Usamos autenticación, cifrado en tránsito (HTTPS) y políticas de fila (RLS) para aislar datos entre usuarios. Ningún sistema es infalible; reporta incidencias por el canal de soporte.</p>
 
     <div class="note">Cobros con Stripe y OCR con Gemini permanecen desactivados hasta que el operador configure secretos de servidor. La app no muestra estados “conectado” inventados.</div>
-    <p style="margin-top:2rem"><a href="/terminos.html">Términos de uso</a> · <a href="/">Volver a Labora+</a></p>
+    <p style="margin-top:2rem"><a href="terminos.html">Términos de uso</a> · <a href="./">Volver a Labora+</a></p>
   </main>
 </body>
 </html>

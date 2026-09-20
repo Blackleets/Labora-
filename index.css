@@ -374,6 +374,51 @@ body.dark .bg-\[\#E7F0EA\] {
   background-color: var(--labora-moss-soft) !important;
 }
 
+/* Loop2: hubs leftovers not covered by prior cream remaps */
+html.dark .bg-\[\#F0ECE6\],
+body.dark .bg-\[\#F0ECE6\],
+html.dark .bg-\[\#F3F0EA\],
+body.dark .bg-\[\#F3F0EA\],
+html.dark .bg-\[\#FFF3E8\],
+body.dark .bg-\[\#FFF3E8\] {
+  background-color: var(--labora-surface-2) !important;
+}
+
+/* MoneyHub metric grid gutters */
+html.dark .bg-\[\#EAE3D9\],
+body.dark .bg-\[\#EAE3D9\] {
+  background-color: var(--labora-border) !important;
+}
+
+html.dark .border-\[\#DCD4C9\],
+body.dark .border-\[\#DCD4C9\],
+html.dark .border-\[\#E5DDD2\],
+body.dark .border-\[\#E5DDD2\],
+html.dark .border-\[\#E7E0D6\],
+body.dark .border-\[\#E7E0D6\],
+html.dark .border-\[\#E6DDD2\],
+body.dark .border-\[\#E6DDD2\],
+html.dark .border-\[\#E2DAD0\],
+body.dark .border-\[\#E2DAD0\],
+html.dark .border-\[\#CFC5B8\],
+body.dark .border-\[\#CFC5B8\],
+html.dark .border-\[\#DCD4C8\],
+body.dark .border-\[\#DCD4C8\] {
+  border-color: var(--labora-border) !important;
+}
+
+html.dark .divide-\[\#EEE8DF\] > :not([hidden]) ~ :not([hidden]),
+body.dark .divide-\[\#EEE8DF\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--labora-border) !important;
+}
+
+html.dark .text-stone-300,
+body.dark .text-stone-300,
+html.dark .text-stone-600,
+body.dark .text-stone-600 {
+  color: var(--labora-muted) !important;
+}
+
 html.dark .divide-\[\#EEE7DD\] > :not([hidden]) ~ :not([hidden]),
 body.dark .divide-\[\#EEE7DD\] > :not([hidden]) ~ :not([hidden]) {
   border-color: var(--labora-border) !important;
@@ -594,6 +639,14 @@ textarea:focus-visible {
   background-image:
     linear-gradient(rgba(30, 42, 36, 0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(30, 42, 36, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+html.dark .labora-soft-grid,
+body.dark .labora-soft-grid {
+  background-image:
+    linear-gradient(rgba(232, 237, 233, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 237, 233, 0.045) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 

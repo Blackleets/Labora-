@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Check, Crown, ExternalLink, Loader2 } from 'lucide-react';
+import { useCountry } from '../contexts/CountryContext';
 import {
   BillingEntitlement,
   BillingInterval,
@@ -11,6 +12,7 @@ import {
 } from '../services/billingService';
 
 const BillingCard: React.FC = () => {
+  const { selectedCountry } = useCountry();
   const [entitlement, setEntitlement] = useState<BillingEntitlement | null>(null);
   const [busy, setBusy] = useState<BillingInterval | 'portal' | null>(null);
   const [error, setError] = useState('');
@@ -27,8 +29,13 @@ const BillingCard: React.FC = () => {
 
   if (!billingEnabled) return null;
 
-  const monthlyLabel = import.meta.env.VITE_LABORA_PRO_MONTHLY_LABEL || '9,99 €/mes';
-  const annualLabel = import.meta.env.VITE_LABORA_PRO_ANNUAL_LABEL || '89,90 €/año';
+  const sym = selectedCountry.currency_symbol || selectedCountry.currency || '';
+  const monthlyLabel =
+    import.meta.env.VITE_LABORA_PRO_MONTHLY_LABEL ||
+    (sym ? `9,99 ${sym}/mes` : 'Plan mensual');
+  const annualLabel =
+    import.meta.env.VITE_LABORA_PRO_ANNUAL_LABEL ||
+    (sym ? `89,90 ${sym}/año` : 'Plan anual');
   const isPro = Boolean(entitlement?.proActive);
 
   const redirect = async (kind: BillingInterval | 'portal') => {
@@ -49,7 +56,7 @@ const BillingCard: React.FC = () => {
 
   return (
     <section className="labora-card overflow-hidden">
-      <div className="bg-[#214E3A] p-5 text-white sm:p-6">
+      <div className="bg-[var(--labora-primary)] p-5 text-white sm:p-6">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-white/12">
             <Crown size={20} />
@@ -72,8 +79,8 @@ const BillingCard: React.FC = () => {
       <div className="p-4 sm:p-5">
         <div className="grid gap-2 sm:grid-cols-2">
           {PRO_CAPABILITIES.map((item) => (
-            <div key={item} className="flex items-start gap-2 rounded-[13px] bg-[#F8F5F0] px-3 py-2.5">
-              <Check size={14} className="mt-0.5 shrink-0 text-[#2F6B50]" />
+            <div key={item} className="flex items-start gap-2 rounded-[13px] bg-[var(--labora-surface-2)] px-3 py-2.5">
+              <Check size={14} className="mt-0.5 shrink-0 text-[var(--labora-primary)]" />
               <p className="text-[11px] font-semibold leading-relaxed text-stone-600">{item}</p>
             </div>
           ))}
@@ -94,7 +101,7 @@ const BillingCard: React.FC = () => {
               type="button"
               onClick={() => void redirect('portal')}
               disabled={busy !== null}
-              className="inline-flex items-center justify-center gap-2 rounded-[13px] border border-[#D7DED8] bg-white px-4 py-2.5 text-xs font-extrabold text-[#214E3A] disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-4 py-2.5 text-xs font-extrabold text-[var(--labora-primary)] disabled:opacity-50"
             >
               {busy === 'portal' ? <Loader2 size={15} className="animate-spin" /> : <ExternalLink size={15} />}
               Gestionar suscripción
@@ -106,7 +113,7 @@ const BillingCard: React.FC = () => {
               type="button"
               onClick={() => void redirect('month')}
               disabled={busy !== null}
-              className="rounded-[13px] bg-[#214E3A] px-4 py-3 text-left text-white disabled:opacity-50"
+              className="rounded-[13px] bg-[var(--labora-primary)] px-4 py-3 text-left text-white disabled:opacity-50"
             >
               <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-white/60">Mensual</span>
               <span className="mt-1 flex items-center gap-2 text-sm font-extrabold">
@@ -118,7 +125,7 @@ const BillingCard: React.FC = () => {
               type="button"
               onClick={() => void redirect('year')}
               disabled={busy !== null}
-              className="rounded-[13px] border border-[#D7DED8] bg-[#F8F5F0] px-4 py-3 text-left text-[#214E3A] disabled:opacity-50"
+              className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-4 py-3 text-left text-[var(--labora-primary)] disabled:opacity-50"
             >
               <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-stone-400">Anual</span>
               <span className="mt-1 flex items-center gap-2 text-sm font-extrabold">
