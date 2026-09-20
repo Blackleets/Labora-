@@ -214,14 +214,14 @@ const Login: React.FC = () => {
               >
                 {title}
               </p>
-              <h1 className="mt-4 font-serif text-[3.2rem] font-semibold leading-[1.02] tracking-[-0.03em] text-[#1E2A24] xl:text-[3.7rem]">
+              <h1 className="mt-5 font-serif text-[3.15rem] font-semibold leading-[1.04] tracking-[-0.03em] text-[#1E2A24] xl:text-[3.6rem]">
                 Trabajo claro, entre colinas y hierba al sol.
               </h1>
-              <p className="mt-5 max-w-md text-[15px] leading-relaxed text-[#5C6E64]">
+              <p className="mt-6 max-w-md text-[15px] leading-relaxed text-[#5C6E64]">
                 {subtitle}. Fiscalidad y gestoría sin ruido: evidencia real, permisos limpios y un espacio con la calma de un prado.
               </p>
 
-              <div className="mt-9 grid max-w-lg grid-cols-3 gap-3">
+              <div className="mt-10 grid max-w-lg grid-cols-3 gap-3">
                 {[
                   { k: 'Auth', v: 'Sesión segura' },
                   { k: 'Docs', v: 'Archivo privado' },
@@ -232,7 +232,7 @@ const Login: React.FC = () => {
                     className="rounded-2xl border px-3.5 py-3 shadow-[0_8px_28px_rgba(47,93,74,0.06)]"
                     style={{
                       borderColor: palette.border,
-                      background: 'rgba(255,254,251,0.82)'
+                      background: 'rgba(255,254,251,0.88)'
                     }}
                   >
                     <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: palette.clay }}>
@@ -247,7 +247,7 @@ const Login: React.FC = () => {
         </section>
 
         {/* Cream paper auth card */}
-        <section className="relative flex items-center justify-center px-4 py-8 sm:px-8">
+        <section className="relative flex items-center justify-center px-4 py-9 sm:px-8 lg:py-10">
           <div
             className="absolute inset-0 lg:bg-none"
             style={{
@@ -257,7 +257,7 @@ const Login: React.FC = () => {
           <div className="relative w-full max-w-[420px]">
             <div className="mb-6 overflow-hidden rounded-[22px] border lg:hidden" style={{ borderColor: palette.border }}>
               <div
-                className="relative h-[112px] overflow-hidden"
+                className="relative h-[152px] overflow-hidden"
                 style={{
                   background: `
                     radial-gradient(ellipse at 80% 20%, ${palette.sunGlow}bb, transparent 40%),
@@ -269,27 +269,33 @@ const Login: React.FC = () => {
                   variant="strip"
                   className="pointer-events-none absolute inset-0 h-full w-full"
                 />
-                <div className="relative z-10 flex h-full items-start justify-between p-3.5">
-                  <Logo size="md" showText variant="light" />
-                  <span
-                    className="rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em]"
-                    style={{
-                      borderColor: palette.bordergreen,
-                      background: 'rgba(255,254,251,0.82)',
-                      color: palette.forest
-                    }}
-                  >
-                    Prado
-                  </span>
+                <div className="relative z-10 flex h-full flex-col justify-between p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <Logo size="md" showText variant="light" />
+                    <span
+                      className="rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em]"
+                      style={{
+                        borderColor: palette.bordergreen,
+                        background: 'rgba(255,254,251,0.88)',
+                        color: palette.forest
+                      }}
+                    >
+                      Prado
+                    </span>
+                  </div>
+                  <p className="max-w-[240px] font-serif text-[1.05rem] font-semibold leading-snug tracking-[-0.02em] text-[#1E2A24]/90">
+                    Luz suave, trabajo claro.
+                  </p>
                 </div>
               </div>
             </div>
 
             <div
-              className="overflow-hidden rounded-[28px] border shadow-[0_24px_70px_rgba(47,93,74,0.10)]"
+              className="overflow-hidden rounded-[28px] border shadow-[0_28px_80px_rgba(47,93,74,0.11),0_1px_0_rgba(255,255,255,0.95)_inset]"
               style={{
                 borderColor: palette.border,
-                background: 'linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%)'
+                background: 'linear-gradient(165deg, #FFFEFB 0%, #FCFAF5 42%, #F8F3EA 100%)',
+                boxShadow: '0 28px 80px rgba(47,93,74,0.11), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(255,254,251,0.5)'
               }}
             >
               <div className="border-b px-2 pt-2" style={{ borderColor: palette.borderSubtle }}>
@@ -299,7 +305,7 @@ const Login: React.FC = () => {
                     onClick={() => switchMode('login')}
                     className={`rounded-2xl py-3 text-xs font-bold transition ${
                       mode === 'login'
-                        ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
+                        ? 'bg-[#EBF3ED] text-[#1E2A24] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.12)]'
                         : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
                     }`}
                   >
@@ -310,7 +316,7 @@ const Login: React.FC = () => {
                     onClick={() => switchMode('register')}
                     className={`rounded-2xl py-3 text-xs font-bold transition ${
                       mode === 'register'
-                        ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
+                        ? 'bg-[#EBF3ED] text-[#1E2A24] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.12)]'
                         : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
                     }`}
                   >
@@ -319,7 +325,7 @@ const Login: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-6 sm:p-8">
+              <div className="p-7 sm:p-9">
                 {mode === 'login' ? (
                   <>
                     <h2 className="font-serif text-[2rem] font-semibold leading-none tracking-tight text-[#1E2A24]">
@@ -329,7 +335,7 @@ const Login: React.FC = () => {
                       Entra a tu espacio de autónomo o gestoría, con luz suave.
                     </p>
 
-                    <form onSubmit={handleLogin} className="mt-8 space-y-4">
+                    <form onSubmit={handleLogin} className="mt-9 space-y-4">
                       <div>
                         <label className={labelClass}>Correo</label>
                         <div className="relative">

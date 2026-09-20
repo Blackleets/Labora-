@@ -192,11 +192,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   ] as const;
 
   return (
-    <div id="rider-dashboard" className="mx-auto max-w-5xl space-y-5 pb-8">
+    <div id="rider-dashboard" className="mx-auto max-w-5xl space-y-6 pb-8">
       <section className="labora-hero p-5 sm:p-7">
         <MeadowLandscape
           variant="hero"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] w-full opacity-[0.42]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] w-full opacity-[0.48]"
         />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_230px] lg:items-end">
           <div className="min-w-0">
@@ -213,8 +213,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               )}
             </div>
 
-            <p className="mt-5 text-sm font-semibold text-[#6B645C]">Hola, {firstName}</p>
-            <h1 className="labora-display mt-1 max-w-2xl text-[2rem] font-semibold leading-[1.04] text-[#1E2A24] sm:text-[2.65rem]">
+            <p className="mt-6 text-sm font-semibold text-[#6B645C]">Hola, {firstName}</p>
+            <h1 className="labora-display mt-1.5 max-w-2xl text-[2.05rem] font-semibold leading-[1.05] text-[#1E2A24] sm:text-[2.7rem]">
               Tu trimestre, con luz de prado y cuidado.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#5C6E64] sm:text-[15px]">
@@ -230,7 +230,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
           <button
             onClick={() => setView?.('money')}
-            className="relative z-10 rounded-[22px] border border-[#E8DFC8] bg-white/75 p-4 text-left shadow-sm backdrop-blur transition hover:bg-white"
+            className="relative z-10 rounded-[22px] border border-[#E8DFC8] bg-[#FFFEFB]/82 p-5 text-left shadow-[0_12px_36px_rgba(47,93,74,0.07),0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur transition hover:bg-[#FFFEFB]"
           >
             <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8A8278]">Neto operativo</p>
             <p className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-[#1E2A24]">{formatCurrency(summary.netProfit)}</p>
@@ -311,7 +311,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="labora-kicker text-[#8A8E89]">Ahora</p>
-            <h2 className="mt-0.5 text-base font-extrabold tracking-[-0.02em] text-[#1E231F]">Acciones rápidas</h2>
+            <h2 className="mt-0.5 font-serif text-[1.15rem] font-semibold tracking-[-0.02em] text-[#1E2A24]">Acciones rápidas</h2>
           </div>
           <span className="hidden text-xs font-medium text-stone-400 sm:block">Lo más usado, sin menús extra</span>
         </div>
@@ -329,7 +329,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               <button
                 key={action.label}
                 onClick={action.onClick}
-                className="labora-card labora-card-interactive group px-4 py-4 text-left"
+                className="labora-card labora-card-interactive group px-4 py-5 text-left"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
@@ -352,7 +352,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       <section>
         <div className="mb-3">
           <p className="labora-kicker text-[#8A8E89]">Este periodo</p>
-          <h2 className="mt-0.5 text-base font-extrabold tracking-[-0.02em] text-[#1E231F]">Tus números</h2>
+          <h2 className="mt-0.5 font-serif text-[1.15rem] font-semibold tracking-[-0.02em] text-[#1E2A24]">Tus números</h2>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Metric onClick={() => setView?.('money')} icon={Wallet} label="Ingresos" value={formatCurrency(summary.totalIncome)} />
@@ -396,12 +396,12 @@ const MiniMetric = ({ label, value, emphasis = false }: { label: string; value: 
 );
 
 const Metric = ({ onClick, icon: Icon, label, value, accent = false, compact = false }: any) => (
-  <button onClick={onClick} className="labora-card labora-card-interactive p-4 text-left">
-    <div className={`flex h-9 w-9 items-center justify-center rounded-[13px] ${accent ? 'bg-[#F8EDE7] text-[#C55E3C]' : 'bg-[#E7F0EA] text-[#214E3A]'}`}>
-      <Icon size={17} strokeWidth={2.2} />
+  <button onClick={onClick} className="labora-card labora-card-interactive p-4 sm:p-5 text-left">
+    <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] ${accent ? 'bg-[#F8EDE7] text-[#C55E3C]' : 'bg-[#E7F0EA] text-[#214E3A]'}`}>
+      <Icon size={18} strokeWidth={2.2} />
     </div>
-    <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.13em] text-[#9A9B96]">{label}</p>
-    <p className={`mt-1 font-extrabold tracking-[-0.03em] text-[#1E231F] ${compact ? 'text-sm' : 'text-xl'}`}>{value}</p>
+    <p className="mt-3.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8A9189]">{label}</p>
+    <p className={`mt-1.5 font-extrabold tracking-[-0.03em] text-[#1E2A24] ${compact ? 'text-sm' : 'text-[1.35rem]'}`}>{value}</p>
   </button>
 );
 

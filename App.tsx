@@ -123,7 +123,7 @@ const MainLayout: React.FC = () => {
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="safe-area-top z-20 flex h-[68px] shrink-0 items-center justify-between border-b border-black/5 bg-[#FFFEFB]/85 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
+        <header className="safe-area-top z-20 flex h-[72px] shrink-0 items-center justify-between border-b border-[#E8DFC8]/70 bg-[#FFFEFB]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -138,10 +138,10 @@ const MainLayout: React.FC = () => {
             </div>
 
             <div className="min-w-0">
-              <p className="hidden text-[9px] font-bold uppercase tracking-[0.16em] text-[#3B7258] lg:block">
+              <p className="hidden text-[9px] font-bold uppercase tracking-[0.18em] text-[#5A7A68] lg:block">
                 {isManager ? 'Gestoría' : 'Autónomo'}
               </p>
-              <span className="block truncate font-serif text-[1.15rem] font-semibold tracking-[-0.03em] text-[#1E2A24]">
+              <span className="block truncate font-serif text-[1.22rem] font-semibold tracking-[-0.03em] text-[#1E2A24]">
                 {getViewTitle()}
               </span>
             </div>
@@ -180,7 +180,7 @@ const MainLayout: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 md:px-8 md:py-8">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 md:px-8 md:py-9">
           <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
         </div>
 
@@ -194,9 +194,9 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
-                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#2F5D4A]' : 'text-stone-400'}`}
+                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#2F5D4A]' : 'text-[#A39B90]'}`}
                 >
-                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[12px] px-2 transition ${active ? 'bg-[#EBF3ED] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.08)]' : ''}`}>
+                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[14px] px-2 transition ${active ? 'bg-[#EBF3ED] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10),0_1px_0_rgba(255,255,255,0.8)_inset]' : ''}`}>
                     {item.id === 'settings' && identityImage ? (
                       <Identity small />
                     ) : (

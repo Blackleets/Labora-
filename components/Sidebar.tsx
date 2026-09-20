@@ -100,25 +100,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
         <button
           key={item.id}
           onClick={() => handleNavigate(item.id)}
-          className={`group relative flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-[13px] transition-all ${
+          className={`group flex w-full items-center gap-3 rounded-[18px] px-3 py-2.5 text-left text-[13px] transition-all ${
             active
-              ? 'font-bold text-[#1E2A24] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.08)]'
-              : 'font-semibold text-[#6B645C] hover:bg-[#F3EEE4] hover:text-[#2A332E]'
+              ? 'font-bold text-[#1E2A24] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
+              : 'font-semibold text-[#6B645C] hover:bg-[#F3EEE4]/90 hover:text-[#2A332E]'
           }`}
-          style={active ? { background: palette.softgreen } : undefined}
+          style={active ? { background: 'linear-gradient(180deg, #F2F8F3 0%, #EBF3ED 100%)' } : undefined}
         >
           <span
-            className={`absolute left-0 h-5 w-1 rounded-r-full transition ${
-              active ? 'bg-[#C96846]' : 'bg-transparent'
-            }`}
-          />
-          <span
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition ${
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] transition ${
               active
-                ? 'text-[#FFFEFB]'
+                ? 'bg-white/80 text-[#2F5D4A] shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_1px_3px_rgba(47,93,74,0.08)]'
                 : 'bg-transparent text-[#8A8278] group-hover:text-[#2F5D4A]'
             }`}
-            style={active ? { background: palette.forest } : undefined}
           >
             <Icon size={17} strokeWidth={active ? 2.35 : 2} />
           </span>
@@ -174,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
 
         <nav className="flex-1 overflow-y-auto px-3 py-5">
           <div className="px-2 pb-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#9A9186]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7A8F82]">
               {isManager ? 'Gestoría' : 'Tu espacio'}
             </p>
           </div>
@@ -188,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
           />
 
           <div className="px-2 pb-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#9A9186]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7A8F82]">
               Comunicación
             </p>
           </div>
@@ -198,10 +192,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
         <div className="border-t p-4" style={{ borderColor: palette.borderSubtle }}>
           <button
             onClick={() => handleNavigate('settings')}
-            className="mb-3 flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition"
+            className="mb-3 flex w-full items-center gap-3 rounded-[20px] border p-3.5 text-left transition shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_8px_24px_rgba(47,93,74,0.04)]"
             style={{
               borderColor: currentView === 'settings' ? `${palette.clay}55` : palette.border,
-              background: currentView === 'settings' ? palette.warmearth : 'rgba(255,254,251,0.85)'
+              background: currentView === 'settings'
+                ? 'linear-gradient(180deg, #FFF9F4 0%, #FAF3EE 100%)'
+                : 'linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%)'
             }}
           >
             <div

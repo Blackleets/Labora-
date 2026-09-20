@@ -9,6 +9,9 @@
   --labora-gold: #B87A24;
   --labora-gold-soft: #E8D48A;
   --labora-canvas: #F7F3EA;
+  --labora-parchment: #FAF6EE;
+  --labora-moss: #3B7258;
+  --labora-moss-soft: #EBF3ED;
   --labora-surface: #FFFEFB;
   --labora-surface-2: #F0EBE1;
   --labora-border: #E8DFC8;
@@ -69,10 +72,10 @@ body:not(.dark) main {
 }
 
 body:not(.dark) main > header {
-  background: color-mix(in srgb, var(--labora-surface) 90%, transparent) !important;
-  border-color: rgba(47, 93, 74, 0.08) !important;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
-  backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--labora-surface) 88%, transparent) !important;
+  border-color: rgba(232, 223, 200, 0.75) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  backdrop-filter: blur(18px);
 }
 
 body:not(.dark) aside {
@@ -81,10 +84,10 @@ body:not(.dark) aside {
 }
 
 body:not(.dark) main > nav {
-  background: rgba(255, 254, 251, 0.94) !important;
-  border-color: rgba(47, 93, 74, 0.08) !important;
+  background: rgba(255, 254, 251, 0.95) !important;
+  border-color: rgba(232, 223, 200, 0.7) !important;
   box-shadow: 0 -16px 48px rgba(47, 93, 74, 0.05);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px);
 }
 
 ::selection {
@@ -110,15 +113,17 @@ textarea:focus-visible {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--ghibli-border, #E8DFC8);
-  border-radius: calc(var(--labora-radius) + 8px);
+  border-radius: calc(var(--labora-radius) + 10px);
   background:
-    radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 70%, transparent), transparent 34%),
-    radial-gradient(ellipse at 18% 0%, color-mix(in srgb, #C9DDEE 55%, transparent), transparent 42%),
-    radial-gradient(circle at 8% 92%, color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 90%, transparent), transparent 40%),
-    radial-gradient(ellipse at 70% 100%, color-mix(in srgb, var(--ghibli-moss, #3B7258) 16%, transparent), transparent 48%),
-    linear-gradient(155deg, var(--ghibli-parchment, #FAF6EE) 0%, #F3F6EC 38%, var(--ghibli-warmearth, #FAF3EE) 62%, var(--ghibli-softgreen, #EBF3ED) 100%);
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 78%, transparent), transparent 36%),
+    radial-gradient(ellipse at 16% -4%, color-mix(in srgb, #C9DDEE 62%, transparent), transparent 44%),
+    radial-gradient(circle at 6% 94%, color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 95%, transparent), transparent 42%),
+    radial-gradient(ellipse at 72% 100%, color-mix(in srgb, var(--ghibli-moss, #3B7258) 14%, transparent), transparent 50%),
+    linear-gradient(158deg, var(--ghibli-parchment, #FAF6EE) 0%, #F4F7ED 36%, var(--ghibli-warmearth, #FAF3EE) 64%, var(--ghibli-softgreen, #EBF3ED) 100%);
   color: var(--labora-ink);
-  box-shadow: var(--labora-shadow-soft);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.88) inset,
+    var(--labora-shadow-soft);
 }
 
 .labora-hero::before {
@@ -147,10 +152,13 @@ textarea:focus-visible {
 }
 
 .labora-card {
-  border: 1px solid var(--ghibli-border, rgba(47, 93, 74, 0.08));
-  background: color-mix(in srgb, var(--labora-surface) 94%, white);
+  border: 1px solid var(--ghibli-border, #E8DFC8);
+  background:
+    linear-gradient(180deg, rgba(255, 254, 251, 0.98), rgba(252, 249, 243, 0.96));
   border-radius: var(--labora-radius);
-  box-shadow: var(--labora-shadow-soft);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    var(--labora-shadow-soft);
   backdrop-filter: blur(10px);
 }
 
@@ -180,13 +188,14 @@ textarea:focus-visible {
   gap: 0.35rem;
   border-radius: 999px;
   border: 1px solid var(--ghibli-bordergreen, #D0E5D7);
-  background: color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 85%, white);
-  padding: 0.35rem 0.75rem;
+  background: color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 88%, white);
+  padding: 0.4rem 0.8rem;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--ghibli-forest, #2F5D4A);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
 }
 
 .labora-kicker {
