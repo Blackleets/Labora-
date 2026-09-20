@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { TaxDeclaration, UserRole } from '../types';
+import { FieldLabel, FormError, fieldErrorA11y, formControlFocusClass } from './formA11y';
 
 interface TaxDeclarationsViewerProps {
   setView?: (view: string) => void;
@@ -64,6 +65,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
   const [selectedQuarter, setSelectedQuarter] = useState(currentQuarterLabel());
   const [filingModalDec, setFilingModalDec] = useState<TaxDeclaration | null>(null);
   const [filingReference, setFilingReference] = useState('');
+  const [filingError, setFilingError] = useState('');
 
   const { model130, model303 } = effectiveUserId
     ? calculateQuarterlyTaxes(effectiveUserId, selectedQuarter)
@@ -125,6 +127,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
         onClick: () => {
           setFilingModalDec(stored);
           setFilingReference('');
+          setFilingError('');
         }
       };
     }
@@ -138,13 +141,16 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
 
     const reference = filingReference.trim();
     if (!reference) {
-      showNotification('error', 'Introduce la referencia real de presentación.');
+      const msg = 'Introduce la referencia real de presentación.';
+      setFilingError(msg);
+      showNotification('error', msg);
       return;
     }
 
     fileTaxDeclaration(filingModalDec.id, reference);
     setFilingModalDec(null);
     setFilingReference('');
+    setFilingError('');
   };
 
   const downloadCsv = (filename: string, rows: Array<Array<string | number>>) => {
@@ -193,8 +199,8 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
 
   if (!effectiveUserId || !effectiveUser) {
     return (
-      <div className="rounded-2xl border border-dashed border-[var(--labora-border)] bg-[var(--labora-surface)] p-8 text-center">
-        <Info size={24} className="mx-auto text-stone-300" />
+      <div className="rounded-2xl border border-dashed border-[var(--labora-border)] bg-[var(--labora-surface)] p-8 text-center" role="status" aria-live="polite">
+        <Info size={24} className="mx-auto text-stone-300" aria-hidden />
         <p className="mt-3 text-sm font-semibold text-[var(--labora-muted)]">No hay un autónomo seleccionado.</p>
       </div>
     );
@@ -209,15 +215,19 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
             <h3 className="mt-1 text-base font-bold text-stone-900">Detalle fiscal</h3>
             <p className="mt-1 text-xs text-[var(--labora-muted)]">{effectiveUser.name} · {effectiveUser.nif || 'NIF no registrado'}</p>
           </div>
-          <select
-            value={selectedQuarter}
-            onChange={(event) => setSelectedQuarter(event.target.value)}
-            className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2 text-xs font-semibold text-[var(--labora-ink-soft)] outline-none"
-          >
-            {quarterOptions.map((quarter) => (
-              <option key={quarter} value={quarter}>{quarter}</option>
-            ))}
-          </select>
+          <div className="min-w-[140px]">
+            <FieldLabel htmlFor="labora-tax-decl-quarter">Trimestre</FieldLabel>
+            <select
+              id="labora-tax-decl-quarter"
+              value={selectedQuarter}
+              onChange={(event) => setSelectedQuarter(event.target.value)}
+              className={`w-full rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2 text-xs font-semibold text-[var(--labora-ink-soft)] outline-none ${formControlFocusClass}`}
+            >
+              {quarterOptions.map((quarter) => (
+                <option key={quarter} value={quarter}>{quarter}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {model130 && model303 && (
@@ -252,13 +262,13 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <button
             onClick={exportExpenses}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-xs font-semibold text-[var(--labora-ink-soft)] hover:bg-[var(--labora-surface-2)]"
+            className={`inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-xs font-semibold text-[var(--labora-ink-soft)] hover:bg-[var(--labora-surface-2)] ${formControlFocusClass}`}
           >
             <Download size={14} /> Gastos CSV
           </button>
           <button
             onClick={exportIncomes}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-xs font-semibold text-[var(--labora-ink-soft)] hover:bg-[var(--labora-surface-2)]"
+            className={`inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-xs font-semibold text-[var(--labora-ink-soft)] hover:bg-[var(--labora-surface-2)] ${formControlFocusClass}`}
           >
             <Download size={14} /> Ingresos CSV
           </button>
@@ -317,38 +327,48 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
             onSubmit={handleRegisterFiling}
             onClick={(event) => event.stopPropagation()}
             className="w-full max-w-md rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-5 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="labora-filing-title"
           >
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--labora-muted)]">Registro de presentación</p>
-            <h3 className="mt-1 text-lg font-extrabold text-stone-900">
+            <h3 id="labora-filing-title" className="mt-1 text-lg font-extrabold text-stone-900">
               Modelo {filingModalDec.modelType} · {filingModalDec.quarter}
             </h3>
             <p className="mt-2 text-xs leading-relaxed text-[var(--labora-muted)]">
               Introduce la referencia real recibida tras la presentación. Labora+ no inventa esta referencia ni presenta el modelo por ti.
             </p>
 
-            <label className="mt-4 block text-[11px] font-bold text-[var(--labora-muted)]">
-              Referencia de presentación
-            </label>
-            <input
-              value={filingReference}
-              onChange={(event) => setFilingReference(event.target.value)}
-              placeholder="Referencia real"
-              className="mt-1 w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]"
-              required
-            />
+            <div className="mt-4">
+              <FieldLabel htmlFor="labora-filing-ref">Referencia de presentación</FieldLabel>
+              <input
+                id="labora-filing-ref"
+                value={filingReference}
+                onChange={(event) => {
+                  setFilingReference(event.target.value);
+                  if (filingError) setFilingError('');
+                }}
+                placeholder="Referencia real"
+                className={`mt-1 w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)] ${formControlFocusClass}`}
+                required
+                {...fieldErrorA11y('labora-filing-error', Boolean(filingError))}
+              />
+            </div>
+
+            {filingError ? <div className="mt-3"><FormError id="labora-filing-error">{filingError}</FormError></div> : null}
 
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                onClick={() => setFilingModalDec(null)}
-                className="flex-1 rounded-[13px] border border-[var(--labora-border)] px-3 py-2.5 text-sm font-bold text-[var(--labora-muted)]"
+                onClick={() => { setFilingModalDec(null); setFilingError(''); }}
+                className={`flex-1 rounded-[13px] border border-[var(--labora-border)] px-3 py-2.5 text-sm font-bold text-[var(--labora-muted)] ${formControlFocusClass}`}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={!filingReference.trim()}
-                className="flex-1 rounded-[13px] bg-[var(--labora-primary)] px-3 py-2.5 text-sm font-extrabold text-white disabled:opacity-45"
+                className={`flex-1 rounded-[13px] bg-[var(--labora-primary)] px-3 py-2.5 text-sm font-extrabold text-white disabled:opacity-45 ${formControlFocusClass}`}
               >
                 Registrar
               </button>
