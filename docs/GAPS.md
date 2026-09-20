@@ -22,7 +22,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 | Play Store **checklist** | `ANDROID.md` + `docs/PLAY_STORE_GATES.md` — shell **NOT Play-ready** |
 | Billing prep (flag OFF) | `.env.example`; `VITE_BILLING_ENABLED=false`; BillingCard gated |
 | Build / typecheck / vitest | Must stay green |
-| Privacy / terms pages | `public/privacidad.html` + `public/terminos.html`; links in Login + Settings |
+| Privacy / terms pages | **Merged PR #15** — `privacidad.html` / `terminos.html`; Login + Settings |
 
 ## Linking — what works / what needs Lewis
 
@@ -48,7 +48,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 | **Live Open Banking (PSD2)** | Provider + legal — not faked |
 | **Platform OAuth** (Uber, Glovo, …) | Catalog / preference only — no fake Connect |
 | **Adversarial RLS on live Supabase** | Needs Lewis’s project + dual sessions |
-| **Auth leaked-password protection** | Advisor WARN — enable in Supabase Auth → Password (HaveIBeenPwned) |
+| **Auth leaked-password protection** | **Deferred** — dashboard login blocked (hCaptcha / GitHub SSO 500); MCP cannot toggle Auth HIBP; enable later in Auth → Password |
 
 ## Draft PR #1 (foundation)
 
