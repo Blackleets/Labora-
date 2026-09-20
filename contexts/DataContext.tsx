@@ -13,6 +13,15 @@ import {
   UserRole,
   Vehicle
 } from '../types';
+import {
+  deleteRemoteDocument,
+  deleteRemoteExpense,
+  deleteRemoteIncome
+} from '../services/remoteOperational';
+import { supabase } from '../services/supabaseClient';
+import { canOwnerDeleteRow } from '../services/deleteEligibility';
+
+type DeleteOptions = { quiet?: boolean };
 
 interface DataContextType {
   currentUser: User | null;
@@ -42,7 +51,9 @@ interface DataContextType {
   addExpense: (expense: Omit<Expense, 'id' | 'userId'>) => void;
   addExpenses: (expenses: Omit<Expense, 'id' | 'userId'>[]) => void;
   updateExpense: (expense: Expense) => void;
-  deleteExpense: (id: string) => void;
+  deleteExpense: (id: string, options?: DeleteOptions) => Promise<boolean>;
+  deleteIncome: (id: string, options?: DeleteOptions) => Promise<boolean>;
+  deleteDocument: (id: string, options?: DeleteOptions) => Promise<boolean>;
   updateExpenseAudit: (
     expenseId: string,
     status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
@@ -401,9 +412,78 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     showNotification('success', 'Gasto actualizado.');
   };
 
-  const deleteExpense = (id: string) => {
-    setExpenses((previous) => previous.filter((expense) => expense.id !== id));
-    showNotification('info', 'Gasto eliminado.');
+  const hasAuthSession = async () => {
+    const { data } = await supabase.auth.getSession();
+    return Boolean(data.session);
+  };
+
+  const deleteExpense = async (id: string, options?: DeleteOptions): Promise<boolean> => {
+    const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+    const expense = expenses.find((item) => item.id === id);
+    if (!expense || !canOwnerDeleteRow(expense.userId, currentUser?.id, Boolean(isManager))) {
+      if (!options?.quiet) showNotification('error', 'No puedes eliminar este gasto.');
+      return false;
+    }
+
+    try {
+      if (await hasAuthSession()) {
+        await deleteRemoteExpense(id);
+      }
+    } catch (error) {
+      console.error(error);
+      if (!options?.quiet) showNotification('error', 'No se pudo eliminar el gasto.');
+      return false;
+    }
+
+    setExpenses((previous) => previous.filter((item) => item.id !== id));
+    if (!options?.quiet) showNotification('success', 'Gasto eliminado.');
+    return true;
+  };
+
+  const deleteIncome = async (id: string, options?: DeleteOptions): Promise<boolean> => {
+    const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+    const income = incomes.find((item) => item.id === id);
+    if (!income || !canOwnerDeleteRow(income.userId, currentUser?.id, Boolean(isManager))) {
+      if (!options?.quiet) showNotification('error', 'No puedes eliminar este ingreso.');
+      return false;
+    }
+
+    try {
+      if (await hasAuthSession()) {
+        await deleteRemoteIncome(id);
+      }
+    } catch (error) {
+      console.error(error);
+      if (!options?.quiet) showNotification('error', 'No se pudo eliminar el ingreso.');
+      return false;
+    }
+
+    setIncomes((previous) => previous.filter((item) => item.id !== id));
+    if (!options?.quiet) showNotification('success', 'Ingreso eliminado.');
+    return true;
+  };
+
+  const deleteDocument = async (id: string, options?: DeleteOptions): Promise<boolean> => {
+    const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+    const document = documents.find((item) => item.id === id);
+    if (!document || !canOwnerDeleteRow(document.userId, currentUser?.id, Boolean(isManager))) {
+      if (!options?.quiet) showNotification('error', 'No puedes eliminar este documento.');
+      return false;
+    }
+
+    try {
+      if (await hasAuthSession()) {
+        await deleteRemoteDocument(id);
+      }
+    } catch (error) {
+      console.error(error);
+      if (!options?.quiet) showNotification('error', 'No se pudo eliminar el documento.');
+      return false;
+    }
+
+    setDocuments((previous) => previous.filter((item) => item.id !== id));
+    if (!options?.quiet) showNotification('success', 'Documento eliminado del expediente.');
+    return true;
   };
 
   const updateExpenseAudit = (
@@ -783,6 +863,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     addExpenses,
     updateExpense,
     deleteExpense,
+    deleteIncome,
+    deleteDocument,
     updateExpenseAudit,
     addDocument,
     addPayment,

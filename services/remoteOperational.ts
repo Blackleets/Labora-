@@ -382,6 +382,11 @@ export const deleteRemoteExpense = async (expenseId: string) => {
   }
 };
 
+export const deleteRemoteIncome = async (incomeId: string) => {
+  const { error } = await supabase.from('incomes').delete().eq('id', incomeId);
+  if (error) throw error;
+};
+
 export const deleteRemoteDocument = async (documentId: string) => {
   const { data, error: readError } = await supabase
     .from('documents')
@@ -408,23 +413,30 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
   if (!isManager) {
     const ownExpenseItems = expenses.filter((expense) => expense.userId === currentUser.id);
     const ownDocumentItems = documents.filter((document) => document.userId === currentUser.id);
+    const ownIncomeItems = incomes.filter((income) => income.userId === currentUser.id);
 
-    const [remoteExpenseIds, remoteDocumentIds] = await Promise.all([
+    const [remoteExpenseIds, remoteDocumentIds, remoteIncomeIds] = await Promise.all([
       supabase.from('expenses').select('id').eq('user_id', currentUser.id),
-      supabase.from('documents').select('id').eq('user_id', currentUser.id)
+      supabase.from('documents').select('id').eq('user_id', currentUser.id),
+      supabase.from('incomes').select('id').eq('user_id', currentUser.id)
     ]);
     if (remoteExpenseIds.error) throw remoteExpenseIds.error;
     if (remoteDocumentIds.error) throw remoteDocumentIds.error;
+    if (remoteIncomeIds.error) throw remoteIncomeIds.error;
 
     const localExpenseIds = new Set(ownExpenseItems.map((item) => item.id));
     const remoteExpenseIdSet = new Set((remoteExpenseIds.data || []).map((item) => item.id));
     const localDocumentIds = new Set(ownDocumentItems.map((item) => item.id));
+    const localIncomeIds = new Set(ownIncomeItems.map((item) => item.id));
 
     for (const row of remoteExpenseIds.data || []) {
       if (!localExpenseIds.has(row.id)) await deleteRemoteExpense(row.id);
     }
     for (const row of remoteDocumentIds.data || []) {
       if (!localDocumentIds.has(row.id)) await deleteRemoteDocument(row.id);
+    }
+    for (const row of remoteIncomeIds.data || []) {
+      if (!localIncomeIds.has(row.id)) await deleteRemoteIncome(row.id);
     }
 
     for (const item of ownExpenseItems) {
