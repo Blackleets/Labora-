@@ -1,6 +1,6 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 8 a11y / offline messaging). **Cream-token sweeps stopped.** Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
+Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 9 form a11y helper). **Cream-token sweeps stopped.** **Agent-safe UX polish should pause for Lewis UAT** after this loop. Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
 
 ## Merged on main (no longer blocked)
 
@@ -34,7 +34,8 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 8 a11y / offline mess
 | Agent-safe loop 5 (Sidebar/Dashboard/GasStation/TaxDeclarations/Education/Identity/FiscalChat/Movements + ProDashboard·Risk·Events·Ops·Policy shells) | Cream/parchment chrome → `var(--labora-*)`; fail-closed shells theme-safe; Education/FiscalChat/Movements blue accents kept; billing flag still OFF |
 | Agent-safe loop 6 (AutomationHub + FeatureFlagSettings cream→tokens; advisors; legal withBaseUrl vitest) | Hub/flags → `var(--labora-*)`; `docs/RLS_ADVISORS.md` (HIBP WARN only); legal href vitest; `dark_mode_force` copy honest (local/in-memory); billing flag still OFF |
 | Agent-safe loop 7 (UAT dual prep + Login/Settings a11y) | `npm run uat:dual` machine prep (`PREP_STATUS`); explicit self-link / not_manager vitest; labels, `role=switch`, `role=alert`, focus-visible on Login + gestoría link; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
-| Agent-safe loop 8 (Messages offline UI + a11y; Documents/Money forms a11y) | Offline banner + Spanish fail-closed send errors (no queue claim); labels / `aria-invalid` / `aria-describedby` / focus-visible / empty `role=status` on Messages, Documents, Expense, Income primary forms; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
+| Agent-safe loop 8 (Messages offline UI + a11y; Documents/Money forms a11y) | Offline banner + Spanish fail-closed send errors (no sync claim); labels / `aria-invalid` / `aria-describedby` / focus-visible / empty `role=status` on Messages, Documents, Expense, Income primary forms; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
+| Agent-safe loop 9 (shared form a11y; tax/calendar forms) | `components/formA11y.tsx` (`FieldLabel`, `FormError` `role=alert`, `fieldErrorA11y`, focus class); applied to TaxOverview / TaxDeclarationsViewer / Calendar primary forms only; **no** MoneyHub/Documents offline chip — `RemoteSyncBridge` does not expose online/offline (fail-closed, no fake sync); **pause agent-safe UX polish for Lewis UAT**; HIBP still Lewis; billing OFF |
 
 ## Linking — what works / what needs Lewis
 
@@ -61,6 +62,8 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 8 a11y / offline mess
 | **Platform OAuth** (Uber, Glovo, …) | Catalog / preference only — no fake Connect |
 | **Adversarial RLS on live Supabase** | Needs Lewis’s project + dual sessions |
 | **Auth leaked-password protection** | **Deferred** — dashboard login blocked (hCaptcha / GitHub SSO 500); MCP cannot toggle Auth HIBP; enable later in Auth → Password |
+| **Offline chip on MoneyHub / Documents** | Skipped loop 9 — RemoteSync has no online/offline API; do not invent sync status. Revisit only if sync surface exposes real connectivity |
+| **Agent-safe UX polish (further loops)** | **Pause for Lewis UAT** — dual-account checklist + signature before more chrome/a11y sweeps |
 
 ## Draft PR #1 (foundation)
 

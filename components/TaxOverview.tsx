@@ -11,6 +11,7 @@ import { useData } from '../contexts/DataContext';
 import { useCountry } from '../contexts/CountryContext';
 import { UserRole } from '../types';
 import { TaxDeclarationsViewer } from './TaxDeclarationsViewer';
+import { FieldLabel, formControlFocusClass } from './formA11y';
 
 interface TaxOverviewProps {
   setView?: (view: string) => void;
@@ -116,26 +117,32 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
           </div>
 
           {isManager && riders.length > 0 && (
-            <label className="min-w-[220px]">
-              <span className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.1em] text-[var(--labora-muted)]">Cliente vinculado</span>
+            <div className="min-w-[220px]">
+              <FieldLabel
+                htmlFor="labora-tax-client"
+                className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-[0.1em] text-[var(--labora-muted)]"
+              >
+                Cliente vinculado
+              </FieldLabel>
               <div className="relative">
-                <UserRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
+                <UserRound size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" aria-hidden />
                 <select
+                  id="labora-tax-client"
                   value={activeUser?.id || ''}
                   onChange={(event) => setSelectedRiderId(event.target.value)}
-                  className="w-full appearance-none rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] py-2.5 pl-9 pr-3 text-xs font-extrabold text-[var(--labora-ink-soft)] outline-none focus:border-[var(--labora-primary-2)]"
+                  className={`w-full appearance-none rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] py-2.5 pl-9 pr-3 text-xs font-extrabold text-[var(--labora-ink-soft)] outline-none focus:border-[var(--labora-primary-2)] ${formControlFocusClass}`}
                 >
                   {riders.map((rider) => <option key={rider.id} value={rider.id}>{rider.name}</option>)}
                 </select>
               </div>
-            </label>
+            </div>
           )}
         </div>
       </section>
 
       {!activeUser ? (
-        <section className="labora-card border-dashed p-10 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]"><UserRound size={22} /></div>
+        <section className="labora-card border-dashed p-10 text-center" role="status" aria-live="polite">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]" aria-hidden><UserRound size={22} /></div>
           <p className="mt-3 text-sm font-extrabold text-[var(--labora-muted)]">No hay un autónomo vinculado.</p>
           <p className="mt-1 text-xs text-[var(--labora-muted)]">Cuando un cliente se vincule a esta gestoría aparecerá aquí.</p>
         </section>
@@ -193,8 +200,10 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
               {quarters.map((quarter) => (
                 <button
                   key={quarter}
+                  type="button"
                   onClick={() => setSelectedQuarter(quarter)}
-                  className={`whitespace-nowrap rounded-[13px] border px-4 py-2.5 text-xs font-extrabold transition ${
+                  aria-pressed={selectedQuarter === quarter}
+                  className={`whitespace-nowrap rounded-[13px] border px-4 py-2.5 text-xs font-extrabold transition ${formControlFocusClass} ${
                     selectedQuarter === quarter
                       ? 'border-[var(--labora-primary)] bg-[var(--labora-primary)] text-white shadow-sm'
                       : 'border-[var(--labora-border)] bg-[var(--labora-parchment)] text-[var(--labora-muted)] hover:bg-[var(--labora-parchment)]'

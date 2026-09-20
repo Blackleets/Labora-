@@ -5,6 +5,7 @@ import { useCountry } from '../contexts/CountryContext';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Clock, ArrowRight, HelpCircle, FileText, Bell, Plus, Save, X, Download, Printer, Share2 } from 'lucide-react';
 import { Payment } from '../types';
 import LogoResolver from './LogoResolver';
+import { FieldLabel, FormError, fieldErrorA11y, formControlFocusClass } from './formA11y';
 
 const Calendar: React.FC = () => {
   const { payments, markPaymentAsReceived, addPayment, currentUser } = useData();
@@ -20,6 +21,7 @@ const Calendar: React.FC = () => {
     platform: '',
     amount: ''
   });
+  const [manualError, setManualError] = useState('');
 
   // Calendar Logic
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -58,31 +60,41 @@ const Calendar: React.FC = () => {
   const handleDayClick = (day: number) => {
     const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     setSelectedDate(dateStr);
-    setIsAddingManual(false); // Reset manual mode
+    setIsAddingManual(false);
+    setManualError('');
   };
 
   const closeModal = () => {
     setSelectedDate(null);
     setIsAddingManual(false);
     setManualForm({ platform: '', amount: '' });
+    setManualError('');
   };
 
   const handleSaveManual = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !manualForm.platform || !manualForm.amount) return;
+    if (!selectedDate) return;
+
+    const platform = manualForm.platform.trim();
+    const amountRaw = manualForm.amount.trim();
+    const amount = parseFloat(amountRaw);
+    if (!platform || !amountRaw || Number.isNaN(amount) || amount <= 0) {
+      setManualError('Indica plataforma e importe válidos.');
+      return;
+    }
 
     addPayment({
-      platform: manualForm.platform,
-      amount: parseFloat(manualForm.amount),
+      platform,
+      amount,
       date: selectedDate,
       status: 'pending',
       estimated: true,
-      domain: `${manualForm.platform.toLowerCase().replace(/\s/g, '')}.com`
+      domain: `${platform.toLowerCase().replace(/\s/g, '')}.com`
     });
 
-    // Reset form but keep modal open to see new item
     setIsAddingManual(false);
     setManualForm({ platform: '', amount: '' });
+    setManualError('');
   };
 
   // Calculate monthly stats
@@ -253,45 +265,58 @@ const Calendar: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-400">
+                <div className="text-center py-8 text-gray-400" role="status" aria-live="polite">
                   <p>No hay pagos registrados.</p>
                 </div>
               )}
 
               {!isAddingManual ? (
-                <button 
-                  onClick={() => setIsAddingManual(true)}
-                  className="w-full py-3 border-2 border-dashed border-gray-200 text-gray-400 rounded-xl font-bold flex items-center justify-center gap-2 hover:border-[#2D6CDF] hover:text-[#2D6CDF] hover:bg-blue-50 transition-all"
+                <button
+                  type="button"
+                  onClick={() => { setManualError(''); setIsAddingManual(true); }}
+                  className={`w-full py-3 border-2 border-dashed border-gray-200 text-gray-400 rounded-xl font-bold flex items-center justify-center gap-2 hover:border-[#2D6CDF] hover:text-[#2D6CDF] hover:bg-blue-50 transition-all ${formControlFocusClass}`}
                 >
-                  <Plus size={18} /> Añadir Pago Manual
+                  <Plus size={18} aria-hidden /> Añadir Pago Manual
                 </button>
               ) : (
                 <form onSubmit={handleSaveManual} className="space-y-4 animate-in fade-in">
                   <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase">Plataforma</label>
-                    <input 
-                      type="text" 
+                    <FieldLabel htmlFor="labora-cal-platform" className="text-xs font-bold text-gray-400 uppercase">Plataforma</FieldLabel>
+                    <input
+                      id="labora-cal-platform"
+                      type="text"
                       placeholder="Ej. Uber Eats"
-                      className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:border-[#2D6CDF]"
+                      className={`w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:border-[#2D6CDF] ${formControlFocusClass}`}
                       value={manualForm.platform}
-                      onChange={e => setManualForm({...manualForm, platform: e.target.value})}
+                      onChange={e => {
+                        setManualForm({ ...manualForm, platform: e.target.value });
+                        if (manualError) setManualError('');
+                      }}
                       autoFocus
+                      {...fieldErrorA11y('labora-cal-form-error', Boolean(manualError))}
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase">Importe ({currencySymbol})</label>
-                    <input 
-                      type="number" 
+                    <FieldLabel htmlFor="labora-cal-amount" className="text-xs font-bold text-gray-400 uppercase">Importe ({currencySymbol})</FieldLabel>
+                    <input
+                      id="labora-cal-amount"
+                      type="number"
                       placeholder="0.00"
                       step="0.01"
-                      className="w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:border-[#2D6CDF]"
+                      min="0"
+                      className={`w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-sm font-bold outline-none focus:border-[#2D6CDF] ${formControlFocusClass}`}
                       value={manualForm.amount}
-                      onChange={e => setManualForm({...manualForm, amount: e.target.value})}
+                      onChange={e => {
+                        setManualForm({ ...manualForm, amount: e.target.value });
+                        if (manualError) setManualError('');
+                      }}
+                      {...fieldErrorA11y('labora-cal-form-error', Boolean(manualError))}
                     />
                   </div>
+                  <FormError id="labora-cal-form-error">{manualError}</FormError>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setIsAddingManual(false)} className="flex-1 py-3 text-gray-500 font-bold text-sm">Cancelar</button>
-                    <button type="submit" className="flex-1 py-3 bg-[#2D6CDF] text-white rounded-xl font-bold text-sm shadow-md">Guardar</button>
+                    <button type="button" onClick={() => { setIsAddingManual(false); setManualError(''); }} className={`flex-1 py-3 text-gray-500 font-bold text-sm ${formControlFocusClass}`}>Cancelar</button>
+                    <button type="submit" className={`flex-1 py-3 bg-[#2D6CDF] text-white rounded-xl font-bold text-sm shadow-md ${formControlFocusClass}`}>Guardar</button>
                   </div>
                 </form>
               )}
