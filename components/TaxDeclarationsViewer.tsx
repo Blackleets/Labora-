@@ -193,26 +193,26 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
 
   if (!effectiveUserId || !effectiveUser) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#DDD5CA] bg-white p-8 text-center">
+      <div className="rounded-2xl border border-dashed border-[var(--labora-border)] bg-[var(--labora-surface)] p-8 text-center">
         <Info size={24} className="mx-auto text-stone-300" />
-        <p className="mt-3 text-sm font-semibold text-stone-600">No hay un autónomo seleccionado.</p>
+        <p className="mt-3 text-sm font-semibold text-[var(--labora-muted)]">No hay un autónomo seleccionado.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-[#E3DCD2] bg-white p-4 sm:p-5">
+      <section className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">Datos de trabajo</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--labora-muted)]">Datos de trabajo</p>
             <h3 className="mt-1 text-base font-bold text-stone-900">Detalle fiscal</h3>
-            <p className="mt-1 text-xs text-stone-500">{effectiveUser.name} · {effectiveUser.nif || 'NIF no registrado'}</p>
+            <p className="mt-1 text-xs text-[var(--labora-muted)]">{effectiveUser.name} · {effectiveUser.nif || 'NIF no registrado'}</p>
           </div>
           <select
             value={selectedQuarter}
             onChange={(event) => setSelectedQuarter(event.target.value)}
-            className="rounded-xl border border-[#DED7CC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 outline-none"
+            className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2 text-xs font-semibold text-[var(--labora-ink-soft)] outline-none"
           >
             {quarterOptions.map((quarter) => (
               <option key={quarter} value={quarter}>{quarter}</option>
@@ -240,41 +240,41 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
         )}
       </section>
 
-      <section className="rounded-2xl border border-[#E3DCD2] bg-white p-4 sm:p-5">
+      <section className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-4 sm:p-5">
         <div className="flex items-center gap-2">
-          <FileSpreadsheet size={16} className="text-[#2E5A44]" />
+          <FileSpreadsheet size={16} className="text-[var(--labora-primary)]" />
           <h3 className="text-sm font-bold text-stone-900">Exportar registros</h3>
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-stone-500">
+        <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">
           Descarga los movimientos almacenados en Labora+ para revisión, archivo o trabajo con tu asesoría.
         </p>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <button
             onClick={exportExpenses}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#DED7CC] bg-white px-3 py-2.5 text-xs font-semibold text-stone-700 hover:bg-[#F8F5F0]"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-xs font-semibold text-[var(--labora-ink-soft)] hover:bg-[var(--labora-surface-2)]"
           >
             <Download size={14} /> Gastos CSV
           </button>
           <button
             onClick={exportIncomes}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#DED7CC] bg-white px-3 py-2.5 text-xs font-semibold text-stone-700 hover:bg-[#F8F5F0]"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-xs font-semibold text-[var(--labora-ink-soft)] hover:bg-[var(--labora-surface-2)]"
           >
             <Download size={14} /> Ingresos CSV
           </button>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-[#E3DCD2] bg-white">
-        <div className="flex items-center gap-2 border-b border-[#ECE5DB] px-4 py-3.5">
-          <History size={16} className="text-stone-400" />
+      <section className="overflow-hidden rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)]">
+        <div className="flex items-center gap-2 border-b border-[var(--labora-border)] px-4 py-3.5">
+          <History size={16} className="text-[var(--labora-muted)]" />
           <h3 className="text-sm font-bold text-stone-900">Historial registrado</h3>
         </div>
 
         {userDeclarations.length === 0 ? (
-          <div className="p-6 text-center text-xs text-stone-400">No hay presentaciones registradas en Labora+.</div>
+          <div className="p-6 text-center text-xs text-[var(--labora-muted)]">No hay presentaciones registradas en Labora+.</div>
         ) : (
-          <div className="divide-y divide-[#EEE8DF]">
+          <div className="divide-y divide-[var(--labora-border)]">
             {userDeclarations
               .slice()
               .sort((a, b) => b.year - a.year || b.quarter.localeCompare(a.quarter))
@@ -282,7 +282,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
                 <div key={declaration.id} className="flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-bold text-stone-800">Modelo {declaration.modelType} · {declaration.quarter}</p>
-                    <p className="mt-0.5 text-[10px] text-stone-400">
+                    <p className="mt-0.5 text-[10px] text-[var(--labora-muted)]">
                       {declaration.status === 'filed_with_tax_agency'
                         ? 'Presentación registrada con referencia'
                         : declaration.status === 'reviewed_by_gestor'
@@ -291,7 +291,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
                     </p>
                   </div>
                   {declaration.filingReference && (
-                    <span className="max-w-full truncate rounded-lg bg-[#F4F1EC] px-2.5 py-1 text-[10px] font-mono text-stone-500">
+                    <span className="max-w-full truncate rounded-lg bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-mono text-[var(--labora-muted)]">
                       {declaration.filingReference}
                     </span>
                   )}
@@ -301,8 +301,8 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
         )}
       </section>
 
-      <div className="flex gap-2 rounded-xl border border-[#E9E1D6] bg-[#FBF8F3] px-3 py-3 text-[11px] leading-relaxed text-stone-500">
-        <FileCheck2 size={15} className="mt-0.5 shrink-0 text-stone-400" />
+      <div className="flex gap-2 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3 py-3 text-[11px] leading-relaxed text-[var(--labora-muted)]">
+        <FileCheck2 size={15} className="mt-0.5 shrink-0 text-[var(--labora-muted)]" />
         <p>
           Esta vista organiza cálculos y registros guardados en Labora+. No genera justificantes oficiales ni realiza presentaciones ante la Agencia Tributaria.
         </p>
@@ -310,30 +310,30 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
 
       {filingModalDec && isManager && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#18211C]/50 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--labora-ink)]/50 p-4 backdrop-blur-sm"
           onClick={() => setFilingModalDec(null)}
         >
           <form
             onSubmit={handleRegisterFiling}
             onClick={(event) => event.stopPropagation()}
-            className="w-full max-w-md rounded-[24px] border border-[#E6DDD2] bg-[#FFFDF9] p-5 shadow-2xl"
+            className="w-full max-w-md rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-5 shadow-2xl"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-400">Registro de presentación</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--labora-muted)]">Registro de presentación</p>
             <h3 className="mt-1 text-lg font-extrabold text-stone-900">
               Modelo {filingModalDec.modelType} · {filingModalDec.quarter}
             </h3>
-            <p className="mt-2 text-xs leading-relaxed text-stone-500">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--labora-muted)]">
               Introduce la referencia real recibida tras la presentación. Labora+ no inventa esta referencia ni presenta el modelo por ti.
             </p>
 
-            <label className="mt-4 block text-[11px] font-bold text-stone-600">
+            <label className="mt-4 block text-[11px] font-bold text-[var(--labora-muted)]">
               Referencia de presentación
             </label>
             <input
               value={filingReference}
               onChange={(event) => setFilingReference(event.target.value)}
               placeholder="Referencia real"
-              className="mt-1 w-full rounded-[13px] border border-[#DDD5CA] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]"
+              className="mt-1 w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]"
               required
             />
 
@@ -341,14 +341,14 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
               <button
                 type="button"
                 onClick={() => setFilingModalDec(null)}
-                className="flex-1 rounded-[13px] border border-[#DDD5CA] px-3 py-2.5 text-sm font-bold text-stone-600"
+                className="flex-1 rounded-[13px] border border-[var(--labora-border)] px-3 py-2.5 text-sm font-bold text-[var(--labora-muted)]"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={!filingReference.trim()}
-                className="flex-1 rounded-[13px] bg-[#214E3A] px-3 py-2.5 text-sm font-extrabold text-white disabled:opacity-45"
+                className="flex-1 rounded-[13px] bg-[var(--labora-primary)] px-3 py-2.5 text-sm font-extrabold text-white disabled:opacity-45"
               >
                 Registrar
               </button>
@@ -373,9 +373,9 @@ const ModelRow = ({
   requiresReview?: boolean;
   action?: { label: string; onClick: () => void } | null;
 }) => (
-  <div className="rounded-xl bg-[#F8F5F0] p-3">
-    <p className="text-[10px] font-bold uppercase tracking-wide text-[#2E5A44]">Modelo {code}</p>
-    <p className="mt-1 text-xs font-semibold text-stone-700">{title}</p>
+  <div className="rounded-xl bg-[var(--labora-surface-2)] p-3">
+    <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--labora-primary)]">Modelo {code}</p>
+    <p className="mt-1 text-xs font-semibold text-[var(--labora-ink-soft)]">{title}</p>
     <p className="mt-2 text-base font-bold text-stone-900">
       {requiresReview ? 'Por revisar' : amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
     </p>
@@ -383,7 +383,7 @@ const ModelRow = ({
       <button
         type="button"
         onClick={action.onClick}
-        className="mt-3 rounded-[10px] border border-[#D7DED8] bg-white px-2.5 py-1.5 text-[10px] font-extrabold text-[#214E3A] hover:bg-[#F1F6F2]"
+        className="mt-3 rounded-[10px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-2.5 py-1.5 text-[10px] font-extrabold text-[var(--labora-primary)] hover:bg-[var(--labora-moss-soft)]"
       >
         {action.label}
       </button>

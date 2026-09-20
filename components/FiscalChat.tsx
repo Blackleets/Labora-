@@ -119,7 +119,7 @@ const FiscalChat: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+    <div className="h-[calc(100vh-140px)] flex flex-col bg-[var(--labora-surface)] rounded-[32px] shadow-2xl border border-[var(--labora-border)] overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="p-6 bg-gradient-to-r from-[#1A73E8] to-[#2D6CDF] text-white flex items-center justify-between shadow-md z-10">
         <div className="flex items-center gap-4">
@@ -142,7 +142,7 @@ const FiscalChat: React.FC = () => {
       </div>
 
       {/* Message Area */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-[#F8F9FA] custom-scrollbar scroll-smooth">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-[var(--labora-canvas)] custom-scrollbar scroll-smooth">
         {messages.map((msg, idx) => (
           <div 
             key={idx} 
@@ -152,7 +152,7 @@ const FiscalChat: React.FC = () => {
               
               {/* Avatar */}
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-auto ${
-                msg.role === 'user' ? 'bg-[#1A73E8] text-white' : 'bg-white text-[#2D6CDF] border border-gray-100'
+                msg.role === 'user' ? 'bg-[#1A73E8] text-white' : 'bg-[var(--labora-surface)] text-[#2D6CDF] border border-[var(--labora-border)]'
               }`}>
                 {msg.role === 'user' ? <UserIcon size={16} /> : <Bot size={18} />}
               </div>
@@ -161,7 +161,7 @@ const FiscalChat: React.FC = () => {
               <div className={`p-4 md:p-5 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
                 msg.role === 'user' 
                   ? 'bg-[#1A73E8] text-white rounded-br-none' 
-                  : 'bg-white text-gray-700 rounded-bl-none border border-gray-100'
+                  : 'bg-[var(--labora-surface)] text-gray-700 rounded-bl-none border border-[var(--labora-border)]'
               }`}>
                 {renderFormattedText(msg.text)}
               </div>
@@ -174,7 +174,7 @@ const FiscalChat: React.FC = () => {
                   <button
                     key={i}
                     onClick={() => action.query && handleSend(action.query)}
-                    className="flex items-center gap-2 px-3 py-2 bg-white text-[#1A73E8] text-xs font-bold rounded-xl border border-blue-100 shadow-sm hover:bg-blue-50 hover:border-blue-200 transition-all active:scale-95 animate-in zoom-in duration-300"
+                    className="flex items-center gap-2 px-3 py-2 bg-[var(--labora-surface)] text-[#1A73E8] text-xs font-bold rounded-xl border border-[var(--labora-border)] shadow-sm hover:bg-[var(--labora-moss-soft)] hover:border-[var(--labora-border)] transition-all active:scale-95 animate-in zoom-in duration-300"
                     style={{ animationDelay: `${i * 100}ms` }}
                   >
                     <action.icon size={14} className="text-[#2D6CDF]" />
@@ -188,10 +188,10 @@ const FiscalChat: React.FC = () => {
         
         {isLoading && (
           <div className="flex gap-3 animate-pulse ml-1">
-            <div className="w-8 h-8 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-[#2D6CDF]">
+            <div className="w-8 h-8 rounded-xl bg-[var(--labora-surface)] border border-[var(--labora-border)] flex items-center justify-center text-[#2D6CDF]">
               <Bot size={18} />
             </div>
-            <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-none shadow-sm border border-gray-100 flex items-center gap-2">
+            <div className="bg-[var(--labora-surface)] px-4 py-3 rounded-2xl rounded-bl-none shadow-sm border border-[var(--labora-border)] flex items-center gap-2">
               <Loader2 size={16} className="animate-spin text-[#2D6CDF]" />
               <span className="text-xs text-gray-400 font-bold">Consultando normativa de {selectedCountry.display_name}...</span>
             </div>
@@ -203,7 +203,7 @@ const FiscalChat: React.FC = () => {
       {/* Input Form */}
       <form 
         onSubmit={(e) => { e.preventDefault(); handleSend(); }} 
-        className="p-4 md:p-6 bg-white border-t border-gray-100 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] z-20"
+        className="p-4 md:p-6 bg-[var(--labora-surface)] border-t border-[var(--labora-border)] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] z-20"
       >
         <div className="relative group">
           <input
@@ -211,12 +211,12 @@ const FiscalChat: React.FC = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={`Consulta fiscal para ${selectedCountry.display_name}...`}
-            className="w-full pl-6 pr-14 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-50 focus:bg-white focus:border-[#2D6CDF] transition-all text-gray-800 placeholder-gray-400 font-medium"
+            className="w-full pl-6 pr-14 py-4 bg-[var(--labora-surface-2)] border border-[var(--labora-border)] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[var(--labora-moss-soft)] focus:bg-[var(--labora-surface)] focus:border-[#2D6CDF] transition-all text-[var(--labora-ink)] placeholder-[var(--labora-muted)] font-medium"
           />
           <button 
             type="submit" 
             disabled={isLoading || !input.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-[#1A73E8] text-white rounded-xl hover:bg-[#1557B0] disabled:opacity-50 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all shadow-md active:scale-95"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-[#1A73E8] text-white rounded-xl hover:bg-[#1557B0] disabled:opacity-50 disabled:bg-[var(--labora-surface-2)] disabled:cursor-not-allowed transition-all shadow-md active:scale-95"
           >
             <Send size={20} strokeWidth={2.5} />
           </button>

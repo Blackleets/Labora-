@@ -123,27 +123,27 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
     <div className="space-y-8 pb-20 lg:pb-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-[#1A1A1A]">Aula Fiscal</h2>
+          <h2 className="text-3xl font-bold text-[var(--labora-ink)]">Aula Fiscal</h2>
           <p className="text-gray-500 mt-1">Aprende a calcular tus impuestos sin miedo.</p>
         </div>
         
-        <div className="flex p-1 bg-white border border-gray-100 rounded-xl shadow-sm overflow-x-auto max-w-full">
+        <div className="flex p-1 bg-[var(--labora-surface)] border border-gray-100 rounded-xl shadow-sm overflow-x-auto max-w-full">
           <button 
             onClick={() => setActiveTab('concepts')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === 'concepts' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === 'concepts' ? 'bg-gray-100 text-gray-900' : 'text-[var(--labora-muted)] hover:text-[var(--labora-ink-soft)]'}`}
           >
             Teoría
           </button>
           <button 
             onClick={() => setActiveTab('workshop')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'workshop' ? 'bg-[#2D6CDF] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'workshop' ? 'bg-[#2D6CDF] text-white shadow-md' : 'text-[var(--labora-muted)] hover:text-[var(--labora-ink-soft)]'}`}
           >
             <GraduationCap size={16} />
             Taller
           </button>
           <button 
             onClick={() => setActiveTab('quiz')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'quiz' ? 'bg-[#7B3FE4] text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'quiz' ? 'bg-[#7B3FE4] text-white shadow-md' : 'text-[var(--labora-muted)] hover:text-[var(--labora-ink-soft)]'}`}
           >
             <Trophy size={16} />
             Test
@@ -194,7 +194,7 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
                 
                 <div className="flex-1 bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col justify-center">
                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">La Fórmula</p>
-                   <div className="font-mono text-sm font-bold text-gray-800 bg-white p-2.5 rounded-lg border border-gray-200 text-center mb-3 shadow-sm">
+                   <div className="font-mono text-sm font-bold text-gray-800 bg-[var(--labora-surface)] p-2.5 rounded-lg border border-gray-200 text-center mb-3 shadow-sm">
                      {step.formula}
                    </div>
                    <div className="flex gap-2 items-start text-xs text-gray-500">
@@ -210,7 +210,7 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
             <div className="flex justify-center pt-4">
               <button 
                 onClick={() => setView('simulator')}
-                className="flex items-center gap-2 px-6 py-3 bg-[#1A1A1A] text-white rounded-xl font-bold shadow-lg hover:bg-black transition-transform active:scale-95"
+                className="flex items-center gap-2 px-6 py-3 bg-[var(--labora-ink)] text-white rounded-xl font-bold shadow-lg hover:bg-black transition-transform active:scale-95"
               >
                 Ir al Simulador Interactivo <ArrowRight size={18} />
               </button>
@@ -237,12 +237,12 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
                 {quizQuestions[quizState.currentQuestion].options.map((option, idx) => {
                   let btnClass = "w-full p-4 rounded-xl text-left font-bold transition-all border-2 ";
                   if (quizState.selectedAnswer === null) {
-                    btnClass += "border-gray-100 hover:border-[#7B3FE4] hover:bg-purple-50 text-gray-700";
+                    btnClass += "border-[var(--labora-border)] hover:border-[#7B3FE4] hover:bg-[var(--labora-moss-soft)] text-[var(--labora-ink-soft)]";
                   } else {
                     if (idx === quizQuestions[quizState.currentQuestion].correct) {
-                      btnClass += "border-[#2ECC71] bg-green-50 text-green-800";
+                      btnClass += "border-[var(--labora-primary)] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]";
                     } else if (idx === quizState.selectedAnswer) {
-                      btnClass += "border-[#E74C3C] bg-red-50 text-red-800";
+                      btnClass += "border-[var(--labora-clay)] bg-[var(--labora-soft-clay)] text-[var(--labora-clay-deep)]";
                     } else {
                       btnClass += "border-gray-100 text-gray-300";
                     }
@@ -272,7 +272,7 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
                     </div>
                     <button 
                       onClick={nextQuestion}
-                      className="w-full py-3 bg-[#1A1A1A] text-white rounded-xl font-bold hover:bg-black transition-all"
+                      className="w-full py-3 bg-[var(--labora-ink)] text-white rounded-xl font-bold hover:bg-black transition-all"
                     >
                       {quizState.currentQuestion + 1 === quizQuestions.length ? 'Ver Resultados' : 'Siguiente Pregunta'}
                     </button>
@@ -287,7 +287,7 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
                </div>
                <h3 className="text-2xl font-bold text-gray-900 mb-2">¡Test Completado!</h3>
                <p className="text-gray-500 mb-6">
-                 Has acertado <span className="text-[#1A1A1A] font-bold text-xl">{quizState.score}</span> de {quizQuestions.length} preguntas.
+                 Has acertado <span className="text-[var(--labora-ink)] font-bold text-xl">{quizState.score}</span> de {quizQuestions.length} preguntas.
                </p>
                
                <div className="bg-gray-50 p-4 rounded-2xl mb-6">

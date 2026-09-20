@@ -211,19 +211,19 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#18211C]/65 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4">
-      <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#FFFDF9] sm:h-auto sm:max-h-[92dvh] sm:max-w-2xl sm:rounded-[28px] sm:border sm:border-[#E3DBD0] sm:shadow-2xl">
-        <header className="relative shrink-0 overflow-hidden bg-[#214E3A] px-4 py-4 text-white sm:px-6 sm:py-5">
-          <div className="absolute -right-10 -top-14 h-36 w-36 rounded-full bg-[#52AA83]/20" />
+    <div className="fixed inset-0 z-50 bg-[var(--labora-ink)]/65 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4">
+      <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[var(--labora-surface)] sm:h-auto sm:max-h-[92dvh] sm:max-w-2xl sm:rounded-[28px] sm:border sm:border-[var(--labora-border)] sm:shadow-2xl">
+        <header className="relative shrink-0 overflow-hidden bg-[var(--labora-primary)] px-4 py-4 text-white sm:px-6 sm:py-5">
+          <div className="absolute -right-10 -top-14 h-36 w-36 rounded-full bg-[var(--labora-primary-3)]/20" />
           <div className="relative flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-white/10 text-[#F1C56B]"><Fuel size={20} /></div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--labora-surface)]/10 text-[var(--labora-gold-soft)]"><Fuel size={20} /></div>
               <div className="min-w-0">
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/55">Repostaje</p>
                 <h2 className="truncate text-lg font-extrabold">Añadir ticket</h2>
               </div>
             </div>
-            <button type="button" onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10" aria-label="Cerrar"><X size={18} /></button>
+            <button type="button" onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--labora-surface)]/10" aria-label="Cerrar"><X size={18} /></button>
           </div>
         </header>
 
@@ -233,37 +233,37 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
             <input id="labora-fuel-gallery" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => void handleImageCapture(event)} />
 
             {!previewImage ? (
-              <section className="rounded-[22px] border border-[#D9E4DD] bg-[#F3F8F5] p-4">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-white text-[#214E3A] shadow-sm">
+              <section className="rounded-[22px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-4">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] bg-[var(--labora-surface)] text-[var(--labora-primary)] shadow-sm">
                   {isProcessing ? <Loader2 size={27} className="animate-spin" /> : <Camera size={27} />}
                 </div>
                 <div className="mt-3 text-center">
-                  <h3 className="text-base font-extrabold text-[#1E231F]">Primero, añade el ticket</h3>
-                  <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-stone-500">Haz una foto clara o usa una imagen que ya tengas. Después podrás revisar lo que detecte la IA.</p>
+                  <h3 className="text-base font-extrabold text-[var(--labora-ink)]">Primero, añade el ticket</h3>
+                  <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-[var(--labora-muted)]">Haz una foto clara o usa una imagen que ya tengas. Después podrás revisar lo que detecte la IA.</p>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2.5">
-                  <label htmlFor="labora-fuel-camera" className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-[#D66C47] px-3 py-3 text-sm font-extrabold text-white ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
+                  <label htmlFor="labora-fuel-camera" className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] bg-[var(--labora-clay)] px-3 py-3 text-sm font-extrabold text-white ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
                     <Camera size={17} /> Tomar foto
                   </label>
-                  <label htmlFor="labora-fuel-gallery" className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-[#D7DED9] bg-white px-3 py-3 text-sm font-extrabold text-[#214E3A] ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
+                  <label htmlFor="labora-fuel-gallery" className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-3 text-sm font-extrabold text-[var(--labora-primary)] ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}>
                     <FileImage size={17} /> Galería
                   </label>
                 </div>
-                <p className="mt-3 text-center text-[10px] text-stone-400">JPG, PNG o WebP · máximo 10 MB</p>
+                <p className="mt-3 text-center text-[10px] text-[var(--labora-muted)]">JPG, PNG o WebP · máximo 10 MB</p>
               </section>
             ) : (
-              <section className="rounded-[20px] border border-[#D9E4DD] bg-[#F3F8F5] p-3">
+              <section className="rounded-[20px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-3">
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => window.open(previewImage, '_blank')} className="h-24 w-20 shrink-0 overflow-hidden rounded-[14px] border border-[#D6DED8] bg-white">
+                  <button type="button" onClick={() => window.open(previewImage, '_blank')} className="h-24 w-20 shrink-0 overflow-hidden rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-surface)]">
                     <img src={previewImage} alt="Ticket cargado" className="h-full w-full object-cover" />
                   </button>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 text-[#214E3A]"><CheckCircle2 size={16} /><p className="text-sm font-extrabold">Ticket cargado</p></div>
-                    <p className="mt-1 text-xs leading-relaxed text-stone-500">Toca la miniatura para verlo grande. Puedes reemplazarlo antes de guardar.</p>
+                    <div className="flex items-center gap-2 text-[var(--labora-primary)]"><CheckCircle2 size={16} /><p className="text-sm font-extrabold">Ticket cargado</p></div>
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">Toca la miniatura para verlo grande. Puedes reemplazarlo antes de guardar.</p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <label htmlFor="labora-fuel-camera" className="cursor-pointer rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-[#D66C47] shadow-sm">Nueva foto</label>
-                      <label htmlFor="labora-fuel-gallery" className="cursor-pointer rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-[#214E3A] shadow-sm">Cambiar imagen</label>
-                      <button type="button" onClick={resetImage} className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-stone-400">Quitar</button>
+                      <label htmlFor="labora-fuel-camera" className="cursor-pointer rounded-lg bg-[var(--labora-surface)] px-2.5 py-1.5 text-[11px] font-extrabold text-[var(--labora-clay)] shadow-sm">Nueva foto</label>
+                      <label htmlFor="labora-fuel-gallery" className="cursor-pointer rounded-lg bg-[var(--labora-surface)] px-2.5 py-1.5 text-[11px] font-extrabold text-[var(--labora-primary)] shadow-sm">Cambiar imagen</label>
+                      <button type="button" onClick={resetImage} className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-[var(--labora-muted)]">Quitar</button>
                     </div>
                   </div>
                 </div>
@@ -271,25 +271,25 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
             )}
 
             {isProcessing && (
-              <div className="mt-3 flex items-center gap-2 rounded-[14px] border border-[#DCE5DF] bg-white px-3 py-3 text-xs font-bold text-stone-600">
-                <Loader2 size={15} className="animate-spin text-[#52AA83]" /> Leyendo el ticket…
+              <div className="mt-3 flex items-center gap-2 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-3 text-xs font-bold text-[var(--labora-muted)]">
+                <Loader2 size={15} className="animate-spin text-[var(--labora-primary-3)]" /> Leyendo el ticket…
               </div>
             )}
 
             {ocr && (
-              <section className={`mt-3 rounded-[14px] border p-3.5 ${ocr.needsReview ? 'border-[#EACFA9] bg-[#FFF8EC]' : 'border-[#BFDCCD] bg-[#EEF8F3]'}`}>
+              <section className={`mt-3 rounded-[14px] border p-3.5 ${ocr.needsReview ? 'border-[var(--labora-border)] bg-[color-mix(in_srgb,var(--labora-gold)_14%,var(--labora-surface))]' : 'border-[var(--labora-border)] bg-[var(--labora-moss-soft)]'}`}>
                 <div className="flex items-center gap-2">
-                  {ocr.needsReview ? <AlertTriangle size={16} className="text-[#9A672C]" /> : <CheckCircle2 size={16} className="text-[#2F6B50]" />}
-                  <p className="text-xs font-extrabold text-[#1E231F]">Lectura IA · confianza {confidencePct}%</p>
+                  {ocr.needsReview ? <AlertTriangle size={16} className="text-[var(--labora-gold)]" /> : <CheckCircle2 size={16} className="text-[var(--labora-primary)]" />}
+                  <p className="text-xs font-extrabold text-[var(--labora-ink)]">Lectura IA · confianza {confidencePct}%</p>
                 </div>
-                <p className="mt-1 text-[11px] leading-relaxed text-stone-600">{ocr.needsReview ? 'Comprueba los datos antes de guardar.' : 'La lectura parece clara; confirma los datos igualmente.'}</p>
-                {ocr.uncertainFields.length > 0 && <p className="mt-1 text-[10px] text-stone-500">Campos dudosos: {ocr.uncertainFields.join(', ')}</p>}
+                <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">{ocr.needsReview ? 'Comprueba los datos antes de guardar.' : 'La lectura parece clara; confirma los datos igualmente.'}</p>
+                {ocr.uncertainFields.length > 0 && <p className="mt-1 text-[10px] text-[var(--labora-muted)]">Campos dudosos: {ocr.uncertainFields.join(', ')}</p>}
               </section>
             )}
 
             <section className="mt-5 space-y-3">
               <div>
-                <label className="mb-1.5 block text-xs font-extrabold text-stone-600">Gasolinera</label>
+                <label className="mb-1.5 block text-xs font-extrabold text-[var(--labora-muted)]">Gasolinera</label>
                 <select value={selectedStation} onChange={(event) => { setSelectedStation(event.target.value); if (event.target.value !== 'Otro') setCustomStation(''); }} className="field-input">
                   <option value="">Selecciona una gasolinera</option>
                   {GAS_STATION_PRESETS.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
@@ -299,16 +299,16 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Importe total"><div className="relative"><input type="number" min="0" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className="field-input pr-8" placeholder="0,00" /><span className="absolute right-3 top-3 text-sm text-stone-400">{selectedCountry.currency_symbol || '€'}</span></div></Field>
+                <Field label="Importe total"><div className="relative"><input type="number" min="0" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className="field-input pr-8" placeholder="0,00" /><span className="absolute right-3 top-3 text-sm text-[var(--labora-muted)]">{selectedCountry.currency_symbol || '€'}</span></div></Field>
                 <Field label="Fecha"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="field-input" /></Field>
               </div>
             </section>
 
-            <details className="mt-4 rounded-[16px] border border-[#E5DED4] bg-white">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-extrabold text-stone-700">
-                Detalles opcionales <ChevronDown size={16} className="text-stone-400" />
+            <details className="mt-4 rounded-[16px] border border-[var(--labora-border)] bg-[var(--labora-surface)]">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-extrabold text-[var(--labora-ink-soft)]">
+                Detalles opcionales <ChevronDown size={16} className="text-[var(--labora-muted)]" />
               </summary>
-              <div className="grid gap-3 border-t border-[#EEE8DF] p-4 sm:grid-cols-2">
+              <div className="grid gap-3 border-t border-[var(--labora-border)] p-4 sm:grid-cols-2">
                 <Field label="Litros"><input type="number" min="0" step="0.01" value={fuelLitres} onChange={(event) => setFuelLitres(event.target.value)} placeholder="Solo si los confirmas" className="field-input" /></Field>
                 <Field label="Combustible"><select value={fuelType} onChange={(event) => setFuelType(event.target.value)} className="field-input"><option value="">Sin especificar</option><option value="Gasolina 95">Gasolina 95</option><option value="Gasolina 98">Gasolina 98</option><option value="Diésel / Gasóleo A">Diésel / Gasóleo A</option><option value="GLP Autogas">GLP Autogas</option><option value="Electricidad / Carga">Electricidad / Carga</option></select></Field>
                 <Field label="Matrícula"><input value={plate} onChange={(event) => setPlate(event.target.value)} placeholder="Opcional" className="field-input uppercase" /></Field>
@@ -316,26 +316,26 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
               </div>
             </details>
 
-            <section className="mt-4 rounded-[14px] border border-[#D7E5DC] bg-[#F1F7F3] p-3.5">
-              <div className="flex items-center gap-2 text-xs font-extrabold text-[#214E3A]"><ShieldCheck size={15} /> Pendiente de revisión</div>
-              <p className="mt-1 text-[11px] leading-relaxed text-stone-500">Guardar el ticket no lo convierte automáticamente en gasto deducible. Entra con IVA y deducibilidad a 0 hasta revisión.</p>
+            <section className="mt-4 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-3.5">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-[var(--labora-primary)]"><ShieldCheck size={15} /> Pendiente de revisión</div>
+              <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">Guardar el ticket no lo convierte automáticamente en gasto deducible. Entra con IVA y deducibilidad a 0 hasta revisión.</p>
             </section>
           </div>
 
-          <footer className="shrink-0 border-t border-[#E8E1D7] bg-[#FFFDF9]/95 px-4 py-3 backdrop-blur sm:px-6">
-            <button type="submit" disabled={!canSave} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#183D2D] disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400">
+          <footer className="shrink-0 border-t border-[var(--labora-border)] bg-[var(--labora-surface)]/95 px-4 py-3 backdrop-blur sm:px-6">
+            <button type="submit" disabled={!canSave} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[15px] bg-[var(--labora-primary)] px-4 py-3 text-sm font-extrabold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-[var(--labora-muted)]">
               {isProcessing ? <Loader2 size={17} className="animate-spin" /> : <CheckCircle2 size={17} />} Guardar para revisión
             </button>
-            {!previewImage && <p className="mt-1.5 text-center text-[10px] text-stone-400">Primero añade una foto del ticket.</p>}
+            {!previewImage && <p className="mt-1.5 text-center text-[10px] text-[var(--labora-muted)]">Primero añade una foto del ticket.</p>}
           </footer>
         </form>
 
-        <style>{`.field-input{width:100%;min-height:46px;border:1px solid #DED7CC;background:#fff;border-radius:13px;padding:.7rem .8rem;font-size:.9rem;outline:none}.field-input:focus{border-color:#52AA83;box-shadow:0 0 0 3px rgba(82,170,131,.14)}summary::-webkit-details-marker{display:none}`}</style>
+        <style>{`.field-input{width:100%;min-height:46px;border:1px solid var(--labora-border);background:var(--labora-surface);color:var(--labora-ink);border-radius:13px;padding:.7rem .8rem;font-size:.9rem;outline:none}.field-input:focus{border-color:var(--labora-primary-3);box-shadow:0 0 0 3px color-mix(in srgb, var(--labora-primary) 18%, transparent)}summary::-webkit-details-marker{display:none}`}</style>
       </div>
     </div>
   );
 };
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <label><span className="mb-1.5 block text-xs font-extrabold text-stone-600">{label}</span>{children}</label>
+  <label><span className="mb-1.5 block text-xs font-extrabold text-[var(--labora-muted)]">{label}</span>{children}</label>
 );
