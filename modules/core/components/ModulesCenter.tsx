@@ -157,7 +157,7 @@ export const ModulesCenter: React.FC<ModulesCenterProps> = ({ setView }) => {
         {
           id: 'hot-zones',
           title: 'Zonas Calientes',
-          desc: 'Sin predicción real; no uses datos inventados.',
+          desc: 'No disponible. Sin heatmap ni surge xN inventados; hace falta feed de demanda verificable.',
           icon: Zap,
           color: 'bg-yellow-50 text-yellow-600',
           tags: ['Bloqueado'],
