@@ -48,6 +48,13 @@ describe('brandMarks', () => {
     expect(withBaseUrl('/brand/platforms/uber.svg')).toMatch(/\/brand\/platforms\/uber\.svg$/);
   });
 
+  it('withBaseUrl builds legal page hrefs under BASE_URL', () => {
+    expect(withBaseUrl('privacidad.html')).toMatch(/privacidad\.html$/);
+    expect(withBaseUrl('/terminos.html')).toMatch(/terminos\.html$/);
+    expect(withBaseUrl('privacidad.html')).not.toMatch(/\/\/privacidad/);
+    expect(withBaseUrl('/terminos.html')).not.toMatch(/\/\/terminos/);
+  });
+
   it('exposes category accents for letter avatars', () => {
     expect(CATEGORY_ACCENTS.delivery.fg).toBeTruthy();
     expect(CATEGORY_ACCENTS.banking.bg).toBeTruthy();
