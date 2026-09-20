@@ -1,4 +1,5 @@
 :root {
+  /* Editorial warm fintech — single shared system */
   --labora-ink: #1E2A24;
   --labora-ink-soft: #2A332E;
   --labora-primary: #2F5D4A;
@@ -8,23 +9,28 @@
   --labora-clay-deep: #B55738;
   --labora-gold: #B87A24;
   --labora-gold-soft: #E8D48A;
+  --labora-champagne: #C4A574;
   --labora-canvas: #F7F3EA;
   --labora-parchment: #FAF6EE;
+  --labora-ivory: #FFFEFB;
   --labora-moss: #3B7258;
   --labora-moss-soft: #EBF3ED;
   --labora-surface: #FFFEFB;
   --labora-surface-2: #F0EBE1;
   --labora-border: #E8DFC8;
+  --labora-border-hairline: rgba(30, 42, 36, 0.08);
   --labora-muted: #6B645C;
   --labora-soft-green: #EBF3ED;
   --labora-soft-clay: #FAF3EE;
-  --labora-shadow: 0 20px 60px rgba(47, 93, 74, 0.10);
-  --labora-shadow-soft: 0 10px 32px rgba(47, 93, 74, 0.06);
-  --labora-shadow-glow: 0 0 0 1px rgba(184, 122, 36, 0.12), 0 18px 48px rgba(47, 93, 74, 0.10);
-  --labora-radius: 22px;
-  --labora-radius-sm: 14px;
+  --labora-shadow: 0 24px 64px rgba(30, 42, 36, 0.08);
+  --labora-shadow-soft: 0 12px 36px rgba(30, 42, 36, 0.05);
+  --labora-shadow-glow: 0 0 0 1px rgba(196, 165, 116, 0.14), 0 20px 56px rgba(30, 42, 36, 0.08);
+  --labora-shadow-paper: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 28px 80px rgba(30, 42, 36, 0.09);
+  --labora-radius: 20px;
+  --labora-radius-sm: 12px;
+  --labora-radius-lg: 28px;
 
-  /* Ghibli atmosphere fallbacks (overridden by GhibliAtmosphereContext) */
+  /* Atmosphere aliases (overridden by GhibliAtmosphereContext for time-of-day) */
   --ghibli-forest: #2F5D4A;
   --ghibli-deepforest: #213B2F;
   --ghibli-moss: #3B7258;
@@ -45,22 +51,24 @@
   --ghibli-border-subtle: #EBE4D8;
   --ghibli-sun-fill: #F7BA55;
   --ghibli-sun-glow: #FAD082;
-  --ghibli-ambient-gradient: radial-gradient(circle at 80% 20%, rgba(250, 208, 130, 0.10) 0%, rgba(250, 246, 238, 0.04) 60%, transparent 100%);
+  --ghibli-ambient-gradient: radial-gradient(circle at 80% 20%, rgba(250, 208, 130, 0.08) 0%, rgba(250, 246, 238, 0.03) 60%, transparent 100%);
 }
 
 html {
-  background: var(--ghibli-canvas, var(--labora-canvas));
+  background: var(--labora-canvas);
   color: var(--labora-ink);
 }
 
 body:not(.dark) {
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(184, 122, 36, 0.10), transparent 50%),
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(47, 93, 74, 0.08), transparent 48%),
-    radial-gradient(ellipse 50% 40% at 50% 100%, rgba(201, 104, 70, 0.05), transparent 45%),
-    var(--ghibli-canvas, var(--labora-canvas));
+    radial-gradient(ellipse 70% 45% at 8% -8%, rgba(196, 165, 116, 0.07), transparent 52%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(47, 93, 74, 0.05), transparent 48%),
+    radial-gradient(ellipse 45% 35% at 50% 100%, rgba(201, 104, 70, 0.03), transparent 45%),
+    var(--labora-canvas);
   color: var(--labora-ink);
   font-feature-settings: 'ss01' on, 'cv11' on;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body:not(.dark) .bg-white {
@@ -72,26 +80,25 @@ body:not(.dark) main {
 }
 
 body:not(.dark) main > header {
-  background: color-mix(in srgb, var(--labora-surface) 88%, transparent) !important;
-  border-color: rgba(232, 223, 200, 0.75) !important;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
-  backdrop-filter: blur(18px);
+  background: color-mix(in srgb, var(--labora-ivory) 90%, transparent) !important;
+  border-color: var(--labora-border-hairline) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.92) inset;
+  backdrop-filter: blur(20px);
 }
 
 body:not(.dark) aside {
-  /* Component sets its own warm gradient; keep fallback soft */
-  border-color: var(--ghibli-border, rgba(47, 93, 74, 0.08)) !important;
+  border-color: var(--labora-border) !important;
 }
 
 body:not(.dark) main > nav {
-  background: rgba(255, 254, 251, 0.95) !important;
-  border-color: rgba(232, 223, 200, 0.7) !important;
-  box-shadow: 0 -16px 48px rgba(47, 93, 74, 0.05);
+  background: rgba(255, 254, 251, 0.96) !important;
+  border-color: rgba(232, 223, 200, 0.65) !important;
+  box-shadow: 0 -12px 40px rgba(30, 42, 36, 0.04);
   backdrop-filter: blur(20px);
 }
 
 ::selection {
-  background: rgba(184, 122, 36, 0.22);
+  background: rgba(196, 165, 116, 0.28);
   color: var(--labora-ink);
 }
 
@@ -104,25 +111,24 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid rgba(47, 93, 74, 0.55);
+  outline: 2px solid rgba(47, 93, 74, 0.45);
   outline-offset: 2px;
 }
 
-/* Soft parchment / meadow hero — not dark OS chrome */
+/* Editorial hero — soft Mediterranean atmosphere, not cartoon meadow */
 .labora-hero {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--ghibli-border, #E8DFC8);
-  border-radius: 30px;
+  border: 1px solid var(--labora-border);
+  border-radius: var(--labora-radius-lg);
   background:
-    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 78%, transparent), transparent 36%),
-    radial-gradient(ellipse at 16% -4%, color-mix(in srgb, #C9DDEE 62%, transparent), transparent 44%),
-    radial-gradient(circle at 6% 94%, color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 95%, transparent), transparent 42%),
-    radial-gradient(ellipse at 72% 100%, color-mix(in srgb, var(--ghibli-moss, #3B7258) 14%, transparent), transparent 50%),
-    linear-gradient(158deg, var(--ghibli-parchment, #FAF6EE) 0%, #F4F7ED 36%, var(--ghibli-warmearth, #FAF3EE) 64%, var(--ghibli-softgreen, #EBF3ED) 100%);
+    radial-gradient(ellipse at 88% 10%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 55%, transparent), transparent 42%),
+    radial-gradient(ellipse at 12% 0%, rgba(180, 200, 215, 0.28), transparent 48%),
+    radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--ghibli-moss, #3B7258) 8%, transparent), transparent 55%),
+    linear-gradient(165deg, var(--labora-parchment) 0%, #F3F0E6 40%, var(--labora-canvas) 100%);
   color: var(--labora-ink);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.88) inset,
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
     var(--labora-shadow-soft);
 }
 
@@ -131,8 +137,7 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(ellipse at 72% 16%, rgba(255, 255, 255, 0.5), transparent 48%),
-    linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 35%, transparent) 100%);
+    radial-gradient(ellipse at 70% 18%, rgba(255, 255, 255, 0.35), transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -140,45 +145,37 @@ textarea:focus-visible {
 .labora-hero::after {
   content: '';
   position: absolute;
-  width: 420px;
-  height: 280px;
-  right: -80px;
-  bottom: -120px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, color-mix(in srgb, var(--ghibli-moss, #3B7258) 22%, transparent), transparent 68%);
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
   pointer-events: none;
   z-index: 0;
+  mix-blend-mode: multiply;
 }
 
 .labora-card {
-  border: 1px solid var(--ghibli-border, #E8DFC8);
-  background:
-    linear-gradient(180deg, rgba(255, 254, 251, 0.98), rgba(252, 249, 243, 0.96));
+  border: 1px solid var(--labora-border);
+  background: linear-gradient(180deg, rgba(255, 254, 251, 0.98), rgba(252, 249, 243, 0.96));
   border-radius: var(--labora-radius);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
     var(--labora-shadow-soft);
-  backdrop-filter: blur(10px);
 }
 
 .labora-card-premium {
-  border: 1px solid var(--ghibli-border, rgba(47, 93, 74, 0.08));
-  background:
-    linear-gradient(180deg, rgba(255,254,251,0.98), rgba(251,247,240,0.96));
+  border: 1px solid var(--labora-border);
+  background: linear-gradient(180deg, rgba(255,254,251,0.99), rgba(251,247,240,0.97));
   border-radius: calc(var(--labora-radius) + 4px);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    var(--labora-shadow);
+  box-shadow: var(--labora-shadow-paper);
 }
 
-.labora-card-parchment {
-  border: 1px solid var(--ghibli-border, #E8DFC8);
+.labora-card-parchment,
+.labora-card-auth {
+  border: 1px solid var(--labora-border);
   background: linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%);
-  border-radius: 28px;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 24px 70px rgba(47, 93, 74, 0.10);
+  border-radius: var(--labora-radius-lg);
+  box-shadow: var(--labora-shadow-paper);
 }
 
 .labora-card-interactive {
@@ -186,9 +183,9 @@ textarea:focus-visible {
 }
 
 .labora-card-interactive:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--ghibli-forest, #2F5D4A) 22%, transparent);
-  box-shadow: 0 18px 50px rgba(47, 93, 74, 0.10);
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--labora-primary) 18%, transparent);
+  box-shadow: 0 16px 44px rgba(30, 42, 36, 0.08);
 }
 
 .labora-chip {
@@ -197,58 +194,93 @@ textarea:focus-visible {
   gap: 0.35rem;
   border-radius: 999px;
   border: 1px solid var(--ghibli-bordergreen, #D0E5D7);
-  background: color-mix(in srgb, var(--ghibli-softgreen, #EBF3ED) 88%, white);
-  padding: 0.4rem 0.8rem;
+  background: color-mix(in srgb, var(--labora-moss-soft) 80%, white);
+  padding: 0.35rem 0.75rem;
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.13em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ghibli-forest, #2F5D4A);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  color: var(--labora-primary);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
 .labora-kicker {
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .labora-display {
-  font-family: 'Fraunces', Georgia, serif;
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
   letter-spacing: -0.03em;
   font-optical-sizing: auto;
+  font-weight: 560;
 }
 
 .labora-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(47,93,74,0.12), transparent);
+  background: linear-gradient(90deg, transparent, rgba(30,42,36,0.10), transparent);
 }
 
 .labora-soft-grid {
   background-image:
-    linear-gradient(rgba(47, 93, 74, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(47, 93, 74, 0.03) 1px, transparent 1px);
-  background-size: 28px 28px;
+    linear-gradient(rgba(30, 42, 36, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 42, 36, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 .labora-btn-primary {
   background: linear-gradient(180deg, #3B7258, #2F5D4A);
   color: #fff;
-  box-shadow: 0 10px 28px rgba(47, 93, 74, 0.22);
+  box-shadow: 0 10px 28px rgba(47, 93, 74, 0.20);
 }
 
-.labora-btn-accent {
+.labora-btn-accent,
+.labora-btn-clay {
   background: linear-gradient(180deg, #D97757, #C96846);
   color: #fff;
-  box-shadow: 0 10px 28px rgba(201, 104, 70, 0.24);
+  box-shadow: 0 12px 32px rgba(201, 104, 70, 0.24);
 }
 
 .labora-gold-line {
-  height: 2px;
-  width: 48px;
+  height: 1.5px;
+  width: 40px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--labora-gold), transparent);
+  background: linear-gradient(90deg, var(--labora-champagne), transparent);
+}
+
+/* Atmospheric editorial wash (login left / hero) */
+.labora-atmosphere {
+  background:
+    radial-gradient(ellipse at 78% 12%, rgba(250, 208, 130, 0.55), transparent 40%),
+    radial-gradient(ellipse at 16% 8%, rgba(180, 200, 215, 0.35), transparent 48%),
+    radial-gradient(ellipse at 50% 85%, rgba(47, 93, 74, 0.12), transparent 55%),
+    linear-gradient(180deg, #C5D5E4 0%, #D5E2DC 32%, #E8E6D8 62%, #F7F3EA 100%);
+}
+
+.labora-film-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+/* Sidebar parchment language */
+.labora-sidebar {
+  background: linear-gradient(180deg, #FFFEFB 0%, #FAF6EE 55%, #F5F1E8 100%);
+  border-color: var(--labora-border);
+}
+
+.labora-nav-active {
+  background: color-mix(in srgb, var(--labora-moss-soft) 92%, white);
+  color: var(--labora-primary);
+  box-shadow: inset 0 0 0 1px rgba(47, 93, 74, 0.10);
+  font-weight: 700;
 }
 
 /* Mobile shell */
@@ -275,33 +307,12 @@ body,
 }
 
 @media (max-width: 640px) {
-  :root { --labora-radius: 18px; }
-  .labora-hero { border-radius: 20px; }
+  :root { --labora-radius: 16px; --labora-radius-lg: 22px; }
+  .labora-hero { border-radius: 18px; }
   button, a, [role='button'] { touch-action: manipulation; }
   input, select, textarea { font-size: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .labora-card-interactive { transition: none; }
-}
-
-
-/* Superdesign — Prados y Claridad helpers */
-.labora-card-auth {
-  border-radius: 28px;
-  border: 1px solid var(--labora-border, #E8DFC8);
-  background: linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%);
-  box-shadow: 0 24px 70px rgba(47, 93, 74, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-}
-.labora-btn-clay {
-  background: linear-gradient(180deg, #D97757 0%, #C96846 100%);
-  color: #fff;
-  box-shadow: 0 12px 32px rgba(201, 104, 70, 0.28);
-}
-.labora-ghibli-ambient {
-  background:
-    radial-gradient(ellipse at 78% 14%, rgba(250, 208, 130, 0.8), transparent 38%),
-    radial-gradient(ellipse at 18% 10%, rgba(180, 210, 230, 0.42), transparent 46%),
-    radial-gradient(ellipse at 50% 70%, rgba(141, 170, 154, 0.4), transparent 55%),
-    linear-gradient(180deg, #C9DDEE 0%, #DCEAE6 28%, #E8F0E0 52%, #FAF6EE 78%, #FAF3EE 100%);
 }

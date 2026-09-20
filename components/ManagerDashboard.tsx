@@ -11,7 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import MeadowLandscape from './MeadowLandscape';
+import AtmosphericPanel from './AtmosphericPanel';
 import { useCountry } from '../contexts/CountryContext';
 import { Expense, UserRole } from '../types';
 
@@ -148,16 +148,16 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   return (
     <div id="manager-dashboard" className="mx-auto max-w-7xl space-y-6 pb-8">
       <section className="labora-hero p-5 sm:p-7">
-        <MeadowLandscape
+        <AtmosphericPanel
           variant="hero"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] w-full opacity-[0.40]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] w-full opacity-[0.45]"
         />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
           <div>
             <span className="labora-chip labora-kicker text-[#2F5D4A]">Gestoría · {quarter}</span>
             <p className="mt-6 text-sm font-semibold text-[#6B645C]">{managerName}</p>
             <h1 className="labora-display mt-1.5 max-w-2xl text-[2.05rem] font-semibold leading-[1.05] text-[#1E2A24] sm:text-[2.55rem]">
-              Toda tu cartera, con la calma del prado.
+              Toda tu cartera, con claridad fiscal.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#5C6E64] sm:text-[15px]">
               Clientes, gastos por revisar, peticiones y modelos en una sola vista — clara, cálida y sin ruido.

@@ -85,10 +85,10 @@ const BASE_ATMOSPHERES: Record<GhibliTimeOfDay, {
   base: GhibliPalette;
 }> = {
   dawn: {
-    title: 'Amanecer en la Colina',
-    subtitle: 'Rocío matinal, aire fresco y bruma sobre los campos',
-    filmInspiration: 'Mi Vecino Totoro & Arrietty',
-    paletteDescription: 'Verdes salvia y celadón húmedos con tierras perladas de arcilla clara y luz naciente suave.',
+    title: 'Luz de mañana',
+    subtitle: 'Tonos frescos y claros para el inicio de la jornada',
+    filmInspiration: 'Dawn calm',
+    paletteDescription: 'Verdes salvia suaves con tierras perladas y luz matinal contenida.',
     base: {
       forest: '#295C46',
       deepforest: '#1E3E2F',
@@ -119,10 +119,10 @@ const BASE_ATMOSPHERES: Record<GhibliTimeOfDay, {
     }
   },
   midday: {
-    title: 'Mediodía Solar',
-    subtitle: 'Luz cenital cristalina, prados vibrantes y tejas mediterráneas',
-    filmInspiration: 'Kiki: Entregas a Domicilio & Porco Rosso',
-    paletteDescription: 'Verde bosque prado clásico y terracota horneada con el contraste vivo de un día radiante.',
+    title: 'Luz mediterránea',
+    subtitle: 'Claridad diurna, contraste sereno y calidez contenida',
+    filmInspiration: 'Midday calm',
+    paletteDescription: 'Verde bosque profundo y terracota contenida con el contraste de un día claro.',
     base: {
       forest: '#2E5A44',
       deepforest: '#213B2F',
@@ -153,10 +153,10 @@ const BASE_ATMOSPHERES: Record<GhibliTimeOfDay, {
     }
   },
   golden_hour: {
-    title: 'Atardecer Ámbar',
-    subtitle: 'Hora mágica de luz dorada, sombras suaves y calidez nostálgica',
-    filmInspiration: 'El Viaje de Chihiro & Susurros del Corazón',
-    paletteDescription: 'Verdes oliva y musgo otoñal entrelazados con calderas ardientes, canela y fondos de pergamino miel.',
+    title: 'Luz ámbar',
+    subtitle: 'Calidez de tarde, sombras suaves y pergamino miel',
+    filmInspiration: 'Golden calm',
+    paletteDescription: 'Verdes oliva y musgo con ámbar contenido y fondos de pergamino miel.',
     base: {
       forest: '#375936',
       deepforest: '#254026',
@@ -187,10 +187,10 @@ const BASE_ATMOSPHERES: Record<GhibliTimeOfDay, {
     }
   },
   night: {
-    title: 'Noche en el Bosque',
-    subtitle: 'Quietud plateada, luna clara y serenidad bajo los árboles',
-    filmInspiration: 'La Princesa Mononoke & El Castillo Ambulante',
-    paletteDescription: 'Verdes ciprés profundo y corteza nocturna con fondos marfil luna que cuidan el descanso visual.',
+    title: 'Luz serena',
+    subtitle: 'Quietud nocturna, marfil suave y descanso visual',
+    filmInspiration: 'Night calm',
+    paletteDescription: 'Verdes ciprés profundo con fondos marfil que cuidan el descanso visual.',
     base: {
       forest: '#23493A',
       deepforest: '#183428',

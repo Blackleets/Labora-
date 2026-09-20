@@ -135,12 +135,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`labora-sidebar fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r transition-transform duration-200 lg:static lg:translate-x-0 ${
           isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
         style={{
           borderColor: palette.border,
-          background: `linear-gradient(180deg, #FFFEFB 0%, ${palette.parchment} 55%, ${palette.softgreen} 140%)`
+          background: `linear-gradient(180deg, #FFFEFB 0%, ${palette.parchment} 60%, #F3EEE4 100%)`
         }}
       >
         <div
@@ -153,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
               className="ml-[48px] mt-1 text-[9px] font-bold uppercase tracking-[0.16em]"
               style={{ color: palette.moss }}
             >
-              Trabajo claro
+              Claridad fiscal
             </p>
           </div>
           <button

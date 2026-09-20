@@ -17,7 +17,7 @@ import {
 import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
-import MeadowLandscape from './MeadowLandscape';
+import AtmosphericPanel from './AtmosphericPanel';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
 
@@ -200,9 +200,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   return (
     <div id="rider-dashboard" className="mx-auto max-w-6xl space-y-6 pb-10">
       <section className="labora-hero p-5 sm:p-7 lg:p-9">
-        <MeadowLandscape
+        <AtmosphericPanel
           variant="hero"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] w-full opacity-[0.5]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] w-full opacity-[0.55]"
         />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-end">
           <div className="min-w-0">
@@ -221,10 +221,10 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
             <p className="mt-6 text-sm font-semibold text-[#6B645C]">{greetSpanish(nowDate.getHours())}, {firstName}</p>
             <h1 className="labora-display mt-1.5 max-w-2xl text-[2.05rem] font-semibold leading-[1.05] text-[#1E2A24] sm:text-[2.7rem]">
-              Tu trimestre, con luz de prado y cuidado.
+              Tu trimestre, con claridad y evidencia.
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#5C6E64] sm:text-[15px]">
-              Gastos, modelos y gestoría en un mismo espacio calmado — como un prado al sol, sin ruido.
+              Gastos, modelos y gestoría en un mismo espacio de trabajo — calmado, verificable y sin ruido.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold text-[#6B645C]">

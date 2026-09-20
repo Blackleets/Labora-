@@ -14,12 +14,12 @@ import {
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { recoverRemoteSession, signInRemote, signUpRemote } from '../services/authWorkspace';
 import { UserRole } from '../types';
+import AtmosphericPanel from './AtmosphericPanel';
 import IdentityImagePicker from './IdentityImagePicker';
 import Logo from './Logo';
-import MeadowLandscape from './MeadowLandscape';
 
 const Login: React.FC = () => {
-  const { palette, title, subtitle } = useGhibliAtmosphere();
+  const { palette } = useGhibliAtmosphere();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [registerStep, setRegisterStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
@@ -52,8 +52,8 @@ const Login: React.FC = () => {
 
   const normalizeEmail = (value: string) => value.trim().toLowerCase();
   const inputClass =
-    'w-full rounded-2xl border border-[#E8DFC8] bg-[#FFFEFB] px-4 py-3.5 text-[15px] text-[#292524] outline-none transition placeholder:text-[#9A9186] focus:border-[#2F5D4A]/45 focus:ring-4 focus:ring-[#2F5D4A]/10';
-  const labelClass = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#6B645C]';
+    'w-full rounded-xl border border-[#E8DFC8] bg-[#FFFEFB] px-4 py-3.5 text-[15px] text-[#1E2A24] outline-none transition placeholder:text-[#9A9186] focus:border-[#2F5D4A]/40 focus:ring-4 focus:ring-[#2F5D4A]/08';
+  const labelClass = 'mb-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6B645C]';
 
   const resetFeedback = () => {
     setError('');
@@ -156,7 +156,7 @@ const Login: React.FC = () => {
   if (recovering) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[#F7F3EA]">
-        <div className="flex items-center gap-3 rounded-2xl border border-[#E8DFC8] bg-[#FFFEFB] px-5 py-3.5 text-sm font-semibold text-[#2F5D4A] shadow-[0_12px_40px_rgba(47,93,74,0.08)]">
+        <div className="flex items-center gap-3 rounded-2xl border border-[#E8DFC8] bg-[#FFFEFB] px-5 py-3.5 text-sm font-medium text-[#2F5D4A] shadow-[0_12px_40px_rgba(30,42,36,0.06)]">
           <Loader2 size={18} className="animate-spin text-[#C96846]" /> Recuperando sesión…
         </div>
       </div>
@@ -164,89 +164,87 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#F7F3EA] text-[#292524] lg:flex-row">
-      {/* Mobile meadow strip — Superdesign e4e7bfb4 */}
+    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#F7F3EA] text-[#1E2A24] lg:flex-row">
+      {/* Mobile atmospheric strip */}
       <div
-        className="relative h-40 w-full shrink-0 overflow-hidden border-b lg:hidden"
+        className="labora-film-grain relative h-36 w-full shrink-0 overflow-hidden border-b lg:hidden"
         style={{
           borderColor: palette.border,
           background: `
-            radial-gradient(ellipse at 80% 20%, ${palette.sunGlow}bb, transparent 40%),
-            linear-gradient(180deg, #D2E4F0 0%, #E4EFE4 55%, ${palette.hillNear} 100%)
+            radial-gradient(ellipse at 80% 20%, ${palette.sunGlow}99, transparent 42%),
+            linear-gradient(180deg, #C5D5E4 0%, #D8E4DC 55%, ${palette.parchment} 100%)
           `
         }}
       >
-        <MeadowLandscape
+        <AtmosphericPanel
           variant="strip"
           className="pointer-events-none absolute inset-0 h-full w-full"
         />
         <div className="relative z-10 flex h-full items-start justify-between p-5 pt-6">
           <Logo size="md" showText variant="light" />
           <span
-            className="rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] shadow-sm"
+            className="rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] backdrop-blur-sm"
             style={{
-              borderColor: palette.bordergreen,
-              background: 'rgba(255,254,251,0.90)',
+              borderColor: 'rgba(30,42,36,0.10)',
+              background: 'rgba(255,254,251,0.88)',
               color: palette.forest
             }}
           >
-            Prado
+            Confianza
           </span>
         </div>
       </div>
 
-      {/* Desktop left meadow panel */}
-      <section className="relative hidden overflow-hidden lg:flex lg:flex-1 lg:flex-col">
+      {/* Desktop left — editorial atmospheric narrative */}
+      <section className="labora-film-grain relative hidden overflow-hidden lg:flex lg:flex-1 lg:flex-col">
         <div
           className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(ellipse at 78% 14%, ${palette.sunGlow}cc, transparent 38%),
-              radial-gradient(ellipse at 18% 10%, rgba(180, 210, 230, 0.42), transparent 46%),
-              radial-gradient(ellipse at 50% 70%, ${palette.hillNear}66, transparent 55%),
-              linear-gradient(180deg, #C9DDEE 0%, #DCEAE6 28%, #E8F0E0 52%, ${palette.parchment} 78%, ${palette.warmearth} 100%)
+              radial-gradient(ellipse at 78% 12%, ${palette.sunGlow}aa, transparent 40%),
+              radial-gradient(ellipse at 16% 8%, rgba(180, 200, 215, 0.38), transparent 48%),
+              radial-gradient(ellipse at 50% 88%, ${palette.hillNear}55, transparent 55%),
+              linear-gradient(180deg, #C5D5E4 0%, #D5E2DC 30%, #E8E6D8 58%, ${palette.parchment} 82%, ${palette.warmearth} 100%)
             `
           }}
         />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-45"
-          style={{ background: palette.ambientGradient }}
-        />
-        <MeadowLandscape
+        <AtmosphericPanel
           variant="panel"
-          className="pointer-events-none absolute inset-0 h-full w-full"
+          className="pointer-events-none absolute inset-0 h-full w-full opacity-90"
         />
 
         <div className="relative z-10 flex flex-1 flex-col justify-between p-10 xl:p-14">
           <div className="flex items-center justify-between">
             <Logo size="lg" showText variant="light" />
             <span
-              className="rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur-sm"
+              className="rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] backdrop-blur-sm"
               style={{
-                borderColor: palette.bordergreen,
-                background: `${palette.softgreen}cc`,
+                borderColor: 'rgba(30,42,36,0.10)',
+                background: 'rgba(255,254,251,0.72)',
                 color: palette.forest
               }}
             >
-              Luz & cuidado
+              Espacio de trabajo
             </span>
           </div>
 
-          <div className="mt-auto max-w-xl pb-8">
+          <div className="mt-auto max-w-xl pb-10">
             <p
-              className="text-[11px] font-bold uppercase tracking-[0.2em]"
+              className="labora-kicker"
               style={{ color: palette.gold }}
             >
-              {title}
+              Claridad fiscal
             </p>
-            <h1 className="mt-4 font-serif text-[3.2rem] font-semibold leading-[1.02] tracking-[-0.03em] text-[#1E2A24] xl:text-[3.75rem]">
-              Trabajo claro, entre colinas y hierba al sol.
+            <div className="labora-gold-line mt-3" />
+            <h1 className="labora-display mt-5 text-[3rem] leading-[1.05] tracking-[-0.03em] text-[#1E2A24] xl:text-[3.5rem]">
+              Evidencia. Confianza.<br />Sin ruido.
             </h1>
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-[#4A5D52]">
-              Fiscalidad y gestoría sin ruido: evidencia real, permisos limpios y un espacio con la calma de un prado.
+              Labora+ es el espacio de trabajo para autónomos y gestorías que necesitan
+              claridad fiscal, archivo privado y estados que se pueden demostrar.
             </p>
 
-            <div className="mt-9 grid max-w-lg grid-cols-3 gap-3">
+            <div className="mt-10 grid max-w-lg grid-cols-3 gap-3">
               {[
                 { k: 'Auth', v: 'Sesión segura' },
                 { k: 'Docs', v: 'Archivo privado' },
@@ -254,13 +252,13 @@ const Login: React.FC = () => {
               ].map((item) => (
                 <div
                   key={item.k}
-                  className="rounded-2xl border bg-white/70 px-3.5 py-3 shadow-[0_8px_28px_rgba(47,93,74,0.06)] backdrop-blur-md"
-                  style={{ borderColor: palette.border }}
+                  className="rounded-2xl border bg-[#FFFEFB]/75 px-3.5 py-3.5 shadow-[0_8px_28px_rgba(30,42,36,0.05)] backdrop-blur-md"
+                  style={{ borderColor: 'rgba(30,42,36,0.08)' }}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: palette.clay }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: palette.clay }}>
                     {item.k}
                   </p>
-                  <p className="mt-1 text-xs font-semibold text-[#2A332E]">{item.v}</p>
+                  <p className="mt-1.5 text-xs font-semibold text-[#2A332E]">{item.v}</p>
                 </div>
               ))}
             </div>
@@ -268,29 +266,22 @@ const Login: React.FC = () => {
         </div>
       </section>
 
-      {/* Auth column */}
-      <section className="relative z-20 flex flex-1 shrink-0 flex-col items-center justify-center px-4 py-8 pb-[34px] sm:px-8 lg:max-w-[540px] lg:bg-[#F7F3EA] lg:pb-0 lg:py-10 xl:max-w-[640px] xl:px-12">
+      {/* Auth column — elevated paper card */}
+      <section className="relative z-20 flex flex-1 shrink-0 flex-col items-center justify-center px-4 py-8 pb-[34px] sm:px-8 lg:max-w-[520px] lg:bg-[#F7F3EA] lg:pb-0 lg:py-12 xl:max-w-[600px] xl:px-12">
         <div
           className="pointer-events-none absolute inset-0 hidden lg:block"
           style={{
-            background: `radial-gradient(ellipse at 50% 0%, ${palette.softgreen}cc, transparent 60%)`
+            background: `radial-gradient(ellipse at 50% 0%, ${palette.softgreen}88, transparent 58%)`
           }}
         />
-        <div className="relative w-full max-w-[420px]">
-          <div
-            className="overflow-hidden rounded-[28px] border shadow-[0_24px_70px_rgba(47,93,74,0.10)]"
-            style={{
-              borderColor: palette.border,
-              background: 'linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%)',
-              boxShadow: '0 24px 70px rgba(47,93,74,0.10), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(255,254,251,0.5)'
-            }}
-          >
-            <div className="border-b px-2 pt-2" style={{ borderColor: 'rgba(232,223,200,0.6)' }}>
+        <div className="relative w-full max-w-[400px]">
+          <div className="labora-card-auth overflow-hidden">
+            <div className="border-b px-2.5 pt-2.5" style={{ borderColor: 'rgba(232,223,200,0.55)' }}>
               <div className="grid grid-cols-2 gap-1 p-1">
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className={`rounded-2xl py-3 text-xs font-bold transition ${
+                  className={`rounded-xl py-2.5 text-xs font-semibold transition ${
                     mode === 'login'
                       ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
                       : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
@@ -301,7 +292,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className={`rounded-2xl py-3 text-xs font-bold transition ${
+                  className={`rounded-xl py-2.5 text-xs font-semibold transition ${
                     mode === 'register'
                       ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
                       : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
@@ -315,14 +306,14 @@ const Login: React.FC = () => {
             <div className="p-6 sm:p-8">
               {mode === 'login' ? (
                 <>
-                  <h2 className="font-serif text-[2rem] font-semibold leading-none tracking-tight text-[#1E2A24]">
+                  <h2 className="labora-display text-[1.85rem] leading-none tracking-tight text-[#1E2A24]">
                     Bienvenido de nuevo
                   </h2>
-                  <p className="mt-2 text-sm text-[#6B645C]">
-                    Entra a tu espacio de autónomo o gestoría, con luz suave.
+                  <p className="mt-2.5 text-sm leading-relaxed text-[#6B645C]">
+                    Accede a tu espacio de trabajo — autónomo o gestoría.
                   </p>
 
-                  <form onSubmit={handleLogin} className="mt-9 space-y-4">
+                  <form onSubmit={handleLogin} className="mt-8 space-y-4">
                     <div>
                       <label className={labelClass}>Correo</label>
                       <div className="relative">
@@ -354,19 +345,19 @@ const Login: React.FC = () => {
                       </div>
                     </div>
                     {error && (
-                      <p className="rounded-2xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-semibold text-[#C96846]">
+                      <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
                         {error}
                       </p>
                     )}
                     {info && (
-                      <p className="rounded-2xl border border-[#FDE3B8] bg-[#FEF7EB] px-3.5 py-3 text-xs font-semibold text-[#B87A24]">
+                      <p className="rounded-xl border border-[#FDE3B8] bg-[#FEF7EB] px-3.5 py-3 text-xs font-medium text-[#B87A24]">
                         {info}
                       </p>
                     )}
                     <button
                       type="submit"
                       disabled={loading}
-                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[#D97757] to-[#C96846] py-3.5 text-sm font-extrabold text-white shadow-[0_12px_32px_rgba(201,104,70,0.28)] transition hover:brightness-105 disabled:opacity-60"
+                      className="labora-btn-clay mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold transition hover:brightness-105 disabled:opacity-60"
                     >
                       {loading ? <Loader2 size={17} className="animate-spin" /> : <>Entrar <ArrowRight size={17} /></>}
                     </button>
@@ -376,14 +367,14 @@ const Login: React.FC = () => {
                 <>
                   <div className="mb-6 flex items-center justify-between">
                     <div>
-                      <h2 className="font-serif text-[2rem] font-semibold leading-none tracking-tight text-[#1E2A24]">
+                      <h2 className="labora-display text-[1.85rem] leading-none tracking-tight text-[#1E2A24]">
                         Crea tu espacio
                       </h2>
-                      <p className="mt-2 text-sm text-[#6B645C]">Paso {registerStep} de 2</p>
+                      <p className="mt-2.5 text-sm text-[#6B645C]">Paso {registerStep} de 2</p>
                     </div>
                     <div className="flex gap-1.5">
-                      <span className={`h-1.5 w-8 rounded-full ${registerStep >= 1 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
-                      <span className={`h-1.5 w-8 rounded-full ${registerStep >= 2 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
+                      <span className={`h-1 w-7 rounded-full ${registerStep >= 1 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
+                      <span className={`h-1 w-7 rounded-full ${registerStep >= 2 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
                     </div>
                   </div>
 
@@ -395,27 +386,27 @@ const Login: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setRole(UserRole.RIDER)}
-                            className={`rounded-2xl border p-3.5 text-left transition ${
+                            className={`rounded-xl border p-3.5 text-left transition ${
                               role === UserRole.RIDER
-                                ? 'border-[#2F5D4A]/40 bg-[#EBF3ED] text-[#1E2A24]'
+                                ? 'border-[#2F5D4A]/35 bg-[#EBF3ED] text-[#1E2A24]'
                                 : 'border-[#E8DFC8] bg-[#FFFEFB] text-[#6B645C]'
                             }`}
                           >
                             <Bike size={18} className={role === UserRole.RIDER ? 'text-[#2F5D4A]' : ''} />
-                            <p className="mt-2 text-sm font-extrabold">Autónomo</p>
+                            <p className="mt-2 text-sm font-semibold">Autónomo</p>
                             <p className="mt-0.5 text-[10px] opacity-70">Mi actividad</p>
                           </button>
                           <button
                             type="button"
                             onClick={() => setRole(UserRole.MANAGER)}
-                            className={`rounded-2xl border p-3.5 text-left transition ${
+                            className={`rounded-xl border p-3.5 text-left transition ${
                               role === UserRole.MANAGER
-                                ? 'border-[#2F5D4A]/40 bg-[#EBF3ED] text-[#1E2A24]'
+                                ? 'border-[#2F5D4A]/35 bg-[#EBF3ED] text-[#1E2A24]'
                                 : 'border-[#E8DFC8] bg-[#FFFEFB] text-[#6B645C]'
                             }`}
                           >
                             <BriefcaseBusiness size={18} className={role === UserRole.MANAGER ? 'text-[#2F5D4A]' : ''} />
-                            <p className="mt-2 text-sm font-extrabold">Gestoría</p>
+                            <p className="mt-2 text-sm font-semibold">Gestoría</p>
                             <p className="mt-0.5 text-[10px] opacity-70">Mis clientes</p>
                           </button>
                         </div>
@@ -444,14 +435,14 @@ const Login: React.FC = () => {
                         </div>
                       </div>
                       {error && (
-                        <p className="rounded-2xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-semibold text-[#C96846]">
+                        <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
                           {error}
                         </p>
                       )}
                       <button
                         type="button"
                         onClick={continueRegistration}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#2F5D4A] py-3.5 text-sm font-extrabold text-[#FFFEFB] transition hover:bg-[#264A3C]"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2F5D4A] py-3.5 text-sm font-semibold text-[#FFFEFB] transition hover:bg-[#264A3C]"
                       >
                         Continuar <ArrowRight size={17} />
                       </button>
@@ -461,7 +452,7 @@ const Login: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => { setRegisterStep(1); resetFeedback(); }}
-                        className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold text-[#6B645C] hover:text-[#2F5D4A]"
+                        className="mb-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B645C] hover:text-[#2F5D4A]"
                       >
                         <ArrowLeft size={14} /> Volver
                       </button>
@@ -513,14 +504,14 @@ const Login: React.FC = () => {
                       )}
 
                       {error && (
-                        <p className="rounded-2xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-semibold text-[#C96846]">
+                        <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
                           {error}
                         </p>
                       )}
                       <button
                         type="submit"
                         disabled={loading}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-[#D97757] to-[#C96846] py-3.5 text-sm font-extrabold text-white shadow-[0_12px_32px_rgba(201,104,70,0.28)] disabled:opacity-60"
+                        className="labora-btn-clay flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold disabled:opacity-60"
                       >
                         {loading ? <Loader2 size={17} className="animate-spin" /> : <>Crear cuenta <ArrowRight size={17} /></>}
                       </button>
@@ -532,14 +523,13 @@ const Login: React.FC = () => {
           </div>
 
           <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-medium text-[#8A8278]">
-            <ShieldCheck size={12} className="text-[#2F5D4A]/80" />
+            <ShieldCheck size={12} className="text-[#2F5D4A]/70" />
             Auth segura · archivo privado · sin datos inventados
           </div>
         </div>
       </section>
     </div>
   );
-
 };
 
 export default Login;
