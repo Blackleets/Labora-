@@ -134,7 +134,14 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   };
 
   const handleApproveExpense = (expense: Expense) => {
-    updateExpenseAudit(expense.id, 'approved', 'Revisado por la gestoría.');
+    const pct = expense.deductiblePercentage && expense.deductiblePercentage > 0
+      ? expense.deductiblePercentage
+      : 100;
+    updateExpenseAudit(expense.id, 'approved', 'Revisado por la gestoría.', pct);
+  };
+
+  const handleRejectExpense = (expense: Expense) => {
+    updateExpenseAudit(expense.id, 'rejected', 'No computado por la gestoría.', 0);
   };
 
   const handleRequestFix = (expense: Expense) => {
@@ -348,11 +355,13 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                               <div className="flex items-center justify-between gap-3 sm:justify-end">
                                 <p className="text-sm font-extrabold text-[#1E231F]">{formatMoney(expense.amount)}</p>
                                 {expense.status !== 'approved' && (
-                                  <div className="flex gap-1.5">
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <button onClick={() => handleRejectExpense(expense)} className="rounded-[10px] border border-[#EBCFCB] px-2.5 py-1.5 text-[10px] font-bold text-[#9A443B] hover:bg-[#FFF0EE]">Rechazar</button>
                                     <button onClick={() => handleRequestFix(expense)} className="rounded-[10px] border border-[#E4D8CF] px-2.5 py-1.5 text-[10px] font-bold text-[#9A5637] hover:bg-[#FFF6F0]">Corregir</button>
-                                    <button onClick={() => handleApproveExpense(expense)} className="rounded-[10px] bg-[#214E3A] px-2.5 py-1.5 text-[10px] font-bold text-white hover:bg-[#183D2D]">Validar</button>
+                                    <button onClick={() => handleApproveExpense(expense)} className="rounded-[10px] bg-[#214E3A] px-2.5 py-1.5 text-[10px] font-bold text-white hover:bg-[#183D2D]">Validar 100%</button>
                                   </div>
                                 )}
+                                <p className="mt-1 text-[10px] text-stone-400">Deducible actual: {expense.deductiblePercentage ?? 0}% · Auditoría detallada también en Dinero/Auditoría</p>
                               </div>
                             </div>
                           </div>

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { ExpenseCategory } from '../types';
-import { GAS_STATION_PRESETS } from '../modules/delivery/data/platforms';
+import { GAS_STATION_PRESETS } from '../data/gasStations';
 import { analyzeReceipt, ReceiptAnalysis } from '../services/geminiService';
 
 interface GasStationCaptureModalProps {
@@ -136,10 +136,11 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
         if (code === 'AI_NOT_CONFIGURED') {
           showNotification(
             'info',
-            'OCR no configurado: rellena gasolinera, fecha e importe a mano. La foto se guarda igual.'
+            'IA no configurada. Rellena gasolinera, fecha e importe a mano; la foto se conserva.'
           );
+        } else {
+          showNotification('info', 'La foto quedó cargada. Completa los datos manualmente.');
         }
-        showNotification('info', 'La foto quedó cargada. Completa los datos manualmente.');
       }
     } catch (error) {
       console.error(error);

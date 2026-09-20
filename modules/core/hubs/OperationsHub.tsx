@@ -2,7 +2,7 @@ import React from 'react';
 import { LockKeyhole, Map, ShieldCheck, Truck } from 'lucide-react';
 
 /**
- * Operations surfaces (live delivery, hot zones, route optimizer) historically
+ * Operations surfaces (live delivery, demand maps, route optimizer) historically
  * shipped with invented orders and demand scores. Until real telemetry exists,
  * this hub stays explicitly unavailable — never a fake live fleet.
  */
@@ -26,7 +26,7 @@ export const OperationsHub: React.FC = () => {
               Sin flota en vivo inventada.
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70">
-              Labora+ no muestra pedidos, zonas calientes ni rutas como datos reales hasta que exista
+              Labora+ no muestra pedidos, mapas de demanda ni rutas como datos reales hasta que exista
               telemetría o una API de plataforma autorizada. El núcleo usable hoy es dinero, documentos,
               modelos fiscales y mensajería con tu gestoría.
             </p>
@@ -39,9 +39,9 @@ export const OperationsHub: React.FC = () => {
           <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]">
             <Map size={16} />
           </div>
-          <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Sin mapa de demanda falsa</p>
+          <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Mapa operativo no disponible</p>
           <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
-            Los multiplicadores y “zonas rojas” simulados quedan fuera del producto hasta tener una fuente verificable.
+            Sin fuente verificable de demanda o flota, Labora+ no publica heatmaps ni multiplicadores.
           </p>
         </div>
         <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">

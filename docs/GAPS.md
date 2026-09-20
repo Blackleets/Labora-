@@ -26,7 +26,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ anti-fiction delivery/hot-
 | Income import without APIs | Parser local CSV/líneas Glovo·Uber (sin Gemini); banca/plataformas apuntan a Ingresos |
 | Anti-fiction pass (Risks/Events/KPIs/ModulesCenter) | Fail-closed unavailable shells; Login copy sin «demo»; `money-incomes` deep-link; payrollEngine marcado no-prod |
 | No enterprise demo org | `OrganizationContext` stays null; payroll/policies fail-closed without fake employees |
-| Anti-fiction delivery / hot zones | `DeliveryDashboard` + both `HotZonesWidget` → «No disponible»; `demandEngine` throws; ModulesCenter hot-zones copy |
+| Anti-fiction delivery / hot zones | Orphan HotZones/Delivery/LiveMap/demandEngine/ModulesCenter **removed**; OperationsHub fail-closed |
 
 ## Linking — what works / what needs Lewis
 
@@ -66,4 +66,4 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ anti-fiction delivery/hot-
 - Linking is email + `manager_id` RPC — **not** OAuth, **not** invite codes unless already in schema.
 - Do not invent UAT PASS or Play-ready claims.
 - RiskMonitor / EventsView / ProDashboard / ModulesCenter: unavailable or marked blocked — no fake weather, calendar success, or KPI seeds.
-- DeliveryDashboard / HotZonesWidget / demandEngine: unavailable shells — no fake live orders, surge heatmaps, or random demand scores.
+- Orphan delivery / hot-zones fiction files removed from tree; OperationsHub remains an honest unavailable shell.

@@ -21,11 +21,19 @@ const currentQuarterLabel = () => {
   return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
 };
 
+const currentMonthLabel = () => {
+  const now = new Date();
+  return now.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+};
+
 export const TaxOverview: React.FC<TaxOverviewProps> = () => {
   const { currentUser, users, calculateQuarterlyTaxes, privacyMode } = useData();
   const { selectedCountry } = useCountry();
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const currentYear = new Date().getFullYear();
+  const countryCode = selectedCountry.country_code;
+  const isSpain = countryCode === 'ES';
+  const isMexico = countryCode === 'MX';
 
   const riders = useMemo(() => {
     if (!currentUser || !isManager) return [];
@@ -43,11 +51,11 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
     : currentUser;
 
   const riderId = activeUser?.id || '';
-  const taxData = riderId ? calculateQuarterlyTaxes(riderId, selectedQuarter) : null;
+  const taxData = riderId && isSpain ? calculateQuarterlyTaxes(riderId, selectedQuarter) : null;
 
   const formatCurrency = (amount: number) => {
     if (privacyMode) return '••••';
-    return amount.toLocaleString('es-ES', {
+    return amount.toLocaleString(isMexico ? 'es-MX' : 'es-ES', {
       style: 'currency',
       currency: selectedCountry.currency || 'EUR',
       maximumFractionDigits: 0
@@ -72,15 +80,38 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
     }
   ] : [];
 
+  const mxRegimenSlots = [
+    {
+      title: 'Régimen de plataformas tecnológicas',
+      detail: 'Pendiente de datos oficiales (SAT). Labora+ no publica retenciones ni tasas inventadas.'
+    },
+    {
+      title: 'ISR / IVA mensual',
+      detail: 'Periodo de trabajo: mensual (según configuración MX). Sin tablas oficiales cargadas en producto.'
+    },
+    {
+      title: 'Constancia / e.Firma',
+      detail: 'Checklist informativo: RFC, e.Firma y sellos. No sustituye el trámite ante el SAT.'
+    }
+  ];
+
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
       <section className="labora-card overflow-hidden">
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
           <div>
-            <p className="labora-kicker text-[#789582]">Fiscal · estimativo</p>
-            <h1 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">Modelos trimestrales</h1>
+            <p className="labora-kicker text-[#789582]">
+              Fiscal · {selectedCountry.display_name} · {selectedCountry.currency}
+            </p>
+            <h1 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">
+              {isSpain ? 'Modelos trimestrales' : isMexico ? 'Obligaciones fiscales (MX)' : 'Fiscal por país'}
+            </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
-              Revisa importes y documentación antes de preparar cualquier presentación oficial.
+              {isSpain
+                ? 'Revisa importes y documentación antes de preparar cualquier presentación oficial ante la AEAT.'
+                : isMexico
+                  ? 'Vista honesta: sin tasas inventadas. Cuando existan tablas oficiales verificadas, se conectarán aquí.'
+                  : `País ${selectedCountry.display_name}: aún sin modelos oficiales cableados en Labora+.`}
             </p>
           </div>
 
@@ -108,7 +139,39 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
           <p className="mt-3 text-sm font-extrabold text-stone-600">No hay un autónomo vinculado.</p>
           <p className="mt-1 text-xs text-stone-400">Cuando un cliente se vincule a esta gestoría aparecerá aquí.</p>
         </section>
-      ) : (
+      ) : isMexico ? (
+        <>
+          <section className="labora-card p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="labora-kicker text-stone-400">Contribuyente en contexto</p>
+                <p className="mt-1 text-base font-extrabold text-[#1E231F]">{activeUser.name}</p>
+                <p className="mt-1 text-xs text-stone-500">{activeUser.nif || 'RFC/NIF no informado'}</p>
+              </div>
+              <span className="inline-flex w-fit rounded-full border border-[#D7E5DC] bg-[#EDF4EF] px-2.5 py-1 text-[10px] font-extrabold text-[#214E3A]">
+                Periodo: mensual · {currentMonthLabel()}
+              </span>
+            </div>
+          </section>
+
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {mxRegimenSlots.map((slot) => (
+              <article key={slot.title} className="labora-card border-dashed p-5">
+                <p className="labora-kicker text-[#855D1E]">Pendiente de datos oficiales</p>
+                <h3 className="mt-2 text-sm font-extrabold text-[#1E231F]">{slot.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-stone-500">{slot.detail}</p>
+                <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.08em] text-stone-400">
+                  Sin importe calculado · {selectedCountry.currency_symbol}
+                </p>
+              </article>
+            ))}
+          </section>
+
+          <div className="rounded-[14px] border border-[#E8DFD2] bg-[#FAF7F1] px-4 py-3 text-[11px] leading-relaxed text-stone-500">
+            Labora+ no inventa tasas de ISR/IVA mexicanas. Los slots anteriores son marcadores de producto hasta cargar fuentes oficiales (SAT).
+          </div>
+        </>
+      ) : isSpain ? (
         <>
           <section className="labora-card p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -123,7 +186,7 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
 
           <section>
             <div className="mb-3 flex items-center justify-between">
-              <div><p className="labora-kicker text-stone-400">Periodo</p><h2 className="mt-0.5 text-sm font-extrabold text-[#1E231F]">{currentYear}</h2></div>
+              <div><p className="labora-kicker text-stone-400">Periodo</p><h2 className="mt-0.5 text-sm font-extrabold text-[#1E231F]">{currentYear} · trimestral (AEAT)</h2></div>
               <span className="text-[10px] font-medium text-stone-400">Trimestre actual: {currentQuarterLabel()}</span>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -181,12 +244,19 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
 
             {showAdvanced && <div className="border-t border-[#E9E2D8] bg-[#FBF9F5] p-4"><TaxDeclarationsViewer userId={riderId} /></div>}
           </section>
-        </>
-      )}
 
-      <div className="rounded-[14px] border border-[#E8DFD2] bg-[#FAF7F1] px-4 py-3 text-[11px] leading-relaxed text-stone-500">
-        Estos cálculos son orientativos y se basan en la información registrada. No equivalen a una presentación ante la Agencia Tributaria.
-      </div>
+          <div className="rounded-[14px] border border-[#E8DFD2] bg-[#FAF7F1] px-4 py-3 text-[11px] leading-relaxed text-stone-500">
+            Estos cálculos son orientativos y se basan en la información registrada. No equivalen a una presentación ante la Agencia Tributaria.
+          </div>
+        </>
+      ) : (
+        <section className="labora-card border-dashed p-8 text-center">
+          <p className="text-sm font-extrabold text-stone-600">Modelos oficiales no cableados para {selectedCountry.display_name}</p>
+          <p className="mt-2 text-xs text-stone-500">
+            Moneda configurada: {selectedCountry.currency}. Sin tasas inventadas hasta fuentes oficiales.
+          </p>
+        </section>
+      )}
     </div>
   );
 };

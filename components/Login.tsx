@@ -15,13 +15,16 @@ import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { recoverRemoteSession, signInRemote, signUpRemote } from '../services/authWorkspace';
 import { managerSignupError, normalizeSpanishTaxId } from '../services/registrationValidation';
 import { UserRole } from '../types';
+import { useCountry } from '../contexts/CountryContext';
 import AtmosphericPanel from './AtmosphericPanel';
+import CountrySelector from './CountrySelector';
 import IdentityImagePicker from './IdentityImagePicker';
 import IntroAnimation from './IntroAnimation';
 import Logo from './Logo';
 
 const Login: React.FC = () => {
   const { palette } = useGhibliAtmosphere();
+  const { selectedCountry } = useCountry();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [registerStep, setRegisterStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
@@ -149,7 +152,7 @@ const Login: React.FC = () => {
         vehicleFuel: undefined,
         companyName: role === UserRole.MANAGER ? companyName.trim() || name.trim() : undefined,
         collegiateNumber: role === UserRole.MANAGER ? collegiateNumber.trim() : undefined,
-        countryCode: 'ES'
+        countryCode: selectedCountry.country_code
       }, password, identityImage);
 
       if (result.session) {
@@ -506,6 +509,14 @@ const Login: React.FC = () => {
                         title={role === UserRole.MANAGER ? 'Logo o imagen de la gestoría' : 'Foto de perfil'}
                         helper={role === UserRole.MANAGER ? 'Tus clientes la verán en mensajes y peticiones.' : 'Tu gestoría la verá al revisar tu actividad.'}
                       />
+
+                      <div>
+                        <label className={labelClass}>País de operación</label>
+                        <CountrySelector variant="cards" />
+                        <p className="mt-2 text-[11px] leading-relaxed text-[#6B645C]">
+                          Se guarda en tu perfil ({selectedCountry.display_name}). Moneda y modelos fiscales seguirán esta elección.
+                        </p>
+                      </div>
 
                       <div>
                         <label className={labelClass}>

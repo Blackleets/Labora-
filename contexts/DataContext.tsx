@@ -46,7 +46,8 @@ interface DataContextType {
   updateExpenseAudit: (
     expenseId: string,
     status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
-    gestorNotes?: string
+    gestorNotes?: string,
+    deductiblePercentage?: number
   ) => void;
   addDocument: (doc: Omit<Document, 'id' | 'userId'>) => Document | undefined;
   addPayment: (payment: Omit<Payment, 'id'>) => void;
@@ -399,10 +400,18 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const updateExpenseAudit = (
     expenseId: string,
     status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
-    gestorNotes?: string
+    gestorNotes?: string,
+    deductiblePercentage?: number
   ) => {
     setExpenses((previous) => previous.map((expense) =>
-      expense.id === expenseId ? { ...expense, status, gestorNotes: gestorNotes ?? expense.gestorNotes } : expense
+      expense.id === expenseId
+        ? {
+            ...expense,
+            status,
+            gestorNotes: gestorNotes ?? expense.gestorNotes,
+            deductiblePercentage: deductiblePercentage ?? expense.deductiblePercentage ?? 0
+          }
+        : expense
     ));
     showNotification('success', 'Estado de auditoría actualizado.');
   };
