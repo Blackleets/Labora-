@@ -26,6 +26,7 @@ import { identityImageStore } from '../services/identityImage';
 import { UserRole } from '../types';
 import BillingCard from './BillingCard';
 import IdentityImagePicker from './IdentityImagePicker';
+import { withBaseUrl } from './brandMarks';
 
 const Settings: React.FC = () => {
   const {
@@ -534,7 +535,7 @@ const Settings: React.FC = () => {
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <a
-            href="/privacidad.html"
+            href={withBaseUrl("privacidad.html")}
             target="_blank"
             rel="noreferrer"
             className="rounded-[13px] border border-[#D9D0C4] bg-[#FFFEFB] px-3.5 py-2.5 text-xs font-extrabold text-[#214E3A] hover:bg-[#F7F3ED]"
@@ -542,7 +543,7 @@ const Settings: React.FC = () => {
             Política de privacidad
           </a>
           <a
-            href="/terminos.html"
+            href={withBaseUrl("terminos.html")}
             target="_blank"
             rel="noreferrer"
             className="rounded-[13px] border border-[#D9D0C4] bg-[#FFFEFB] px-3.5 py-2.5 text-xs font-extrabold text-[#214E3A] hover:bg-[#F7F3ED]"
@@ -550,6 +551,19 @@ const Settings: React.FC = () => {
             Términos de uso
           </a>
         </div>
+      </section>
+
+      <section className="labora-card p-4 sm:p-5">
+        <p className="labora-kicker text-stone-400">Cuenta</p>
+        <h2 className="mt-1 text-base font-extrabold text-[#1E231F]">Eliminar cuenta</h2>
+        <p className="mt-1 text-xs leading-relaxed text-stone-500">
+          La eliminación completa de datos en Supabase todavía no está automatizada.
+          Si necesitas borrar tu cuenta y datos asociados, contacta soporte — no ofrecemos
+          un botón falso que no limpie el backend.
+        </p>
+        <p className="mt-3 rounded-[13px] border border-dashed border-[#E3DCD2] bg-[#FBF8F3] px-3 py-2.5 text-[11px] font-bold text-stone-500">
+          Próximamente · contacta soporte para solicitudes de borrado (Play User Data policy).
+        </p>
       </section>
 
       <button

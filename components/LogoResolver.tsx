@@ -4,10 +4,10 @@ import {
   getInlineBrandIcon
 } from './brandIcons';
 import {
-  CATEGORY_ACCENTS,
   getCuratedBrandMarkUrl,
   getGoogleFaviconUrl,
   getLocalBrandMarkUrl,
+  getPlatformLetterAccent,
   isDarkGlyphBrand
 } from './brandMarks';
 
@@ -83,7 +83,7 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
   };
 
   const s = sizeConfig[size] || sizeConfig.md;
-  const accent = CATEGORY_ACCENTS[category] || CATEGORY_ACCENTS.other;
+  const accent = getPlatformLetterAccent(id, category);
 
   const chipBg =
     darkGlyph && (step === 'inline' || step === 'curated')

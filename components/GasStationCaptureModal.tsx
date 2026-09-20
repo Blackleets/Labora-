@@ -11,6 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { useCountry } from '../contexts/CountryContext';
 import { ExpenseCategory } from '../types';
 import { GAS_STATION_PRESETS } from '../data/gasStations';
 import { analyzeReceipt, ReceiptAnalysis } from '../services/geminiService';
@@ -38,6 +39,7 @@ const readAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
 
 export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ isOpen, onClose }) => {
   const { addExpense, expenses, vehicle, currentUser, showNotification } = useData();
+  const { selectedCountry } = useCountry();
   const contentRef = useRef<HTMLDivElement>(null);
 
   const [selectedStation, setSelectedStation] = useState('');
@@ -297,7 +299,7 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Importe total"><div className="relative"><input type="number" min="0" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className="field-input pr-8" placeholder="0,00" /><span className="absolute right-3 top-3 text-sm text-stone-400">€</span></div></Field>
+                <Field label="Importe total"><div className="relative"><input type="number" min="0" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className="field-input pr-8" placeholder="0,00" /><span className="absolute right-3 top-3 text-sm text-stone-400">{selectedCountry.currency_symbol || '€'}</span></div></Field>
                 <Field label="Fecha"><input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="field-input" /></Field>
               </div>
             </section>

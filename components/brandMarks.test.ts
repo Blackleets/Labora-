@@ -6,6 +6,8 @@ import {
   getCuratedBrandMarkUrl,
   getGoogleFaviconUrl,
   getLocalBrandMarkUrl,
+  getPlatformLetterAccent,
+  PLATFORM_LETTER_ACCENTS,
   isDarkGlyphBrand,
   withBaseUrl
 } from './brandMarks';
@@ -49,5 +51,18 @@ describe('brandMarks', () => {
   it('exposes category accents for letter avatars', () => {
     expect(CATEGORY_ACCENTS.delivery.fg).toBeTruthy();
     expect(CATEGORY_ACCENTS.banking.bg).toBeTruthy();
+  });
+
+  it('tints letter avatars for high-traffic ids without Simple Icons', () => {
+    expect(PLATFORM_LETTER_ACCENTS.stuart.fg).toBeTruthy();
+    expect(PLATFORM_LETTER_ACCENTS.rappi.fg).toBeTruthy();
+    expect(PLATFORM_LETTER_ACCENTS.bbva_es.fg).toBeTruthy();
+    expect(PLATFORM_LETTER_ACCENTS.santander_es.fg).toBeTruthy();
+    expect(PLATFORM_LETTER_ACCENTS.holded.fg).toBeTruthy();
+    expect(PLATFORM_LETTER_ACCENTS.amazon_flex.fg).toBeTruthy();
+    expect(PLATFORM_LETTER_ACCENTS.didi.fg).toBeTruthy();
+    expect(PLATFORM_LETTER_ACCENTS.freenow.fg).toBeTruthy();
+    expect(getPlatformLetterAccent('stuart', 'delivery').fg).toBe(PLATFORM_LETTER_ACCENTS.stuart.fg);
+    expect(getPlatformLetterAccent('unknown_brand', 'banking').fg).toBe(CATEGORY_ACCENTS.banking.fg);
   });
 });

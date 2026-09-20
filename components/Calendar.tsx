@@ -1,12 +1,15 @@
 
 import React, { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
+import { useCountry } from '../contexts/CountryContext';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Clock, ArrowRight, HelpCircle, FileText, Bell, Plus, Save, X, Download, Printer, Share2 } from 'lucide-react';
 import { Payment } from '../types';
 import LogoResolver from './LogoResolver';
 
 const Calendar: React.FC = () => {
   const { payments, markPaymentAsReceived, addPayment, currentUser } = useData();
+  const { selectedCountry } = useCountry();
+  const currencySymbol = selectedCountry.currency_symbol || '€';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [viewingInvoice, setViewingInvoice] = useState<Payment | null>(null);
@@ -149,7 +152,7 @@ const Calendar: React.FC = () => {
         </div>
         <div className="hidden md:block text-right">
           <p className="text-xs text-gray-400 font-bold uppercase">Total Pendiente (Mes)</p>
-          <p className="text-xl font-bold text-[#F1C40F]">{monthlyStats.pending.toFixed(2)} €</p>
+          <p className="text-xl font-bold text-[#F1C40F]">{monthlyStats.pending.toFixed(2)} {currencySymbol}</p>
         </div>
       </div>
 
@@ -189,11 +192,11 @@ const Calendar: React.FC = () => {
       <div className="md:hidden grid grid-cols-2 gap-4">
          <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
             <p className="text-xs text-green-600 font-bold uppercase">Recibido</p>
-            <p className="text-lg font-bold text-green-800">{monthlyStats.received.toFixed(0)} €</p>
+            <p className="text-lg font-bold text-green-800">{monthlyStats.received.toFixed(0)} {currencySymbol}</p>
          </div>
          <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100">
             <p className="text-xs text-yellow-600 font-bold uppercase">Pendiente</p>
-            <p className="text-lg font-bold text-yellow-800">{monthlyStats.pending.toFixed(0)} €</p>
+            <p className="text-lg font-bold text-yellow-800">{monthlyStats.pending.toFixed(0)} {currencySymbol}</p>
          </div>
       </div>
 
@@ -239,7 +242,7 @@ const Calendar: React.FC = () => {
                          </div>
                       </div>
                       <div className="text-right">
-                         <p className="font-bold text-gray-900">{p.amount.toFixed(2)}€</p>
+                         <p className="font-bold text-gray-900">{p.amount.toFixed(2)}{currencySymbol}</p>
                          {p.status === 'pending' && (
                            <button onClick={() => markPaymentAsReceived(p.id)} className="text-[10px] text-blue-600 font-bold hover:underline">
                              Marcar cobrado
@@ -276,7 +279,7 @@ const Calendar: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-400 uppercase">Importe (€)</label>
+                    <label className="text-xs font-bold text-gray-400 uppercase">Importe ({currencySymbol})</label>
                     <input 
                       type="number" 
                       placeholder="0.00"

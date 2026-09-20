@@ -10,6 +10,7 @@ import {
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { useCountry } from '../contexts/CountryContext';
 import { extractIncomeFromDocument, extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
 import { parseIncomeTextLocally } from '../services/incomeTextParser';
 import { reviewRemoteIncome } from '../services/remoteOperational';
@@ -32,6 +33,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     privacyMode,
     showNotification
   } = useData();
+  const { selectedCountry } = useCountry();
 
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
@@ -81,7 +83,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
   const formatMoney = (value: number) => privacyMode
     ? '••••'
-    : value.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+    : value.toLocaleString(selectedCountry.country_code === 'MX' ? 'es-MX' : 'es-ES', { style: 'currency', currency: selectedCountry.currency || 'EUR', maximumFractionDigits: 2 });
 
   const handleAIExtraction = async () => {
     if (!pastedText.trim() || isManager) return;

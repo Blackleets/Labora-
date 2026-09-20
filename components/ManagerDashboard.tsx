@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 import {
   Bell,
   ChevronRight,
+  Eye,
   FileText,
+  ImageIcon,
   MessageSquare,
   Plus,
   Search,
@@ -50,6 +52,10 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   const [selectedClientId, setSelectedClientId] = useState('');
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<Tab>('audit');
+  const [reviewingExpense, setReviewingExpense] = useState<Expense | null>(null);
+  const [reviewPct, setReviewPct] = useState('100');
+  const [reviewNote, setReviewNote] = useState('');
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [showRequirementModal, setShowRequirementModal] = useState(false);
   const [requirementTitle, setRequirementTitle] = useState('');
   const [requirementDescription, setRequirementDescription] = useState('');
@@ -133,20 +139,34 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
     setShowRequirementModal(false);
   };
 
-  const handleApproveExpense = (expense: Expense) => {
-    const pct = expense.deductiblePercentage && expense.deductiblePercentage > 0
-      ? expense.deductiblePercentage
-      : 100;
-    updateExpenseAudit(expense.id, 'approved', 'Revisado por la gestoría.', pct);
+  const openExpenseReview = (expense: Expense) => {
+    setReviewingExpense(expense);
+    const existing = expense.deductiblePercentage;
+    setReviewPct(String(existing && existing > 0 ? existing : 100));
+    setReviewNote('');
   };
 
-  const handleRejectExpense = (expense: Expense) => {
-    updateExpenseAudit(expense.id, 'rejected', 'No computado por la gestoría.', 0);
-  };
-
-  const handleRequestFix = (expense: Expense) => {
-    updateExpenseAudit(expense.id, 'needs_fix', 'Revisa el justificante o completa la información del gasto.');
-    showNotification('info', 'El gasto se ha marcado para corrección.');
+  const submitExpenseReview = (status: 'approved' | 'rejected' | 'needs_fix') => {
+    if (!reviewingExpense) return;
+    const pct = Math.max(0, Math.min(100, Number(reviewPct) || 0));
+    const note = reviewNote.trim()
+      || (status === 'approved'
+        ? `Aprobado al ${pct}% por la gestoría.`
+        : status === 'rejected'
+          ? 'No computado por la gestoría.'
+          : 'Revisa el justificante o completa la información del gasto.');
+    updateExpenseAudit(
+      reviewingExpense.id,
+      status,
+      note,
+      status === 'approved' ? pct : status === 'rejected' ? 0 : reviewingExpense.deductiblePercentage
+    );
+    if (status === 'needs_fix') {
+      showNotification('info', 'El gasto se ha marcado para corrección.');
+    } else if (status === 'approved') {
+      showNotification('success', `Gasto aprobado al ${pct}%.`);
+    }
+    setReviewingExpense(null);
   };
 
   const taxModels = selectedClient ? calculateQuarterlyTaxes(selectedClient.id, quarter) : null;
@@ -342,26 +362,49 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                         const status = getExpenseStatus(expense);
                         return (
                           <div key={expense.id} className="p-4 sm:p-5">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <p className="text-sm font-extrabold text-[#1E231F]">{expense.category}</p>
-                                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${status.className}`}>{status.label}</span>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="flex min-w-0 gap-3">
+                                {expense.receiptUrl ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewingImage(expense.receiptUrl || null)}
+                                    className="h-12 w-12 shrink-0 overflow-hidden rounded-[12px] border border-[#DDE7E0] bg-[#F2F7F4]"
+                                    title="Ver ticket"
+                                  >
+                                    <img src={expense.receiptUrl} alt="" className="h-full w-full object-cover" />
+                                  </button>
+                                ) : null}
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="text-sm font-extrabold text-[#1E231F]">{expense.category}</p>
+                                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${status.className}`}>{status.label}</span>
+                                  </div>
+                                  <p className="mt-1 text-xs text-stone-500">{expense.date} · {expense.merchant || 'Sin proveedor'}</p>
+                                  {expense.notes && <p className="mt-1 line-clamp-2 text-xs text-stone-400">{expense.notes}</p>}
+                                  {expense.receiptUrl && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setViewingImage(expense.receiptUrl || null)}
+                                      className="mt-2 inline-flex items-center gap-1 rounded-[10px] px-2 py-1 text-[11px] font-bold text-[#214E3A] hover:bg-[#EDF4EF]"
+                                    >
+                                      <Eye size={14} /> Ver ticket
+                                    </button>
+                                  )}
+                                  <p className="mt-1 text-[10px] text-stone-400">Deducible actual: {expense.deductiblePercentage ?? 0}%</p>
                                 </div>
-                                <p className="mt-1 text-xs text-stone-500">{expense.date} · {expense.merchant || 'Sin proveedor'}</p>
-                                {expense.notes && <p className="mt-1 line-clamp-2 text-xs text-stone-400">{expense.notes}</p>}
                               </div>
 
-                              <div className="flex items-center justify-between gap-3 sm:justify-end">
+                              <div className="flex flex-col items-stretch gap-2 sm:items-end">
                                 <p className="text-sm font-extrabold text-[#1E231F]">{formatMoney(expense.amount)}</p>
                                 {expense.status !== 'approved' && (
-                                  <div className="flex flex-wrap gap-1.5">
-                                    <button onClick={() => handleRejectExpense(expense)} className="rounded-[10px] border border-[#EBCFCB] px-2.5 py-1.5 text-[10px] font-bold text-[#9A443B] hover:bg-[#FFF0EE]">Rechazar</button>
-                                    <button onClick={() => handleRequestFix(expense)} className="rounded-[10px] border border-[#E4D8CF] px-2.5 py-1.5 text-[10px] font-bold text-[#9A5637] hover:bg-[#FFF6F0]">Corregir</button>
-                                    <button onClick={() => handleApproveExpense(expense)} className="rounded-[10px] bg-[#214E3A] px-2.5 py-1.5 text-[10px] font-bold text-white hover:bg-[#183D2D]">Validar 100%</button>
-                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => openExpenseReview(expense)}
+                                    className="rounded-[10px] bg-[#214E3A] px-3 py-1.5 text-[10px] font-bold text-white hover:bg-[#183D2D]"
+                                  >
+                                    Revisar / % deducible
+                                  </button>
                                 )}
-                                <p className="mt-1 text-[10px] text-stone-400">Deducible actual: {expense.deductiblePercentage ?? 0}% · Auditoría detallada también en Dinero/Auditoría</p>
                               </div>
                             </div>
                           </div>
@@ -448,6 +491,49 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
           </form>
         </div>
       )}
+      {viewingImage && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/90 p-4" onClick={() => setViewingImage(null)}>
+          <button type="button" onClick={() => setViewingImage(null)} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white" aria-label="Cerrar ticket"><X size={20} /></button>
+          <img src={viewingImage} alt="Justificante del gasto" className="max-h-[86vh] max-w-full rounded-xl object-contain" onClick={(event) => event.stopPropagation()} />
+        </div>
+      )}
+
+      {reviewingExpense && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#18211C]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[#E3DBD0] bg-[#FFFDF9] shadow-2xl sm:rounded-[26px]">
+            <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-5 py-4">
+              <div>
+                <p className="labora-kicker text-[#789582]">Auditoría</p>
+                <h3 className="mt-1 text-lg font-extrabold text-[#1E231F]">{reviewingExpense.merchant || reviewingExpense.category}</h3>
+                <p className="mt-1 text-xs text-stone-500">{formatMoney(reviewingExpense.amount)} · {reviewingExpense.date}</p>
+              </div>
+              <button type="button" onClick={() => setReviewingExpense(null)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DED2] bg-white text-stone-500"><X size={18} /></button>
+            </div>
+            <div className="space-y-4 overflow-y-auto p-5">
+              {reviewingExpense.receiptUrl && (
+                <button type="button" onClick={() => setViewingImage(reviewingExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[#DDE7E0] bg-[#F2F7F4] p-3 text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#DDE7E0] bg-white text-[#214E3A]"><ImageIcon size={17} /></div>
+                  <div className="min-w-0"><p className="text-sm font-extrabold text-[#1E231F]">Ver ticket</p><p className="text-[11px] text-stone-500">Abre la imagen adjunta</p></div>
+                </button>
+              )}
+              <label className="block space-y-1.5">
+                <span className="text-xs font-extrabold text-stone-600">% deducible (0–100)</span>
+                <input type="number" min="0" max="100" step="1" value={reviewPct} onChange={(event) => setReviewPct(event.target.value)} className="w-full rounded-[13px] border border-[#DDD4C8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-extrabold text-stone-600">Nota para el autónomo</span>
+                <textarea rows={3} value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} className="w-full resize-none rounded-[13px] border border-[#DDD4C8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" placeholder="Opcional" />
+              </label>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <button type="button" onClick={() => submitExpenseReview('rejected')} className="rounded-[13px] border border-[#EBCFCB] bg-[#FFF0EE] px-3 py-3 text-xs font-extrabold text-[#9A443B]">Rechazar</button>
+                <button type="button" onClick={() => submitExpenseReview('needs_fix')} className="rounded-[13px] border border-[#EDCFBB] bg-[#FFF3EA] px-3 py-3 text-xs font-extrabold text-[#A4562D]">Pedir corrección</button>
+                <button type="button" onClick={() => submitExpenseReview('approved')} className="rounded-[13px] bg-[#214E3A] px-3 py-3 text-xs font-extrabold text-white">Aprobar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
