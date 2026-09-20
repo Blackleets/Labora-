@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { recoverRemoteSession, signInRemote, signUpRemote } from '../services/authWorkspace';
+import { managerSignupError, normalizeSpanishTaxId } from '../services/registrationValidation';
 import { UserRole } from '../types';
 import AtmosphericPanel from './AtmosphericPanel';
 import IdentityImagePicker from './IdentityImagePicker';
@@ -115,6 +116,19 @@ const Login: React.FC = () => {
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
     resetFeedback();
+
+    if (role === UserRole.MANAGER) {
+      const managerError = managerSignupError({
+        companyName: companyName.trim() || name.trim(),
+        nif,
+        collegiateNumber
+      });
+      if (managerError) {
+        setError(managerError);
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -122,7 +136,9 @@ const Login: React.FC = () => {
         name: name.trim(),
         email: normalizeEmail(email),
         phone: phone.trim() || undefined,
-        nif: nif.trim().toUpperCase() || undefined,
+        nif: role === UserRole.MANAGER
+          ? normalizeSpanishTaxId(nif)
+          : (nif.trim().toUpperCase() || undefined),
         role,
         platforms: [],
         fiscalRegime: undefined,
@@ -132,7 +148,7 @@ const Login: React.FC = () => {
         vehiclePlate: role === UserRole.RIDER ? vehiclePlate.trim().toUpperCase() || undefined : undefined,
         vehicleFuel: undefined,
         companyName: role === UserRole.MANAGER ? companyName.trim() || name.trim() : undefined,
-        collegiateNumber: role === UserRole.MANAGER ? collegiateNumber.trim() || undefined : undefined,
+        collegiateNumber: role === UserRole.MANAGER ? collegiateNumber.trim() : undefined,
         countryCode: 'ES'
       }, password, identityImage);
 
@@ -433,6 +449,9 @@ const Login: React.FC = () => {
                             <p className="mt-0.5 text-[10px] opacity-70">Mis clientes</p>
                           </button>
                         </div>
+                        <p className="mt-3 text-[11px] leading-relaxed text-[#6B645C]">
+                          Las gestorías deben identificar NIF y colegiado. Los autónomos se registran libremente.
+                        </p>
                       </div>
                       <div>
                         <label className={labelClass}>
@@ -497,31 +516,58 @@ const Login: React.FC = () => {
                           <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-11`} placeholder="+34 600 000 000" />
                         </div>
                       </div>
-                      <div>
-                        <label className={labelClass}>
-                          NIF / NIE <span className="font-normal text-[#9A9186]">(opcional)</span>
-                        </label>
-                        <input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678A" />
-                      </div>
-
                       {role === UserRole.RIDER ? (
-                        <div>
-                          <label className={labelClass}>
-                            Matrícula <span className="font-normal text-[#9A9186]">(opcional)</span>
-                          </label>
-                          <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" />
-                        </div>
-                      ) : (
-                        <div className="space-y-5">
+                        <>
                           <div>
-                            <label className={labelClass}>Nombre de la gestoría</label>
-                            <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputClass} placeholder="Nombre comercial" />
+                            <label className={labelClass}>
+                              NIF / NIE <span className="font-normal text-[#9A9186]">(opcional)</span>
+                            </label>
+                            <input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678Z" />
                           </div>
                           <div>
                             <label className={labelClass}>
-                              N.º colegiado <span className="font-normal text-[#9A9186]">(opcional)</span>
+                              Matrícula <span className="font-normal text-[#9A9186]">(opcional)</span>
                             </label>
-                            <input value={collegiateNumber} onChange={(e) => setCollegiateNumber(e.target.value)} className={inputClass} placeholder="Número de colegiado" />
+                            <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-5">
+                          <p className="rounded-xl border border-[#E8DFC8] bg-[#F7F3EA] px-3.5 py-3 text-[11px] leading-relaxed text-[#4A5D52]">
+                            Las gestorías deben identificar NIF y colegiado. Los autónomos se registran libremente.
+                          </p>
+                          <div>
+                            <label className={labelClass}>Nombre de la gestoría</label>
+                            <input
+                              value={companyName}
+                              onChange={(e) => { setCompanyName(e.target.value); resetFeedback(); }}
+                              className={inputClass}
+                              placeholder="Nombre comercial"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className={labelClass}>NIF de la empresa</label>
+                            <input
+                              value={nif}
+                              onChange={(e) => { setNif(e.target.value.toUpperCase()); resetFeedback(); }}
+                              className={inputClass}
+                              placeholder="B12345674"
+                              required
+                              autoComplete="off"
+                            />
+                            <p className="mt-1.5 text-[10px] text-[#8A8278]">NIF, CIF o NIE válido (formato). No consultamos AEAT en tiempo real.</p>
+                          </div>
+                          <div>
+                            <label className={labelClass}>Número de colegiado</label>
+                            <input
+                              value={collegiateNumber}
+                              onChange={(e) => { setCollegiateNumber(e.target.value); resetFeedback(); }}
+                              className={inputClass}
+                              placeholder="Ej. COL-9988"
+                              required
+                              autoComplete="off"
+                            />
                           </div>
                         </div>
                       )}

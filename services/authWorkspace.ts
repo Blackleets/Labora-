@@ -1,4 +1,5 @@
 import { User, UserRole } from '../types';
+import { assertManagerSignupFields } from './registrationValidation';
 import { supabase } from './supabaseClient';
 
 const LOCAL = {
@@ -166,13 +167,30 @@ export const signUpRemote = async (
   const email = userData.email?.trim().toLowerCase();
   if (!email) throw new Error('El correo es obligatorio.');
 
+  // Gestorías: never allow role=manager without valid company NIF + collegiate number.
+  // Autónomos (riders) stay open — no invite wall / pending queue.
+  let nif = userData.nif?.trim().toUpperCase() || '';
+  let companyName = userData.companyName?.trim() || '';
+  let collegiateNumber = userData.collegiateNumber?.trim() || '';
+
+  if (role === UserRole.MANAGER) {
+    const secured = assertManagerSignupFields({
+      companyName: companyName || userData.name,
+      nif,
+      collegiateNumber
+    });
+    companyName = secured.companyName;
+    nif = secured.nif;
+    collegiateNumber = secured.collegiateNumber;
+  }
+
   const metadata = {
     role: roleToDb(role),
     name: userData.name?.trim() || 'Usuario',
     phone: userData.phone || '',
-    nif: userData.nif || '',
-    company_name: userData.companyName || '',
-    collegiate_number: userData.collegiateNumber || '',
+    nif,
+    company_name: companyName,
+    collegiate_number: collegiateNumber,
     fiscal_regime: userData.fiscalRegime || '',
     iae_code: userData.iaeCode || '',
     social_security_type: userData.socialSecurityType || '',
