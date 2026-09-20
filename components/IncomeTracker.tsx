@@ -37,6 +37,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
+  const [formError, setFormError] = useState('');
   const [pastedText, setPastedText] = useState('');
   const [pendingImports, setPendingImports] = useState<Array<{ platform: string; amount: number; date: string; retention: number }>>([]);
   const [pendingImportSource, setPendingImportSource] = useState<'text_import' | 'document_import'>('text_import');
@@ -293,6 +294,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     const numericRetention = Number(retention || 0);
 
     if (!platform.trim() || !date || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+      setFormError('Completa plataforma, fecha e importe.');
       showNotification('error', 'Completa plataforma, fecha e importe.');
       return;
     }
@@ -367,8 +369,8 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
           {!isManager && (
             <div className="flex gap-2">
-              <button onClick={() => setIsManualOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 py-2.5 text-xs font-extrabold text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]"><Plus size={15} /> Añadir</button>
-              <button onClick={() => setIsPasteModalOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-3.5 py-2.5 text-xs font-extrabold text-white hover:opacity-90"><Sparkles size={15} /> Importar</button>
+              <button type="button" onClick={() => { setFormError(''); setIsManualOpen(true); }} className="inline-flex items-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 py-2.5 text-xs font-extrabold text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"><Plus size={15} aria-hidden /> Añadir</button>
+              <button type="button" onClick={() => setIsPasteModalOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-3.5 py-2.5 text-xs font-extrabold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"><Sparkles size={15} aria-hidden /> Importar</button>
             </div>
           )}
         </div>
@@ -385,7 +387,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
         </div>
 
         {filteredIncomes.length === 0 ? (
-          <div className="px-4 py-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]"><TrendingUp size={23} /></div><p className="mt-3 text-sm font-extrabold text-[var(--labora-muted)]">No hay ingresos en este periodo.</p></div>
+          <div className="px-4 py-12 text-center" role="status" aria-live="polite"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden><TrendingUp size={23} /></div><p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">No hay ingresos en este periodo.</p><p className="mt-1 text-xs text-[var(--labora-muted)]">Añade un ingreso manual o importa una liquidación/CSV. Nada se inventa automáticamente.</p></div>
         ) : (
           <div className="divide-y divide-[var(--labora-border)]">
             {filteredIncomes.map((income) => (
@@ -459,12 +461,15 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
       {isManualOpen && !isManager && (
         <Modal onClose={() => setIsManualOpen(false)} title="Añadir ingreso" kicker="Registro manual">
-          <form onSubmit={handleManualSave} className="space-y-4">
-            <Field label="Plataforma / pagador"><input value={platform} onChange={(e) => setPlatform(e.target.value)} className="field-input" placeholder="Ej. Uber Eats" /></Field>
-            <div className="grid grid-cols-2 gap-3"><Field label="Importe bruto"><input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="field-input" /></Field><Field label="Fecha"><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="field-input" /></Field></div>
-            <Field label="Retención registrada"><input type="number" min="0" step="0.01" value={retention} onChange={(e) => setRetention(e.target.value)} className="field-input" /></Field>
+          <form onSubmit={handleManualSave} className="space-y-4" noValidate>
+            <Field label="Plataforma / pagador" htmlFor="labora-income-platform"><input id="labora-income-platform" value={platform} onChange={(e) => { setPlatform(e.target.value); if (formError) setFormError(''); }} className="field-input" placeholder="Ej. Uber Eats" aria-invalid={formError ? true : undefined} aria-describedby={formError ? 'labora-income-form-error' : undefined} /></Field>
+            <div className="grid grid-cols-2 gap-3"><Field label="Importe bruto" htmlFor="labora-income-amount"><input id="labora-income-amount" type="number" min="0" step="0.01" value={amount} onChange={(e) => { setAmount(e.target.value); if (formError) setFormError(''); }} className="field-input" aria-invalid={formError ? true : undefined} aria-describedby={formError ? 'labora-income-form-error' : undefined} /></Field><Field label="Fecha" htmlFor="labora-income-date"><input id="labora-income-date" type="date" value={date} onChange={(e) => { setDate(e.target.value); if (formError) setFormError(''); }} className="field-input" aria-invalid={formError ? true : undefined} aria-describedby={formError ? 'labora-income-form-error' : undefined} /></Field></div>
+            <Field label="Retención registrada" htmlFor="labora-income-retention"><input id="labora-income-retention" type="number" min="0" step="0.01" value={retention} onChange={(e) => setRetention(e.target.value)} className="field-input" /></Field>
             <p className="rounded-[13px] bg-[var(--labora-parchment)] px-3 py-2.5 text-[10px] leading-relaxed text-[var(--labora-muted)]">Introduce únicamente importes que aparezcan en tu liquidación, factura o justificante.</p>
-            <button type="submit" className="w-full rounded-[13px] bg-[var(--labora-primary)] py-3 text-sm font-extrabold text-white">Guardar ingreso</button>
+            {formError ? (
+              <p id="labora-income-form-error" role="alert" className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3 py-2.5 text-xs font-medium text-[var(--labora-clay)]">{formError}</p>
+            ) : null}
+            <button type="submit" className="w-full rounded-[13px] bg-[var(--labora-primary)] py-3 text-sm font-extrabold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]">Guardar ingreso</button>
           </form>
         </Modal>
       )}
@@ -573,8 +578,13 @@ const incomeSourceLabel = (sourceType?: string) => {
 
 const SummaryMetric = ({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) => <div className="bg-[var(--labora-parchment)] p-3.5 sm:p-4"><p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-[var(--labora-muted)]">{label}</p><p className={`mt-1 text-base font-extrabold tracking-[-0.03em] ${accent ? 'text-[var(--labora-clay-deep)]' : 'text-[var(--labora-primary)]'}`}>{value}</p></div>;
 
-const Modal = ({ onClose, title, kicker, children }: { onClose: () => void; title: string; kicker: string; children: React.ReactNode }) => <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--labora-ink)]/55 p-4 backdrop-blur-sm"><div className="w-full max-w-lg rounded-[26px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-5 shadow-2xl"><div className="mb-5 flex items-start justify-between"><div><p className="labora-kicker text-[var(--labora-primary-2)]">{kicker}</p><h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{title}</h3></div><button onClick={onClose} className="rounded-xl p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]"><X size={18} /></button></div>{children}</div></div>;
+const Modal = ({ onClose, title, kicker, children }: { onClose: () => void; title: string; kicker: string; children: React.ReactNode }) => <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--labora-ink)]/55 p-4 backdrop-blur-sm"><div className="w-full max-w-lg rounded-[26px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-5 shadow-2xl" role="dialog" aria-modal="true" aria-label={title}><div className="mb-5 flex items-start justify-between"><div><p className="labora-kicker text-[var(--labora-primary-2)]">{kicker}</p><h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{title}</h3></div><button type="button" onClick={onClose} className="rounded-xl p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label="Cerrar"><X size={18} aria-hidden /></button></div>{children}</div></div>;
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => <label className="block space-y-1.5"><span className="text-xs font-extrabold text-[var(--labora-muted)]">{label}</span>{children}</label>;
+const Field = ({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) => (
+  <div className="block space-y-1.5">
+    <label htmlFor={htmlFor} className="text-xs font-extrabold text-[var(--labora-muted)]">{label}</label>
+    {children}
+  </div>
+);
 
 export default IncomeTracker;

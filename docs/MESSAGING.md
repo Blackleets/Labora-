@@ -44,3 +44,10 @@ Los mensajes antiguos pueden tener solo `personId` (= destinatario). La UI prefi
 - Unit: `modules/messages/messagingRules.test.ts` (elegibilidad + contraparte).
 - Unit: `modules/messages/repositories/messageCache.test.ts` (aislamiento de caché).
 - UAT manual: sección C de `docs/UAT_DUAL_ACCOUNT.md`.
+
+
+## Offline (fail-closed)
+
+- Banner when the browser is offline or the hub fell back to the session-scoped local cache.
+- Send is **not** queued: Spanish copy states the message was not sent and was not enqueued.
+- Cache remains per `labora_messages:<userId>` — never another account's bucket.
