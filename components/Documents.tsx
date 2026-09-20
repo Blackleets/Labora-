@@ -89,6 +89,7 @@ export const Documents: React.FC = () => {
 
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'receipts' | 'taxes' | 'legal'>('all');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [formError, setFormError] = useState('');
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isReadingFile, setIsReadingFile] = useState(false);
   const [docName, setDocName] = useState('');
@@ -241,6 +242,7 @@ export const Documents: React.FC = () => {
     event.preventDefault();
     if (!currentUser || isManager) return;
     if (!docName.trim() || !pendingUpload) {
+      setFormError('Selecciona un archivo y confirma su nombre.');
       showNotification('error', 'Selecciona un archivo y confirma su nombre.');
       return;
     }
@@ -341,11 +343,11 @@ export const Documents: React.FC = () => {
 
           {!isManager && (
             <div className="flex shrink-0 gap-2">
-              <button onClick={() => setIsReportOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 py-2.5 text-xs font-extrabold text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]">
-                <FileBarChart size={15} /> Resumen
+              <button type="button" onClick={() => setIsReportOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 py-2.5 text-xs font-extrabold text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]">
+                <FileBarChart size={15} aria-hidden /> Resumen
               </button>
-              <button onClick={() => setIsUploadOpen(true)} className="inline-flex items-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-3.5 py-2.5 text-xs font-extrabold text-white hover:opacity-90">
-                <Upload size={15} /> Subir
+              <button type="button" onClick={() => { setFormError(''); setIsUploadOpen(true); }} className="inline-flex items-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-3.5 py-2.5 text-xs font-extrabold text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]">
+                <Upload size={15} aria-hidden /> Subir
               </button>
             </div>
           )}
@@ -379,9 +381,10 @@ export const Documents: React.FC = () => {
         </div>
 
         {filteredItems.length === 0 ? (
-          <div className="px-4 py-14 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]"><Folder size={23} /></div>
-            <p className="mt-3 text-sm font-extrabold text-[var(--labora-muted)]">No hay documentos en esta categoría.</p>
+          <div className="px-4 py-14 text-center" role="status" aria-live="polite">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden><Folder size={23} /></div>
+            <p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">No hay documentos en esta categoría.</p>
+            <p className="mt-1 text-xs text-[var(--labora-muted)]">Prueba otro filtro o sube un PDF, JPG, PNG o WebP desde el botón Subir.</p>
           </div>
         ) : (
           <div className="divide-y divide-[var(--labora-border)]">
@@ -415,8 +418,8 @@ export const Documents: React.FC = () => {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-0.5">
-                  <button onClick={() => setPreview(item)} className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-primary)]" title="Previsualizar"><Eye size={16} /></button>
-                  <button onClick={() => handleDownload(item)} disabled={!item.content} className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-primary)] disabled:cursor-not-allowed disabled:opacity-25" title="Descargar"><Download size={16} /></button>
+                  <button type="button" onClick={() => setPreview(item)} className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label={`Previsualizar ${item.name}`} title="Previsualizar"><Eye size={16} aria-hidden /></button>
+                  <button type="button" onClick={() => handleDownload(item)} disabled={!item.content} className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-primary)] disabled:cursor-not-allowed disabled:opacity-25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label={`Descargar ${item.name}`} title="Descargar"><Download size={16} aria-hidden /></button>
                   {!isManager && item.source === 'document' && item.sourceUserId === currentUser?.id && (
                     <button onClick={() => void handleDelete(item)} disabled={deletingId === item.id} className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-soft-clay)] hover:text-[var(--labora-clay-deep)] disabled:opacity-40" title="Eliminar">
                       {deletingId === item.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
@@ -442,25 +445,35 @@ export const Documents: React.FC = () => {
           <div className="w-full max-w-lg rounded-t-[26px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-5 shadow-2xl sm:rounded-[26px]">
             <div className="flex items-start justify-between gap-3">
               <div><p className="labora-kicker text-[var(--labora-primary-2)]">Archivo privado</p><h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">Subir documento</h3><p className="mt-1 text-xs text-[var(--labora-muted)]">PDF, JPG, PNG o WebP · máximo 15 MB.</p></div>
-              <button onClick={() => setIsUploadOpen(false)} className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-2 text-[var(--labora-muted)]"><X size={17} /></button>
+              <button type="button" onClick={() => { setFormError(''); setIsUploadOpen(false); }} className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-2 text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label="Cerrar"><X size={17} aria-hidden /></button>
             </div>
 
-            <form onSubmit={handleSaveDocument} className="mt-5 space-y-4">
-              <input ref={fileInputRef} type="file" className="hidden" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => void handleFileSelect(event)} />
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isReadingFile} className="flex w-full flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-[var(--labora-border)] bg-[var(--labora-parchment)] px-4 py-7 text-center transition hover:border-[var(--labora-primary-2)] disabled:opacity-60">
-                {isReadingFile ? <Loader2 size={24} className="animate-spin text-[var(--labora-primary)]" /> : <Upload size={24} className="text-[var(--labora-primary)]" />}
+            <form onSubmit={handleSaveDocument} className="mt-5 space-y-4" noValidate>
+              <input ref={fileInputRef} id="labora-doc-file" type="file" className="sr-only" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={(event) => { setFormError(''); void handleFileSelect(event); }} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isReadingFile} aria-describedby="labora-doc-file-help" className="flex w-full flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-[var(--labora-border)] bg-[var(--labora-parchment)] px-4 py-7 text-center transition hover:border-[var(--labora-primary-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-60">
+                {isReadingFile ? <Loader2 size={24} className="animate-spin text-[var(--labora-primary)]" aria-hidden /> : <Upload size={24} className="text-[var(--labora-primary)]" aria-hidden />}
                 <p className="mt-2 text-sm font-extrabold text-[var(--labora-ink)]">{pendingUpload ? pendingUpload.name : 'Seleccionar archivo'}</p>
-                <p className="mt-1 text-[11px] text-[var(--labora-muted)]">{pendingUpload ? `${bytesLabel(pendingUpload.sizeBytes)} · SHA-256 calculado` : 'El original se conserva completo.'}</p>
+                <p id="labora-doc-file-help" className="mt-1 text-[11px] text-[var(--labora-muted)]">{pendingUpload ? `${bytesLabel(pendingUpload.sizeBytes)} · SHA-256 calculado` : 'PDF, JPG, PNG o WebP · máximo 15 MB. El original se conserva completo.'}</p>
               </button>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <label><span className="mb-1.5 block text-[11px] font-extrabold text-[var(--labora-muted)]">Nombre</span><input value={docName} onChange={(event) => setDocName(event.target.value)} className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]" /></label>
-                <label><span className="mb-1.5 block text-[11px] font-extrabold text-[var(--labora-muted)]">Tipo</span><select value={docType} onChange={(event) => setDocType(event.target.value as UserDocument['type'])} className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none"><option value="Factura">Factura</option><option value="Liquidación">Liquidación de plataforma</option><option value="Trimestre">Fiscal / trimestre</option><option value="Alta">Alta / censal</option><option value="Otro">Otro</option></select></label>
+                <div>
+                  <label htmlFor="labora-doc-name" className="mb-1.5 block text-[11px] font-extrabold text-[var(--labora-muted)]">Nombre</label>
+                  <input id="labora-doc-name" value={docName} onChange={(event) => { setDocName(event.target.value); if (formError) setFormError(''); }} aria-invalid={formError ? true : undefined} aria-describedby={formError ? 'labora-doc-form-error' : undefined} className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" />
+                </div>
+                <div>
+                  <label htmlFor="labora-doc-type" className="mb-1.5 block text-[11px] font-extrabold text-[var(--labora-muted)]">Tipo</label>
+                  <select id="labora-doc-type" value={docType} onChange={(event) => setDocType(event.target.value as UserDocument['type'])} className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"><option value="Factura">Factura</option><option value="Liquidación">Liquidación de plataforma</option><option value="Trimestre">Fiscal / trimestre</option><option value="Alta">Alta / censal</option><option value="Otro">Otro</option></select>
+                </div>
               </div>
 
+              {formError ? (
+                <p id="labora-doc-form-error" role="alert" className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3 py-2.5 text-xs font-medium text-[var(--labora-clay)]">{formError}</p>
+              ) : null}
+
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={() => setIsUploadOpen(false)} className="flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] py-2.5 text-xs font-extrabold text-[var(--labora-muted)]">Cancelar</button>
-                <button type="submit" disabled={!pendingUpload || !docName.trim()} className="flex-1 rounded-[13px] bg-[var(--labora-primary)] py-2.5 text-xs font-extrabold text-white disabled:opacity-40">Guardar</button>
+                <button type="button" onClick={() => { setFormError(''); setIsUploadOpen(false); }} className="flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] py-2.5 text-xs font-extrabold text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]">Cancelar</button>
+                <button type="submit" disabled={!pendingUpload || !docName.trim()} className="flex-1 rounded-[13px] bg-[var(--labora-primary)] py-2.5 text-xs font-extrabold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-40">Guardar</button>
               </div>
             </form>
           </div>

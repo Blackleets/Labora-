@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Building2, Check, CheckCheck, Clock, Loader2, MessageSquare, Search, Send, UserRound } from 'lucide-react';
+import { Building2, Check, CheckCheck, Clock, Loader2, MessageSquare, Search, Send, UserRound, WifiOff } from 'lucide-react';
 import { useData } from '../../../contexts/DataContext';
 import { identityImageStore } from '../../../services/identityImage';
 import { User, UserRole } from '../../../types';
@@ -13,7 +13,7 @@ import {
   statusLabelEs,
   unreadIncomingCount
 } from '../messagingRules';
-import { messageRepository } from '../repositories/messageRepository';
+import { messageRepository, messagingSendErrorEs } from '../repositories/messageRepository';
 import { Message } from '../types';
 
 const ContactImage = ({ user, active = false, size = 'sm' }: { user: User; active?: boolean; size?: 'sm' | 'md' }) => {
@@ -59,6 +59,9 @@ export const MessagesHub: React.FC = () => {
   const [selectedContactId, setSelectedContactId] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+  const [fromCache, setFromCache] = useState(false);
+  const [composerError, setComposerError] = useState('');
   const isManager = Boolean(currentUser && isManagerLike(currentUser.role));
 
   const contacts = useMemo(
@@ -74,9 +77,12 @@ export const MessagesHub: React.FC = () => {
   const loadMessages = useCallback(async () => {
     setLoading(true);
     try {
-      setMessages(await messageRepository.getAll(users));
+      const result = await messageRepository.getAll(users);
+      setMessages(result.messages);
+      setFromCache(result.fromCache);
     } catch (error) {
       console.error(error);
+      setFromCache(true);
     } finally {
       setLoading(false);
     }
@@ -87,6 +93,17 @@ export const MessagesHub: React.FC = () => {
     const unsubscribe = messageRepository.subscribe(() => void loadMessages());
     return unsubscribe;
   }, [loadMessages]);
+
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
 
   useEffect(() => {
     if (!contacts.length) {
@@ -149,16 +166,23 @@ export const MessagesHub: React.FC = () => {
     if (!currentUser || !selectedContact || !draft.trim() || sending) return;
 
     if (!canMessagePair(currentUser, selectedContact)) {
-      showNotification(
-        'error',
-        isManager
-          ? 'Solo puedes escribir a clientes vinculados a ti.'
-          : 'Solo puedes escribir a tu gestoría vinculada.'
-      );
+      const blocked = isManager
+        ? 'Solo puedes escribir a clientes vinculados a ti.'
+        : 'Solo puedes escribir a tu gestoría vinculada.';
+      setComposerError(blocked);
+      showNotification('error', blocked);
+      return;
+    }
+
+    if (!online || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+      const offlineMsg = messagingSendErrorEs();
+      setComposerError(offlineMsg);
+      showNotification('error', offlineMsg);
       return;
     }
 
     const text = draft.trim();
+    setComposerError('');
     setSending(true);
     try {
       const message = await messageRepository.sendMessage({
@@ -173,8 +197,11 @@ export const MessagesHub: React.FC = () => {
       });
       setMessages((previous) => (previous.some((item) => item.id === message.id) ? previous : [...previous, message]));
       setDraft('');
-    } catch (error: any) {
-      showNotification('error', String(error?.message || 'No se pudo enviar el mensaje.'));
+      setComposerError('');
+    } catch (error: unknown) {
+      const msg = messagingSendErrorEs(error);
+      setComposerError(msg);
+      showNotification('error', msg);
     } finally {
       setSending(false);
     }
@@ -208,16 +235,36 @@ export const MessagesHub: React.FC = () => {
         </div>
       </header>
 
+      {(!online || fromCache) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-start gap-2.5 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs leading-relaxed text-[var(--labora-clay-deep)]"
+        >
+          <WifiOff size={15} className="mt-0.5 shrink-0" aria-hidden />
+          <div>
+            <p className="font-extrabold">{!online ? 'Sin conexión' : 'Copia local'}</p>
+            <p className="mt-0.5 font-medium opacity-90">
+              {!online
+                ? 'No puedes enviar mensajes ahora. Lo que ves puede ser una copia local de tu sesión; no se encola nada para envío posterior.'
+                : 'No se pudo sincronizar con el servidor. Mostrando solo la copia local de tu sesión (aislada por cuenta). Los envíos fallan sin encolar.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       <section className="labora-card grid min-h-[560px] overflow-hidden lg:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="border-b border-[var(--labora-border)] bg-[var(--labora-parchment)] lg:border-b-0 lg:border-r">
           <div className="border-b border-[var(--labora-border)] p-3">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <label htmlFor="labora-messages-search" className="sr-only">Buscar en conversación</label>
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" aria-hidden />
               <input
+                id="labora-messages-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Buscar en conversación"
-                className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[var(--labora-primary-2)]"
+                className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[var(--labora-primary-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
               />
             </div>
           </div>
@@ -235,7 +282,9 @@ export const MessagesHub: React.FC = () => {
                     key={contact.id}
                     type="button"
                     onClick={() => setSelectedContactId(contact.id)}
-                    className={`flex w-full items-center gap-3 rounded-[14px] p-3 text-left transition ${
+                    aria-current={active ? 'true' : undefined}
+                    aria-label={`Conversación con ${displayNameFor(contact)}${unread > 0 ? `, ${unread} sin leer` : ''}`}
+                    className={`flex w-full items-center gap-3 rounded-[14px] p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] ${
                       active ? 'bg-[var(--labora-moss-soft)] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.06)]' : 'hover:bg-[var(--labora-surface-2)]'
                     }`}
                   >
@@ -343,26 +392,34 @@ export const MessagesHub: React.FC = () => {
             )}
           </div>
 
-          <form onSubmit={handleSend} className="border-t border-[var(--labora-border)] bg-[var(--labora-surface)] p-3 sm:p-4">
+          <form onSubmit={handleSend} className="border-t border-[var(--labora-border)] bg-[var(--labora-surface)] p-3 sm:p-4" noValidate>
             <div className="flex gap-2">
+              <label htmlFor="labora-messages-draft" className="sr-only">Escribe un mensaje</label>
               <textarea
+                id="labora-messages-draft"
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => { setDraft(e.target.value); if (composerError) setComposerError(''); }}
                 placeholder={selectedContact ? 'Escribe un mensaje…' : 'Vincula una gestoría para conversar'}
-                disabled={!selectedContact || sending}
+                disabled={!selectedContact || sending || !online}
                 rows={2}
-                className="min-w-0 flex-1 resize-none rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)] disabled:bg-[var(--labora-surface-2)]"
+                aria-invalid={composerError ? true : undefined}
+                aria-describedby={composerError ? 'labora-messages-composer-error' : 'labora-messages-composer-hint'}
+                className="min-w-0 flex-1 resize-none rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:bg-[var(--labora-surface-2)]"
               />
               <button
                 type="submit"
-                disabled={!selectedContact || !draft.trim() || sending}
-                className="self-end rounded-[14px] bg-[var(--labora-clay)] p-3 text-white shadow-sm transition hover:bg-[#BE5838] disabled:opacity-35"
+                disabled={!selectedContact || !draft.trim() || sending || !online}
+                className="self-end rounded-[14px] bg-[var(--labora-clay)] p-3 text-white shadow-sm transition hover:bg-[#BE5838] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-35"
                 aria-label="Enviar mensaje"
               >
-                {sending ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
+                {sending ? <Loader2 size={17} className="animate-spin" aria-hidden /> : <Send size={17} aria-hidden />}
               </button>
             </div>
-            <p className="mt-2 text-[10px] font-medium text-stone-400">{composerHint}</p>
+            {composerError ? (
+              <p id="labora-messages-composer-error" role="alert" className="mt-2 text-[10px] font-bold text-[var(--labora-clay-deep)]">{composerError}</p>
+            ) : (
+              <p id="labora-messages-composer-hint" className="mt-2 text-[10px] font-medium text-stone-400">{composerHint}</p>
+            )}
           </form>
         </div>
       </section>
@@ -371,8 +428,8 @@ export const MessagesHub: React.FC = () => {
 };
 
 const EmptyContacts = ({ isManager }: { isManager: boolean }) => (
-  <div className="px-3 py-10 text-center">
-    <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-[15px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]">
+  <div className="px-3 py-10 text-center" role="status" aria-live="polite">
+    <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-[15px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden>
       {isManager ? <UserRound size={21} /> : <Building2 size={21} />}
     </div>
     <p className="mt-3 text-xs font-extrabold text-[var(--labora-ink-soft)]">
@@ -387,8 +444,8 @@ const EmptyContacts = ({ isManager }: { isManager: boolean }) => (
 );
 
 const EmptyThread = ({ title, detail }: { title: string; detail: string }) => (
-  <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center">
-    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
+  <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center" role="status" aria-live="polite">
+    <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]" aria-hidden>
       <MessageSquare size={23} />
     </div>
     <p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">{title}</p>

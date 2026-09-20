@@ -54,6 +54,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   const { selectedCountry } = useCountry();
   const [isScanning, setIsScanning] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
+  const [formError, setFormError] = useState('');
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
@@ -251,12 +252,14 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   const openManualEntry = () => {
     if (isManager) return;
     setSelectedExpense(makeManualDraft());
+    setFormError('');
     setIsManualOpen(true);
   };
 
   const openEdit = (expense: Expense) => {
     if (isManager) return;
     setSelectedExpense({ ...expense });
+    setFormError('');
     setIsManualOpen(true);
   };
 
@@ -265,6 +268,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
     if (!selectedExpense || !currentUser || isManager) return;
 
     if (!selectedExpense.amount || selectedExpense.amount <= 0 || !selectedExpense.date || !selectedExpense.category) {
+      setFormError('Completa importe, fecha y categoría.');
       showNotification('error', 'Completa importe, fecha y categoría.');
       return;
     }
@@ -400,9 +404,9 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
           })}
 
           {filteredExpenses.length === 0 && (
-            <div className="px-4 py-12 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]"><Receipt size={23} /></div>
-              <p className="mt-3 text-sm font-extrabold text-[var(--labora-muted)]">{isManager ? 'Sin gastos de clientes vinculados' : 'No hay gastos registrados'}</p>
+            <div className="px-4 py-12 text-center" role="status" aria-live="polite">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden><Receipt size={23} /></div>
+              <p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">{isManager ? 'Sin gastos de clientes vinculados' : 'No hay gastos registrados'}</p>
               <p className="mt-1 text-xs text-[var(--labora-muted)]">{isManager ? 'Cuando un autónomo vinculado registre un ticket o gasto, aparecerá aquí para aprobar, rechazar o fijar el % deducible.' : 'Escanea un ticket o añade uno manualmente.'}</p>
             </div>
           )}
@@ -414,7 +418,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
           <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] shadow-2xl sm:rounded-[26px]">
             <div className="flex items-center justify-between gap-3 border-b border-[var(--labora-border)] px-5 py-4">
               <div><p className="labora-kicker text-[var(--labora-primary-2)]">{selectedExpense.receiptUrl ? 'Revisar ticket' : 'Registro manual'}</p><h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{selectedExpense.id.startsWith('temp_') ? 'Nuevo gasto' : 'Editar gasto'}</h3></div>
-              <button type="button" onClick={() => { setIsManualOpen(false); setSelectedExpense(null); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)]"><X size={18} /></button>
+              <button type="button" onClick={() => { setFormError(''); setIsManualOpen(false); setSelectedExpense(null); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label="Cerrar"><X size={18} aria-hidden /></button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-4 overflow-y-auto p-5">
@@ -426,15 +430,15 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
               )}
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Importe"><div className="relative"><input type="number" min="0" step="0.01" value={selectedExpense.amount || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, amount: Number(event.target.value) })} className="field-input pr-9" required /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[var(--labora-muted)]">{selectedCountry.currency_symbol || '€'}</span></div></Field>
-                <Field label="Fecha"><input type="date" value={selectedExpense.date} onChange={(event) => setSelectedExpense({ ...selectedExpense, date: event.target.value })} className="field-input" required /></Field>
+                <Field label="Importe" htmlFor="labora-expense-amount"><div className="relative"><input id="labora-expense-amount" type="number" min="0" step="0.01" value={selectedExpense.amount || ''} onChange={(event) => { setSelectedExpense({ ...selectedExpense, amount: Number(event.target.value) }); if (formError) setFormError(''); }} className="field-input pr-9" required aria-invalid={formError ? true : undefined} aria-describedby={formError ? 'labora-expense-form-error' : undefined} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[var(--labora-muted)]" aria-hidden>{selectedCountry.currency_symbol || '€'}</span></div></Field>
+                <Field label="Fecha" htmlFor="labora-expense-date"><input id="labora-expense-date" type="date" value={selectedExpense.date} onChange={(event) => { setSelectedExpense({ ...selectedExpense, date: event.target.value }); if (formError) setFormError(''); }} className="field-input" required aria-invalid={formError ? true : undefined} aria-describedby={formError ? 'labora-expense-form-error' : undefined} /></Field>
               </div>
 
-              <Field label="Proveedor / comercio"><input value={selectedExpense.merchant || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, merchant: event.target.value })} className="field-input" placeholder="Nombre visible en el justificante" /></Field>
+              <Field label="Proveedor / comercio" htmlFor="labora-expense-merchant"><input id="labora-expense-merchant" value={selectedExpense.merchant || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, merchant: event.target.value })} className="field-input" placeholder="Nombre visible en el justificante" /></Field>
 
-              <Field label="Categoría"><select value={String(selectedExpense.category)} onChange={(event) => setSelectedExpense({ ...selectedExpense, category: event.target.value })} className="field-input">{Object.values(ExpenseCategory).map((category) => <option key={category} value={category}>{category}</option>)}</select></Field>
+              <Field label="Categoría" htmlFor="labora-expense-category"><select id="labora-expense-category" value={String(selectedExpense.category)} onChange={(event) => { setSelectedExpense({ ...selectedExpense, category: event.target.value }); if (formError) setFormError(''); }} className="field-input" aria-invalid={formError ? true : undefined} aria-describedby={formError ? 'labora-expense-form-error' : undefined}>{Object.values(ExpenseCategory).map((category) => <option key={category} value={category}>{category}</option>)}</select></Field>
 
-              <Field label="Descripción"><textarea rows={3} value={selectedExpense.notes || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, notes: event.target.value })} placeholder="Concepto o nota…" className="field-input resize-none" /></Field>
+              <Field label="Descripción" htmlFor="labora-expense-notes"><textarea id="labora-expense-notes" rows={3} value={selectedExpense.notes || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, notes: event.target.value })} placeholder="Concepto o nota…" className="field-input resize-none" /></Field>
 
               {selectedExpense.receiptUrl && (
                 <button type="button" onClick={() => setViewingImage(selectedExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-3 text-left">
@@ -449,9 +453,13 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
 
               <label className="flex items-center gap-2 text-xs font-bold text-[var(--labora-muted)]"><input type="checkbox" checked={Boolean(selectedExpense.isRecurring)} onChange={(event) => setSelectedExpense({ ...selectedExpense, isRecurring: event.target.checked })} className="rounded border-[var(--labora-border)]" />Es un gasto recurrente</label>
 
+              {formError ? (
+                <p id="labora-expense-form-error" role="alert" className="rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3 py-2.5 text-xs font-medium text-[var(--labora-clay)]">{formError}</p>
+              ) : null}
+
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => { setIsManualOpen(false); setSelectedExpense(null); }} className="flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-4 py-3 text-sm font-extrabold text-[var(--labora-muted)]">Cancelar</button>
-                <button type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-4 py-3 text-sm font-extrabold text-white"><Save size={16} /> Guardar</button>
+                <button type="button" onClick={() => { setFormError(''); setIsManualOpen(false); setSelectedExpense(null); }} className="flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-4 py-3 text-sm font-extrabold text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]">Cancelar</button>
+                <button type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-4 py-3 text-sm font-extrabold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"><Save size={16} aria-hidden /> Guardar</button>
               </div>
             </form>
           </div>
@@ -515,7 +523,7 @@ const ActionCard = ({ icon: Icon, title, text, tone, onClick, loading = false, w
       ? 'bg-[var(--labora-moss-soft)] text-[var(--labora-primary)] border-[var(--labora-border)]'
       : 'bg-[var(--labora-surface-2)] text-[var(--labora-muted)] border-[var(--labora-border)]';
   return (
-    <button onClick={onClick} disabled={loading} className={`labora-card labora-card-interactive min-w-0 p-3.5 text-left disabled:opacity-60 ${wide ? 'col-span-2 sm:col-span-1' : ''}`}>
+    <button type="button" onClick={onClick} disabled={loading} className={`labora-card labora-card-interactive min-w-0 p-3.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-60 ${wide ? 'col-span-2 sm:col-span-1' : ''}`}>
       <div className={`flex h-10 w-10 items-center justify-center rounded-[13px] border ${toneClass}`}>{loading ? <Loader2 size={18} className="animate-spin" /> : <Icon size={18} />}</div>
       <p className="mt-2 text-sm font-extrabold text-[var(--labora-ink)]">{title}</p>
       <p className="mt-0.5 text-[11px] font-medium text-[var(--labora-muted)]">{text}</p>
@@ -523,8 +531,11 @@ const ActionCard = ({ icon: Icon, title, text, tone, onClick, loading = false, w
   );
 };
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <label className="block space-y-1.5"><span className="text-xs font-extrabold text-[var(--labora-muted)]">{label}</span>{children}</label>
+const Field = ({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) => (
+  <div className="block space-y-1.5">
+    <label htmlFor={htmlFor} className="text-xs font-extrabold text-[var(--labora-muted)]">{label}</label>
+    {children}
+  </div>
 );
 
 export default ExpenseTracker;

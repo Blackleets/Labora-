@@ -1,6 +1,6 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 7 UAT prep / a11y). **Cream-token sweeps stopped.** Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
+Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 8 a11y / offline messaging). **Cream-token sweeps stopped.** Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
 
 ## Merged on main (no longer blocked)
 
@@ -34,6 +34,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 7 UAT prep / a11y). *
 | Agent-safe loop 5 (Sidebar/Dashboard/GasStation/TaxDeclarations/Education/Identity/FiscalChat/Movements + ProDashboard·Risk·Events·Ops·Policy shells) | Cream/parchment chrome → `var(--labora-*)`; fail-closed shells theme-safe; Education/FiscalChat/Movements blue accents kept; billing flag still OFF |
 | Agent-safe loop 6 (AutomationHub + FeatureFlagSettings cream→tokens; advisors; legal withBaseUrl vitest) | Hub/flags → `var(--labora-*)`; `docs/RLS_ADVISORS.md` (HIBP WARN only); legal href vitest; `dark_mode_force` copy honest (local/in-memory); billing flag still OFF |
 | Agent-safe loop 7 (UAT dual prep + Login/Settings a11y) | `npm run uat:dual` machine prep (`PREP_STATUS`); explicit self-link / not_manager vitest; labels, `role=switch`, `role=alert`, focus-visible on Login + gestoría link; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
+| Agent-safe loop 8 (Messages offline UI + a11y; Documents/Money forms a11y) | Offline banner + Spanish fail-closed send errors (no queue claim); labels / `aria-invalid` / `aria-describedby` / focus-visible / empty `role=status` on Messages, Documents, Expense, Income primary forms; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
 
 ## Linking — what works / what needs Lewis
 
