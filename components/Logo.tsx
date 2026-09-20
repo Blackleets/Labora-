@@ -13,6 +13,8 @@ interface SharedLogoProps {
   /** Mark geometry */
   markVariant?: MarkVariant;
   animated?: boolean;
+  /** Enable startup entrance motion (stroke draw + scale) */
+  entrance?: boolean;
 }
 
 const SIZE = {
@@ -31,11 +33,13 @@ const uid = () => `labora-${Math.random().toString(36).slice(2, 9)}`;
  * without literal bike/briefcase or monogram-in-squircle.
  */
 function MarkGlyph({
-  gid,
-  markVariant
+  gid: _gid,
+  markVariant = 'ascent' as MarkVariant,
+  entrance = false
 }: {
   gid: string;
-  markVariant: MarkVariant;
+  markVariant?: MarkVariant;
+  entrance?: boolean;
 }) {
   if (markVariant === 'fold') {
     /* Twin ascending chevrons — dual entities rising into clarity */
@@ -88,6 +92,7 @@ function MarkGlyph({
     <>
       {/* Secondary beam — partnership / gestoría (champagne) */}
       <path
+        className={entrance ? 'labora-beam-draw labora-beam-draw--champagne' : undefined}
         d="M20 52 L50 22"
         stroke="#C9A574"
         strokeWidth="6.5"
@@ -95,14 +100,17 @@ function MarkGlyph({
       />
       {/* Primary beam — clarity path / autónomo (ivory) */}
       <path
+        className={entrance ? 'labora-beam-draw labora-beam-draw--ivory' : undefined}
         d="M13 47 L44 16"
         stroke="#FFFEFB"
         strokeWidth="9.5"
         strokeLinecap="round"
       />
       {/* Apex node — the + moment */}
-      <circle cx="44" cy="16" r="4.6" fill="#C96846" />
-      <circle cx="44" cy="16" r="1.7" fill="#FFFEFB" fillOpacity="0.95" />
+      <g className={entrance ? 'labora-apex-node' : undefined}>
+        <circle cx="44" cy="16" r="4.6" fill="#C96846" />
+        <circle cx="44" cy="16" r="1.7" fill="#FFFEFB" fillOpacity="0.95" />
+      </g>
     </>
   );
 }
@@ -114,7 +122,8 @@ export const LogoMark: React.FC<
   size = 'md',
   className = '',
   animated = false,
-  markVariant = 'ascent',
+  entrance = false,
+  markVariant = 'ascent' as MarkVariant,
   title
 }) => {
   const config = SIZE[size];
@@ -122,7 +131,9 @@ export const LogoMark: React.FC<
 
   return (
     <div
-      className={`relative shrink-0 overflow-hidden shadow-[0_10px_28px_rgba(15,61,46,0.22)] ring-1 ring-black/[0.04] ${animated ? 'transition-transform duration-500 hover:-rotate-1 hover:scale-[1.03]' : ''} ${className}`}
+      className={`relative shrink-0 overflow-hidden shadow-[0_10px_28px_rgba(15,61,46,0.22)] ring-1 ring-black/[0.04] ${
+        entrance ? 'labora-mark-squircle' : ''
+      } ${animated && !entrance ? 'transition-transform duration-500 hover:-rotate-1 hover:scale-[1.03]' : ''} ${className}`}
       style={{
         width: config.mark,
         height: config.mark,
@@ -179,7 +190,7 @@ export const LogoMark: React.FC<
         <rect width="64" height="64" rx="15" fill={`url(#markFill-${gid})`} />
         <rect width="64" height="64" rx="15" fill={`url(#markGlow-${gid})`} />
         <rect width="64" height="64" rx="15" fill={`url(#markSheen-${gid})`} />
-        <MarkGlyph gid={gid} markVariant={markVariant} />
+        <MarkGlyph gid={gid} markVariant={markVariant} entrance={entrance} />
       </svg>
     </div>
   );
@@ -189,7 +200,8 @@ export const LogoMark: React.FC<
 export const LogoWordmark: React.FC<SharedLogoProps> = ({
   size = 'md',
   className = '',
-  variant = 'light'
+  variant = 'light',
+  entrance = false
 }) => {
   const config = SIZE[size];
   const textColor = variant === 'dark' ? 'text-[#FFFEFB]' : 'text-[#0A1210]';
@@ -197,7 +209,9 @@ export const LogoWordmark: React.FC<SharedLogoProps> = ({
 
   return (
     <span
-      className={`font-sans font-extrabold tracking-[-0.045em] ${config.text} ${textColor} ${className}`}
+      className={`font-sans font-extrabold tracking-[-0.045em] ${config.text} ${textColor} ${
+        entrance ? 'labora-wordmark-entrance' : ''
+      } ${className}`}
       style={{
         fontFamily:
           "var(--labora-font-sans, 'Plus Jakarta Sans', system-ui, sans-serif)"
@@ -217,14 +231,25 @@ export const LogoLockup: React.FC<
   className = '',
   variant = 'light',
   markVariant = 'ascent',
-  animated = false
+  animated = false,
+  entrance = false
 }) => {
   const config = SIZE[size];
 
   return (
-    <div className={`flex items-center ${config.gap} ${className}`} aria-label="Labora+">
-      <LogoMark size={size} animated={animated} markVariant={markVariant} />
-      {showText && <LogoWordmark size={size} variant={variant} />}
+    <div
+      className={`flex items-center ${config.gap} ${entrance ? 'labora-logo-entrance' : ''} ${className}`}
+      aria-label="Labora+"
+    >
+      <LogoMark
+        size={size}
+        animated={animated}
+        entrance={entrance}
+        markVariant={markVariant}
+      />
+      {showText && (
+        <LogoWordmark size={size} variant={variant} entrance={entrance} />
+      )}
     </div>
   );
 };
@@ -240,7 +265,8 @@ const Logo: React.FC<LogoProps> = ({
   className = '',
   variant = 'light',
   markVariant = 'ascent',
-  animated = false
+  animated = false,
+  entrance = false
 }) => (
   <LogoLockup
     size={size}
@@ -249,6 +275,7 @@ const Logo: React.FC<LogoProps> = ({
     variant={variant}
     markVariant={markVariant}
     animated={animated}
+    entrance={entrance}
   />
 );
 

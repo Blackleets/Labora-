@@ -16,6 +16,7 @@ import { recoverRemoteSession, signInRemote, signUpRemote } from '../services/au
 import { UserRole } from '../types';
 import AtmosphericPanel from './AtmosphericPanel';
 import IdentityImagePicker from './IdentityImagePicker';
+import IntroAnimation from './IntroAnimation';
 import Logo from './Logo';
 
 const Login: React.FC = () => {
@@ -36,6 +37,13 @@ const Login: React.FC = () => {
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [recovering, setRecovering] = useState(true);
+  const [introDone, setIntroDone] = useState(() => {
+    try {
+      return sessionStorage.getItem('labora_intro_seen') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     let active = true;
@@ -160,6 +168,21 @@ const Login: React.FC = () => {
           <Loader2 size={18} className="animate-spin text-[#C96846]" /> Recuperando sesión…
         </div>
       </div>
+    );
+  }
+
+  if (!introDone) {
+    return (
+      <IntroAnimation
+        onComplete={() => {
+          try {
+            sessionStorage.setItem('labora_intro_seen', '1');
+          } catch {
+            /* ignore quota / private mode */
+          }
+          setIntroDone(true);
+        }}
+      />
     );
   }
 
