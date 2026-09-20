@@ -1,5 +1,11 @@
 import { User, UserRole } from '../types';
 import { assertManagerSignupFields } from './registrationValidation';
+import {
+  friendlyLinkError,
+  friendlyUnlinkError,
+  normalizeGestoriaEmail,
+  validateRiderLinkByEmail
+} from './gestoriaLinking';
 import { supabase } from './supabaseClient';
 
 const LOCAL = {
@@ -239,17 +245,69 @@ export const recoverRemoteSession = async () => {
   return true;
 };
 
-export const linkManagerByEmail = async (managerEmail: string) => {
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData.user) throw new Error('Debes iniciar sesión.');
+/**
+ * Link the signed-in rider to a gestoría by email.
+ *
+ * Honesty note: `profiles.manager_id` is NOT in the authenticated column UPDATE
+ * grant (migration 20260918160500). Direct `.update({ manager_id })` is blocked.
+ * Linking goes through RPC `link_manager_by_email` (SECURITY DEFINER). Apply
+ * migration `20260920141000_labora_gestoria_link_rpcs.sql` on the live project
+ * if the RPC is missing.
+ */
+export const linkManagerByEmail = async (
+  managerEmail: string,
+  directory: User[] = []
+) => {
+  const authenticatedUser = await requireAuthenticatedUser();
+  const currentRaw = localStorage.getItem(LOCAL.currentUser);
+  const current = currentRaw ? (JSON.parse(currentRaw) as User) : undefined;
+  if (!current || current.id !== authenticatedUser.id) {
+    throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
+  }
+  if (current.role !== UserRole.RIDER) {
+    throw new Error('Solo los autónomos pueden vincular una gestoría desde este formulario.');
+  }
+
+    const validation = validateRiderLinkByEmail(current, managerEmail, directory);
+  if (validation.ok === false) {
+    throw new Error(validation.message);
+  }
 
   const { error } = await supabase.rpc('link_manager_by_email', {
-    manager_email: managerEmail.trim().toLowerCase()
+    manager_email: validation.email
   });
-  if (error) throw error;
+  if (error) {
+    throw new Error(friendlyLinkError(error));
+  }
 
-  await loadRemoteWorkspace(authData.user.id);
+  return loadRemoteWorkspace(authenticatedUser.id);
 };
+
+/**
+ * Clear manager_id for the signed-in rider via RPC `unlink_own_manager`.
+ * Same column-grant constraint as link — no direct client UPDATE.
+ */
+export const unlinkOwnManager = async () => {
+  const authenticatedUser = await requireAuthenticatedUser();
+  const currentRaw = localStorage.getItem(LOCAL.currentUser);
+  const current = currentRaw ? (JSON.parse(currentRaw) as User) : undefined;
+  if (!current || current.id !== authenticatedUser.id) {
+    throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
+  }
+  if (current.role !== UserRole.RIDER) {
+    throw new Error('Solo los autónomos pueden desvincular una gestoría.');
+  }
+
+  const { error } = await supabase.rpc('unlink_own_manager');
+  if (error) {
+    throw new Error(friendlyUnlinkError(error));
+  }
+
+  return loadRemoteWorkspace(authenticatedUser.id);
+};
+
+/** @deprecated Prefer normalizeGestoriaEmail from gestoriaLinking. */
+export const normalizeManagerEmail = (email: string) => normalizeGestoriaEmail(email);
 
 export const updateRemoteUserConfig = async (platforms: string[], banks: string[]) => {
   const authenticatedUser = await requireAuthenticatedUser();

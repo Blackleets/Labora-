@@ -13,9 +13,11 @@ La conversación es un hilo único entre ambos: cada mensaje tiene `senderId` / 
 
 ## Vinculación (previa a mensajería)
 
-1. El rider va a **Perfil → Relación de trabajo** e introduce el **correo** de la gestoría (`linkManagerByEmail`).
-2. La gestoría no “conecta” por OAuth: comparte su correo; el rider se vincula, o el flujo de cartera vigente añade el vínculo.
-3. Sin `managerId` el rider ve vacío honesto (“No tienes gestoría vinculada”) y se le indica Perfil — **no** se inventa un botón de conectar gestor.
+1. El autónomo abre **Perfil / Ajustes → Tu gestoría** e introduce el **correo** de la gestoría (`linkManagerByEmail` → RPC `link_manager_by_email`).
+2. La gestoría abre **Perfil / Ajustes → Tus clientes**, copia su correo y lo comparte; ve la lista de riders con `managerId === yo`. **No** hay invitaciones OAuth ni códigos inventados.
+3. Desvincular: el autónomo confirma en la misma sección (`unlinkOwnManager` → RPC `unlink_own_manager`).
+4. Sin `managerId` el rider ve vacío honesto y el formulario de correo — **no** se inventa un botón de conectar gestor.
+5. `profiles.manager_id` **no** es actualizable por `.update()` del cliente (grant de columnas); hace falta el RPC. Si el RPC falta en el proyecto live, la UI muestra un error claro pidiendo aplicar la migración.
 
 ## UI (claridad)
 

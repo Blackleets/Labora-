@@ -3,7 +3,7 @@
 **Estado:** checklist lista para Lewis. **No marcar PASS** sin ejecutar con dos cuentas reales.  
 **Sin secretos de bot:** este documento no inventa resultados. CI solo prueba fail-closed / aislamiento de caché offline.
 
-Rama: `feat/labora-millionaire-design` · Ver también `scripts/uat-dual-smoke.md` y `npm run uat:dual`.
+Rama: `main` (o PR `feat/gestoria-link-and-docs`) · Ver también `scripts/uat-dual-smoke.md` y `npm run uat:dual`.
 
 ---
 
@@ -31,9 +31,14 @@ Rama: `feat/labora-millionaire-design` · Ver también `scripts/uat-dual-smoke.m
 
 | # | Paso | Quién | Criterio PASS |
 | --- | --- | --- | --- |
-| B1 | Vincular por correo | Rider invita gestoría **o** gestoría añade rider (flujo actual) | Relación `managerId` / vínculo visible solo entre esos dos |
-| B2 | Cliente en cartera | Gestoría | Rider aparece en lista de clientes vinculados |
-| B3 | No vinculado | Tercera cuenta (si hay) | **No** ve datos de A ni B |
+| B1 | Gestoría copia su correo | B en **Perfil → Tus clientes** | Correo visible; sin invitaciones falsas |
+| B2 | Autónomo vincula por correo | A en **Perfil → Tu gestoría** escribe el correo de B | Badge «Gestoría vinculada»; nombre/correo de B visibles |
+| B3 | Cliente en lista | B | A aparece bajo **Tus clientes** (`managerId === B`) |
+| B4 | Mensajes habilitados | A y B | Contactos de mensajería dejan de estar vacíos (ver sección C) |
+| B5 | Rechazo honesto | A intenta correo de otro rider / inválido | Error claro; **no** se crea vínculo |
+| B6 | Desvincular | A confirma desvínculo | `managerId` limpio; listas y mensajes vuelven al vacío honesto |
+| B7 | RPC ausente | Si Lewis aún no aplicó la migración | Error que pide aplicar `link_manager_by_email` — **no** fingir éxito |
+| B8 | Tercera cuenta | C | **No** ve datos de A ni B |
 
 ---
 

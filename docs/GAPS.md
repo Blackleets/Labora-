@@ -1,25 +1,45 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: `feat/labora-millionaire-design`. **Do not merge** until product gates say so.
+Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ PR `feat/gestoria-link-and-docs`).
 
-## Done without secrets (this / recent agent passes)
+## Merged on main (no longer blocked)
 
 | Item | Notes |
 | --- | --- |
-| Premium UI / brand on PR #11 branch | Parchment / forest / clay; logos; meadow login |
-| Banking UI honesty | Copy: **Open Banking próximamente**; no «conectado» sin adapter real; `bankAdapter` / `bankApi` fail-closed |
-| Automated fail-closed tests | Messaging per-user cache isolation; bank refuse; billing flag default off |
-| Dual-account UAT **prep** | `android-shell/docs/UAT_DUAL_ACCOUNT.md` + `npm run uat:dual` — checklist only, **not** PASS |
-| Play Store **checklist** | `ANDROID.md` + `docs/PLAY_STORE_GATES.md` — shell marked **NOT Play-ready** |
-| Billing prep (flag OFF) | `.env.example` documents Stripe/Gemini server secrets; `VITE_BILLING_ENABLED=false`; BillingCard gated |
-| Build / vitest | Must stay green on branch |
+| **PR #11** premium UI / brand | Merged — parchment / forest / clay; logos; meadow login |
+| **PR #12** messaging clarity | Merged — rider↔gestoría hub titles, badges, eligibility, `docs/MESSAGING.md` |
+| **PR #13** gestoría signup | Merged — NIF + colegiado required (`docs/REGISTRATION.md`) |
+| Autónomo ↔ gestoría **linking UI** | Settings: **Tu gestoría** / **Tus clientes**; link by email; unlink with confirm |
+| Linking RPCs (repo) | Migration `20260920141000_labora_gestoria_link_rpcs.sql` — must be **applied** on live Supabase |
+
+## Done without secrets (agent-safe)
+
+| Item | Notes |
+| --- | --- |
+| Banking UI honesty | Copy: **Open Banking próximamente**; fail-closed adapters |
+| Fail-closed vitest | Messaging cache isolation; bank refuse; billing flag default off; gestoría link helpers |
+| Dual-account UAT **prep** | `docs/UAT_DUAL_ACCOUNT.md` + `npm run uat:dual` — checklist only, **not** PASS |
+| Play Store **checklist** | `ANDROID.md` + `docs/PLAY_STORE_GATES.md` — shell **NOT Play-ready** |
+| Billing prep (flag OFF) | `.env.example`; `VITE_BILLING_ENABLED=false`; BillingCard gated |
+| Build / typecheck / vitest | Must stay green |
+
+## Linking — what works / what needs Lewis
+
+| Capability | State |
+| --- | --- |
+| Rider UI: show linked gestoría or email form | Works in Settings (`Tu gestoría`) |
+| Manager UI: share email + list linked clients | Works in Settings (`Tus clientes`) — no fake invites |
+| Client validation (role=manager/admin only) | Pure helpers + RPC reject riders / self |
+| Set / clear `profiles.manager_id` | **Only via RPC** — column is **not** in authenticated UPDATE grant |
+| RPC applied on live project | **Lewis must run** migration (or confirm already present) |
+| Direct `.update({ manager_id })` from Vite | **Cannot** — by design (column security) |
 
 ## Blocked on Lewis
 
 | Gap | State |
 | --- | --- |
-| **PR #11** merge | OPEN — **DO NOT MERGE** until Lewis says so |
 | **Dual-account UAT sign-off** | Checklist ready; needs two real accounts + Lewis signature |
+| **Apply gestoría link RPCs** on live Supabase | Migration in repo; confirm execute |
 | **Stripe secrets + Price IDs** | Supabase Function secrets; sandbox checkout/webhook/portal UAT |
 | **Gemini / OCR API key** | Server secret only (`GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
 | **`VITE_BILLING_ENABLED=true`** | Only after sandbox UAT passes |
@@ -28,17 +48,14 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `feat/labora-millionaire-design`. **
 | **Platform OAuth** (Uber, Glovo, …) | Catalog / preference only — no fake Connect |
 | **Adversarial RLS on live Supabase** | Needs Lewis’s project + dual sessions |
 
-## Logos (reference)
+## Draft PR #1 (foundation)
 
-| Source | Brands |
-| --- | --- |
-| Simple Icons CDN (verified 200) | glovo, uber, ubereats, justeat, deliveroo, paypal, stripe, revolut, square, quickbooks, xero, wise, n26, chase, wellsfargo, lyft |
-| Local geometric SVG (CDN absent / fail) | glovo, uber, uber_eats, just_eat, cabify, bolt, bolt_food |
-| Google favicon → Clearbit → Lucide | stuart, paack, catcher, banorte, holded, amazon_flex, rappi, didi*, wolt, freenow, qonto, bbva_*, santander_es |
+See [`docs/FOUNDATION_DRAFT.md`](./FOUNDATION_DRAFT.md). **Do not merge** the draft. Recommendation: **close** as superseded by current `main`; cherry-pick only if fiscal/trust/migration pieces are still wanted.
 
 ## Product honesty
 
 - Spanish UI preserved.
 - “En mi actividad” = profile preference, **not** connected OAuth.
 - Banking remains Open Banking / próximamente — fail-closed.
+- Linking is email + `manager_id` RPC — **not** OAuth, **not** invite codes unless already in schema.
 - Do not invent UAT PASS or Play-ready claims.
