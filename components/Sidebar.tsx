@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Bell,
   BookOpen,
@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
+import { unreadIncomingCount } from '../modules/messages/messagingRules';
+import { offlineFallbackFor } from '../modules/messages/repositories/messageCache';
 import { signOutRemote } from '../services/authWorkspace';
 import { identityImageStore } from '../services/identityImage';
 import { UserRole } from '../types';
@@ -48,6 +50,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
     return requirement.managerId === currentUser.id && requirement.status === 'pending';
   }).length;
 
+  // Cheap unread: per-user offline cache only (no extra network). Best-effort.
+  const unreadMessages = useMemo(() => {
+    if (!currentUser?.id) return 0;
+    return unreadIncomingCount(offlineFallbackFor(currentUser.id), currentUser.id);
+  }, [currentUser?.id, currentView]);
+
   const riderPrimary: NavItem[] = [
     { id: 'dashboard', label: 'Inicio', icon: Home },
     { id: 'money', label: 'Ingresos y gastos', icon: Wallet },
@@ -56,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   ];
 
   const riderWorkspace: NavItem[] = [
-    { id: 'messages', label: 'Mensajes', icon: MessageSquare },
+    { id: 'messages', label: 'Mensajes', icon: MessageSquare, badge: unreadMessages },
     { id: 'docs', label: 'Documentos', icon: BookOpen },
     { id: 'integrations', label: 'Plataformas', icon: Receipt }
   ];
@@ -70,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   ];
 
   const managerWorkspace: NavItem[] = [
-    { id: 'messages', label: 'Mensajes', icon: MessageSquare },
+    { id: 'messages', label: 'Mensajes', icon: MessageSquare, badge: unreadMessages },
     { id: 'docs', label: 'Documentos', icon: BookOpen }
   ];
 

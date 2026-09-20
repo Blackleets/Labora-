@@ -39,6 +39,8 @@ Rama: `feat/labora-millionaire-design` · Ver también `scripts/uat-dual-smoke.m
 
 ## C. Mensajería y aislamiento RLS
 
+Contrato bidireccional y copy de UI: ver [`docs/MESSAGING.md`](./MESSAGING.md).
+
 | # | Paso | Criterio PASS |
 | --- | --- | --- |
 | C1 | Rider envía mensaje a gestoría vinculada | Gestoría lo recibe; estado coherente |
