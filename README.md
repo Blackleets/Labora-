@@ -70,4 +70,4 @@ npm run cap:open
 
 ## QA
 
-Ver `LABORA_TESTING.md` para el plan dual-cuenta. No marques PASS sin ejecutarlo.
+Ver `LABORA_TESTING.md` y `docs/UAT_DUAL_ACCOUNT.md` (`npm run uat:dual`) para el plan dual-cuenta. No marques PASS sin ejecutarlo.

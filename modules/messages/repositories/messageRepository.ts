@@ -1,37 +1,14 @@
 import { supabase } from '../../../services/supabaseClient';
 import { User } from '../../../types';
 import { Message } from '../types';
+import {
+  offlineFallbackFor,
+  purgeLegacySharedCache,
+  readMessageCache,
+  writeMessageCache
+} from './messageCache';
 
-const STORAGE_PREFIX = 'labora_messages:';
 type NewMessage = Omit<Message, 'id' | 'timestamp' | 'status'>;
-
-const cacheKeyFor = (userId: string) => `${STORAGE_PREFIX}${userId}`;
-
-const cache = (userId: string, messages: Message[]) => {
-  try {
-    localStorage.setItem(cacheKeyFor(userId), JSON.stringify(messages));
-  } catch {
-    /* cache is optional */
-  }
-};
-
-const cachedFor = (userId: string): Message[] => {
-  try {
-    const data = localStorage.getItem(cacheKeyFor(userId));
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
-
-/** Drop legacy unscoped cache that could leak across accounts on the same browser. */
-const purgeLegacySharedCache = () => {
-  try {
-    localStorage.removeItem('labora_messages');
-  } catch {
-    /* ignore */
-  }
-};
 
 const mapRows = (rows: any[], users: User[]): Message[] => {
   const names = new Map(users.map((user) => [user.id, user.companyName || user.name]));
@@ -64,10 +41,10 @@ export const messageRepository = {
     if (error) {
       console.error('Error loading remote messages:', error);
       // Never return another account's cache. Only the current session user cache is allowed.
-      return sessionUserId ? cachedFor(sessionUserId) : [];
+      return offlineFallbackFor(sessionUserId) as Message[];
     }
     const messages = mapRows(data || [], users);
-    if (sessionUserId) cache(sessionUserId, messages);
+    if (sessionUserId) writeMessageCache(sessionUserId, messages);
     return messages;
   },
 
@@ -96,7 +73,10 @@ export const messageRepository = {
       timestamp: data.created_at,
       status: data.status
     };
-    cache(sessionUserId, [...cachedFor(sessionUserId).filter((item) => item.id !== newMessage.id), newMessage]);
+    writeMessageCache(sessionUserId, [
+      ...readMessageCache(sessionUserId).filter((item) => item.id !== newMessage.id),
+      newMessage
+    ]);
     return newMessage;
   },
 

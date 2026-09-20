@@ -37,7 +37,7 @@ export const BankConnectFlow: React.FC<BankConnectFlowProps> = ({ onClose }) => 
         <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A]">
           <Building2 size={21} />
         </div>
-        <p className="labora-kicker mt-4 text-[#789582]">Open Banking</p>
+        <p className="labora-kicker mt-4 text-[#789582]">Open Banking · próximamente</p>
         <h2 className="labora-display mt-1 text-xl font-semibold text-[#1E231F]">
           Conexión bancaria todavía no habilitada.
         </h2>
