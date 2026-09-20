@@ -102,10 +102,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
           onClick={() => handleNavigate(item.id)}
           className={`group flex w-full items-center gap-3 rounded-[18px] px-3 py-2.5 text-left text-[13px] transition-all ${
             active
-              ? 'font-bold text-[#1E2A24] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
+              ? 'bg-[#EBF3ED] font-bold text-[#2F5D4A] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
               : 'font-semibold text-[#6B645C] hover:bg-[#F3EEE4]/90 hover:text-[#2A332E]'
           }`}
-          style={active ? { background: 'linear-gradient(180deg, #F2F8F3 0%, #EBF3ED 100%)' } : undefined}
         >
           <span
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] transition ${

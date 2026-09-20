@@ -113,7 +113,7 @@ textarea:focus-visible {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--ghibli-border, #E8DFC8);
-  border-radius: calc(var(--labora-radius) + 10px);
+  border-radius: 30px;
   background:
     radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 78%, transparent), transparent 36%),
     radial-gradient(ellipse at 16% -4%, color-mix(in srgb, #C9DDEE 62%, transparent), transparent 44%),
@@ -170,6 +170,15 @@ textarea:focus-visible {
   box-shadow:
     0 1px 0 rgba(255,255,255,0.9) inset,
     var(--labora-shadow);
+}
+
+.labora-card-parchment {
+  border: 1px solid var(--ghibli-border, #E8DFC8);
+  background: linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%);
+  border-radius: 28px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 24px 70px rgba(47, 93, 74, 0.10);
 }
 
 .labora-card-interactive {
@@ -274,4 +283,25 @@ body,
 
 @media (prefers-reduced-motion: reduce) {
   .labora-card-interactive { transition: none; }
+}
+
+
+/* Superdesign — Prados y Claridad helpers */
+.labora-card-auth {
+  border-radius: 28px;
+  border: 1px solid var(--labora-border, #E8DFC8);
+  background: linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%);
+  box-shadow: 0 24px 70px rgba(47, 93, 74, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+.labora-btn-clay {
+  background: linear-gradient(180deg, #D97757 0%, #C96846 100%);
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(201, 104, 70, 0.28);
+}
+.labora-ghibli-ambient {
+  background:
+    radial-gradient(ellipse at 78% 14%, rgba(250, 208, 130, 0.8), transparent 38%),
+    radial-gradient(ellipse at 18% 10%, rgba(180, 210, 230, 0.42), transparent 46%),
+    radial-gradient(ellipse at 50% 70%, rgba(141, 170, 154, 0.4), transparent 55%),
+    linear-gradient(180deg, #C9DDEE 0%, #DCEAE6 28%, #E8F0E0 52%, #FAF6EE 78%, #FAF3EE 100%);
 }

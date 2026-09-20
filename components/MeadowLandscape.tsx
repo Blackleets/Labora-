@@ -57,12 +57,12 @@ const MeadowLandscape: React.FC<MeadowLandscapeProps> = ({
     >
       <defs>
         <radialGradient id={gid('sun-glow')} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={palette.sunGlow} stopOpacity="0.85" />
-          <stop offset="55%" stopColor={palette.sunGlow} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={palette.sunGlow} stopOpacity="0" />
+          <stop offset="0%" stopColor={isNight ? palette.sunGlow : '#FAD082'} stopOpacity="0.88" />
+          <stop offset="55%" stopColor={isNight ? palette.sunGlow : '#FAD082'} stopOpacity="0.30" />
+          <stop offset="100%" stopColor={isNight ? palette.sunGlow : '#FAD082'} stopOpacity="0" />
         </radialGradient>
         <linearGradient id={gid('sky-haze')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={isNight ? '#B8D5E5' : '#FFFFFF'} stopOpacity={isNight ? 0.12 : 0.35} />
+          <stop offset="0%" stopColor={isNight ? '#B8D5E5' : '#D2E4F0'} stopOpacity={isNight ? 0.12 : 0.42} />
           <stop offset="100%" stopColor={palette.hillNear} stopOpacity="0" />
         </linearGradient>
         <linearGradient id={gid('path')} x1="0" y1="0" x2="1" y2="1">

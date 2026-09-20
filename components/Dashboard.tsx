@@ -29,6 +29,12 @@ const currentQuarter = () => {
   return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
 };
 
+const greetSpanish = (hour: number) => {
+  if (hour < 12) return 'Buenos días';
+  if (hour < 20) return 'Buenas tardes';
+  return 'Buenas noches';
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   const { currentUser, getFiscalSummary, privacyMode, requirements, incomes, expenses, showNotification } = useData();
   const { selectedCountry } = useCountry();
@@ -192,13 +198,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   ] as const;
 
   return (
-    <div id="rider-dashboard" className="mx-auto max-w-5xl space-y-6 pb-8">
-      <section className="labora-hero p-5 sm:p-7">
+    <div id="rider-dashboard" className="mx-auto max-w-6xl space-y-6 pb-10">
+      <section className="labora-hero p-5 sm:p-7 lg:p-9">
         <MeadowLandscape
           variant="hero"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] w-full opacity-[0.48]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] w-full opacity-[0.5]"
         />
-        <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_230px] lg:items-end">
+        <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-end">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="labora-chip labora-kicker text-[#2F5D4A]">Autónomo · {period}</span>
@@ -213,7 +219,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               )}
             </div>
 
-            <p className="mt-6 text-sm font-semibold text-[#6B645C]">Hola, {firstName}</p>
+            <p className="mt-6 text-sm font-semibold text-[#6B645C]">{greetSpanish(nowDate.getHours())}, {firstName}</p>
             <h1 className="labora-display mt-1.5 max-w-2xl text-[2.05rem] font-semibold leading-[1.05] text-[#1E2A24] sm:text-[2.7rem]">
               Tu trimestre, con luz de prado y cuidado.
             </h1>
