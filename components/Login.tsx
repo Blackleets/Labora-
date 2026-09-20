@@ -591,9 +591,20 @@ const Login: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-medium tracking-[0.02em] text-[#8A8278]">
-            <ShieldCheck size={12} className="text-[#2F5D4A]/70" />
-            Auth segura · archivo privado · sin datos inventados
+          <div className="mt-8 space-y-2 text-center">
+            <div className="flex items-center justify-center gap-2 text-[10px] font-medium tracking-[0.02em] text-[#8A8278]">
+              <ShieldCheck size={12} className="text-[#2F5D4A]/70" />
+              Auth segura · archivo privado · sin datos inventados
+            </div>
+            <p className="text-[10px] text-[#9A9186]">
+              <a href="/privacidad.html" className="font-semibold text-[#2F5D4A] underline-offset-2 hover:underline">
+                Privacidad
+              </a>
+              <span className="mx-1.5 text-[#D4CCC0]">·</span>
+              <a href="/terminos.html" className="font-semibold text-[#2F5D4A] underline-offset-2 hover:underline">
+                Términos
+              </a>
+            </p>
           </div>
         </div>
       </section>

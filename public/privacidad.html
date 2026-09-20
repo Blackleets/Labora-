@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacidad · Labora+</title>
+  <link rel="icon" href="/favicon.png" />
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; font-family: "Plus Jakarta Sans", system-ui, sans-serif; background: #FFFEFB; color: #1E2A24; line-height: 1.55; }
+    main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    h1 { font-size: 1.75rem; letter-spacing: -0.03em; margin: 0 0 0.35rem; }
+    .kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #789582; }
+    h2 { font-size: 1.05rem; margin: 1.75rem 0 0.5rem; }
+    p, li { color: #4A534C; font-size: 0.95rem; }
+    a { color: #2F5D4A; }
+    .note { margin-top: 1.5rem; padding: 0.9rem 1rem; border-radius: 12px; background: #F7F3EA; border: 1px solid #E8DFC8; font-size: 0.85rem; color: #4A5D52; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker">Labora+</p>
+    <h1>Política de privacidad</h1>
+    <p>Última actualización: 20 de septiembre de 2026 (Europa/París).</p>
+    <p>Labora+ ayuda a autónomos (riders) y gestorías a organizar actividad fiscal y operativa. Esta página describe qué datos tratamos y con qué fin. No es asesoramiento legal.</p>
+
+    <h2>Responsable</h2>
+    <p>El responsable del tratamiento es el operador de Labora+ (Blackleets / Labora-). Contacto de privacidad: el correo de la cuenta con la que te registraste o el canal indicado en la app.</p>
+
+    <h2>Qué datos tratamos</h2>
+    <ul>
+      <li>Cuenta: correo, nombre, rol (autónomo / gestoría), y datos de perfil que introduces (teléfono, NIF, matrícula, nombre de gestoría, nº de colegiado).</li>
+      <li>Contenido operativo: gastos, ingresos, documentos, mensajes entre autónomo y gestoría vinculada, peticiones y preferencias de la app.</li>
+      <li>Medios: fotos de tickets o identidad que subes a almacenamiento privado del proyecto.</li>
+      <li>Técnicos: sesión de autenticación (Supabase Auth) y registros necesarios para seguridad.</li>
+    </ul>
+
+    <h2>Para qué</h2>
+    <ul>
+      <li>Prestarte el servicio (login, archivo, mensajería con tu gestoría vinculada, revisión).</li>
+      <li>Seguridad (control de acceso, RLS, prevención de abuso).</li>
+      <li>Funciones opcionales de lectura automática (OCR / asistente) solo si el operador ha configurado la clave de servidor correspondiente; si no está configurada, la función falla de forma explícita y no inventa datos.</li>
+    </ul>
+
+    <h2>Base y conservación</h2>
+    <p>Tratamos los datos para ejecutar el contrato de servicio y, cuando aplique, el interés legítimo de seguridad. Conservamos la cuenta mientras esté activa y el contenido que tú o tu gestoría vinculada necesiten para la actividad; puedes solicitar borrado de cuenta contactándonos.</p>
+
+    <h2>Compartición</h2>
+    <ul>
+      <li>Tu gestoría vinculada ve lo que las políticas de la app permiten (clientes vinculados, mensajes, peticiones, revisiones).</li>
+      <li>Proveedores de infraestructura: autenticación y base de datos (Supabase), y, si se activan, pagos (Stripe) o OCR (proveedor de IA), siempre bajo contrato y sin vender tus datos.</li>
+      <li>No hay OAuth falso a Uber/Glovo ni Open Banking en vivo; esas preferencias son solo de perfil hasta que existan integraciones reales.</li>
+    </ul>
+
+    <h2>Tus derechos</h2>
+    <p>Puedes solicitar acceso, rectificación, supresión, limitación, portabilidad y oposición según la normativa aplicable (RGPD / LOPDGDD). También puedes reclamar ante la AEPD.</p>
+
+    <h2>Seguridad</h2>
+    <p>Usamos autenticación, cifrado en tránsito (HTTPS) y políticas de fila (RLS) para aislar datos entre usuarios. Ningún sistema es infalible; reporta incidencias por el canal de soporte.</p>
+
+    <div class="note">Cobros con Stripe y OCR con Gemini permanecen desactivados hasta que el operador configure secretos de servidor. La app no muestra estados “conectado” inventados.</div>
+    <p style="margin-top:2rem"><a href="/terminos.html">Términos de uso</a> · <a href="/">Volver a Labora+</a></p>
+  </main>
+</body>
+</html>

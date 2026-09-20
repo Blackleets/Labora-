@@ -204,7 +204,13 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
         console.error(error);
         setSelectedExpense(makeManualDraft({ dataUrl: resultUrl, hash: receiptHash, mimeType: file.type }));
         setIsManualOpen(true);
-        showNotification('error', 'No se pudo leer el ticket. La imagen se conserva para que completes los datos manualmente.');
+        const code = error instanceof Error ? error.message : '';
+        showNotification(
+          'error',
+          code === 'AI_NOT_CONFIGURED'
+            ? 'El OCR no está configurado en el servidor. Completa el gasto a mano; la imagen se conserva.'
+            : 'No se pudo leer el ticket. La imagen se conserva para que completes los datos manualmente.'
+        );
       }
     } catch (error) {
       console.error(error);

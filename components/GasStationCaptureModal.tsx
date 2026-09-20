@@ -132,6 +132,13 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
         );
       } catch (ocrError) {
         console.warn('OCR unavailable or failed:', ocrError);
+        const code = ocrError instanceof Error ? ocrError.message : '';
+        if (code === 'AI_NOT_CONFIGURED') {
+          showNotification(
+            'info',
+            'OCR no configurado: rellena gasolinera, fecha e importe a mano. La foto se guarda igual.'
+          );
+        }
         showNotification('info', 'La foto quedó cargada. Completa los datos manualmente.');
       }
     } catch (error) {
