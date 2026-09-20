@@ -123,7 +123,7 @@ const MainLayout: React.FC = () => {
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="safe-area-top z-20 flex h-[72px] shrink-0 items-center justify-between border-b border-[#E8DFC8]/70 bg-[#FFFEFB]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
+        <header className="safe-area-top z-20 flex h-[80px] shrink-0 items-center justify-between border-b border-[#E8DFC8]/70 bg-[#FFFEFB]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -138,10 +138,10 @@ const MainLayout: React.FC = () => {
             </div>
 
             <div className="min-w-0">
-              <p className="hidden text-[9px] font-bold uppercase tracking-[0.18em] text-[#5A7A68] lg:block">
+              <p className="labora-section-label hidden text-[#5A7A68] lg:block">
                 {isManager ? 'Gestoría' : 'Autónomo'}
               </p>
-              <span className="block truncate font-serif text-[1.22rem] font-semibold tracking-[-0.03em] text-[#1E2A24]">
+              <span className="labora-title mt-0.5 block truncate text-[1.3rem] text-[#1E2A24]">
                 {getViewTitle()}
               </span>
             </div>
@@ -180,7 +180,7 @@ const MainLayout: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 md:px-8 md:py-9">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-7 md:px-8 md:py-10">
           <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
         </div>
 

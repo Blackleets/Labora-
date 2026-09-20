@@ -30,6 +30,38 @@
   --labora-radius-sm: 12px;
   --labora-radius-lg: 28px;
 
+  /* Type scale — private-banking / editorial */
+  --labora-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --labora-font-sans: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+  --labora-display: clamp(2.75rem, 4.2vw, 4.25rem);
+  --labora-display-sm: clamp(2.05rem, 3.2vw, 2.85rem);
+  --labora-title: clamp(1.75rem, 2.2vw, 2rem);
+  --labora-title-sm: 1.25rem;
+  --labora-body: 0.9375rem;
+  --labora-body-lg: 1rem;
+  --labora-label: 0.625rem;
+  --labora-leading-display: 1.05;
+  --labora-leading-body: 1.65;
+  --labora-tracking-display: -0.03em;
+  --labora-tracking-label: 0.14em;
+
+  /* Spacing rhythm */
+  --labora-space-1: 0.25rem;
+  --labora-space-2: 0.5rem;
+  --labora-space-3: 0.75rem;
+  --labora-space-4: 1rem;
+  --labora-space-5: 1.25rem;
+  --labora-space-6: 1.5rem;
+  --labora-space-8: 2rem;
+  --labora-space-10: 2.5rem;
+  --labora-space-12: 3rem;
+  --labora-gap-fields: 1.35rem;
+  --labora-gap-section: 1.75rem;
+  --labora-gap-grid: 1.5rem;
+  --labora-pad-card: 2rem;
+  --labora-pad-card-lg: 2.5rem;
+  --labora-pad-hero: 2.5rem;
+
   /* Atmosphere aliases (overridden by GhibliAtmosphereContext for time-of-day) */
   --ghibli-forest: #2F5D4A;
   --ghibli-deepforest: #213B2F;
@@ -66,6 +98,9 @@ body:not(.dark) {
     radial-gradient(ellipse 45% 35% at 50% 100%, rgba(201, 104, 70, 0.03), transparent 45%),
     var(--labora-canvas);
   color: var(--labora-ink);
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-body);
+  line-height: var(--labora-leading-body);
   font-feature-settings: 'ss01' on, 'cv11' on;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -191,31 +226,70 @@ textarea:focus-visible {
 .labora-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   border-radius: 999px;
   border: 1px solid var(--ghibli-bordergreen, #D0E5D7);
   background: color-mix(in srgb, var(--labora-moss-soft) 80%, white);
-  padding: 0.35rem 0.75rem;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  padding: 0.4rem 0.9rem;
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-label);
+  font-weight: 600;
+  letter-spacing: var(--labora-tracking-label);
   text-transform: uppercase;
   color: var(--labora-primary);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
 .labora-kicker {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-label);
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  color: var(--labora-muted);
+}
+
+.labora-label {
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-label);
+  font-weight: 600;
+  letter-spacing: var(--labora-tracking-label);
+  text-transform: uppercase;
+  color: var(--labora-muted);
 }
 
 .labora-display {
-  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
-  letter-spacing: -0.03em;
+  font-family: var(--labora-font-display);
+  font-size: var(--labora-display);
+  line-height: var(--labora-leading-display);
+  letter-spacing: var(--labora-tracking-display);
   font-optical-sizing: auto;
   font-weight: 560;
+}
+
+.labora-title {
+  font-family: var(--labora-font-display);
+  font-size: var(--labora-title);
+  line-height: 1.15;
+  letter-spacing: var(--labora-tracking-display);
+  font-optical-sizing: auto;
+  font-weight: 560;
+}
+
+.labora-body {
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-body);
+  line-height: var(--labora-leading-body);
+  color: var(--labora-muted);
+}
+
+.labora-section-label {
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-label);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7A8F82;
 }
 
 .labora-divider {
@@ -245,7 +319,7 @@ textarea:focus-visible {
 
 .labora-gold-line {
   height: 1.5px;
-  width: 40px;
+  width: 48px;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--labora-champagne), transparent);
 }
@@ -307,7 +381,14 @@ body,
 }
 
 @media (max-width: 640px) {
-  :root { --labora-radius: 16px; --labora-radius-lg: 22px; }
+  :root {
+    --labora-radius: 16px;
+    --labora-radius-lg: 22px;
+    --labora-display: clamp(2.15rem, 8vw, 2.75rem);
+    --labora-title: 1.65rem;
+    --labora-pad-card: 1.75rem;
+    --labora-pad-hero: 1.5rem;
+  }
   .labora-hero { border-radius: 18px; }
   button, a, [role='button'] { touch-action: manipulation; }
   input, select, textarea { font-size: 16px; }

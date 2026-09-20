@@ -52,8 +52,8 @@ const Login: React.FC = () => {
 
   const normalizeEmail = (value: string) => value.trim().toLowerCase();
   const inputClass =
-    'w-full rounded-xl border border-[#E8DFC8] bg-[#FFFEFB] px-4 py-3.5 text-[15px] text-[#1E2A24] outline-none transition placeholder:text-[#9A9186] focus:border-[#2F5D4A]/40 focus:ring-4 focus:ring-[#2F5D4A]/08';
-  const labelClass = 'mb-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6B645C]';
+    'w-full rounded-xl border border-[#E8DFC8] bg-[#FFFEFB] px-4 py-3.5 text-[15px] leading-normal text-[#1E2A24] outline-none transition placeholder:text-[#9A9186] focus:border-[#2F5D4A]/40 focus:ring-4 focus:ring-[#2F5D4A]/08';
+  const labelClass = 'labora-label mb-2.5 block';
 
   const resetFeedback = () => {
     setError('');
@@ -213,7 +213,7 @@ const Login: React.FC = () => {
           className="pointer-events-none absolute inset-0 h-full w-full opacity-90"
         />
 
-        <div className="relative z-10 flex flex-1 flex-col justify-between p-10 xl:p-14">
+        <div className="relative z-10 flex flex-1 flex-col justify-between p-12 xl:p-16 2xl:p-20">
           <div className="flex items-center justify-between">
             <Logo size="lg" showText variant="light" />
             <span
@@ -228,23 +228,23 @@ const Login: React.FC = () => {
             </span>
           </div>
 
-          <div className="mt-auto max-w-xl pb-10">
+          <div className="mt-auto max-w-lg pb-12 xl:max-w-xl">
             <p
               className="labora-kicker"
               style={{ color: palette.gold }}
             >
               Claridad fiscal
             </p>
-            <div className="labora-gold-line mt-3" />
-            <h1 className="labora-display mt-5 text-[3rem] leading-[1.05] tracking-[-0.03em] text-[#1E2A24] xl:text-[3.5rem]">
-              Evidencia. Confianza.<br />Sin ruido.
+            <div className="labora-gold-line mt-4" />
+            <h1 className="labora-display mt-6 text-[#1E2A24] xl:text-[4rem] 2xl:text-[4.35rem]">
+              Evidencia.<br />Confianza.<br />Sin ruido.
             </h1>
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-[#4A5D52]">
-              Labora+ es el espacio de trabajo para autónomos y gestorías que necesitan
-              claridad fiscal, archivo privado y estados que se pueden demostrar.
+            <p className="labora-body mt-6 max-w-md text-[15px] leading-[1.7] text-[#4A5D52] xl:text-base">
+              Espacio de trabajo para autónomos y gestorías: claridad fiscal,
+              archivo privado y estados demostrables.
             </p>
 
-            <div className="mt-10 grid max-w-lg grid-cols-3 gap-3">
+            <div className="mt-12 grid max-w-lg grid-cols-3 gap-5">
               {[
                 { k: 'Auth', v: 'Sesión segura' },
                 { k: 'Docs', v: 'Archivo privado' },
@@ -252,13 +252,13 @@ const Login: React.FC = () => {
               ].map((item) => (
                 <div
                   key={item.k}
-                  className="rounded-2xl border bg-[#FFFEFB]/75 px-3.5 py-3.5 shadow-[0_8px_28px_rgba(30,42,36,0.05)] backdrop-blur-md"
+                  className="rounded-2xl border bg-[#FFFEFB]/75 px-4 py-4 shadow-[0_8px_28px_rgba(30,42,36,0.05)] backdrop-blur-md"
                   style={{ borderColor: 'rgba(30,42,36,0.08)' }}
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: palette.clay }}>
+                  <p className="labora-label" style={{ color: palette.clay }}>
                     {item.k}
                   </p>
-                  <p className="mt-1.5 text-xs font-semibold text-[#2A332E]">{item.v}</p>
+                  <p className="mt-2 text-[13px] font-semibold leading-snug text-[#2A332E]">{item.v}</p>
                 </div>
               ))}
             </div>
@@ -267,21 +267,21 @@ const Login: React.FC = () => {
       </section>
 
       {/* Auth column — elevated paper card */}
-      <section className="relative z-20 flex flex-1 shrink-0 flex-col items-center justify-center px-4 py-8 pb-[34px] sm:px-8 lg:max-w-[520px] lg:bg-[#F7F3EA] lg:pb-0 lg:py-12 xl:max-w-[600px] xl:px-12">
+      <section className="relative z-20 flex flex-1 shrink-0 flex-col items-center justify-center px-5 py-10 pb-[40px] sm:px-10 lg:max-w-[540px] lg:bg-[#F7F3EA] lg:pb-0 lg:py-14 xl:max-w-[620px] xl:px-14">
         <div
           className="pointer-events-none absolute inset-0 hidden lg:block"
           style={{
             background: `radial-gradient(ellipse at 50% 0%, ${palette.softgreen}88, transparent 58%)`
           }}
         />
-        <div className="relative w-full max-w-[400px]">
+        <div className="relative w-full max-w-[420px]">
           <div className="labora-card-auth overflow-hidden">
-            <div className="border-b px-2.5 pt-2.5" style={{ borderColor: 'rgba(232,223,200,0.55)' }}>
-              <div className="grid grid-cols-2 gap-1 p-1">
+            <div className="border-b px-3 pt-3" style={{ borderColor: 'rgba(232,223,200,0.55)' }}>
+              <div className="grid grid-cols-2 gap-1.5 p-1.5">
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className={`rounded-xl py-2.5 text-xs font-semibold transition ${
+                  className={`rounded-xl py-3 text-[13px] font-semibold tracking-[-0.01em] transition ${
                     mode === 'login'
                       ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
                       : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
@@ -292,7 +292,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className={`rounded-xl py-2.5 text-xs font-semibold transition ${
+                  className={`rounded-xl py-3 text-[13px] font-semibold tracking-[-0.01em] transition ${
                     mode === 'register'
                       ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
                       : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
@@ -303,17 +303,17 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-6 sm:p-8">
+            <div className="p-8 sm:p-10">
               {mode === 'login' ? (
                 <>
-                  <h2 className="labora-display text-[1.85rem] leading-none tracking-tight text-[#1E2A24]">
+                  <h2 className="labora-title text-[#1E2A24]">
                     Bienvenido de nuevo
                   </h2>
-                  <p className="mt-2.5 text-sm leading-relaxed text-[#6B645C]">
-                    Accede a tu espacio de trabajo — autónomo o gestoría.
+                  <p className="labora-body mt-3 text-[15px] leading-[1.65]">
+                    Accede a tu espacio — autónomo o gestoría.
                   </p>
 
-                  <form onSubmit={handleLogin} className="mt-8 space-y-4">
+                  <form onSubmit={handleLogin} className="mt-9 space-y-5">
                     <div>
                       <label className={labelClass}>Correo</label>
                       <div className="relative">
@@ -365,12 +365,12 @@ const Login: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <div className="mb-6 flex items-center justify-between">
+                  <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
-                      <h2 className="labora-display text-[1.85rem] leading-none tracking-tight text-[#1E2A24]">
+                      <h2 className="labora-title text-[#1E2A24]">
                         Crea tu espacio
                       </h2>
-                      <p className="mt-2.5 text-sm text-[#6B645C]">Paso {registerStep} de 2</p>
+                      <p className="labora-body mt-3 text-[15px]">Paso {registerStep} de 2</p>
                     </div>
                     <div className="flex gap-1.5">
                       <span className={`h-1 w-7 rounded-full ${registerStep >= 1 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
@@ -379,10 +379,10 @@ const Login: React.FC = () => {
                   </div>
 
                   {registerStep === 1 ? (
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       <div>
                         <label className={labelClass}>Tipo de cuenta</label>
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-2 gap-3.5">
                           <button
                             type="button"
                             onClick={() => setRole(UserRole.RIDER)}
@@ -448,7 +448,7 @@ const Login: React.FC = () => {
                       </button>
                     </div>
                   ) : (
-                    <form onSubmit={handleRegister} className="space-y-4">
+                    <form onSubmit={handleRegister} className="space-y-5">
                       <button
                         type="button"
                         onClick={() => { setRegisterStep(1); resetFeedback(); }}
@@ -489,7 +489,7 @@ const Login: React.FC = () => {
                           <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" />
                         </div>
                       ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                           <div>
                             <label className={labelClass}>Nombre de la gestoría</label>
                             <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputClass} placeholder="Nombre comercial" />
@@ -522,7 +522,7 @@ const Login: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-medium text-[#8A8278]">
+          <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-medium tracking-[0.02em] text-[#8A8278]">
             <ShieldCheck size={12} className="text-[#2F5D4A]/70" />
             Auth segura · archivo privado · sin datos inventados
           </div>

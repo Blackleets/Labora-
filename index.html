@@ -24,7 +24,7 @@
             fontFamily: {
               serif: ['Fraunces', 'Georgia', 'serif'],
               ghibli: ['Fraunces', 'Georgia', 'serif'],
-              sans: ['Outfit', 'Plus Jakarta Sans', 'Inter', 'sans-serif'],
+              sans: ['Inter', 'Outfit', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
             },
             colors: {
               ghibli: {
@@ -68,9 +68,9 @@
 
     <style>
       :root {
-        --font-primary: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-        --font-serif: 'Fraunces', Georgia, serif;
-        --font-body: 'Outfit', 'Inter', sans-serif;
+        --font-primary: 'Inter', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+        --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+        --font-body: 'Inter', 'Outfit', system-ui, sans-serif;
         --primary: #2D5A43;
         --secondary: #1F2937;
         
@@ -130,7 +130,14 @@
 
       h1, h2, h3, h4, h5, h6, .font-heading {
         font-family: var(--font-primary);
-        letter-spacing: -0.025em;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+      }
+      .labora-display, .labora-title, .font-serif, .font-ghibli {
+        font-family: var(--font-serif) !important;
+      }
+      body {
+        line-height: 1.65;
       }
 
       /* Custom Scrollbar for Enterprise feel */

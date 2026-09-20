@@ -100,10 +100,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
         <button
           key={item.id}
           onClick={() => handleNavigate(item.id)}
-          className={`group flex w-full items-center gap-3 rounded-[18px] px-3 py-2.5 text-left text-[13px] transition-all ${
+          className={`group flex w-full items-center gap-3 rounded-[18px] px-3.5 py-3 text-left text-[13.5px] tracking-[-0.01em] transition-all ${
             active
-              ? 'bg-[#EBF3ED] font-bold text-[#2F5D4A] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
-              : 'font-semibold text-[#6B645C] hover:bg-[#F3EEE4]/90 hover:text-[#2A332E]'
+              ? 'bg-[#EBF3ED] font-semibold text-[#2F5D4A] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
+              : 'font-medium text-[#6B645C] hover:bg-[#F3EEE4]/90 hover:text-[#2A332E]'
           }`}
         >
           <span
@@ -144,13 +144,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
         }}
       >
         <div
-          className="flex h-[76px] items-center justify-between border-b px-5"
+          className="flex h-[84px] items-center justify-between border-b px-5"
           style={{ borderColor: palette.borderSubtle }}
         >
           <div>
             <Logo size="md" showText variant="light" animated />
             <p
-              className="ml-[48px] mt-1 text-[9px] font-bold uppercase tracking-[0.16em]"
+              className="labora-section-label ml-[48px] mt-1.5"
               style={{ color: palette.moss }}
             >
               Claridad fiscal
@@ -165,30 +165,30 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-5">
-          <div className="px-2 pb-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7A8F82]">
+        <nav className="flex-1 overflow-y-auto px-3.5 py-6">
+          <div className="px-2.5 pb-3">
+            <p className="labora-section-label">
               {isManager ? 'Gestoría' : 'Tu espacio'}
             </p>
           </div>
-          <div className="space-y-1">{renderItems(primaryItems)}</div>
+          <div className="space-y-1.5">{renderItems(primaryItems)}</div>
 
           <div
-            className="my-5 h-px"
+            className="my-7 h-px"
             style={{
               background: `linear-gradient(90deg, transparent, ${palette.border}, transparent)`
             }}
           />
 
-          <div className="px-2 pb-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7A8F82]">
+          <div className="px-2.5 pb-3">
+            <p className="labora-section-label">
               Comunicación
             </p>
           </div>
-          <div className="space-y-1">{renderItems(workspaceItems)}</div>
+          <div className="space-y-1.5">{renderItems(workspaceItems)}</div>
         </nav>
 
-        <div className="border-t p-4" style={{ borderColor: palette.borderSubtle }}>
+        <div className="border-t p-5" style={{ borderColor: palette.borderSubtle }}>
           <button
             onClick={() => handleNavigate('settings')}
             className="mb-3 flex w-full items-center gap-3 rounded-[20px] border p-3.5 text-left transition shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_8px_24px_rgba(47,93,74,0.04)]"
