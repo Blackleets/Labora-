@@ -6,6 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0F3D2E" />
     <meta name="color-scheme" content="light dark" />
+    <script>
+      (function () {
+        try {
+          var dark = localStorage.getItem('labora_darkmode') === 'true';
+          if (dark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+            document.documentElement.style.background = '#121816';
+            document.addEventListener('DOMContentLoaded', function () {
+              document.body.classList.add('dark');
+              document.body.style.colorScheme = 'dark';
+            });
+          } else {
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -116,19 +135,29 @@
         font-family: var(--font-serif);
       }
 
-      /* Dark Mode Overrides */
-      body.dark {
-        background-color: #0B1120 !important;
-        color: #E2E8F0 !important;
+      /* Dark Mode Overrides — align with --labora-* tokens (see index.css) */
+      html.dark, body.dark {
+        background-color: var(--labora-canvas, #121816) !important;
+        color: var(--labora-ink, #E8EDE9) !important;
       }
-      .dark .bg-white { background-color: #1E293B !important; border-color: #334155 !important; }
-      .dark .text-gray-900 { color: #FFFFFF !important; }
-      .dark .text-gray-800 { color: #F1F5F9 !important; }
-      .dark .text-gray-600 { color: #94A3B8 !important; }
-      .dark .text-gray-500 { color: #64748B !important; }
-      .dark .bg-gray-50 { background-color: #0F172A !important; }
-      .dark .border-gray-100, 
-      .dark .border-gray-200 { border-color: #334155 !important; }
+      .dark .bg-white {
+        background-color: var(--labora-surface, #1A221E) !important;
+        border-color: var(--labora-border, #2A3530) !important;
+        color: var(--labora-ink, #E8EDE9);
+      }
+      .dark .text-gray-900, .dark .text-stone-900 { color: var(--labora-ink, #E8EDE9) !important; }
+      .dark .text-gray-800, .dark .text-stone-800 { color: var(--labora-ink-soft, #C5D0C9) !important; }
+      .dark .text-gray-600, .dark .text-stone-600 { color: var(--labora-muted, #9AABA2) !important; }
+      .dark .text-gray-500, .dark .text-stone-500, .dark .text-stone-400 { color: var(--labora-muted, #9AABA2) !important; }
+      .dark .bg-gray-50, .dark .bg-stone-50 { background-color: var(--labora-parchment, #161C19) !important; }
+      .dark .border-gray-100,
+      .dark .border-gray-200,
+      .dark .border-stone-100,
+      .dark .border-stone-200 { border-color: var(--labora-border, #2A3530) !important; }
+      .dark .glass-panel {
+        background: color-mix(in srgb, var(--labora-surface, #1A221E) 90%, transparent);
+        border-color: var(--labora-border, #2A3530);
+      }
 
       h1, h2, h3, h4, h5, h6, .font-heading {
         font-family: var(--font-primary);

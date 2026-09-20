@@ -87,6 +87,300 @@
   --ghibli-ambient-gradient: radial-gradient(circle at 80% 20%, rgba(250, 208, 130, 0.08) 0%, rgba(250, 246, 238, 0.03) 60%, transparent 100%);
 }
 
+/* ── Dark theme tokens (body.dark / html.dark) ───────────────────────── */
+html.dark,
+body.dark {
+  color-scheme: dark;
+  --labora-ink: #E8EDE9;
+  --labora-ink-soft: #C5D0C9;
+  --labora-primary: #6FAF8E;
+  --labora-primary-2: #5A9A78;
+  --labora-primary-3: #7EC49A;
+  --labora-clay: #E08A6A;
+  --labora-clay-deep: #D47858;
+  --labora-gold: #D4A04A;
+  --labora-gold-soft: #C4A574;
+  --labora-champagne: #C4A574;
+  --labora-canvas: #121816;
+  --labora-parchment: #161C19;
+  --labora-ivory: #1A221E;
+  --labora-moss: #6FAF8E;
+  --labora-moss-soft: #1E2E26;
+  --labora-surface: #1A221E;
+  --labora-surface-2: #222B26;
+  --labora-border: #2A3530;
+  --labora-border-hairline: rgba(232, 237, 233, 0.08);
+  --labora-muted: #9AABA2;
+  --labora-soft-green: #1E2E26;
+  --labora-soft-clay: #2A221E;
+  --labora-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  --labora-shadow-soft: 0 12px 36px rgba(0, 0, 0, 0.35);
+  --labora-shadow-glow: 0 0 0 1px rgba(196, 165, 116, 0.12), 0 20px 56px rgba(0, 0, 0, 0.4);
+  --labora-shadow-paper: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 28px 80px rgba(0, 0, 0, 0.4);
+
+  --ghibli-forest: #6FAF8E;
+  --ghibli-deepforest: #1A2E24;
+  --ghibli-moss: #6FAF8E;
+  --ghibli-softgreen: #1E2E26;
+  --ghibli-bordergreen: #2A4034;
+  --ghibli-clay: #E08A6A;
+  --ghibli-terracotta: #D47858;
+  --ghibli-warmearth: #2A221E;
+  --ghibli-borderclay: #3A2E28;
+  --ghibli-amber: #D4A04A;
+  --ghibli-gold: #D4A04A;
+  --ghibli-softamber: #2A2418;
+  --ghibli-borderamber: #3A3220;
+  --ghibli-canvas: #121816;
+  --ghibli-card: #1A221E;
+  --ghibli-parchment: #161C19;
+  --ghibli-border: #2A3530;
+  --ghibli-border-subtle: #24302A;
+  --ghibli-sun-fill: #D4A04A;
+  --ghibli-sun-glow: #C4A574;
+  --ghibli-ambient-gradient: radial-gradient(circle at 80% 20%, rgba(196, 165, 116, 0.06) 0%, transparent 60%);
+}
+
+html.dark,
+body.dark {
+  background:
+    radial-gradient(ellipse 70% 45% at 8% -8%, rgba(196, 165, 116, 0.04), transparent 52%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(111, 175, 142, 0.05), transparent 48%),
+    var(--labora-canvas);
+  color: var(--labora-ink);
+}
+
+html.dark .bg-white,
+body.dark .bg-white {
+  background-color: var(--labora-surface) !important;
+}
+
+html.dark main,
+body.dark main {
+  background: transparent !important;
+}
+
+html.dark main > header,
+body.dark main > header {
+  background: color-mix(in srgb, var(--labora-ivory) 88%, transparent) !important;
+  border-color: var(--labora-border-hairline) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  backdrop-filter: blur(20px);
+}
+
+html.dark aside,
+body.dark aside {
+  border-color: var(--labora-border) !important;
+}
+
+html.dark main > nav,
+body.dark main > nav {
+  background: color-mix(in srgb, var(--labora-ivory) 94%, transparent) !important;
+  border-color: var(--labora-border) !important;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(20px);
+}
+
+html.dark .labora-card,
+body.dark .labora-card {
+  background: linear-gradient(180deg, var(--labora-surface), var(--labora-surface-2));
+  border-color: var(--labora-border);
+  box-shadow: var(--labora-shadow-soft);
+}
+
+html.dark .labora-card-premium,
+body.dark .labora-card-premium,
+html.dark .labora-card-parchment,
+body.dark .labora-card-parchment,
+html.dark .labora-card-auth,
+body.dark .labora-card-auth {
+  background: linear-gradient(180deg, var(--labora-surface), var(--labora-parchment));
+  border-color: var(--labora-border);
+  box-shadow: var(--labora-shadow-paper);
+}
+
+html.dark .labora-hero,
+body.dark .labora-hero {
+  background:
+    radial-gradient(ellipse at 88% 10%, color-mix(in srgb, var(--ghibli-sun-glow) 25%, transparent), transparent 42%),
+    radial-gradient(ellipse at 12% 0%, rgba(111, 175, 142, 0.12), transparent 48%),
+    linear-gradient(165deg, var(--labora-parchment) 0%, var(--labora-canvas) 100%);
+  color: var(--labora-ink);
+  border-color: var(--labora-border);
+  box-shadow: var(--labora-shadow-soft);
+}
+
+html.dark .labora-sidebar,
+body.dark .labora-sidebar {
+  background: linear-gradient(180deg, var(--labora-surface) 0%, var(--labora-parchment) 55%, var(--labora-canvas) 100%);
+  border-color: var(--labora-border);
+}
+
+html.dark .labora-nav-active,
+body.dark .labora-nav-active {
+  background: var(--labora-moss-soft);
+  color: var(--labora-primary);
+  box-shadow: inset 0 0 0 1px rgba(111, 175, 142, 0.18);
+}
+
+html.dark .labora-intro-splash,
+body.dark .labora-intro-splash {
+  background: var(--labora-canvas);
+}
+
+html.dark .labora-chip,
+body.dark .labora-chip {
+  background: var(--labora-moss-soft);
+  border-color: var(--ghibli-bordergreen);
+  color: var(--labora-primary);
+  box-shadow: none;
+}
+
+html.dark .labora-divider,
+body.dark .labora-divider {
+  background: linear-gradient(90deg, transparent, rgba(232, 237, 233, 0.12), transparent);
+}
+
+html.dark .labora-atmosphere,
+body.dark .labora-atmosphere {
+  background:
+    radial-gradient(ellipse at 78% 12%, rgba(196, 165, 116, 0.12), transparent 40%),
+    radial-gradient(ellipse at 16% 8%, rgba(111, 175, 142, 0.1), transparent 48%),
+    linear-gradient(180deg, #1A2420 0%, #161C19 50%, #121816 100%);
+}
+
+html.dark ::selection,
+body.dark ::selection {
+  background: rgba(111, 175, 142, 0.35);
+  color: var(--labora-ink);
+}
+
+/* Header chrome / icon buttons — theme tokens, not slate blobs */
+html.dark .labora-icon-btn,
+body.dark .labora-icon-btn {
+  background: var(--labora-surface) !important;
+  border-color: var(--labora-border) !important;
+  color: var(--labora-ink) !important;
+}
+
+/* Common hardcoded light hex leftovers (shell / settings / catalog) */
+html.dark .bg-\[\#F7F3EA\],
+body.dark .bg-\[\#F7F3EA\],
+html.dark .bg-\[\#FAF6EE\],
+body.dark .bg-\[\#FAF6EE\],
+html.dark .bg-\[\#F7F4EE\],
+body.dark .bg-\[\#F7F4EE\],
+html.dark .bg-\[\#F8F5F0\],
+body.dark .bg-\[\#F8F5F0\],
+html.dark .bg-\[\#F5F2ED\],
+body.dark .bg-\[\#F5F2ED\],
+html.dark .bg-\[\#FAF8F4\],
+body.dark .bg-\[\#FAF8F4\],
+html.dark .bg-\[\#F6F1E8\],
+body.dark .bg-\[\#F6F1E8\],
+html.dark .bg-\[\#FAF7F2\],
+body.dark .bg-\[\#FAF7F2\],
+html.dark .bg-\[\#FCFAF7\],
+body.dark .bg-\[\#FCFAF7\],
+html.dark .bg-\[\#F3EEE4\],
+body.dark .bg-\[\#F3EEE4\],
+html.dark .bg-\[\#F0EBE1\],
+body.dark .bg-\[\#F0EBE1\],
+html.dark .bg-\[\#F2EDE4\],
+body.dark .bg-\[\#F2EDE4\] {
+  background-color: var(--labora-canvas) !important;
+}
+
+html.dark .bg-\[\#FFFEFB\],
+body.dark .bg-\[\#FFFEFB\],
+html.dark .bg-\[\#FFFEFB\]\/82,
+body.dark .bg-\[\#FFFEFB\]\/82,
+html.dark .bg-\[\#FFFEFB\]\/95,
+body.dark .bg-\[\#FFFEFB\]\/95,
+html.dark .bg-\[\#FFFEFB\]\/85,
+body.dark .bg-\[\#FFFEFB\]\/85,
+html.dark .bg-\[\#FFFEFB\]\/75,
+body.dark .bg-\[\#FFFEFB\]\/75 {
+  background-color: var(--labora-surface) !important;
+}
+
+html.dark .text-\[\#1E2A24\],
+body.dark .text-\[\#1E2A24\],
+html.dark .text-\[\#1E231F\],
+body.dark .text-\[\#1E231F\],
+html.dark .text-\[\#2A332E\],
+body.dark .text-\[\#2A332E\],
+html.dark .text-stone-900,
+body.dark .text-stone-900,
+html.dark .text-stone-800,
+body.dark .text-stone-800 {
+  color: var(--labora-ink) !important;
+}
+
+html.dark .text-\[\#6B645C\],
+body.dark .text-\[\#6B645C\],
+html.dark .text-\[\#8A8278\],
+body.dark .text-\[\#8A8278\],
+html.dark .text-\[\#9A9186\],
+body.dark .text-\[\#9A9186\],
+html.dark .text-\[\#A39B90\],
+body.dark .text-\[\#A39B90\],
+html.dark .text-stone-500,
+body.dark .text-stone-500,
+html.dark .text-stone-400,
+body.dark .text-stone-400,
+html.dark .text-stone-700,
+body.dark .text-stone-700 {
+  color: var(--labora-muted) !important;
+}
+
+html.dark .border-\[\#E8DFC8\],
+body.dark .border-\[\#E8DFC8\],
+html.dark .border-\[\#E3DCD2\],
+body.dark .border-\[\#E3DCD2\],
+html.dark .border-\[\#E2DBD1\],
+body.dark .border-\[\#E2DBD1\],
+html.dark .border-\[\#EEE7DD\],
+body.dark .border-\[\#EEE7DD\],
+html.dark .border-\[\#E8E1D7\],
+body.dark .border-\[\#E8E1D7\],
+html.dark .border-\[\#D9D0C4\],
+body.dark .border-\[\#D9D0C4\],
+html.dark .border-\[\#E5DAC2\],
+body.dark .border-\[\#E5DAC2\],
+html.dark .border-\[\#E4D7BE\],
+body.dark .border-\[\#E4D7BE\],
+html.dark .border-\[\#EAE0CD\],
+body.dark .border-\[\#EAE0CD\],
+html.dark .border-\[\#E7DBC4\],
+body.dark .border-\[\#E7DBC4\],
+html.dark .border-\[\#E6DFD5\],
+body.dark .border-\[\#E6DFD5\],
+html.dark .border-\[\#D5CFC4\],
+body.dark .border-\[\#D5CFC4\],
+html.dark .border-\[\#E8DFC8\]\/70,
+body.dark .border-\[\#E8DFC8\]\/70 {
+  border-color: var(--labora-border) !important;
+}
+
+html.dark .bg-\[\#EBF3ED\],
+body.dark .bg-\[\#EBF3ED\],
+html.dark .bg-\[\#EAF2ED\],
+body.dark .bg-\[\#EAF2ED\],
+html.dark .bg-\[\#F2F6F3\],
+body.dark .bg-\[\#F2F6F3\],
+html.dark .bg-\[\#E7F0EA\],
+body.dark .bg-\[\#E7F0EA\] {
+  background-color: var(--labora-moss-soft) !important;
+}
+
+html.dark .divide-\[\#EEE7DD\] > :not([hidden]) ~ :not([hidden]),
+body.dark .divide-\[\#EEE7DD\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--labora-border) !important;
+}
+
+
+
 html {
   background: var(--labora-canvas);
   color: var(--labora-ink);
@@ -192,7 +486,7 @@ textarea:focus-visible {
 
 .labora-card {
   border: 1px solid var(--labora-border);
-  background: linear-gradient(180deg, rgba(255, 254, 251, 0.98), rgba(252, 249, 243, 0.96));
+  background: linear-gradient(180deg, var(--labora-surface), var(--labora-parchment));
   border-radius: var(--labora-radius);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
@@ -201,7 +495,7 @@ textarea:focus-visible {
 
 .labora-card-premium {
   border: 1px solid var(--labora-border);
-  background: linear-gradient(180deg, rgba(255,254,251,0.99), rgba(251,247,240,0.97));
+  background: linear-gradient(180deg, var(--labora-surface), var(--labora-parchment));
   border-radius: calc(var(--labora-radius) + 4px);
   box-shadow: var(--labora-shadow-paper);
 }
@@ -209,7 +503,7 @@ textarea:focus-visible {
 .labora-card-parchment,
 .labora-card-auth {
   border: 1px solid var(--labora-border);
-  background: linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%);
+  background: linear-gradient(180deg, var(--labora-surface) 0%, var(--labora-parchment) 100%);
   border-radius: var(--labora-radius-lg);
   box-shadow: var(--labora-shadow-paper);
 }
@@ -345,7 +639,7 @@ textarea:focus-visible {
 
 /* Sidebar parchment language */
 .labora-sidebar {
-  background: linear-gradient(180deg, #FFFEFB 0%, #FAF6EE 55%, #F5F1E8 100%);
+  background: linear-gradient(180deg, var(--labora-surface) 0%, var(--labora-parchment) 55%, var(--labora-canvas) 100%);
   border-color: var(--labora-border);
 }
 
@@ -557,4 +851,36 @@ body,
 
 @media (prefers-reduced-motion: reduce) {
   .labora-card-interactive { transition: none; }
+}
+
+
+/* dark polish: end — after light component rules so tokens + chrome win */
+html.dark .labora-card,
+body.dark .labora-card,
+html.dark .labora-card-premium,
+body.dark .labora-card-premium,
+html.dark .labora-card-parchment,
+body.dark .labora-card-parchment,
+html.dark .labora-card-auth,
+body.dark .labora-card-auth {
+  box-shadow: var(--labora-shadow-soft);
+  background: linear-gradient(180deg, var(--labora-surface), var(--labora-parchment));
+}
+
+html.dark .labora-icon-btn,
+body.dark .labora-icon-btn {
+  background: var(--labora-surface) !important;
+  border-color: var(--labora-border) !important;
+  color: var(--labora-ink) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+html.dark .labora-sidebar,
+body.dark .labora-sidebar {
+  background: linear-gradient(180deg, var(--labora-surface) 0%, var(--labora-parchment) 55%, var(--labora-canvas) 100%);
+}
+
+html.dark .labora-intro-splash,
+body.dark .labora-intro-splash {
+  background: var(--labora-canvas) !important;
 }

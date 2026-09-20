@@ -115,7 +115,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#F7F3EA] font-sans text-[#1E2A24] selection:bg-[#B87A24]/25 selection:text-[#1E2A24]">
+    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-[color:var(--labora-canvas,#F7F3EA)] font-sans text-[color:var(--labora-ink,#1E2A24)] selection:bg-[color:var(--labora-gold,#B87A24)]/25 selection:text-[color:var(--labora-ink,#1E2A24)]">
       <Toast />
       <Sidebar
         currentView={currentView}
@@ -125,11 +125,11 @@ const MainLayout: React.FC = () => {
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="safe-area-top z-20 flex h-[80px] shrink-0 items-center justify-between border-b border-[#E8DFC8]/70 bg-[#FFFEFB]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
+        <header className="safe-area-top z-20 flex h-[80px] shrink-0 items-center justify-between border-b border-[color:var(--labora-border,#E8DFC8)]/70 bg-[color:var(--labora-ivory,#FFFEFB)]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#E8DFC8] bg-white text-[#1E2A24] shadow-sm lg:hidden"
+              className="labora-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--labora-border,#E8DFC8)] bg-[color:var(--labora-surface,#FFFEFB)] text-[color:var(--labora-ink,#1E2A24)] shadow-sm lg:hidden"
               aria-label="Abrir menú"
             >
               <Menu size={20} />
@@ -140,10 +140,10 @@ const MainLayout: React.FC = () => {
             </div>
 
             <div className="min-w-0">
-              <p className="labora-section-label hidden text-[#5A7A68] lg:block">
+              <p className="labora-section-label hidden text-[color:var(--labora-muted,#5A7A68)] lg:block">
                 {isManager ? 'Gestoría' : 'Autónomo'}
               </p>
-              <span className="labora-title mt-0.5 block truncate text-[1.3rem] text-[#1E2A24]">
+              <span className="labora-title mt-0.5 block truncate text-[1.3rem] text-[color:var(--labora-ink,#1E2A24)]">
                 {getViewTitle()}
               </span>
             </div>
@@ -155,10 +155,10 @@ const MainLayout: React.FC = () => {
             </div>
             <button
               onClick={togglePrivacyMode}
-              className={`flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
+              className={`labora-icon-btn flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
                 privacyMode
-                  ? 'border-[#B87A24]/35 bg-[#FEF7EB] text-[#B87A24]'
-                  : 'border-[#E8DFC8] bg-white text-stone-500 hover:text-[#2F5D4A]'
+                  ? 'border-[color:var(--labora-gold,#B87A24)]/35 bg-[color:var(--labora-soft-clay,#FEF7EB)] text-[color:var(--labora-gold,#B87A24)]'
+                  : 'border-[color:var(--labora-border,#E8DFC8)] bg-[color:var(--labora-surface,#FFFEFB)] text-[color:var(--labora-muted,#78716c)] hover:text-[color:var(--labora-primary,#2F5D4A)]'
               }`}
               title={privacyMode ? 'Mostrar importes' : 'Ocultar importes'}
             >
@@ -167,11 +167,11 @@ const MainLayout: React.FC = () => {
 
             <button
               onClick={() => setView('settings')}
-              className="flex items-center gap-2 rounded-2xl border border-[#E8DFC8] bg-white p-1 pr-3 text-left shadow-sm transition hover:border-[#2F5D4A]/30"
+              className="labora-icon-btn flex items-center gap-2 rounded-2xl border border-[color:var(--labora-border,#E8DFC8)] bg-[color:var(--labora-surface,#FFFEFB)] p-1 pr-3 text-left shadow-sm transition hover:border-[color:var(--labora-primary,#2F5D4A)]/30"
             >
               <Identity />
               <div className="hidden text-right sm:block">
-                <p className="max-w-[190px] truncate text-xs font-extrabold text-[#1E2A24]">
+                <p className="max-w-[190px] truncate text-xs font-extrabold text-[color:var(--labora-ink,#1E2A24)]">
                   {currentUser.companyName || currentUser.name}
                 </p>
                 <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400">
@@ -186,7 +186,7 @@ const MainLayout: React.FC = () => {
           <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
         </div>
 
-        <nav className="safe-area-bottom shrink-0 border-t border-black/5 bg-[#FFFEFB]/95 px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
+        <nav className="safe-area-bottom shrink-0 border-t border-[color:var(--labora-border-hairline,rgba(0,0,0,0.05))] bg-[color:var(--labora-ivory,#FFFEFB)]/95 px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
           <div className="grid grid-cols-5 gap-0.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -196,9 +196,9 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
-                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#2F5D4A]' : 'text-[#A39B90]'}`}
+                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[color:var(--labora-primary,#2F5D4A)]' : 'text-[color:var(--labora-muted,#A39B90)]'}`}
                 >
-                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[14px] px-2 transition ${active ? 'bg-[#EBF3ED] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10),0_1px_0_rgba(255,255,255,0.8)_inset]' : ''}`}>
+                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[14px] px-2 transition ${active ? 'bg-[color:var(--labora-moss-soft,#EBF3ED)] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10),0_1px_0_rgba(255,255,255,0.8)_inset]' : ''}`}>
                     {item.id === 'settings' && identityImage ? (
                       <Identity small />
                     ) : (

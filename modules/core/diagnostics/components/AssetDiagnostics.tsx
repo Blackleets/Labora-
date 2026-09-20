@@ -70,8 +70,10 @@ export const AssetDiagnostics: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-3 text-xs font-mono text-gray-500">
-                    <div>1. /brands/{item.id}.svg</div>
-                    <div>2. {item.domain ? `clearbit/${item.domain}` : 'N/A'}</div>
+                    <div>1. brand/platforms/{item.id}.svg</div>
+                    <div>2. simpleicons (if curated)</div>
+                    <div>3. {item.domain ? `favicon/${item.domain}` : 'N/A'}</div>
+                    <div>4. letter avatar</div>
                   </td>
                   <td className="px-6 py-3">
                     {/* Note: This status is visual; real logic happens inside LogoResolver */}

@@ -90,10 +90,10 @@ export const GhibliLightingControl: React.FC = () => {
       <button
         id="ghibli-lighting-btn"
         onClick={() => setIsOpen(!isOpen)}
-        className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-serif font-semibold flex items-center space-x-2 border transition-all duration-300 shadow-sm active:scale-95 ${
+        className={`labora-icon-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-serif font-semibold flex items-center space-x-2 border transition-all duration-300 shadow-sm active:scale-95 ${
           isOpen
-            ? 'bg-white border-[#2E5A44] text-[#245338] ring-2 ring-[#2E5A44]/15'
-            : 'bg-[#FAF7F2] hover:bg-white border-[#E5DAC2] text-stone-700'
+            ? 'bg-[color:var(--labora-surface,#FFFEFB)] border-[color:var(--labora-primary,#2E5A44)] text-[color:var(--labora-primary,#245338)] ring-2 ring-[color:var(--labora-primary,#2E5A44)]/15'
+            : 'bg-[color:var(--labora-parchment,#FAF7F2)] hover:bg-[color:var(--labora-surface,#FFFEFB)] border-[color:var(--labora-border,#E5DAC2)] text-[color:var(--labora-ink,#44403c)]'
         }`}
         title="Ajustar luz ambiental"
         aria-expanded={isOpen}
