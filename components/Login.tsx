@@ -181,7 +181,7 @@ const Login: React.FC = () => {
           className="pointer-events-none absolute inset-0 h-full w-full"
         />
         <div className="relative z-10 flex h-full items-start justify-between p-5 pt-6">
-          <Logo size="md" showText variant="light" />
+          <Logo size="md" showText variant="light" animated />
           <span
             className="rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] backdrop-blur-sm"
             style={{
@@ -215,7 +215,7 @@ const Login: React.FC = () => {
 
         <div className="relative z-10 flex flex-1 flex-col justify-between p-12 xl:p-16 2xl:p-20">
           <div className="flex items-center justify-between">
-            <Logo size="lg" showText variant="light" />
+            <Logo size="xl" showText variant="light" animated />
             <span
               className="rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] backdrop-blur-sm"
               style={{

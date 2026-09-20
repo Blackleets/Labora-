@@ -31,8 +31,9 @@
   --labora-radius-lg: 28px;
 
   /* Type scale — private-banking / editorial */
-  --labora-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --labora-font-sans: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+  --labora-font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --labora-font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --labora-sans: var(--labora-font-sans);
   --labora-display: clamp(2.75rem, 4.2vw, 4.25rem);
   --labora-display-sm: clamp(2.05rem, 3.2vw, 2.85rem);
   --labora-title: clamp(1.75rem, 2.2vw, 2rem);
@@ -263,8 +264,7 @@ textarea:focus-visible {
   font-size: var(--labora-display);
   line-height: var(--labora-leading-display);
   letter-spacing: var(--labora-tracking-display);
-  font-optical-sizing: auto;
-  font-weight: 560;
+  font-weight: 800;
 }
 
 .labora-title {
@@ -272,8 +272,7 @@ textarea:focus-visible {
   font-size: var(--labora-title);
   line-height: 1.15;
   letter-spacing: var(--labora-tracking-display);
-  font-optical-sizing: auto;
-  font-weight: 560;
+  font-weight: 700;
 }
 
 .labora-body {

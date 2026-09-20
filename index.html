@@ -10,8 +10,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="format-detection" content="telephone=no" />
+    <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
     <link rel="icon" type="image/png" href="/brand/labora-mark.png" />
-    <link rel="apple-touch-icon" href="/brand/labora-mark.png" />
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.svg" />
     <title>Labora+ | Control fiscal y operativo para autónomos y gestorías</title>
     <meta name="description" content="Plataforma fiscal global para repartidores autónomos y gestores: digitalización de facturas y tickets de gasolinera con respaldo fotográfico, control de modelos tributarios (036, 130, 303) y auditoría colaborativa." />
     <meta property="og:title" content="Labora+ | Control fiscal y operativo para autónomos y gestorías" />
@@ -22,9 +23,10 @@
         theme: {
           extend: {
             fontFamily: {
-              serif: ['Fraunces', 'Georgia', 'serif'],
-              ghibli: ['Fraunces', 'Georgia', 'serif'],
-              sans: ['Inter', 'Outfit', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+              sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+              serif: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+              ghibli: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+              display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
             },
             colors: {
               ghibli: {
@@ -60,7 +62,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
     
     <!-- Leaflet Map Resources -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -68,9 +70,9 @@
 
     <style>
       :root {
-        --font-primary: 'Inter', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
-        --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
-        --font-body: 'Inter', 'Outfit', system-ui, sans-serif;
+        --font-primary: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        --font-serif: 'Plus Jakarta Sans', system-ui, sans-serif;
+        --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
         --primary: #2D5A43;
         --secondary: #1F2937;
         
@@ -134,7 +136,7 @@
         line-height: 1.25;
       }
       .labora-display, .labora-title, .font-serif, .font-ghibli {
-        font-family: var(--font-serif) !important;
+        font-family: var(--font-primary) !important;
       }
       body {
         line-height: 1.65;
