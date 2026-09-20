@@ -225,14 +225,14 @@ const MainLayout: React.FC = () => {
 
 const App: React.FC = () => (
   <OrganizationProvider>
-    <CountryProvider>
-      <DataProvider>
+    <DataProvider>
+      <CountryProvider>
         <GhibliAtmosphereProvider>
           <RemoteSyncBridge />
           <MainLayout />
         </GhibliAtmosphereProvider>
-      </DataProvider>
-    </CountryProvider>
+      </CountryProvider>
+    </DataProvider>
   </OrganizationProvider>
 );
 

@@ -23,6 +23,7 @@ import {
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { useCountry } from '../contexts/CountryContext';
 import { analyzeReceipt } from '../services/geminiService';
 import { Expense, ExpenseCategory, UserRole } from '../types';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
@@ -49,12 +50,16 @@ const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) 
 });
 
 const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) => {
-  const { expenses, addExpense, updateExpense, showNotification, privacyMode, currentUser } = useData();
+  const { expenses, addExpense, updateExpense, updateExpenseAudit, showNotification, privacyMode, currentUser, users } = useData();
+  const { selectedCountry } = useCountry();
   const [isScanning, setIsScanning] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [reviewingExpense, setReviewingExpense] = useState<Expense | null>(null);
+  const [reviewPct, setReviewPct] = useState('0');
+  const [reviewNote, setReviewNote] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
@@ -72,12 +77,34 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   }), [expenses, startDate, endDate, currentUser, isManager]);
 
   const formatCurrency = (amount: number) => {
-    if (privacyMode) return '•••• €';
-    return amount.toLocaleString('es-ES', {
+    if (privacyMode) return '••••';
+    return amount.toLocaleString(selectedCountry.country_code === 'MX' ? 'es-MX' : 'es-ES', {
       style: 'currency',
-      currency: 'EUR',
+      currency: selectedCountry.currency || 'EUR',
       maximumFractionDigits: 2
     });
+  };
+
+  const clientName = (userId: string) => users.find((user) => user.id === userId)?.name || 'Cliente';
+
+  const openManagerReview = (expense: Expense) => {
+    if (!isManager) return;
+    setReviewingExpense(expense);
+    setReviewPct(String(expense.deductiblePercentage ?? 0));
+    setReviewNote(expense.gestorNotes || '');
+  };
+
+  const submitManagerReview = (status: 'approved' | 'rejected' | 'needs_fix') => {
+    if (!reviewingExpense) return;
+    const pct = Math.max(0, Math.min(100, Number(reviewPct) || 0));
+    const note = reviewNote.trim()
+      || (status === 'approved'
+        ? 'Validado por la gestoría.'
+        : status === 'rejected'
+          ? 'No computado por la gestoría.'
+          : 'Revisa el justificante o completa la información.');
+    updateExpenseAudit(reviewingExpense.id, status, note, status === 'rejected' ? 0 : pct);
+    setReviewingExpense(null);
   };
 
   const formatDate = (date: string) => {
@@ -208,7 +235,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
         showNotification(
           'error',
           code === 'AI_NOT_CONFIGURED'
-            ? 'El OCR no está configurado en el servidor. Completa el gasto a mano; la imagen se conserva.'
+            ? 'IA no configurada. Completa el gasto a mano; la imagen se conserva.'
             : 'No se pudo leer el ticket. La imagen se conserva para que completes los datos manualmente.'
         );
       }
@@ -300,7 +327,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
 
           <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             <ActionCard icon={Fuel} title="Repostaje" text="Ticket de combustible" tone="clay" onClick={() => setIsGasModalOpen(true)} />
-            <ActionCard icon={Camera} title={isScanning ? 'Leyendo…' : 'Escanear'} text="OCR + anti-duplicado" tone="green" onClick={() => fileInputRef.current?.click()} loading={isScanning} />
+            <ActionCard icon={Camera} title={isScanning ? 'Leyendo…' : 'Escanear'} text="Foto + anti-duplicado" tone="green" onClick={() => fileInputRef.current?.click()} loading={isScanning} />
             <ActionCard icon={Plus} title="Añadir manual" text="Sin suposiciones fiscales" tone="stone" onClick={openManualEntry} wide />
           </section>
         </>
@@ -322,8 +349,8 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
             return (
               <article
                 key={expense.id}
-                onClick={() => openEdit(expense)}
-                className={`min-w-0 p-4 transition ${isManager ? '' : 'cursor-pointer hover:bg-[#FCFAF7]'}`}
+                onClick={() => (isManager ? openManagerReview(expense) : openEdit(expense))}
+                className="min-w-0 cursor-pointer p-4 transition hover:bg-[#FCFAF7]"
               >
                 <div className="grid min-w-0 grid-cols-[42px_minmax(0,1fr)] items-start gap-3">
                   <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[#F1ECE3] text-stone-500">
@@ -337,7 +364,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
                           <h4 className="truncate text-[15px] font-extrabold leading-tight text-[#1E231F]">{expense.merchant || expense.category}</h4>
                           {expense.isRecurring && <Repeat size={12} className="shrink-0 text-stone-400" />}
                         </div>
-                        <p className="mt-1 text-[11px] font-medium text-stone-400">{expense.merchant ? `${expense.category} · ` : ''}{formatDate(expense.date)}</p>
+                        <p className="mt-1 text-[11px] font-medium text-stone-400">{isManager ? `${clientName(expense.userId)} · ` : ''}{expense.merchant ? `${expense.category} · ` : ''}{formatDate(expense.date)}</p>
                       </div>
                       <p className="shrink-0 whitespace-nowrap text-sm font-extrabold text-[#1E231F]">{formatCurrency(expense.amount)}</p>
                     </div>
@@ -375,8 +402,8 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
           {filteredExpenses.length === 0 && (
             <div className="px-4 py-12 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#F1ECE3] text-stone-300"><Receipt size={23} /></div>
-              <p className="mt-3 text-sm font-extrabold text-stone-500">No hay gastos registrados</p>
-              <p className="mt-1 text-xs text-stone-400">{isManager ? 'Los gastos aparecerán cuando tus clientes los registren.' : 'Escanea un ticket o añade uno manualmente.'}</p>
+              <p className="mt-3 text-sm font-extrabold text-stone-500">{isManager ? 'Sin gastos de clientes vinculados' : 'No hay gastos registrados'}</p>
+              <p className="mt-1 text-xs text-stone-400">{isManager ? 'Cuando un autónomo vinculado registre un ticket o gasto, aparecerá aquí para aprobar, rechazar o fijar el % deducible.' : 'Escanea un ticket o añade uno manualmente.'}</p>
             </div>
           )}
         </div>
@@ -435,6 +462,42 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/90 p-4" onClick={() => setViewingImage(null)}>
           <button type="button" onClick={() => setViewingImage(null)} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white" aria-label="Cerrar ticket"><X size={20} /></button>
           <img src={viewingImage} alt="Justificante del gasto" className="max-h-[86vh] max-w-full rounded-xl object-contain" onClick={(event) => event.stopPropagation()} />
+        </div>
+      )}
+
+      {isManager && reviewingExpense && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#18211C]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[#E3DBD0] bg-[#FFFDF9] shadow-2xl sm:rounded-[26px]">
+            <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-5 py-4">
+              <div>
+                <p className="labora-kicker text-[#789582]">Auditoría</p>
+                <h3 className="mt-1 text-lg font-extrabold text-[#1E231F]">{reviewingExpense.merchant || reviewingExpense.category}</h3>
+                <p className="mt-1 text-xs text-stone-500">{clientName(reviewingExpense.userId)} · {formatCurrency(reviewingExpense.amount)} · {formatDate(reviewingExpense.date)}</p>
+              </div>
+              <button type="button" onClick={() => setReviewingExpense(null)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DED2] bg-white text-stone-500"><X size={18} /></button>
+            </div>
+            <div className="space-y-4 overflow-y-auto p-5">
+              {reviewingExpense.receiptUrl && (
+                <button type="button" onClick={() => setViewingImage(reviewingExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[#DDE7E0] bg-[#F2F7F4] p-3 text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#DDE7E0] bg-white text-[#214E3A]"><ImageIcon size={17} /></div>
+                  <div className="min-w-0"><p className="text-sm font-extrabold text-[#1E231F]">Ver justificante</p><p className="text-[11px] text-stone-500">Abre la imagen adjunta</p></div>
+                </button>
+              )}
+              <label className="block space-y-1.5">
+                <span className="text-xs font-extrabold text-stone-600">% deducible (0–100)</span>
+                <input type="number" min="0" max="100" step="1" value={reviewPct} onChange={(event) => setReviewPct(event.target.value)} className="field-input" />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-extrabold text-stone-600">Nota para el autónomo</span>
+                <textarea rows={3} value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} className="field-input resize-none" placeholder="Opcional" />
+              </label>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <button type="button" onClick={() => submitManagerReview('rejected')} className="rounded-[13px] border border-[#EBCFCB] bg-[#FFF0EE] px-3 py-3 text-xs font-extrabold text-[#9A443B]">Rechazar</button>
+                <button type="button" onClick={() => submitManagerReview('needs_fix')} className="rounded-[13px] border border-[#EDCFBB] bg-[#FFF3EA] px-3 py-3 text-xs font-extrabold text-[#A4562D]">Pedir corrección</button>
+                <button type="button" onClick={() => submitManagerReview('approved')} className="rounded-[13px] bg-[#214E3A] px-3 py-3 text-xs font-extrabold text-white">Aprobar</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
