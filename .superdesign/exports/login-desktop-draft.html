@@ -1,0 +1,221 @@
+<!DOCTYPE html><html lang="es" class="antialiased"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Labora+ | Iniciar Sesión</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <style>
+    @import url('https://api.fontshare.com/v2/css?f[]=zodiak@700,500,400&f[]=plus-jakarta-sans@800,700,600,500,400&display=swap');
+
+    :root {
+      --ghibli-forest: #2F5D4A;
+      --ghibli-moss: #3B7258;
+      --ghibli-softgreen: #EBF3ED;
+      --ghibli-clay: #C96846;
+      --ghibli-terracotta: #D97757;
+      --ghibli-gold: #B87A24;
+      --ghibli-canvas: #F7F3EA;
+      --ghibli-surface: #FFFEFB;
+      --ghibli-parchment: #FAF6EE;
+      --ghibli-border: #E8DFC8;
+      --ghibli-sun-glow: #FAD082;
+      --ghibli-ink: #1E2A24;
+      --ghibli-muted: #6B645C;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--ghibli-canvas);
+      color: var(--ghibli-ink);
+    }
+
+    .font-serif {
+      font-family: 'Zodiak', serif;
+    }
+
+    .meadow-bg {
+      background:
+        radial-gradient(ellipse at 78% 14%, rgba(250, 208, 130, 0.8), transparent 38%),
+        radial-gradient(ellipse at 18% 10%, rgba(180, 210, 230, 0.42), transparent 46%),
+        linear-gradient(180deg, #C9DDEE 0%, #DCEAE6 28%, #E8F0E0 52%, var(--ghibli-parchment) 78%, var(--ghibli-canvas) 100%);
+    }
+
+    .auth-card {
+      background: linear-gradient(165deg, #FFFEFB 0%, #FCFAF5 42%, #F8F3EA 100%);
+      box-shadow: 0 28px 80px rgba(47, 93, 74, 0.11), inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 0 0 1px rgba(255, 254, 251, 0.5);
+    }
+
+    .input-field {
+      width: 100%;
+      border-radius: 1rem;
+      border: 1px solid var(--ghibli-border);
+      background-color: var(--ghibli-surface);
+      padding: 0.875rem 1rem 0.875rem 2.75rem;
+      font-size: 0.9375rem;
+      color: var(--ghibli-ink);
+      outline: none;
+      transition: all 0.2s;
+    }
+    
+    .input-field:focus {
+      border-color: rgba(47, 93, 74, 0.45);
+      box-shadow: 0 0 0 4px rgba(47, 93, 74, 0.1);
+    }
+
+    .input-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--ghibli-muted);
+    }
+
+    .btn-primary {
+      background: linear-gradient(to bottom, var(--ghibli-terracotta), var(--ghibli-clay));
+      box-shadow: 0 12px 32px rgba(201, 104, 70, 0.28);
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen flex items-center justify-center" data-sd-id="1">
+    <div class="w-full max-w-[1440px] min-h-screen grid lg:grid-cols-[1.2fr_minmax(400px,480px)]" data-sd-id="2">
+      
+      <!-- Left Panel: Meadow Landscape -->
+      <section class="relative hidden lg:flex flex-col overflow-hidden meadow-bg" data-sd-id="3">
+        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 520" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" data-sd-id="4">
+          <defs>
+            <radialGradient id="sun-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#FAD082" stop-opacity="0.85"></stop>
+              <stop offset="100%" stop-color="#FAD082" stop-opacity="0"></stop>
+            </radialGradient>
+            <linearGradient id="hill-far" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#A5C7B7" stop-opacity="0.45"></stop>
+              <stop offset="100%" stop-color="#A5C7B7" stop-opacity="0.7"></stop>
+            </linearGradient>
+            <linearGradient id="hill-mid" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#8BB7A3" stop-opacity="0.65"></stop>
+              <stop offset="100%" stop-color="#8BB7A3" stop-opacity="0.9"></stop>
+            </linearGradient>
+            <linearGradient id="path" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#D4B896" stop-opacity="0.55"></stop>
+              <stop offset="100%" stop-color="#C4A574" stop-opacity="0.72"></stop>
+            </linearGradient>
+          </defs>
+
+          <!-- Sun -->
+          <circle cx="655" cy="78" r="60" fill="url(#sun-glow)"></circle>
+          <circle cx="655" cy="78" r="36" fill="#F7BA55"></circle>
+
+          <!-- Clouds -->
+          <g opacity="0.6" fill="#FFFFFF">
+            <ellipse cx="140" cy="58" rx="58" ry="18"></ellipse>
+            <ellipse cx="420" cy="44" rx="70" ry="16"></ellipse>
+            <ellipse cx="680" cy="130" rx="42" ry="12"></ellipse>
+          </g>
+
+          <!-- Hills -->
+          <path d="M0 210 C100 175 190 195 300 185 C420 172 510 215 620 195 C700 182 760 205 800 200 L800 520 L0 520 Z" fill="url(#hill-far)"></path>
+          <path d="M0 275 C130 240 240 275 370 255 C500 235 600 290 720 265 C770 255 790 270 800 275 L800 520 L0 520 Z" fill="url(#hill-mid)"></path>
+          <path d="M0 340 C150 310 280 355 430 340 C560 328 680 370 800 350 L800 520 L0 520 Z" fill="#C2D6C0"></path>
+          <path d="M0 400 C180 375 320 420 500 400 C660 385 740 430 800 415 L800 520 L0 520 Z" fill="#3B7258" opacity="0.35"></path>
+
+          <!-- Path -->
+          <path d="M310 520 C340 470 360 430 390 400 C430 360 480 345 540 330 C600 315 650 305 700 295" fill="none" stroke="url(#path)" stroke-width="22" stroke-linecap="round" opacity="0.7"></path>
+        </svg>
+
+        <div class="relative z-10 flex flex-col justify-between h-full p-14" data-sd-id="5">
+          <div class="flex items-center justify-between" data-sd-id="6">
+            <div class="flex items-center gap-3" data-sd-id="7">
+              <div class="w-12 h-12 bg-gradient-to-br from-[#0F3D2E] to-[#247A56] rounded-xl flex items-center justify-center text-white shadow-lg" data-sd-id="8">
+                <span class="font-serif font-bold text-2xl" data-sd-id="9">L+</span>
+              </div>
+              <span class="font-extrabold text-2xl tracking-tight text-[#0A1210]" data-sd-id="10">Labora<span class="text-[#E85D3B]" data-sd-id="11">+</span></span>
+            </div>
+            <span class="px-3 py-1 rounded-full border border-[#D0E5D7] bg-[#EBF3ED] text-[#2F5D4A] text-[10px] font-bold uppercase tracking-widest" data-sd-id="12">
+              Luz &amp; cuidado
+            </span>
+          </div>
+
+          <div class="max-w-xl pb-10" data-sd-id="13">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-[#B87A24]" data-sd-id="14">Amanecer en la Colina</p>
+            <h1 class="mt-4 font-serif text-5xl lg:text-6xl font-semibold leading-tight tracking-tight text-[#1E2A24]" data-sd-id="15">
+              Trabajo claro, entre colinas y hierba al sol.
+            </h1>
+            <p class="mt-6 max-w-md text-base leading-relaxed text-[#5C6E64]" data-sd-id="16">
+              Fiscalidad y gestoría sin ruido: evidencia real, permisos limpios y un espacio con la calma de un prado.
+            </p>
+
+            <div class="mt-10 grid grid-cols-3 gap-4 max-w-lg" data-sd-id="17">
+              <div class="bg-white/90 backdrop-blur rounded-2xl border border-[#E8DFC8] p-4 shadow-sm" data-sd-id="18">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-[#C96846]" data-sd-id="19">Auth</p>
+                <p class="mt-1 text-sm font-semibold text-[#2A332E]" data-sd-id="20">Sesión segura</p>
+              </div>
+              <div class="bg-white/90 backdrop-blur rounded-2xl border border-[#E8DFC8] p-4 shadow-sm" data-sd-id="21">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-[#C96846]" data-sd-id="22">Docs</p>
+                <p class="mt-1 text-sm font-semibold text-[#2A332E]" data-sd-id="23">Archivo privado</p>
+              </div>
+              <div class="bg-white/90 backdrop-blur rounded-2xl border border-[#E8DFC8] p-4 shadow-sm" data-sd-id="24">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-[#C96846]" data-sd-id="25">Fiscal</p>
+                <p class="mt-1 text-sm font-semibold text-[#2A332E]" data-sd-id="26">Estados claros</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel: Auth Card -->
+      <section class="relative flex items-center justify-center p-8 lg:p-12" data-sd-id="27">
+        <div class="w-full max-w-[420px]" data-sd-id="28">
+          
+          <div class="auth-card rounded-[28px] border border-[#E8DFC8] overflow-hidden" data-sd-id="29">
+            <div class="flex border-b border-[#EBE4D8] p-2 gap-1" data-sd-id="30">
+              <button class="flex-1 py-3 text-sm font-bold rounded-2xl bg-[#EBF3ED] text-[#1E2A24] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.12)]" data-sd-id="31">Entrar</button>
+              <button class="flex-1 py-3 text-sm font-bold rounded-2xl text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E] transition-colors" data-sd-id="32">Crear cuenta</button>
+            </div>
+
+            <div class="p-8 sm:p-10" data-sd-id="33">
+              <h2 class="font-serif text-3xl font-semibold leading-tight text-[#1E2A24]" data-sd-id="34">Bienvenido de nuevo</h2>
+              <p class="mt-2 text-sm text-[#6B645C]" data-sd-id="35">Entra a tu espacio de autónomo o gestoría, con luz suave.</p>
+
+              <form class="mt-8 space-y-5" data-sd-id="36">
+                <div data-sd-id="37">
+                  <label class="input-label" for="email" data-sd-id="38">Correo</label>
+                  <div class="relative" data-sd-id="39">
+                    <iconify-icon icon="lucide:mail" class="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-[#9A9186]"></iconify-icon>
+                    <input type="email" id="email" class="input-field" placeholder="tu@correo.com" required="" data-sd-id="40">
+                  </div>
+                </div>
+                
+                <div data-sd-id="41">
+                  <label class="input-label" for="password" data-sd-id="42">Contraseña</label>
+                  <div class="relative" data-sd-id="43">
+                    <iconify-icon icon="lucide:key-round" class="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-[#9A9186]"></iconify-icon>
+                    <input type="password" id="password" class="input-field" placeholder="Tu contraseña" required="" data-sd-id="44">
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between mt-2" data-sd-id="45">
+                  <a href="#" id="forgot-password" class="text-xs font-semibold text-[#2F5D4A] hover:underline" data-sd-id="46">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" id="submit-login" class="btn-primary w-full mt-4 flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-extrabold text-white transition hover:brightness-105" data-sd-id="47">
+                  Entrar <iconify-icon icon="lucide:arrow-right" class="text-lg"></iconify-icon>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="mt-8 flex items-center justify-center gap-2 text-xs font-medium text-[#8A8278]" data-sd-id="48">
+            <iconify-icon icon="lucide:shield-check" class="text-[#2F5D4A] text-lg"></iconify-icon>
+            Auth segura · archivo privado · sin datos inventados
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+</body></html>
