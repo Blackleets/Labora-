@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Car, CreditCard, FileText, Landmark, Package } from 'lucide-react';
 import {
+  BrandMarkSvg,
+  getInlineBrandIcon
+} from './brandIcons';
+import {
+  CATEGORY_ACCENTS,
   getCuratedBrandMarkUrl,
   getGoogleFaviconUrl,
   getLocalBrandMarkUrl,
@@ -18,10 +22,10 @@ export interface LogoResolverProps {
 
 /**
  * Fallback chain (fail-closed, never blank):
- * local geometric SVG → curated Simple Icons → Google favicon → letter avatar.
+ * inline Simple Icons → curated CDN → local geometric SVG → Google favicon → letter avatar.
  * Clearbit omitted (API dead → empty image that never fires onError).
  */
-type LoadStep = 'local' | 'curated' | 'favicon' | 'placeholder';
+type LoadStep = 'inline' | 'curated' | 'local' | 'favicon' | 'placeholder';
 
 const LogoResolver: React.FC<LogoResolverProps> = ({
   id,
@@ -31,20 +35,22 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
   className = '',
   size = 'md'
 }) => {
-  const localUrl = useMemo(() => getLocalBrandMarkUrl(id), [id]);
+  const inlineIcon = useMemo(() => getInlineBrandIcon(id), [id]);
   const curatedUrl = useMemo(() => getCuratedBrandMarkUrl(id), [id]);
+  const localUrl = useMemo(() => getLocalBrandMarkUrl(id), [id]);
   const faviconUrl = useMemo(
     () => (domain ? getGoogleFaviconUrl(domain) : undefined),
     [domain]
   );
-  const darkGlyph = isDarkGlyphBrand(id);
+  const darkGlyph = isDarkGlyphBrand(id) || Boolean(inlineIcon?.darkGlyph);
 
   const initialStep = useMemo((): LoadStep => {
-    if (localUrl) return 'local';
+    if (inlineIcon) return 'inline';
     if (curatedUrl) return 'curated';
+    if (localUrl) return 'local';
     if (faviconUrl) return 'favicon';
     return 'placeholder';
-  }, [localUrl, curatedUrl, faviconUrl]);
+  }, [inlineIcon, curatedUrl, localUrl, faviconUrl]);
 
   const [step, setStep] = useState<LoadStep>(initialStep);
 
@@ -54,11 +60,13 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
 
   const advance = () => {
     setStep((current) => {
-      const order: LoadStep[] = ['local', 'curated', 'favicon', 'placeholder'];
+      const order: LoadStep[] = ['inline', 'curated', 'local', 'favicon', 'placeholder'];
       const idx = order.indexOf(current);
       for (let i = idx + 1; i < order.length; i++) {
         const next = order[i];
+        if (next === 'inline' && inlineIcon) return next;
         if (next === 'curated' && curatedUrl) return next;
+        if (next === 'local' && localUrl) return next;
         if (next === 'favicon' && faviconUrl) return next;
         if (next === 'placeholder') return next;
       }
@@ -67,16 +75,18 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
   };
 
   const sizeConfig = {
-    sm: { w: 'w-9', h: 'h-9', p: 'p-1.5', icon: 14, text: 'text-[9px]' },
-    md: { w: 'w-14', h: 'h-14', p: 'p-2.5', icon: 22, text: 'text-[10px]' },
-    lg: { w: 'w-[4.5rem]', h: 'h-[4.5rem]', p: 'p-3', icon: 28, text: 'text-xs' },
-    xl: { w: 'w-24', h: 'h-24', p: 'p-4', icon: 36, text: 'text-sm' },
-    '2xl': { w: 'w-32', h: 'h-32', p: 'p-6', icon: 48, text: 'text-base' }
+    sm: { w: 'w-9', h: 'h-9', p: 'p-1.5', icon: 14, text: 'text-[9px]', svg: 'h-[70%] w-[70%]' },
+    md: { w: 'w-14', h: 'h-14', p: 'p-2.5', icon: 22, text: 'text-[10px]', svg: 'h-[72%] w-[72%]' },
+    lg: { w: 'w-[4.5rem]', h: 'h-[4.5rem]', p: 'p-3', icon: 28, text: 'text-xs', svg: 'h-[74%] w-[74%]' },
+    xl: { w: 'w-24', h: 'h-24', p: 'p-4', icon: 36, text: 'text-sm', svg: 'h-[76%] w-[76%]' },
+    '2xl': { w: 'w-32', h: 'h-32', p: 'p-6', icon: 48, text: 'text-base', svg: 'h-[78%] w-[78%]' }
   };
 
   const s = sizeConfig[size] || sizeConfig.md;
+  const accent = CATEGORY_ACCENTS[category] || CATEGORY_ACCENTS.other;
+
   const chipBg =
-    darkGlyph && step === 'curated'
+    darkGlyph && (step === 'inline' || step === 'curated')
       ? 'border border-[#1A1A1A] bg-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.2)]'
       : 'border border-[color:var(--labora-border,#E3DCD2)] bg-[color:var(--labora-surface,#FFFEFB)] shadow-[0_1px_2px_rgba(46,90,68,0.04)]';
 
@@ -98,12 +108,21 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
     .join('')
     .slice(0, 2) || '?';
 
+  if (step === 'inline' && inlineIcon) {
+    return (
+      <div className={`${containerClass} ${s.p}`} title={name}>
+        <BrandMarkSvg icon={inlineIcon} className={s.svg} title={`${name} logo`} />
+      </div>
+    );
+  }
+
   const renderRemote = (src: string) => (
     <div className={`${containerClass} ${s.p}`} title={name}>
       {/* Letter underlay — visible if remote paint fails without firing onError */}
       <span
         aria-hidden
-        className={`pointer-events-none absolute inset-0 flex items-center justify-center font-bold uppercase tracking-[0.12em] text-[color:var(--labora-muted,#5C6B5F)]/35 ${s.text}`}
+        className={`pointer-events-none absolute inset-0 flex items-center justify-center font-bold uppercase tracking-[0.12em] ${s.text}`}
+        style={{ color: `${accent.fg}55` }}
       >
         {letters}
       </span>
@@ -119,43 +138,28 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
     </div>
   );
 
-  if (step === 'local' && localUrl) return renderRemote(localUrl);
   if (step === 'curated' && curatedUrl) return renderRemote(curatedUrl);
+  if (step === 'local' && localUrl) return renderRemote(localUrl);
   if (step === 'favicon' && faviconUrl) return renderRemote(faviconUrl);
 
-  const getCategoryIcon = () => {
-    switch (category) {
-      case 'delivery':
-        return <Package size={s.icon} strokeWidth={1.75} />;
-      case 'mobility':
-        return <Car size={s.icon} strokeWidth={1.75} />;
-      case 'banking':
-        return <Landmark size={s.icon} strokeWidth={1.75} />;
-      case 'payments':
-        return <CreditCard size={s.icon} strokeWidth={1.75} />;
-      case 'accounting':
-        return <FileText size={s.icon} strokeWidth={1.75} />;
-      default:
-        return <Briefcase size={s.icon} strokeWidth={1.75} />;
-    }
-  };
-
+  // Colored letter avatar — never blank white
   return (
     <div
-      className={`${containerClass} bg-[color:var(--labora-moss-soft,#F5F2ED)] text-[color:var(--labora-primary,#2E5A44)]/80`}
+      className={`${s.w} ${s.h} rounded-2xl flex items-center justify-center overflow-hidden relative shrink-0 ${className}`}
+      style={{
+        background: accent.bg,
+        border: `1px solid ${accent.border}`,
+        color: accent.fg,
+        boxShadow: '0 1px 2px rgba(46,90,68,0.04)'
+      }}
       title={`${name}: marca no disponible`}
     >
-      <div className="flex flex-col items-center justify-center gap-0.5 px-1">
-        {getCategoryIcon()}
-        {size !== 'sm' && (
-          <span
-            className={`font-bold uppercase tracking-[0.12em] text-[color:var(--labora-muted,#5C6B5F)] ${s.text}`}
-            style={{ fontFamily: "var(--labora-font-sans, 'Plus Jakarta Sans', system-ui, sans-serif)" }}
-          >
-            {letters}
-          </span>
-        )}
-      </div>
+      <span
+        className={`font-bold uppercase tracking-[0.1em] ${s.text === 'text-[9px]' ? 'text-xs' : s.text === 'text-[10px]' ? 'text-sm' : 'text-base'}`}
+        style={{ fontFamily: "var(--labora-font-sans, 'Plus Jakarta Sans', system-ui, sans-serif)" }}
+      >
+        {letters}
+      </span>
     </div>
   );
 };
