@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { extractIncomeFromDocument, extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
+import { parseIncomeTextLocally } from '../services/incomeTextParser';
 import { reviewRemoteIncome } from '../services/remoteOperational';
 import { UserRole } from '../types';
 
@@ -86,14 +87,38 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     if (!pastedText.trim() || isManager) return;
     setIsProcessing(true);
     try {
-      const extractedData = await extractIncomeFromText(pastedText);
+      // Prefer deterministic local parse (CSV / líneas Glovo·Uber) — works without Gemini.
+      const localRows = parseIncomeTextLocally(pastedText);
+      let extractedData = localRows;
+      let sourceLabel = 'Texto / CSV (parser local)';
+
       if (extractedData.length === 0) {
-        showNotification('info', 'No se encontraron ingresos claros en el texto.');
+        try {
+          extractedData = await extractIncomeFromText(pastedText);
+          sourceLabel = 'Texto (asistente IA)';
+        } catch (error: unknown) {
+          const code = error instanceof Error ? error.message : '';
+          if (code === 'AI_NOT_CONFIGURED') {
+            showNotification(
+              'info',
+              'Sin OCR/IA configurada. Pega CSV o líneas tipo «Glovo 10/09/2026 89,90» (plataforma, fecha, importe).'
+            );
+            return;
+          }
+          throw error;
+        }
+      }
+
+      if (extractedData.length === 0) {
+        showNotification(
+          'info',
+          'No se encontraron ingresos claros. Formato: plataforma;fecha;importe;retención o «Glovo 10/09/2026 89,90».'
+        );
         return;
       }
 
       setPendingImportSource('text_import');
-      setPendingImportReference('Texto pegado por el usuario');
+      setPendingImportReference(sourceLabel);
       setPendingEvidence(null);
       setPendingImports(extractedData.map((item) => ({
         platform: item.platform,
@@ -101,7 +126,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
         date: item.date,
         retention: item.retention || 0
       })));
-      showNotification('info', `${extractedData.length} ingresos extraídos. Revisa antes de guardar.`);
+      showNotification('info', `${extractedData.length} ingresos detectados. Revisa antes de guardar.`);
     } catch (error: any) {
       console.error(error);
       showNotification('error', String(error?.message || 'No se pudo procesar el texto.'));
@@ -334,7 +359,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
             <p className="labora-kicker text-[#789582]">{isManager ? 'Cartera vinculada' : 'Registro de actividad'}</p>
             <h2 className="mt-1 text-lg font-extrabold text-[#1E231F]">{isManager ? 'Ingresos de clientes' : 'Ingresos'}</h2>
             <p className="mt-1 text-xs text-stone-500">
-              {isManager ? 'Lectura de ingresos registrados por tus clientes vinculados.' : 'Registra importes explícitos de tus plataformas; la IA no crea filas si no puede extraerlas.'}
+              {isManager ? 'Lectura de ingresos registrados por tus clientes vinculados.' : 'Sin conexión a Glovo/Uber. Registra importes a mano o importa liquidación/CSV; nada se inventa.'}
             </p>
           </div>
 
@@ -447,7 +472,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
           {pendingImports.length === 0 ? (
             <>
               <p className="mb-3 text-xs leading-relaxed text-stone-500">
-                Usa una liquidación real en PDF/captura o pega el texto. La IA solo propone filas: nada se guarda hasta que tú confirmes.
+                Sin API de Glovo/Uber: importa liquidación (PDF/captura si hay IA) o pega CSV / líneas «Glovo 10/09/2026 89,90». Nada se guarda hasta que confirmes.
               </p>
               <input
                 ref={importFileRef}

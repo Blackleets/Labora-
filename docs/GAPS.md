@@ -23,6 +23,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 | Billing prep (flag OFF) | `.env.example`; `VITE_BILLING_ENABLED=false`; BillingCard gated |
 | Build / typecheck / vitest | Must stay green |
 | Privacy / terms pages | **Merged PR #15** — `privacidad.html` / `terminos.html`; Login + Settings |
+| Income import without APIs | Parser local CSV/líneas Glovo·Uber (sin Gemini); banca/plataformas apuntan a Ingresos |
 
 ## Linking — what works / what needs Lewis
 

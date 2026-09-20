@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { Building2, ClipboardPaste, LockKeyhole, ShieldCheck } from 'lucide-react';
 
 export const BankingConnect: React.FC = () => {
   return (
@@ -45,6 +45,21 @@ export const BankingConnect: React.FC = () => {
           <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
             Cuando llegue Open Banking: saldos y movimientos para conciliación. La iniciación de pagos permanece fuera de alcance.
           </p>
+        </div>
+      </div>
+
+      <div className="border-t border-[#EAE3D9] bg-[#F1F7F3] px-4 py-4 sm:px-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-white text-[#214E3A] border border-[#D7E5DC]">
+            <ClipboardPaste size={16} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-extrabold text-[#1E231F]">Alternativa honesta ahora</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+              No hay API de Glovo/Uber ni banco en vivo. Ve a <span className="font-semibold text-stone-600">Movimientos → Ingresos</span> y
+              pega liquidaciones (CSV o líneas «Glovo 10/09/2026 89,90») o súbelas como PDF/captura si hay OCR. Nada se marca como «conectado».
+            </p>
+          </div>
         </div>
       </div>
 

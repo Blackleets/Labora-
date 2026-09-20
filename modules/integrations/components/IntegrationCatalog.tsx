@@ -69,10 +69,10 @@ export const IntegrationCatalog: React.FC = () => {
 
   const descriptionFor = (integration: IntegrationDef) => {
     if (integration.category === 'banking') {
-      return 'La conexión de movimientos se habilitará únicamente mediante Open Banking regulado bajo PSD2. Sin banco en vivo todavía.';
+      return 'Open Banking PSD2 aún no está cableado. No hay botón Conectar. Alternativa: importar movimientos/liquidaciones en Ingresos.';
     }
     if (integration.category === 'delivery' || integration.category === 'mobility') {
-      return 'Añádela a tu perfil para clasificar tu actividad e ingresos. La sincronización automática todavía no está habilitada.';
+      return 'Preferencia de perfil («en mi actividad»), no OAuth. Sin API Glovo/Uber: importa liquidaciones en Movimientos → Ingresos.';
     }
     return 'Integración API prevista. Labora+ no marcará este servicio como conectado hasta que exista una autorización real.';
   };
@@ -97,8 +97,8 @@ export const IntegrationCatalog: React.FC = () => {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Actividad</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-stone-900">Plataformas y servicios</h1>
         <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-stone-500">
-          Selecciona las plataformas que utilizas. Solo mostramos como «en mi actividad» una preferencia de perfil;
-          no hay conexión OAuth ni sincronización automática todavía.
+          Marca las plataformas que usas («en mi actividad» = preferencia de perfil). No hay OAuth de Glovo/Uber ni banco en vivo;
+          los ingresos se registran a mano o importando liquidaciones.
         </p>
       </header>
 
