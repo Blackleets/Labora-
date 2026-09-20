@@ -7,9 +7,9 @@ import { DollarSign, LockKeyhole, ShieldCheck } from 'lucide-react';
  */
 export const PayrollDashboard: React.FC = () => (
   <section className="labora-card mx-auto max-w-3xl overflow-hidden">
-    <div className="relative overflow-hidden bg-[#214E3A] p-5 text-white sm:p-6">
+    <div className="relative overflow-hidden bg-[var(--labora-primary)] p-5 text-white sm:p-6">
       <div className="relative flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/10 text-[#F1C56B]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/10 text-[var(--labora-gold-soft)]">
           <DollarSign size={21} />
         </div>
         <div>
@@ -23,17 +23,17 @@ export const PayrollDashboard: React.FC = () => (
       </div>
     </div>
     <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
-      <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
-        <LockKeyhole size={16} className="text-[#214E3A]" />
-        <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Sin empleados inventados</p>
-        <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+      <div className="rounded-[16px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-4">
+        <LockKeyhole size={16} className="text-[var(--labora-primary)]" />
+        <p className="mt-3 text-xs font-extrabold text-[var(--labora-ink)]">Sin empleados inventados</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">
           Cualquier suite de nómina futura usará datos reales de tu organización, no semillas demo.
         </p>
       </div>
-      <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
-        <ShieldCheck size={16} className="text-[#B95635]" />
-        <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Producto usable hoy</p>
-        <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+      <div className="rounded-[16px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-4">
+        <ShieldCheck size={16} className="text-[var(--labora-clay-deep)]" />
+        <p className="mt-3 text-xs font-extrabold text-[var(--labora-ink)]">Producto usable hoy</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">
           Dinero, avisos, modelos, mensajería y vínculo autónomo↔gestoría.
         </p>
       </div>

@@ -138,15 +138,15 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   const getStatus = (expense: Expense) => {
     switch (expense.status) {
       case 'approved':
-        return { label: 'Validado', detail: 'Gestoría', className: 'bg-[#ECF7F0] text-[#24613F] border-[#CFE7D7]', icon: CheckCircle2 };
+        return { label: 'Validado', detail: 'Gestoría', className: 'labora-status-ok', icon: CheckCircle2 };
       case 'pending_review':
-        return { label: 'En revisión', detail: 'Gestoría', className: 'bg-[#FFF8E8] text-[#855D1E] border-[#ECD9A8]', icon: Clock };
+        return { label: 'En revisión', detail: 'Gestoría', className: 'labora-status-pending', icon: Clock };
       case 'rejected':
-        return { label: 'No computado', detail: '', className: 'bg-[#FFF0EE] text-[#9A443B] border-[#EBCFCB]', icon: X };
+        return { label: 'No computado', detail: '', className: 'labora-status-danger', icon: X };
       case 'needs_fix':
-        return { label: 'Corregir', detail: '', className: 'bg-[#FFF3EA] text-[#A4562D] border-[#EDCFBB]', icon: Clock };
+        return { label: 'Corregir', detail: '', className: 'labora-status-warn', icon: Clock };
       default:
-        return { label: 'Pendiente', detail: '', className: 'bg-[#F3F1ED] text-stone-600 border-[#E3DDD4]', icon: Clock };
+        return { label: 'Pendiente', detail: '', className: 'labora-status-pending', icon: Clock };
     }
   };
 
@@ -334,15 +334,15 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
       )}
 
       <section className="labora-card min-w-0 overflow-hidden">
-        <header className="flex items-center justify-between gap-3 border-b border-[#EEE8DF] px-4 py-3.5">
+        <header className="flex items-center justify-between gap-3 border-b border-[var(--labora-border)] px-4 py-3.5">
           <div className="min-w-0">
-            <p className="labora-kicker text-stone-400">{isManager ? 'Cartera vinculada' : 'Registro'}</p>
-            <h3 className="mt-0.5 text-base font-extrabold text-[#1E231F]">{isManager ? 'Gastos de clientes' : 'Gastos'}</h3>
+            <p className="labora-kicker text-[var(--labora-muted)]">{isManager ? 'Cartera vinculada' : 'Registro'}</p>
+            <h3 className="mt-0.5 text-base font-extrabold text-[var(--labora-ink)]">{isManager ? 'Gastos de clientes' : 'Gastos'}</h3>
           </div>
-          <span className="rounded-full bg-[#F1ECE3] px-2.5 py-1 text-[10px] font-extrabold text-stone-500">{filteredExpenses.length}</span>
+          <span className="rounded-full bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-extrabold text-[var(--labora-muted)]">{filteredExpenses.length}</span>
         </header>
 
-        <div className="divide-y divide-[#EEE8DF]">
+        <div className="divide-y divide-[var(--labora-border)]">
           {filteredExpenses.map((expense) => {
             const status = getStatus(expense);
             const StatusIcon = status.icon;
@@ -350,10 +350,10 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
               <article
                 key={expense.id}
                 onClick={() => (isManager ? openManagerReview(expense) : openEdit(expense))}
-                className="min-w-0 cursor-pointer p-4 transition hover:bg-[#FCFAF7]"
+                className="min-w-0 cursor-pointer p-4 transition hover:bg-[var(--labora-parchment)]"
               >
                 <div className="grid min-w-0 grid-cols-[42px_minmax(0,1fr)] items-start gap-3">
-                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[#F1ECE3] text-stone-500">
+                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]">
                     {getCategoryIcon(String(expense.category))}
                   </div>
 
@@ -361,15 +361,15 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
                     <div className="flex min-w-0 items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex min-w-0 items-center gap-1.5">
-                          <h4 className="truncate text-[15px] font-extrabold leading-tight text-[#1E231F]">{expense.merchant || expense.category}</h4>
-                          {expense.isRecurring && <Repeat size={12} className="shrink-0 text-stone-400" />}
+                          <h4 className="truncate text-[15px] font-extrabold leading-tight text-[var(--labora-ink)]">{expense.merchant || expense.category}</h4>
+                          {expense.isRecurring && <Repeat size={12} className="shrink-0 text-[var(--labora-muted)]" />}
                         </div>
-                        <p className="mt-1 text-[11px] font-medium text-stone-400">{isManager ? `${clientName(expense.userId)} · ` : ''}{expense.merchant ? `${expense.category} · ` : ''}{formatDate(expense.date)}</p>
+                        <p className="mt-1 text-[11px] font-medium text-[var(--labora-muted)]">{isManager ? `${clientName(expense.userId)} · ` : ''}{expense.merchant ? `${expense.category} · ` : ''}{formatDate(expense.date)}</p>
                       </div>
-                      <p className="shrink-0 whitespace-nowrap text-sm font-extrabold text-[#1E231F]">{formatCurrency(expense.amount)}</p>
+                      <p className="shrink-0 whitespace-nowrap text-sm font-extrabold text-[var(--labora-ink)]">{formatCurrency(expense.amount)}</p>
                     </div>
 
-                    {expense.notes && <p className="mt-2 line-clamp-2 break-words text-xs leading-relaxed text-stone-500">{expense.notes}</p>}
+                    {expense.notes && <p className="mt-2 line-clamp-2 break-words text-xs leading-relaxed text-[var(--labora-muted)]">{expense.notes}</p>}
 
                     <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap gap-1.5">
@@ -377,7 +377,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
                           <StatusIcon size={11} /><span>{status.label}</span>{status.detail && <span className="hidden opacity-75 min-[380px]:inline">· {status.detail}</span>}
                         </span>
                         {typeof expense.ocrConfidence === 'number' && (
-                          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${expense.ocrNeedsReview ? 'border-[#ECD9A8] bg-[#FFF8E8] text-[#855D1E]' : 'border-[#D6E4DB] bg-[#EDF4EF] text-[#214E3A]'}`}>
+                          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${expense.ocrNeedsReview ? 'border-[var(--labora-border)] bg-[var(--labora-parchment)] text-[var(--labora-gold)]' : 'border-[var(--labora-border)] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]'}`}>
                             OCR {Math.round(expense.ocrConfidence * 100)}%
                           </span>
                         )}
@@ -386,7 +386,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
                       {expense.receiptUrl && (
                         <button
                           onClick={(event) => { event.stopPropagation(); setViewingImage(expense.receiptUrl || null); }}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-[10px] px-2 py-1.5 text-[11px] font-bold text-[#214E3A] hover:bg-[#EDF4EF]"
+                          className="inline-flex shrink-0 items-center gap-1 rounded-[10px] px-2 py-1.5 text-[11px] font-bold text-[var(--labora-primary)] hover:bg-[var(--labora-moss-soft)]"
                           title="Ver ticket"
                         >
                           <Eye size={14} /> Ticket
@@ -401,32 +401,32 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
 
           {filteredExpenses.length === 0 && (
             <div className="px-4 py-12 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#F1ECE3] text-stone-300"><Receipt size={23} /></div>
-              <p className="mt-3 text-sm font-extrabold text-stone-500">{isManager ? 'Sin gastos de clientes vinculados' : 'No hay gastos registrados'}</p>
-              <p className="mt-1 text-xs text-stone-400">{isManager ? 'Cuando un autónomo vinculado registre un ticket o gasto, aparecerá aquí para aprobar, rechazar o fijar el % deducible.' : 'Escanea un ticket o añade uno manualmente.'}</p>
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]"><Receipt size={23} /></div>
+              <p className="mt-3 text-sm font-extrabold text-[var(--labora-muted)]">{isManager ? 'Sin gastos de clientes vinculados' : 'No hay gastos registrados'}</p>
+              <p className="mt-1 text-xs text-[var(--labora-muted)]">{isManager ? 'Cuando un autónomo vinculado registre un ticket o gasto, aparecerá aquí para aprobar, rechazar o fijar el % deducible.' : 'Escanea un ticket o añade uno manualmente.'}</p>
             </div>
           )}
         </div>
       </section>
 
       {isManualOpen && selectedExpense && !isManager && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#18211C]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
-          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[#E3DBD0] bg-[#FFFDF9] shadow-2xl sm:rounded-[26px]">
-            <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-5 py-4">
-              <div><p className="labora-kicker text-[#789582]">{selectedExpense.receiptUrl ? 'Revisar ticket' : 'Registro manual'}</p><h3 className="mt-1 text-lg font-extrabold text-[#1E231F]">{selectedExpense.id.startsWith('temp_') ? 'Nuevo gasto' : 'Editar gasto'}</h3></div>
-              <button type="button" onClick={() => { setIsManualOpen(false); setSelectedExpense(null); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DED2] bg-white text-stone-500"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--labora-ink)]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] shadow-2xl sm:rounded-[26px]">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--labora-border)] px-5 py-4">
+              <div><p className="labora-kicker text-[var(--labora-primary-2)]">{selectedExpense.receiptUrl ? 'Revisar ticket' : 'Registro manual'}</p><h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{selectedExpense.id.startsWith('temp_') ? 'Nuevo gasto' : 'Editar gasto'}</h3></div>
+              <button type="button" onClick={() => { setIsManualOpen(false); setSelectedExpense(null); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)]"><X size={18} /></button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-4 overflow-y-auto p-5">
               {typeof selectedExpense.ocrConfidence === 'number' && (
-                <div className={`rounded-[14px] border p-3 ${selectedExpense.ocrNeedsReview ? 'border-[#ECD9A8] bg-[#FFF8E8]' : 'border-[#D5E4DA] bg-[#EDF4EF]'}`}>
-                  <div className="flex items-center justify-between gap-3"><p className={`text-xs font-extrabold ${selectedExpense.ocrNeedsReview ? 'text-[#805F2B]' : 'text-[#214E3A]'}`}>Lectura OCR · {Math.round(selectedExpense.ocrConfidence * 100)}%</p><span className="text-[10px] font-bold text-stone-500">Siempre confirma los datos</span></div>
-                  {selectedExpense.ocrUncertainFields?.length ? <p className="mt-1 text-[10px] text-stone-500">Campos dudosos: {selectedExpense.ocrUncertainFields.join(', ')}</p> : null}
+                <div className={`rounded-[14px] border p-3 ${selectedExpense.ocrNeedsReview ? 'border-[var(--labora-border)] bg-[var(--labora-parchment)]' : 'border-[var(--labora-border)] bg-[var(--labora-moss-soft)]'}`}>
+                  <div className="flex items-center justify-between gap-3"><p className={`text-xs font-extrabold ${selectedExpense.ocrNeedsReview ? 'text-[var(--labora-gold)]' : 'text-[var(--labora-primary)]'}`}>Lectura OCR · {Math.round(selectedExpense.ocrConfidence * 100)}%</p><span className="text-[10px] font-bold text-[var(--labora-muted)]">Siempre confirma los datos</span></div>
+                  {selectedExpense.ocrUncertainFields?.length ? <p className="mt-1 text-[10px] text-[var(--labora-muted)]">Campos dudosos: {selectedExpense.ocrUncertainFields.join(', ')}</p> : null}
                 </div>
               )}
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Importe"><div className="relative"><input type="number" min="0" step="0.01" value={selectedExpense.amount || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, amount: Number(event.target.value) })} className="field-input pr-9" required /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-stone-400">{selectedCountry.currency_symbol || '€'}</span></div></Field>
+                <Field label="Importe"><div className="relative"><input type="number" min="0" step="0.01" value={selectedExpense.amount || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, amount: Number(event.target.value) })} className="field-input pr-9" required /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[var(--labora-muted)]">{selectedCountry.currency_symbol || '€'}</span></div></Field>
                 <Field label="Fecha"><input type="date" value={selectedExpense.date} onChange={(event) => setSelectedExpense({ ...selectedExpense, date: event.target.value })} className="field-input" required /></Field>
               </div>
 
@@ -437,21 +437,21 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
               <Field label="Descripción"><textarea rows={3} value={selectedExpense.notes || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, notes: event.target.value })} placeholder="Concepto o nota…" className="field-input resize-none" /></Field>
 
               {selectedExpense.receiptUrl && (
-                <button type="button" onClick={() => setViewingImage(selectedExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[#DDE7E0] bg-[#F2F7F4] p-3 text-left">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#DDE7E0] bg-white text-[#214E3A]"><ImageIcon size={17} /></div>
-                  <div className="min-w-0"><p className="text-sm font-extrabold text-[#1E231F]">Justificante adjunto</p><p className="text-[11px] text-stone-500">Toca para revisarlo</p></div>
+                <button type="button" onClick={() => setViewingImage(selectedExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-3 text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-primary)]"><ImageIcon size={17} /></div>
+                  <div className="min-w-0"><p className="text-sm font-extrabold text-[var(--labora-ink)]">Justificante adjunto</p><p className="text-[11px] text-[var(--labora-muted)]">Toca para revisarlo</p></div>
                 </button>
               )}
 
-              <div className="rounded-[14px] border border-[#E8DFD2] bg-[#FAF7F1] p-3 text-[10px] leading-relaxed text-stone-500">
-                Este gasto se guarda <strong className="text-stone-700">pendiente de revisión</strong>. Labora+ no asignará automáticamente IVA ni porcentaje deducible solo por haber subido el justificante.
+              <div className="rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-3 text-[10px] leading-relaxed text-[var(--labora-muted)]">
+                Este gasto se guarda <strong className="text-[var(--labora-ink-soft)]">pendiente de revisión</strong>. Labora+ no asignará automáticamente IVA ni porcentaje deducible solo por haber subido el justificante.
               </div>
 
-              <label className="flex items-center gap-2 text-xs font-bold text-stone-600"><input type="checkbox" checked={Boolean(selectedExpense.isRecurring)} onChange={(event) => setSelectedExpense({ ...selectedExpense, isRecurring: event.target.checked })} className="rounded border-stone-300" />Es un gasto recurrente</label>
+              <label className="flex items-center gap-2 text-xs font-bold text-[var(--labora-muted)]"><input type="checkbox" checked={Boolean(selectedExpense.isRecurring)} onChange={(event) => setSelectedExpense({ ...selectedExpense, isRecurring: event.target.checked })} className="rounded border-[var(--labora-border)]" />Es un gasto recurrente</label>
 
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => { setIsManualOpen(false); setSelectedExpense(null); }} className="flex-1 rounded-[13px] border border-[#DDD4C8] bg-white px-4 py-3 text-sm font-extrabold text-stone-600">Cancelar</button>
-                <button type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#214E3A] px-4 py-3 text-sm font-extrabold text-white"><Save size={16} /> Guardar</button>
+                <button type="button" onClick={() => { setIsManualOpen(false); setSelectedExpense(null); }} className="flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-4 py-3 text-sm font-extrabold text-[var(--labora-muted)]">Cancelar</button>
+                <button type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-4 py-3 text-sm font-extrabold text-white"><Save size={16} /> Guardar</button>
               </div>
             </form>
           </div>
@@ -459,42 +459,42 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
       )}
 
       {viewingImage && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/90 p-4" onClick={() => setViewingImage(null)}>
-          <button type="button" onClick={() => setViewingImage(null)} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white" aria-label="Cerrar ticket"><X size={20} /></button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[var(--labora-ink)]/90 p-4" onClick={() => setViewingImage(null)}>
+          <button type="button" onClick={() => setViewingImage(null)} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--labora-surface)]/10 text-white" aria-label="Cerrar ticket"><X size={20} /></button>
           <img src={viewingImage} alt="Justificante del gasto" className="max-h-[86vh] max-w-full rounded-xl object-contain" onClick={(event) => event.stopPropagation()} />
         </div>
       )}
 
       {isManager && reviewingExpense && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#18211C]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
-          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[#E3DBD0] bg-[#FFFDF9] shadow-2xl sm:rounded-[26px]">
-            <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-5 py-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--labora-ink)]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] shadow-2xl sm:rounded-[26px]">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--labora-border)] px-5 py-4">
               <div>
-                <p className="labora-kicker text-[#789582]">Auditoría</p>
-                <h3 className="mt-1 text-lg font-extrabold text-[#1E231F]">{reviewingExpense.merchant || reviewingExpense.category}</h3>
-                <p className="mt-1 text-xs text-stone-500">{clientName(reviewingExpense.userId)} · {formatCurrency(reviewingExpense.amount)} · {formatDate(reviewingExpense.date)}</p>
+                <p className="labora-kicker text-[var(--labora-primary-2)]">Auditoría</p>
+                <h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{reviewingExpense.merchant || reviewingExpense.category}</h3>
+                <p className="mt-1 text-xs text-[var(--labora-muted)]">{clientName(reviewingExpense.userId)} · {formatCurrency(reviewingExpense.amount)} · {formatDate(reviewingExpense.date)}</p>
               </div>
-              <button type="button" onClick={() => setReviewingExpense(null)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DED2] bg-white text-stone-500"><X size={18} /></button>
+              <button type="button" onClick={() => setReviewingExpense(null)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)]"><X size={18} /></button>
             </div>
             <div className="space-y-4 overflow-y-auto p-5">
               {reviewingExpense.receiptUrl && (
-                <button type="button" onClick={() => setViewingImage(reviewingExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[#DDE7E0] bg-[#F2F7F4] p-3 text-left">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#DDE7E0] bg-white text-[#214E3A]"><ImageIcon size={17} /></div>
-                  <div className="min-w-0"><p className="text-sm font-extrabold text-[#1E231F]">Ver justificante</p><p className="text-[11px] text-stone-500">Abre la imagen adjunta</p></div>
+                <button type="button" onClick={() => setViewingImage(reviewingExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-3 text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-primary)]"><ImageIcon size={17} /></div>
+                  <div className="min-w-0"><p className="text-sm font-extrabold text-[var(--labora-ink)]">Ver justificante</p><p className="text-[11px] text-[var(--labora-muted)]">Abre la imagen adjunta</p></div>
                 </button>
               )}
               <label className="block space-y-1.5">
-                <span className="text-xs font-extrabold text-stone-600">% deducible (0–100)</span>
+                <span className="text-xs font-extrabold text-[var(--labora-muted)]">% deducible (0–100)</span>
                 <input type="number" min="0" max="100" step="1" value={reviewPct} onChange={(event) => setReviewPct(event.target.value)} className="field-input" />
               </label>
               <label className="block space-y-1.5">
-                <span className="text-xs font-extrabold text-stone-600">Nota para el autónomo</span>
+                <span className="text-xs font-extrabold text-[var(--labora-muted)]">Nota para el autónomo</span>
                 <textarea rows={3} value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} className="field-input resize-none" placeholder="Opcional" />
               </label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <button type="button" onClick={() => submitManagerReview('rejected')} className="rounded-[13px] border border-[#EBCFCB] bg-[#FFF0EE] px-3 py-3 text-xs font-extrabold text-[#9A443B]">Rechazar</button>
-                <button type="button" onClick={() => submitManagerReview('needs_fix')} className="rounded-[13px] border border-[#EDCFBB] bg-[#FFF3EA] px-3 py-3 text-xs font-extrabold text-[#A4562D]">Pedir corrección</button>
-                <button type="button" onClick={() => submitManagerReview('approved')} className="rounded-[13px] bg-[#214E3A] px-3 py-3 text-xs font-extrabold text-white">Aprobar</button>
+                <button type="button" onClick={() => submitManagerReview('rejected')} className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3 py-3 text-xs font-extrabold text-[var(--labora-clay-deep)]">Rechazar</button>
+                <button type="button" onClick={() => submitManagerReview('needs_fix')} className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3 py-3 text-xs font-extrabold text-[var(--labora-clay-deep)]">Pedir corrección</button>
+                <button type="button" onClick={() => submitManagerReview('approved')} className="rounded-[13px] bg-[var(--labora-primary)] px-3 py-3 text-xs font-extrabold text-white">Aprobar</button>
               </div>
             </div>
           </div>
@@ -503,28 +503,28 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
 
       {!isManager && <GasStationCaptureModal isOpen={isGasModalOpen} onClose={() => setIsGasModalOpen(false)} />}
 
-      <style>{`.field-input{width:100%;border:1px solid #DDD4C8;background:#fff;border-radius:13px;padding:.65rem .75rem;font-size:.875rem;outline:none}.field-input:focus{border-color:#789582;box-shadow:0 0 0 2px rgba(221,233,225,.7)}`}</style>
+      <style>{`.field-input{width:100%;border:1px solid var(--labora-border);background:var(--labora-surface);border-radius:13px;padding:.65rem .75rem;font-size:.875rem;outline:none}.field-input:focus{border-color:var(--labora-primary-2);box-shadow:0 0 0 2px color-mix(in srgb, var(--labora-primary) 18%, transparent)}`}</style>
     </div>
   );
 };
 
 const ActionCard = ({ icon: Icon, title, text, tone, onClick, loading = false, wide = false }: any) => {
   const toneClass = tone === 'clay'
-    ? 'bg-[#F8EDE7] text-[#B95635] border-[#F0D8CD]'
+    ? 'bg-[var(--labora-soft-clay)] text-[var(--labora-clay-deep)] border-[var(--labora-border)]'
     : tone === 'green'
-      ? 'bg-[#E7F0EA] text-[#214E3A] border-[#D2E3D8]'
-      : 'bg-[#F1ECE3] text-stone-600 border-[#E4DDD3]';
+      ? 'bg-[var(--labora-moss-soft)] text-[var(--labora-primary)] border-[var(--labora-border)]'
+      : 'bg-[var(--labora-surface-2)] text-[var(--labora-muted)] border-[var(--labora-border)]';
   return (
     <button onClick={onClick} disabled={loading} className={`labora-card labora-card-interactive min-w-0 p-3.5 text-left disabled:opacity-60 ${wide ? 'col-span-2 sm:col-span-1' : ''}`}>
       <div className={`flex h-10 w-10 items-center justify-center rounded-[13px] border ${toneClass}`}>{loading ? <Loader2 size={18} className="animate-spin" /> : <Icon size={18} />}</div>
-      <p className="mt-2 text-sm font-extrabold text-[#1E231F]">{title}</p>
-      <p className="mt-0.5 text-[11px] font-medium text-stone-500">{text}</p>
+      <p className="mt-2 text-sm font-extrabold text-[var(--labora-ink)]">{title}</p>
+      <p className="mt-0.5 text-[11px] font-medium text-[var(--labora-muted)]">{text}</p>
     </button>
   );
 };
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <label className="block space-y-1.5"><span className="text-xs font-extrabold text-stone-600">{label}</span>{children}</label>
+  <label className="block space-y-1.5"><span className="text-xs font-extrabold text-[var(--labora-muted)]">{label}</span>{children}</label>
 );
 
 export default ExpenseTracker;
