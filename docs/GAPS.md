@@ -30,6 +30,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ anti-fiction delivery/hot-
 | Agent-safe polish pass | BASE_URL legal links; currency from CountryContext in money UIs; dark cream remaps; ManagerDashboard Ver ticket + % deducible; platform letter accents; honest account-deletion entry |
 | Agent-safe loop 2 (hub CSS vars, Messages empty/soft-grid dark, soft currency toolkit/billing labels, legal relative HTML) | Dark remaps + `var(--labora-*)` on Messages/Money/Catalog/People/Dashboard leftovers; billing flag still OFF |
 | Agent-safe loop 3 (Settings/Onboarding/Documents cream→tokens, ManagerDashboard status chips, toolkit soft shadow) | `var(--labora-*)` + `.labora-status-*` theme chips; RiderToolkit shadows; billing flag still OFF |
+| Agent-safe loop 4 (GestorRequirements/Expense/Login/Tax/Income + banking·payroll shells cream→tokens) | Remaining parchment hex → `var(--labora-*)`; requirements/expense/income badges → `.labora-status-*`; meadow Login sky gradients kept; billing flag still OFF |
 
 ## Linking — what works / what needs Lewis
 

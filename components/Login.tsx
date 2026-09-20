@@ -65,7 +65,7 @@ const Login: React.FC = () => {
 
   const normalizeEmail = (value: string) => value.trim().toLowerCase();
   const inputClass =
-    'w-full rounded-xl border border-[#E8DFC8] bg-[#FFFEFB] px-4 py-3.5 text-[15px] leading-normal text-[#1E2A24] outline-none transition placeholder:text-[#9A9186] focus:border-[#2F5D4A]/40 focus:ring-4 focus:ring-[#2F5D4A]/08';
+    'w-full rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-4 py-3.5 text-[15px] leading-normal text-[var(--labora-ink)] outline-none transition placeholder:text-[var(--labora-muted)] focus:border-[var(--labora-primary)]/40 focus:ring-4 focus:ring-[var(--labora-primary)]/08';
   const labelClass = 'labora-label mb-2.5 block';
 
   const resetFeedback = () => {
@@ -183,9 +183,9 @@ const Login: React.FC = () => {
 
   if (recovering) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#F7F3EA]">
-        <div className="flex items-center gap-3 rounded-2xl border border-[#E8DFC8] bg-[#FFFEFB] px-5 py-3.5 text-sm font-medium text-[#2F5D4A] shadow-[0_12px_40px_rgba(30,42,36,0.06)]">
-          <Loader2 size={18} className="animate-spin text-[#C96846]" /> Recuperando sesión…
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--labora-canvas)]">
+        <div className="flex items-center gap-3 rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-5 py-3.5 text-sm font-medium text-[var(--labora-primary)] shadow-[0_12px_40px_rgba(30,42,36,0.06)]">
+          <Loader2 size={18} className="animate-spin text-[var(--labora-clay)]" /> Recuperando sesión…
         </div>
       </div>
     );
@@ -207,7 +207,7 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#F7F3EA] text-[#1E2A24] lg:flex-row">
+    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[var(--labora-canvas)] text-[var(--labora-ink)] lg:flex-row">
       {/* Mobile atmospheric strip */}
       <div
         className="labora-film-grain relative h-36 w-full shrink-0 overflow-hidden border-b lg:hidden"
@@ -279,10 +279,10 @@ const Login: React.FC = () => {
               Claridad fiscal
             </p>
             <div className="labora-gold-line mt-4" />
-            <h1 className="labora-display mt-6 text-[#1E2A24] xl:text-[4rem] 2xl:text-[4.35rem]">
+            <h1 className="labora-display mt-6 text-[var(--labora-ink)] xl:text-[4rem] 2xl:text-[4.35rem]">
               Evidencia.<br />Confianza.<br />Sin ruido.
             </h1>
-            <p className="labora-body mt-6 max-w-md text-[15px] leading-[1.7] text-[#4A5D52] xl:text-base">
+            <p className="labora-body mt-6 max-w-md text-[15px] leading-[1.7] text-[var(--labora-muted)] xl:text-base">
               Espacio de trabajo para autónomos y gestorías: claridad fiscal,
               archivo privado y estados claros con evidencia.
             </p>
@@ -295,13 +295,13 @@ const Login: React.FC = () => {
               ].map((item) => (
                 <div
                   key={item.k}
-                  className="rounded-2xl border bg-[#FFFEFB]/75 px-4 py-4 shadow-[0_8px_28px_rgba(30,42,36,0.05)] backdrop-blur-md"
+                  className="rounded-2xl border bg-[var(--labora-surface)]/75 px-4 py-4 shadow-[0_8px_28px_rgba(30,42,36,0.05)] backdrop-blur-md"
                   style={{ borderColor: 'rgba(30,42,36,0.08)' }}
                 >
                   <p className="labora-label" style={{ color: palette.clay }}>
                     {item.k}
                   </p>
-                  <p className="mt-2 text-[13px] font-semibold leading-snug text-[#2A332E]">{item.v}</p>
+                  <p className="mt-2 text-[13px] font-semibold leading-snug text-[var(--labora-ink-soft)]">{item.v}</p>
                 </div>
               ))}
             </div>
@@ -310,7 +310,7 @@ const Login: React.FC = () => {
       </section>
 
       {/* Auth column — elevated paper card */}
-      <section className="relative z-20 flex flex-1 shrink-0 flex-col items-center justify-center px-5 py-10 pb-[40px] sm:px-10 lg:max-w-[540px] lg:bg-[#F7F3EA] lg:pb-0 lg:py-14 xl:max-w-[620px] xl:px-14">
+      <section className="relative z-20 flex flex-1 shrink-0 flex-col items-center justify-center px-5 py-10 pb-[40px] sm:px-10 lg:max-w-[540px] lg:bg-[var(--labora-canvas)] lg:pb-0 lg:py-14 xl:max-w-[620px] xl:px-14">
         <div
           className="pointer-events-none absolute inset-0 hidden lg:block"
           style={{
@@ -326,8 +326,8 @@ const Login: React.FC = () => {
                   onClick={() => switchMode('login')}
                   className={`rounded-xl py-3 text-[13px] font-semibold tracking-[-0.01em] transition ${
                     mode === 'login'
-                      ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
-                      : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
+                      ? 'bg-[var(--labora-primary)] text-[var(--labora-surface)] shadow-sm'
+                      : 'text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-ink-soft)]'
                   }`}
                 >
                   Entrar
@@ -337,8 +337,8 @@ const Login: React.FC = () => {
                   onClick={() => switchMode('register')}
                   className={`rounded-xl py-3 text-[13px] font-semibold tracking-[-0.01em] transition ${
                     mode === 'register'
-                      ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
-                      : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
+                      ? 'bg-[var(--labora-primary)] text-[var(--labora-surface)] shadow-sm'
+                      : 'text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-ink-soft)]'
                   }`}
                 >
                   Crear cuenta
@@ -349,7 +349,7 @@ const Login: React.FC = () => {
             <div className="p-8 sm:p-10">
               {mode === 'login' ? (
                 <>
-                  <h2 className="labora-title text-[#1E2A24]">
+                  <h2 className="labora-title text-[var(--labora-ink)]">
                     Bienvenido de nuevo
                   </h2>
                   <p className="labora-body mt-3 text-[15px] leading-[1.65]">
@@ -360,7 +360,7 @@ const Login: React.FC = () => {
                     <div>
                       <label className={labelClass}>Correo</label>
                       <div className="relative">
-                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
                         <input
                           type="email"
                           autoComplete="email"
@@ -375,7 +375,7 @@ const Login: React.FC = () => {
                     <div>
                       <label className={labelClass}>Contraseña</label>
                       <div className="relative">
-                        <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                        <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
                         <input
                           type="password"
                           autoComplete="current-password"
@@ -388,12 +388,12 @@ const Login: React.FC = () => {
                       </div>
                     </div>
                     {error && (
-                      <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
+                      <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
                         {error}
                       </p>
                     )}
                     {info && (
-                      <p className="rounded-xl border border-[#FDE3B8] bg-[#FEF7EB] px-3.5 py-3 text-xs font-medium text-[#B87A24]">
+                      <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3.5 py-3 text-xs font-medium text-[var(--labora-gold)]">
                         {info}
                       </p>
                     )}
@@ -410,14 +410,14 @@ const Login: React.FC = () => {
                 <>
                   <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
-                      <h2 className="labora-title text-[#1E2A24]">
+                      <h2 className="labora-title text-[var(--labora-ink)]">
                         Crea tu espacio
                       </h2>
                       <p className="labora-body mt-3 text-[15px]">Paso {registerStep} de 2</p>
                     </div>
                     <div className="flex gap-1.5">
-                      <span className={`h-1 w-7 rounded-full ${registerStep >= 1 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
-                      <span className={`h-1 w-7 rounded-full ${registerStep >= 2 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
+                      <span className={`h-1 w-7 rounded-full ${registerStep >= 1 ? 'bg-[var(--labora-clay)]' : 'bg-[var(--labora-border)]'}`} />
+                      <span className={`h-1 w-7 rounded-full ${registerStep >= 2 ? 'bg-[var(--labora-clay)]' : 'bg-[var(--labora-border)]'}`} />
                     </div>
                   </div>
 
@@ -431,11 +431,11 @@ const Login: React.FC = () => {
                             onClick={() => setRole(UserRole.RIDER)}
                             className={`rounded-xl border p-3.5 text-left transition ${
                               role === UserRole.RIDER
-                                ? 'border-[#2F5D4A]/35 bg-[#EBF3ED] text-[#1E2A24]'
-                                : 'border-[#E8DFC8] bg-[#FFFEFB] text-[#6B645C]'
+                                ? 'border-[var(--labora-primary)]/35 bg-[var(--labora-moss-soft)] text-[var(--labora-ink)]'
+                                : 'border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)]'
                             }`}
                           >
-                            <Bike size={18} className={role === UserRole.RIDER ? 'text-[#2F5D4A]' : ''} />
+                            <Bike size={18} className={role === UserRole.RIDER ? 'text-[var(--labora-primary)]' : ''} />
                             <p className="mt-2 text-sm font-semibold">Autónomo</p>
                             <p className="mt-0.5 text-[10px] opacity-70">Mi actividad</p>
                           </button>
@@ -444,16 +444,16 @@ const Login: React.FC = () => {
                             onClick={() => setRole(UserRole.MANAGER)}
                             className={`rounded-xl border p-3.5 text-left transition ${
                               role === UserRole.MANAGER
-                                ? 'border-[#2F5D4A]/35 bg-[#EBF3ED] text-[#1E2A24]'
-                                : 'border-[#E8DFC8] bg-[#FFFEFB] text-[#6B645C]'
+                                ? 'border-[var(--labora-primary)]/35 bg-[var(--labora-moss-soft)] text-[var(--labora-ink)]'
+                                : 'border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)]'
                             }`}
                           >
-                            <BriefcaseBusiness size={18} className={role === UserRole.MANAGER ? 'text-[#2F5D4A]' : ''} />
+                            <BriefcaseBusiness size={18} className={role === UserRole.MANAGER ? 'text-[var(--labora-primary)]' : ''} />
                             <p className="mt-2 text-sm font-semibold">Gestoría</p>
                             <p className="mt-0.5 text-[10px] opacity-70">Mis clientes</p>
                           </button>
                         </div>
-                        <p className="mt-3 text-[11px] leading-relaxed text-[#6B645C]">
+                        <p className="mt-3 text-[11px] leading-relaxed text-[var(--labora-muted)]">
                           Las gestorías deben identificar NIF y colegiado. Los autónomos se registran libremente.
                         </p>
                       </div>
@@ -462,33 +462,33 @@ const Login: React.FC = () => {
                           {role === UserRole.MANAGER ? 'Nombre de contacto' : 'Nombre y apellidos'}
                         </label>
                         <div className="relative">
-                          <UserRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                          <UserRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
                           <input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} pl-11`} placeholder="Tu nombre" />
                         </div>
                       </div>
                       <div>
                         <label className={labelClass}>Correo electrónico</label>
                         <div className="relative">
-                          <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                          <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
                           <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-11`} placeholder="tu@correo.com" />
                         </div>
                       </div>
                       <div>
                         <label className={labelClass}>Contraseña</label>
                         <div className="relative">
-                          <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                          <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
                           <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-11`} placeholder="8 caracteres o más" />
                         </div>
                       </div>
                       {error && (
-                        <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
+                        <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
                           {error}
                         </p>
                       )}
                       <button
                         type="button"
                         onClick={continueRegistration}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2F5D4A] py-3.5 text-sm font-semibold text-[#FFFEFB] transition hover:bg-[#264A3C]"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--labora-primary)] py-3.5 text-sm font-semibold text-[var(--labora-surface)] transition hover:opacity-90"
                       >
                         Continuar <ArrowRight size={17} />
                       </button>
@@ -498,7 +498,7 @@ const Login: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => { setRegisterStep(1); resetFeedback(); }}
-                        className="mb-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B645C] hover:text-[#2F5D4A]"
+                        className="mb-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--labora-muted)] hover:text-[var(--labora-primary)]"
                       >
                         <ArrowLeft size={14} /> Volver
                       </button>
@@ -514,17 +514,17 @@ const Login: React.FC = () => {
                       <div>
                         <label className={labelClass}>País de operación</label>
                         <CountrySelector variant="cards" />
-                        <p className="mt-2 text-[11px] leading-relaxed text-[#6B645C]">
+                        <p className="mt-2 text-[11px] leading-relaxed text-[var(--labora-muted)]">
                           Se guarda en tu perfil ({selectedCountry.display_name}). Moneda y modelos fiscales seguirán esta elección.
                         </p>
                       </div>
 
                       <div>
                         <label className={labelClass}>
-                          Teléfono <span className="font-normal text-[#9A9186]">(opcional)</span>
+                          Teléfono <span className="font-normal text-[var(--labora-muted)]">(opcional)</span>
                         </label>
                         <div className="relative">
-                          <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                          <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
                           <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-11`} placeholder="+34 600 000 000" />
                         </div>
                       </div>
@@ -532,20 +532,20 @@ const Login: React.FC = () => {
                         <>
                           <div>
                             <label className={labelClass}>
-                              NIF / NIE <span className="font-normal text-[#9A9186]">(opcional)</span>
+                              NIF / NIE <span className="font-normal text-[var(--labora-muted)]">(opcional)</span>
                             </label>
                             <input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678Z" />
                           </div>
                           <div>
                             <label className={labelClass}>
-                              Matrícula <span className="font-normal text-[#9A9186]">(opcional)</span>
+                              Matrícula <span className="font-normal text-[var(--labora-muted)]">(opcional)</span>
                             </label>
                             <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" />
                           </div>
                         </>
                       ) : (
                         <div className="space-y-5">
-                          <p className="rounded-xl border border-[#E8DFC8] bg-[#F7F3EA] px-3.5 py-3 text-[11px] leading-relaxed text-[#4A5D52]">
+                          <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-canvas)] px-3.5 py-3 text-[11px] leading-relaxed text-[var(--labora-muted)]">
                             Las gestorías deben identificar NIF y colegiado. Los autónomos se registran libremente.
                           </p>
                           <div>
@@ -568,7 +568,7 @@ const Login: React.FC = () => {
                               required
                               autoComplete="off"
                             />
-                            <p className="mt-1.5 text-[10px] text-[#8A8278]">NIF, CIF o NIE válido (formato). No consultamos AEAT en tiempo real.</p>
+                            <p className="mt-1.5 text-[10px] text-[var(--labora-muted)]">NIF, CIF o NIE válido (formato). No consultamos AEAT en tiempo real.</p>
                           </div>
                           <div>
                             <label className={labelClass}>Número de colegiado</label>
@@ -585,7 +585,7 @@ const Login: React.FC = () => {
                       )}
 
                       {error && (
-                        <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
+                        <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
                           {error}
                         </p>
                       )}
@@ -604,16 +604,16 @@ const Login: React.FC = () => {
           </div>
 
           <div className="mt-8 space-y-2 text-center">
-            <div className="flex items-center justify-center gap-2 text-[10px] font-medium tracking-[0.02em] text-[#8A8278]">
-              <ShieldCheck size={12} className="text-[#2F5D4A]/70" />
+            <div className="flex items-center justify-center gap-2 text-[10px] font-medium tracking-[0.02em] text-[var(--labora-muted)]">
+              <ShieldCheck size={12} className="text-[var(--labora-primary)]/70" />
               Auth segura · archivo privado · sin datos inventados
             </div>
-            <p className="text-[10px] text-[#9A9186]">
-              <a href={withBaseUrl("privacidad.html")} className="font-semibold text-[#2F5D4A] underline-offset-2 hover:underline">
+            <p className="text-[10px] text-[var(--labora-muted)]">
+              <a href={withBaseUrl("privacidad.html")} className="font-semibold text-[var(--labora-primary)] underline-offset-2 hover:underline">
                 Privacidad
               </a>
-              <span className="mx-1.5 text-[#D4CCC0]">·</span>
-              <a href={withBaseUrl("terminos.html")} className="font-semibold text-[#2F5D4A] underline-offset-2 hover:underline">
+              <span className="mx-1.5 text-[var(--labora-border)]">·</span>
+              <a href={withBaseUrl("terminos.html")} className="font-semibold text-[var(--labora-primary)] underline-offset-2 hover:underline">
                 Términos
               </a>
             </p>
