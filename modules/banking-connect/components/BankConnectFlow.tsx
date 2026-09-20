@@ -51,7 +51,7 @@ export const BankConnectFlow: React.FC<BankConnectFlowProps> = ({ onClose }) => 
             <ShieldCheck size={15} /> Sin credenciales en Labora+
           </div>
           <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
-            Nunca introduzcas aquí la contraseña de tu banco. La primera integración real será solo lectura.
+            Nunca introduzcas aquí la contraseña de tu banco. Mientras tanto: importa liquidaciones en Movimientos → Ingresos (CSV o texto), sin fingir conexión.
           </p>
         </div>
 
