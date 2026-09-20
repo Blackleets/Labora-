@@ -1,6 +1,6 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ PR `feat/gestoria-link-and-docs`).
+Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`.
 
 ## Merged on main (no longer blocked)
 
@@ -31,7 +31,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ PR `feat/gestoria-link-and
 | Manager UI: share email + list linked clients | Works in Settings (`Tus clientes`) — no fake invites |
 | Client validation (role=manager/admin only) | Pure helpers + RPC reject riders / self |
 | Set / clear `profiles.manager_id` | **Only via RPC** — column is **not** in authenticated UPDATE grant |
-| RPC applied on live project | **Lewis must run** migration (or confirm already present) |
+| RPC applied on live project | **Applied** 2026-09-20 (`labora_gestoria_link_rpcs` + grants harden) |
 | Direct `.update({ manager_id })` from Vite | **Cannot** — by design (column security) |
 
 ## Blocked on Lewis
@@ -39,7 +39,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ PR `feat/gestoria-link-and
 | Gap | State |
 | --- | --- |
 | **Dual-account UAT sign-off** | Checklist ready; needs two real accounts + Lewis signature |
-| **Apply gestoría link RPCs** on live Supabase | Migration in repo; confirm execute |
+| **Apply gestoría link RPCs** on live Supabase | **Done** — `link_manager_by_email` + `unlink_own_manager` live |
 | **Stripe secrets + Price IDs** | Supabase Function secrets; sandbox checkout/webhook/portal UAT |
 | **Gemini / OCR API key** | Server secret only (`GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
 | **`VITE_BILLING_ENABLED=true`** | Only after sandbox UAT passes |
@@ -47,10 +47,11 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ PR `feat/gestoria-link-and
 | **Live Open Banking (PSD2)** | Provider + legal — not faked |
 | **Platform OAuth** (Uber, Glovo, …) | Catalog / preference only — no fake Connect |
 | **Adversarial RLS on live Supabase** | Needs Lewis’s project + dual sessions |
+| **Auth leaked-password protection** | Advisor WARN — enable in Supabase Auth → Password (HaveIBeenPwned) |
 
 ## Draft PR #1 (foundation)
 
-See [`docs/FOUNDATION_DRAFT.md`](./FOUNDATION_DRAFT.md). **Do not merge** the draft. Recommendation: **close** as superseded by current `main`; cherry-pick only if fiscal/trust/migration pieces are still wanted.
+**Closed** 2026-09-20 as superseded by current `main`. See [`docs/FOUNDATION_DRAFT.md`](./FOUNDATION_DRAFT.md) only if cherry-picking fiscal/trust pieces.
 
 ## Product honesty
 

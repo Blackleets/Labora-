@@ -2,6 +2,12 @@
 -- profiles.manager_id is intentionally NOT in the authenticated column UPDATE grant
 -- (see 20260918160500_labora_profile_column_security.sql). Linking must go through
 -- SECURITY DEFINER RPCs so riders cannot set arbitrary manager_id / escalate.
+-- Live project may still have the legacy uuid-returning link RPC; drop first.
+
+drop function if exists public.link_manager_by_email(text);
+drop function if exists private.link_manager_by_email_internal(text);
+drop function if exists public.unlink_own_manager();
+drop function if exists private.unlink_own_manager_internal();
 
 create or replace function private.link_manager_by_email_internal(manager_email text)
 returns void
@@ -105,3 +111,6 @@ revoke all on function public.link_manager_by_email(text) from public, anon;
 revoke all on function public.unlink_own_manager() from public, anon;
 grant execute on function public.link_manager_by_email(text) to authenticated;
 grant execute on function public.unlink_own_manager() to authenticated;
+
+revoke all on function private.link_manager_by_email_internal(text) from public, anon, authenticated;
+revoke all on function private.unlink_own_manager_internal() from public, anon, authenticated;
