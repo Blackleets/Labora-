@@ -11,10 +11,10 @@ export const AutomationHub: React.FC = () => {
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <section className="labora-card overflow-hidden">
-        <div className="bg-[#214E3A] p-5 text-white sm:p-6">
+        <div className="bg-[var(--labora-primary)] p-5 text-white sm:p-6">
           <div className="flex flex-wrap items-center gap-2">
             <p className="labora-kicker text-white/55">Asistente</p>
-            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-white/75">
+            <span className="rounded-full border border-[var(--labora-surface)]/15 bg-[var(--labora-surface)]/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-white/75">
               Solo IA fiscal autenticada
             </span>
           </div>
@@ -24,7 +24,7 @@ export const AutomationHub: React.FC = () => {
             Policy Engine y bandeja de aprobaciones locales quedan fuera: no son flujos de producción.
           </p>
         </div>
-        <div className="grid gap-3 border-b border-[#EAE3D9] bg-[#FFF9EE] p-4 text-[11px] leading-relaxed text-[#80612E] sm:grid-cols-2 sm:p-5">
+        <div className="grid gap-3 border-b border-[var(--labora-border)] bg-[var(--labora-parchment)] p-4 text-[11px] leading-relaxed text-[var(--labora-gold)] sm:grid-cols-2 sm:p-5">
           <div className="flex gap-2">
             <LockKeyhole size={14} className="mt-0.5 shrink-0" />
             <p>Sin políticas ni aprobaciones simuladas en localStorage.</p>
@@ -37,7 +37,7 @@ export const AutomationHub: React.FC = () => {
       </section>
 
       <section className="labora-card overflow-hidden p-3 sm:p-4">
-        <div className="mb-3 flex items-center gap-2 text-xs font-extrabold text-[#214E3A]">
+        <div className="mb-3 flex items-center gap-2 text-xs font-extrabold text-[var(--labora-primary)]">
           <MessageSquare size={15} /> Chat fiscal
         </div>
         <FiscalChat />

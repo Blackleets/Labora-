@@ -1,6 +1,6 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ anti-fiction delivery/hot-zones). Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`.
+Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 6 cream leftovers / advisors). Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN only; no RLS grant advisories this run).
 
 ## Merged on main (no longer blocked)
 
@@ -32,6 +32,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ anti-fiction delivery/hot-
 | Agent-safe loop 3 (Settings/Onboarding/Documents cream→tokens, ManagerDashboard status chips, toolkit soft shadow) | `var(--labora-*)` + `.labora-status-*` theme chips; RiderToolkit shadows; billing flag still OFF |
 | Agent-safe loop 4 (GestorRequirements/Expense/Login/Tax/Income + banking·payroll shells cream→tokens) | Remaining parchment hex → `var(--labora-*)`; requirements/expense/income badges → `.labora-status-*`; meadow Login sky gradients kept; billing flag still OFF |
 | Agent-safe loop 5 (Sidebar/Dashboard/GasStation/TaxDeclarations/Education/Identity/FiscalChat/Movements + ProDashboard·Risk·Events·Ops·Policy shells) | Cream/parchment chrome → `var(--labora-*)`; fail-closed shells theme-safe; Education/FiscalChat/Movements blue accents kept; billing flag still OFF |
+| Agent-safe loop 6 (AutomationHub + FeatureFlagSettings cream→tokens; advisors; legal withBaseUrl vitest) | Hub/flags → `var(--labora-*)`; `docs/RLS_ADVISORS.md` (HIBP WARN only); legal href vitest; `dark_mode_force` copy honest (local/in-memory); billing flag still OFF |
 
 ## Linking — what works / what needs Lewis
 
