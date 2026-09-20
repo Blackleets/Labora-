@@ -310,7 +310,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
           <MiniMetric label="Km cerrados" value={todayKm > 0 ? `${todayKm.toFixed(1)} km` : '—'} />
           <MiniMetric label="Ingresos hoy" value={formatCurrency(todayRegisteredIncome)} />
           <MiniMetric
-            label="€/h bruto"
+            label={`${selectedCountry.currency_symbol || '€'}/h bruto`}
             value={todayWorkedHours > 0 ? formatCurrencyPrecise(todayGrossPerHour) : '—'}
             emphasis
           />
@@ -318,7 +318,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-medium text-stone-400">
           <span>Gasolina registrada hoy: <strong className="text-stone-600">{formatCurrencyPrecise(todayFuelCost)}</strong></span>
           <span>Ingresos − gasolina: <strong className="text-stone-600">{formatCurrencyPrecise(todayAfterRegisteredFuel)}</strong></span>
-          <span>€/km bruto: <strong className="text-stone-600">{todayKm > 0 ? formatCurrencyPrecise(todayGrossPerKm) : '—'}</strong></span>
+          <span>{selectedCountry.currency_symbol || '€'}/km bruto: <strong className="text-stone-600">{todayKm > 0 ? formatCurrencyPrecise(todayGrossPerKm) : '—'}</strong></span>
         </div>
         <p className="mt-2 text-[9px] leading-relaxed text-stone-400">
           Métricas operativas basadas solo en datos registrados. “Ingresos − gasolina” no es beneficio neto: faltan mantenimiento, seguro, cuota, depreciación, impuestos y otros costes.

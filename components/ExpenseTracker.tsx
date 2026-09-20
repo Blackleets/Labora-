@@ -426,7 +426,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
               )}
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Importe"><div className="relative"><input type="number" min="0" step="0.01" value={selectedExpense.amount || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, amount: Number(event.target.value) })} className="field-input pr-9" required /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-stone-400">€</span></div></Field>
+                <Field label="Importe"><div className="relative"><input type="number" min="0" step="0.01" value={selectedExpense.amount || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, amount: Number(event.target.value) })} className="field-input pr-9" required /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-stone-400">{selectedCountry.currency_symbol || '€'}</span></div></Field>
                 <Field label="Fecha"><input type="date" value={selectedExpense.date} onChange={(event) => setSelectedExpense({ ...selectedExpense, date: event.target.value })} className="field-input" required /></Field>
               </div>
 

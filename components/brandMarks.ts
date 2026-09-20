@@ -66,6 +66,39 @@ export const CATEGORY_ACCENTS: Record<
   other: { bg: '#F5F2ED', fg: '#2E5A44', border: '#E3DCD2' }
 };
 
+/** Brand-tinted letter avatars for high-traffic catalog ids without Simple Icons. */
+export const PLATFORM_LETTER_ACCENTS: Record<
+  string,
+  { bg: string; fg: string; border: string }
+> = {
+  stuart: { bg: '#E8F0FE', fg: '#1A4DB3', border: '#C5D6F5' },
+  rappi: { bg: '#FFE8EC', fg: '#E1003C', border: '#F5C5CF' },
+  bbva_es: { bg: '#E8F1FB', fg: '#004481', border: '#B8D0E8' },
+  bbva_mx: { bg: '#E8F1FB', fg: '#004481', border: '#B8D0E8' },
+  santander_es: { bg: '#FCEAEA', fg: '#EC0000', border: '#F0C5C5' },
+  holded: { bg: '#FFF0E6', fg: '#FF6B00', border: '#F0D4B8' },
+  amazon_flex: { bg: '#FFF6E5', fg: '#FF9900', border: '#F0DDB0' },
+  didi: { bg: '#FFF4E8', fg: '#FF7D41', border: '#F0D4B8' },
+  didi_food: { bg: '#FFF4E8', fg: '#FF7D41', border: '#F0D4B8' },
+  freenow: { bg: '#F0ECFF', fg: '#4C3D9E', border: '#D4CCF0' },
+  cabify: { bg: '#F3E8FF', fg: '#6B2D8B', border: '#DCC8F0' },
+  bolt: { bg: '#E8FFF0', fg: '#34D186', border: '#B8E8C8' },
+  bolt_food: { bg: '#E8FFF0', fg: '#34D186', border: '#B8E8C8' },
+  qonto: { bg: '#E8EEFF', fg: '#1A1A2E', border: '#C5D0F0' },
+  wolt: { bg: '#E8F6FF', fg: '#009DE0', border: '#B8DCF0' },
+  paack: { bg: '#EEF5FF', fg: '#2B5EA7', border: '#C5D8EF' },
+  catcher: { bg: '#F5F2ED', fg: '#2E5A44', border: '#E3DCD2' },
+  banorte: { bg: '#EAF2ED', fg: '#C8102E', border: '#E0C5C8' }
+};
+
+export const getPlatformLetterAccent = (
+  id: string,
+  category?: string
+): { bg: string; fg: string; border: string } =>
+  PLATFORM_LETTER_ACCENTS[id]
+  || CATEGORY_ACCENTS[category || '']
+  || CATEGORY_ACCENTS.other;
+
 /** Vite `BASE_URL` always ends with `/` (e.g. `/` or `/Labora-/`). */
 export const withBaseUrl = (path: string): string => {
   const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';

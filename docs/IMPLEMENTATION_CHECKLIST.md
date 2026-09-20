@@ -14,6 +14,7 @@ Updated: 2026-09-20 (Europe/Paris). Feature work may live on unmerged branches; 
 | TaxOverview MX | Régimen slots marked **pendiente de datos oficiales** — **no invented rates** |
 | Docs | This checklist + `HOW_TO_TEST_AUTONOMO_GESTORIA.md` |
 | CI | `tsc` + vitest must stay green on the feature branch |
+| Agent-safe polish (BASE_URL legal, currency/country, dark remaps, audit ticket/%, platform letter accents, account-deletion honesty) | Done on `feat/agent-safe-polish-pass` — no secrets / OCR / tax fiction |
 
 ## Blocked / external (secrets or official data)
 

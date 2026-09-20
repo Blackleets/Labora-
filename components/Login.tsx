@@ -21,6 +21,7 @@ import CountrySelector from './CountrySelector';
 import IdentityImagePicker from './IdentityImagePicker';
 import IntroAnimation from './IntroAnimation';
 import Logo from './Logo';
+import { withBaseUrl } from './brandMarks';
 
 const Login: React.FC = () => {
   const { palette } = useGhibliAtmosphere();
@@ -608,11 +609,11 @@ const Login: React.FC = () => {
               Auth segura · archivo privado · sin datos inventados
             </div>
             <p className="text-[10px] text-[#9A9186]">
-              <a href="/privacidad.html" className="font-semibold text-[#2F5D4A] underline-offset-2 hover:underline">
+              <a href={withBaseUrl("privacidad.html")} className="font-semibold text-[#2F5D4A] underline-offset-2 hover:underline">
                 Privacidad
               </a>
               <span className="mx-1.5 text-[#D4CCC0]">·</span>
-              <a href="/terminos.html" className="font-semibold text-[#2F5D4A] underline-offset-2 hover:underline">
+              <a href={withBaseUrl("terminos.html")} className="font-semibold text-[#2F5D4A] underline-offset-2 hover:underline">
                 Términos
               </a>
             </p>

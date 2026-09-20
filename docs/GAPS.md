@@ -27,6 +27,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ anti-fiction delivery/hot-
 | Anti-fiction pass (Risks/Events/KPIs/ModulesCenter) | Fail-closed unavailable shells; Login copy sin «demo»; `money-incomes` deep-link; payrollEngine marcado no-prod |
 | No enterprise demo org | `OrganizationContext` stays null; payroll/policies fail-closed without fake employees |
 | Anti-fiction delivery / hot zones | Orphan HotZones/Delivery/LiveMap/demandEngine/ModulesCenter **removed**; OperationsHub fail-closed |
+| Agent-safe polish pass | BASE_URL legal links; currency from CountryContext in money UIs; dark cream remaps; ManagerDashboard Ver ticket + % deducible; platform letter accents; honest account-deletion entry |
 
 ## Linking — what works / what needs Lewis
 
