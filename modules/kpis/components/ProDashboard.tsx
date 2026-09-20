@@ -1,63 +1,60 @@
-
 import React from 'react';
-import { useData } from '../../../contexts/DataContext';
-import { BarChart2, TrendingUp, Clock, Activity } from 'lucide-react';
+import { Activity, BarChart2, LockKeyhole, ShieldCheck } from 'lucide-react';
 
-export const ProDashboard: React.FC = () => {
-  const { incomes, vehicle } = useData();
-
-  // Mock calculations based on incomes
-  const totalIncome = incomes.reduce((s, i) => s + i.amount, 0);
-  const estimatedKm = vehicle?.currentKm || 1000; // Fallback
-  const profitPerKm = totalIncome / (estimatedKm || 1);
-  const hourlyRate = totalIncome / 160; // Mock 160h worked
-
-  const KPICard = ({ label, value, sub, icon: Icon, color }: any) => (
-    <div className="bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm">
-       <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${color}`}>
-         <Icon size={20} />
-       </div>
-       <p className="text-xs font-bold text-gray-400 uppercase">{label}</p>
-       <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
-       <p className="text-xs text-gray-500 mt-1">{sub}</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <h2 className="text-3xl font-bold text-[#1A1A1A] flex items-center gap-2">
-         <Activity className="text-[#2D6CDF]" /> Panel KPIs Pro
-      </h2>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-         <KPICard 
-           label="Ganancia / Km" 
-           value={profitPerKm.toFixed(2)} 
-           sub="Eficiencia de ruta"
-           icon={TrendingUp}
-           color="bg-green-50 text-green-600"
-         />
-         <KPICard 
-           label="Ganancia / Hora" 
-           value={hourlyRate.toFixed(2)} 
-           sub="Productividad"
-           icon={Clock}
-           color="bg-blue-50 text-blue-600"
-         />
-         <KPICard 
-           label="Coste / Km" 
-           value="0.15" 
-           sub="Mantenimiento + Gas"
-           icon={BarChart2}
-           color="bg-red-50 text-red-600"
-         />
-         <KPICard 
-           label="Tiempo Muerto" 
-           value="12%" 
-           sub="Esperando pedidos"
-           icon={Clock}
-           color="bg-orange-50 text-orange-600"
-         />
+/**
+ * Pro KPIs previously divided income by a fake 160h month and hard-coded 0.15 €/km.
+ * Until hours, km and costs are user-evidenced, this panel stays unavailable.
+ */
+export const ProDashboard: React.FC = () => (
+  <section className="labora-card mx-auto max-w-3xl overflow-hidden">
+    <div className="relative overflow-hidden bg-[#214E3A] p-5 text-white sm:p-6">
+      <div className="absolute -right-10 -top-16 h-40 w-40 rounded-full bg-[#F1C56B]/15" />
+      <div className="relative flex items-start gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/10 text-[#F1C56B]">
+          <Activity size={21} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="labora-kicker text-white/55">KPIs</p>
+            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-white/75">
+              No disponible
+            </span>
+          </div>
+          <h2 className="labora-display mt-1 text-xl font-semibold text-white">
+            Sin métricas inventadas.
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70">
+            Labora+ no muestra ganancia/hora con 160 h ficticias ni coste/km hardcodeado (p. ej. 0,15 €).
+            Harían falta horas reales de jornada, odómetro/km evidenciado y costes registrados por el usuario.
+          </p>
+        </div>
       </div>
     </div>
-  );
-};
+
+    <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+      <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]">
+          <BarChart2 size={16} />
+        </div>
+        <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Sin 160 h ni 0,15 €/km</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+          Esos números eran semillas de UI, no productividad medida. Quedan fuera del producto.
+        </p>
+      </div>
+      <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#F8EDE7] text-[#B95635]">
+          <ShieldCheck size={16} />
+        </div>
+        <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Qué sí puedes usar hoy</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+          Ingresos y gastos que tú registras, jornada Labora (horas) y neto operativo del hub Dinero — sin inventar ratios.
+        </p>
+      </div>
+    </div>
+
+    <div className="flex items-start gap-2 border-t border-[#EAE3D9] bg-[#FFF9EE] px-4 py-3 text-[10px] font-medium leading-relaxed text-[#80612E] sm:px-5">
+      <LockKeyhole size={14} className="mt-0.5 shrink-0" />
+      Panel bloqueado a propósito. No uses capturas de KPIs Pro como prueba de analytics en vivo.
+    </div>
+  </section>
+);

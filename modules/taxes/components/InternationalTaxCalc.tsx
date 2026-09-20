@@ -11,7 +11,7 @@ export const InternationalTaxCalc: React.FC = () => {
   const calculateTax = (amount: number) => {
     let tax = 0;
     let remaining = amount;
-    // Simplified logic for demo: Flat rate based on first bracket found or average
+    // Simplified estimation only (not a filing engine): Flat rate based on first bracket found or average
     // Ideally calculate progressive steps
     const effectiveRate = config.income_tax_brackets.find(b => amount < b.max)?.rate || 0.20;
     return amount * effectiveRate;

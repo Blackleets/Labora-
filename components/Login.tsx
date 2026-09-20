@@ -280,7 +280,7 @@ const Login: React.FC = () => {
             </h1>
             <p className="labora-body mt-6 max-w-md text-[15px] leading-[1.7] text-[#4A5D52] xl:text-base">
               Espacio de trabajo para autónomos y gestorías: claridad fiscal,
-              archivo privado y estados demostrables.
+              archivo privado y estados claros con evidencia.
             </p>
 
             <div className="mt-12 grid max-w-lg grid-cols-3 gap-5">

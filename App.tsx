@@ -56,6 +56,7 @@ const MainLayout: React.FC = () => {
     const titles: Record<string, string> = {
       dashboard: isManager ? 'Resumen' : 'Inicio',
       money: isManager ? 'Auditoría' : 'Dinero',
+      'money-incomes': isManager ? 'Auditoría · Ingresos' : 'Ingresos',
       'tax-declarations': 'Modelos fiscales',
       'gestor-requirements': isManager ? 'Peticiones' : 'Avisos',
       operations: 'Operaciones',
@@ -74,6 +75,7 @@ const MainLayout: React.FC = () => {
     switch (currentView) {
       case 'dashboard': return isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
       case 'money': return <MoneyHub setView={setView} />;
+      case 'money-incomes': return <MoneyHub initialTab="incomes" setView={setView} />;
       case 'tax-declarations': return <TaxOverview setView={setView} />;
       case 'gestor-requirements': return <div className="mx-auto max-w-4xl"><GestorRequirementsWidget /></div>;
       case 'operations': return <OperationsHub />;
