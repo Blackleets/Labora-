@@ -1,30 +1,17 @@
-
 import React, { createContext, useContext, useState, useEffect, PropsWithChildren } from 'react';
-import { Organization, User } from '../types';
+import { Organization } from '../types';
 
 interface OrganizationContextType {
   organization: Organization | null;
-  setOrganization: (org: Organization) => void;
+  setOrganization: (org: Organization | null) => void;
   updateFeatureFlag: (key: string, value: boolean) => void;
   isLoading: boolean;
 }
 
-// Mock Default Org
-const DEFAULT_ORG: Organization = {
-  id: 'org_default',
-  name: 'Labora Enterprise Demo',
-  plan: 'enterprise',
-  country_code: 'ES',
-  feature_flags: {
-    policy_engine: true,
-    payroll_pro: true,
-    delivery_pro: true,
-    audit_log: true,
-    beta_ai_analysis: false,
-    dark_mode_force: false
-  }
-};
-
+/**
+ * Multi-tenant organization is not a live product surface yet.
+ * Never invent a "Labora Enterprise Demo" or enterprise plan.
+ */
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export const OrganizationProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
@@ -32,17 +19,13 @@ export const OrganizationProvider: React.FC<PropsWithChildren<{}>> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching org based on logged in user
-    setTimeout(() => {
-      setOrganization(DEFAULT_ORG);
-      setIsLoading(false);
-    }, 500);
+    setOrganization(null);
+    setIsLoading(false);
   }, []);
 
   const updateFeatureFlag = (key: string, value: boolean) => {
     if (!organization) return;
-    
-    setOrganization(prev => {
+    setOrganization((prev) => {
       if (!prev) return null;
       return {
         ...prev,
@@ -63,6 +46,6 @@ export const OrganizationProvider: React.FC<PropsWithChildren<{}>> = ({ children
 
 export const useOrganization = () => {
   const context = useContext(OrganizationContext);
-  if (!context) throw new Error("useOrganization must be used within an OrganizationProvider");
+  if (!context) throw new Error('useOrganization must be used within an OrganizationProvider');
   return context;
 };

@@ -27,7 +27,14 @@ const DEFINED_FLAGS: FlagDefinition[] = [
 export const FeatureFlagSettings: React.FC = () => {
   const { organization, updateFeatureFlag } = useOrganization();
 
-  if (!organization) return null;
+  if (!organization) {
+    return (
+      <div className="rounded-xl border border-[#E8DFC8] bg-[#FFF9EE] p-4 text-sm text-[#80612E]">
+        No hay organización multi-tenant en producción. Los feature flags de «Enterprise Demo» se eliminaron;
+        no se activan módulos ficticios (nómina, flota, políticas inventadas).
+      </div>
+    );
+  }
 
   const renderSection = (category: string, title: string, icon: React.ElementType) => {
     const flags = DEFINED_FLAGS.filter(f => f.category === category);

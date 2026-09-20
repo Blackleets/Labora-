@@ -196,8 +196,34 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
           </div>
           <h2 className="mt-4 text-base font-extrabold text-[#1E231F]">Aún no tienes clientes vinculados</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-500">
-            Comparte el correo de esta gestoría. El autónomo puede vincularte desde Perfil y ajustes.
+            Comparte este correo con el autónomo. Él lo introduce en Perfil → Tu gestoría. No hay invitaciones OAuth ni códigos inventados.
           </p>
+          {currentUser?.email ? (
+            <div className="mx-auto mt-4 flex max-w-md flex-col items-center gap-2 sm:flex-row sm:justify-center">
+              <code className="rounded-[12px] border border-[#D9D0C4] bg-[#FFFEFB] px-3 py-2 text-xs font-bold text-[#214E3A]">
+                {currentUser.email}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(currentUser.email).then(
+                    () => showNotification('success', 'Correo copiado.'),
+                    () => showNotification('error', 'No se pudo copiar el correo.')
+                  );
+                }}
+                className="rounded-[12px] bg-[#214E3A] px-3.5 py-2 text-xs font-extrabold text-white hover:bg-[#183D2D]"
+              >
+                Copiar correo
+              </button>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setView?.('settings')}
+            className="mt-4 text-xs font-extrabold text-[#214E3A] underline-offset-2 hover:underline"
+          >
+            Ver en Ajustes → Tus clientes
+          </button>
         </section>
       ) : (
         <section className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
