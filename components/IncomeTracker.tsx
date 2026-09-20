@@ -5,6 +5,7 @@ import {
   Loader2,
   Plus,
   Sparkles,
+  Trash2,
   TrendingUp,
   Upload,
   X
@@ -14,7 +15,8 @@ import { useCountry } from '../contexts/CountryContext';
 import { extractIncomeFromDocument, extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
 import { parseIncomeTextLocally } from '../services/incomeTextParser';
 import { reviewRemoteIncome } from '../services/remoteOperational';
-import { UserRole } from '../types';
+import { canOwnerDeleteRow, incomeDeleteConfirmMessage } from '../services/deleteEligibility';
+import { Income, UserRole } from '../types';
 
 interface IncomeTrackerProps {
   startDate: string;
@@ -28,6 +30,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     addIncome,
     addIncomes,
     addDocument,
+    deleteIncome,
     currentUser,
     users,
     privacyMode,
@@ -58,6 +61,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [loadingExplanation, setLoadingExplanation] = useState<Record<string, boolean>>({});
   const [reviewingIncome, setReviewingIncome] = useState<Record<string, boolean>>({});
+  const [deletingIncomeId, setDeletingIncomeId] = useState<string | null>(null);
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const linkedIds = useMemo(() => new Set(
@@ -85,6 +89,17 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   const formatMoney = (value: number) => privacyMode
     ? '••••'
     : value.toLocaleString(selectedCountry.country_code === 'MX' ? 'es-MX' : 'es-ES', { style: 'currency', currency: selectedCountry.currency || 'EUR', maximumFractionDigits: 2 });
+
+  const handleDeleteIncome = async (income: Income) => {
+    if (!canOwnerDeleteRow(income.userId, currentUser?.id, Boolean(isManager))) return;
+    if (!window.confirm(incomeDeleteConfirmMessage(income.platform))) return;
+    setDeletingIncomeId(income.id);
+    try {
+      await deleteIncome(income.id);
+    } finally {
+      setDeletingIncomeId(null);
+    }
+  };
 
   const handleAIExtraction = async () => {
     if (!pastedText.trim() || isManager) return;
@@ -416,7 +431,21 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
                         <p className="mt-1.5 max-w-md text-[10px] leading-relaxed text-[var(--labora-muted)]">{income.reviewNote}</p>
                       )}
                     </div>
-                    <div className="shrink-0 text-right"><p className="text-sm font-extrabold text-[var(--labora-primary)]">+{formatMoney(income.amount)}</p>{income.retention > 0 && <p className="mt-0.5 text-[10px] font-bold text-[var(--labora-clay-deep)]">Ret. −{formatMoney(income.retention)}</p>}</div>
+                    <div className="flex shrink-0 items-start gap-1">
+                      <div className="text-right"><p className="text-sm font-extrabold text-[var(--labora-primary)]">+{formatMoney(income.amount)}</p>{income.retention > 0 && <p className="mt-0.5 text-[10px] font-bold text-[var(--labora-clay-deep)]">Ret. −{formatMoney(income.retention)}</p>}</div>
+                      {!isManager && canOwnerDeleteRow(income.userId, currentUser?.id, false) && (
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteIncome(income)}
+                          disabled={deletingIncomeId === income.id}
+                          className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-soft-clay)] hover:text-[var(--labora-clay-deep)] disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
+                          aria-label="Eliminar ingreso"
+                          title="Eliminar ingreso"
+                        >
+                          {deletingIncomeId === income.id ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <Trash2 size={16} aria-hidden />}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {income.retention > 0 && (

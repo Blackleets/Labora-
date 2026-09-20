@@ -18,6 +18,7 @@ import {
   Shield,
   ShoppingBag,
   Smartphone,
+  Trash2,
   Utensils,
   Wrench,
   X
@@ -27,6 +28,7 @@ import { useCountry } from '../contexts/CountryContext';
 import { analyzeReceipt } from '../services/geminiService';
 import { Expense, ExpenseCategory, UserRole } from '../types';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
+import { canOwnerDeleteRow, expenseDeleteConfirmMessage } from '../services/deleteEligibility';
 
 interface ExpenseTrackerProps {
   startDate: string;
@@ -50,7 +52,7 @@ const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) 
 });
 
 const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) => {
-  const { expenses, addExpense, updateExpense, updateExpenseAudit, showNotification, privacyMode, currentUser, users } = useData();
+  const { expenses, addExpense, updateExpense, deleteExpense, updateExpenseAudit, showNotification, privacyMode, currentUser, users } = useData();
   const { selectedCountry } = useCountry();
   const [isScanning, setIsScanning] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
@@ -61,6 +63,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   const [reviewingExpense, setReviewingExpense] = useState<Expense | null>(null);
   const [reviewPct, setReviewPct] = useState('0');
   const [reviewNote, setReviewNote] = useState('');
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
@@ -87,6 +90,21 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   };
 
   const clientName = (userId: string) => users.find((user) => user.id === userId)?.name || 'Cliente';
+
+  const handleDeleteExpense = async (expense: Expense, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!canOwnerDeleteRow(expense.userId, currentUser?.id, Boolean(isManager))) return;
+    const approved = expense.status === 'approved';
+    const label = expense.merchant || String(expense.category);
+    if (!window.confirm(expenseDeleteConfirmMessage(approved, label))) return;
+    setDeletingExpenseId(expense.id);
+    try {
+      await deleteExpense(expense.id);
+    } finally {
+      setDeletingExpenseId(null);
+    }
+  };
+
 
   const openManagerReview = (expense: Expense) => {
     if (!isManager) return;
@@ -387,15 +405,31 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
                         )}
                       </div>
 
-                      {expense.receiptUrl && (
-                        <button
-                          onClick={(event) => { event.stopPropagation(); setViewingImage(expense.receiptUrl || null); }}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-[10px] px-2 py-1.5 text-[11px] font-bold text-[var(--labora-primary)] hover:bg-[var(--labora-moss-soft)]"
-                          title="Ver ticket"
-                        >
-                          <Eye size={14} /> Ticket
-                        </button>
-                      )}
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        {expense.receiptUrl && (
+                          <button
+                            type="button"
+                            onClick={(event) => { event.stopPropagation(); setViewingImage(expense.receiptUrl || null); }}
+                            className="inline-flex items-center gap-1 rounded-[10px] px-2 py-1.5 text-[11px] font-bold text-[var(--labora-primary)] hover:bg-[var(--labora-moss-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
+                            title="Ver ticket"
+                            aria-label="Ver ticket"
+                          >
+                            <Eye size={14} aria-hidden /> Ticket
+                          </button>
+                        )}
+                        {!isManager && canOwnerDeleteRow(expense.userId, currentUser?.id, false) && (
+                          <button
+                            type="button"
+                            onClick={(event) => void handleDeleteExpense(expense, event)}
+                            disabled={deletingExpenseId === expense.id}
+                            className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-soft-clay)] hover:text-[var(--labora-clay-deep)] disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
+                            aria-label="Eliminar gasto"
+                            title="Eliminar gasto"
+                          >
+                            {deletingExpenseId === expense.id ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <Trash2 size={16} aria-hidden />}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

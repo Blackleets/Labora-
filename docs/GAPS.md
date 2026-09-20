@@ -1,6 +1,6 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 9 form a11y helper). **Cream-token sweeps stopped.** **Agent-safe UX polish should pause for Lewis UAT** after this loop. Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
+Updated: 2026-09-20 (Europe/Paris). Branch: owner-delete (expenses/incomes/docs). **Cream-token sweeps stopped.** Dual-account UAT still Lewis. Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
 
 ## Merged on main (no longer blocked)
 
@@ -36,6 +36,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 9 form a11y helper). 
 | Agent-safe loop 7 (UAT dual prep + Login/Settings a11y) | `npm run uat:dual` machine prep (`PREP_STATUS`); explicit self-link / not_manager vitest; labels, `role=switch`, `role=alert`, focus-visible on Login + gestoría link; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
 | Agent-safe loop 8 (Messages offline UI + a11y; Documents/Money forms a11y) | Offline banner + Spanish fail-closed send errors (no sync claim); labels / `aria-invalid` / `aria-describedby` / focus-visible / empty `role=status` on Messages, Documents, Expense, Income primary forms; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
 | Agent-safe loop 9 (shared form a11y; tax/calendar forms) | `components/formA11y.tsx` (`FieldLabel`, `FormError` `role=alert`, `fieldErrorA11y`, focus class); applied to TaxOverview / TaxDeclarationsViewer / Calendar primary forms only; **no** MoneyHub/Documents offline chip — `RemoteSyncBridge` does not expose online/offline (fail-closed, no fake sync); **pause agent-safe UX polish for Lewis UAT**; HIBP still Lewis; billing OFF |
+| Owner delete (gastos / ingresos / docs) | Rider/owner only: Trash + confirm; `deleteExpense`/`deleteIncome`/`deleteDocument` call remote when session; liquidación cascade deletes linked incomes then doc; managers stay read-only; fail-closed Spanish toasts; vitest on `deleteEligibility` |
 
 ## Linking — what works / what needs Lewis
 
@@ -63,6 +64,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 9 form a11y helper). 
 | **Adversarial RLS on live Supabase** | Needs Lewis’s project + dual sessions |
 | **Auth leaked-password protection** | **Deferred** — dashboard login blocked (hCaptcha / GitHub SSO 500); MCP cannot toggle Auth HIBP; enable later in Auth → Password |
 | **Offline chip on MoneyHub / Documents** | Skipped loop 9 — RemoteSync has no online/offline API; do not invent sync status. Revisit only if sync surface exposes real connectivity |
+| **Manager delete of client rows** | Intentionally blocked (RLS + UI). Owners delete own data only |
 | **Agent-safe UX polish (further loops)** | **Pause for Lewis UAT** — dual-account checklist + signature before more chrome/a11y sweeps |
 
 ## Draft PR #1 (foundation)

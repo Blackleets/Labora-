@@ -18,7 +18,10 @@ import {
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { deleteRemoteDocument } from '../services/remoteOperational';
+import {
+  documentDeleteConfirmMessage,
+  linkedIncomesForDocument
+} from '../services/deleteEligibility';
 import { Document as UserDocument, UserRole } from '../types';
 
 type DisplayItem = {
@@ -84,6 +87,8 @@ export const Documents: React.FC = () => {
     users,
     getFiscalSummary,
     addDocument,
+    deleteIncome,
+    deleteDocument,
     showNotification
   } = useData();
 
@@ -286,24 +291,29 @@ export const Documents: React.FC = () => {
   const handleDelete = async (item: DisplayItem) => {
     if (!currentUser || item.source !== 'document' || item.sourceUserId !== currentUser.id || isManager) return;
 
-    const linkedIncomeCount = incomes.filter((income) => income.sourceDocumentId === item.id).length;
-    if (linkedIncomeCount > 0) {
-      showNotification(
-        'info',
-        `No puedes eliminar esta liquidación: conserva evidencia de ${linkedIncomeCount} ${linkedIncomeCount === 1 ? 'ingreso' : 'ingresos'}.`
-      );
-      return;
-    }
-
-    if (!window.confirm(`¿Eliminar “${item.name}” del expediente?`)) return;
+    const linked = linkedIncomesForDocument(incomes, item.id, currentUser.id);
+    if (!window.confirm(documentDeleteConfirmMessage(item.name, linked.length))) return;
 
     setDeletingId(item.id);
     try {
-      await deleteRemoteDocument(item.id);
-      const remaining = documents.filter((document) => document.id !== item.id);
-      localStorage.setItem('labora_docs', JSON.stringify(remaining));
-      showNotification('success', 'Documento eliminado del expediente y del almacenamiento privado.');
-      window.setTimeout(() => window.location.reload(), 250);
+      for (const income of linked) {
+        const ok = await deleteIncome(income.id, { quiet: true });
+        if (!ok) {
+          showNotification('error', 'No se pudieron eliminar los ingresos vinculados. El documento no se ha borrado.');
+          return;
+        }
+      }
+      const ok = await deleteDocument(item.id, { quiet: true });
+      if (!ok) {
+        showNotification('error', 'No se pudo eliminar el documento.');
+        return;
+      }
+      showNotification(
+        'success',
+        linked.length > 0
+          ? `Documento e ${linked.length === 1 ? 'ingreso vinculado eliminados' : 'ingresos vinculados eliminados'}.`
+          : 'Documento eliminado del expediente.'
+      );
     } catch (error) {
       console.error(error);
       showNotification('error', 'No se pudo eliminar el documento.');
@@ -421,8 +431,15 @@ export const Documents: React.FC = () => {
                   <button type="button" onClick={() => setPreview(item)} className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label={`Previsualizar ${item.name}`} title="Previsualizar"><Eye size={16} aria-hidden /></button>
                   <button type="button" onClick={() => handleDownload(item)} disabled={!item.content} className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-primary)] disabled:cursor-not-allowed disabled:opacity-25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label={`Descargar ${item.name}`} title="Descargar"><Download size={16} aria-hidden /></button>
                   {!isManager && item.source === 'document' && item.sourceUserId === currentUser?.id && (
-                    <button onClick={() => void handleDelete(item)} disabled={deletingId === item.id} className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-soft-clay)] hover:text-[var(--labora-clay-deep)] disabled:opacity-40" title="Eliminar">
-                      {deletingId === item.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(item)}
+                      disabled={deletingId === item.id}
+                      className="rounded-[10px] p-2 text-[var(--labora-muted)] hover:bg-[var(--labora-soft-clay)] hover:text-[var(--labora-clay-deep)] disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
+                      aria-label="Eliminar documento"
+                      title="Eliminar documento"
+                    >
+                      {deletingId === item.id ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <Trash2 size={16} aria-hidden />}
                     </button>
                   )}
                 </div>
