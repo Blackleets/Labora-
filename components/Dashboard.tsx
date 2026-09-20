@@ -182,7 +182,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       description: hasGestoria ? 'Liquidación CSV o texto' : 'Glovo/Uber: pega liquidación',
       icon: ClipboardPaste,
       tone: 'green',
-      onClick: () => setView?.('money')
+      onClick: () => setView?.('money-incomes')
     },
     {
       label: 'Registrar gasto',
@@ -373,7 +373,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
           <h2 className="labora-title mt-1.5 text-[1.35rem] text-[#1E2A24]">Tus números</h2>
         </div>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
-          <Metric onClick={() => setView?.('money')} icon={Wallet} label="Ingresos" value={formatCurrency(summary.totalIncome)} />
+          <Metric onClick={() => setView?.('money-incomes')} icon={Wallet} label="Ingresos" value={formatCurrency(summary.totalIncome)} />
           <Metric onClick={() => setView?.('money')} icon={ReceiptText} label="Gastos" value={formatCurrency(summary.totalExpenses)} accent />
           <Metric onClick={() => setView?.('money')} icon={ShieldCheck} label="Neto operativo" value={formatCurrency(summary.netProfit)} />
           <Metric onClick={() => setView?.('messages')} icon={MessageSquare} label="Gestoría" value="Abrir chat" compact />

@@ -1,39 +1,61 @@
-
 import React from 'react';
-import { CloudRain, TrendingDown, Wrench, AlertTriangle, Wind } from 'lucide-react';
+import { AlertTriangle, CloudRain, LockKeyhole, ShieldCheck } from 'lucide-react';
 
-export const RiskMonitor: React.FC = () => {
-  // Mocked risks
-  const risks = [
-    { type: 'weather', level: 'medium', message: 'Lluvia ligera esperada a las 18:00.', icon: CloudRain, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { type: 'demand', level: 'high', message: 'Baja demanda detectada en Zona Norte.', icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-50' },
-    { type: 'maintenance', level: 'low', message: 'Revisa presión de neumáticos.', icon: Wrench, color: 'text-orange-500', bg: 'bg-orange-50' },
-    { type: 'wind', level: 'critical', message: 'Rachas de viento > 40km/h.', icon: Wind, color: 'text-gray-600', bg: 'bg-gray-100' },
-  ];
-
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-      <h2 className="text-3xl font-bold text-[#1A1A1A] flex items-center gap-2">
-         <AlertTriangle className="text-orange-500" /> Centro de Riesgos
-      </h2>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-         {risks.map((risk, idx) => (
-           <div key={idx} className={`p-5 rounded-[24px] border border-gray-100 flex items-start gap-4 ${risk.bg}`}>
-              <div className={`p-3 rounded-xl bg-white shadow-sm ${risk.color}`}>
-                 <risk.icon size={24} />
-              </div>
-              <div>
-                 <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-white/50 ${risk.color}`}>
-                      Riesgo {risk.level}
-                    </span>
-                 </div>
-                 <p className="font-bold text-gray-800 leading-tight">{risk.message}</p>
-              </div>
-           </div>
-         ))}
+/**
+ * Risk Monitor previously showed hardcoded weather/demand alerts.
+ * Until real weather/fleet feeds exist, this surface stays unavailable.
+ */
+export const RiskMonitor: React.FC = () => (
+  <section className="labora-card mx-auto max-w-3xl overflow-hidden">
+    <div className="relative overflow-hidden bg-[#214E3A] p-5 text-white sm:p-6">
+      <div className="absolute -right-10 -top-16 h-40 w-40 rounded-full bg-[#F1C56B]/15" />
+      <div className="relative flex items-start gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/10 text-[#F1C56B]">
+          <AlertTriangle size={21} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="labora-kicker text-white/55">Riesgos</p>
+            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-white/75">
+              No disponible
+            </span>
+          </div>
+          <h2 className="labora-display mt-1 text-xl font-semibold text-white">
+            Sin alertas inventadas.
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70">
+            Labora+ no muestra lluvia, demanda ni rachas de viento como datos reales. Hace falta una
+            fuente verificable (API meteorológica autorizada, telemetría de flota o avisos de
+            plataforma) antes de activar este módulo.
+          </p>
+        </div>
       </div>
     </div>
-  );
-};
+
+    <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+      <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]">
+          <CloudRain size={16} />
+        </div>
+        <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Sin clima ni demanda simulados</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+          Los avisos hardcodeados («lluvia a las 18:00», «baja demanda Zona Norte») quedan fuera del producto.
+        </p>
+      </div>
+      <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#F8EDE7] text-[#B95635]">
+          <ShieldCheck size={16} />
+        </div>
+        <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Qué haría falta</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+          Proveedor meteorológico + consentimiento, o datos operativos reales de plataforma — nunca semillas locales.
+        </p>
+      </div>
+    </div>
+
+    <div className="flex items-start gap-2 border-t border-[#EAE3D9] bg-[#FFF9EE] px-4 py-3 text-[10px] font-medium leading-relaxed text-[#80612E] sm:px-5">
+      <LockKeyhole size={14} className="mt-0.5 shrink-0" />
+      Módulo bloqueado a propósito. No uses capturas de riesgos como prueba de producto en vivo.
+    </div>
+  </section>
+);

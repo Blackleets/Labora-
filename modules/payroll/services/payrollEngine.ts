@@ -1,6 +1,11 @@
 import { Employee, Payslip } from '../../../types';
 import { CountryConfig, IncomeTaxBracket } from '../../country-config/types';
 
+/**
+ * Offline estimation helper only — NOT production payroll.
+ * Rates below are simplified placeholders for unit/experiment use.
+ * UI is fail-closed via PayrollDashboard; do not wire this to live payslips.
+ */
 export const payrollEngine = {
   calculatePayslip: (employee: Employee, countryConfig: CountryConfig): Payslip => {
     const gross = employee.base_salary;
@@ -12,7 +17,7 @@ export const payrollEngine = {
     
     if (countryConfig.country_code === 'ES') {
       // Spain Logic
-      const ssRate = 0.0635; // Contingencias comunes + desempleo (Mock)
+      const ssRate = 0.0635; // PLACEHOLDER ONLY — not official SS rates; not for production payslips
       const ssAmount = gross * ssRate;
       
       // IRPF (Simple progressive check)

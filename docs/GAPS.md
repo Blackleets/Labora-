@@ -1,6 +1,6 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`.
+Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ anti-fiction pass). Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`.
 
 ## Merged on main (no longer blocked)
 
@@ -24,6 +24,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 | Build / typecheck / vitest | Must stay green |
 | Privacy / terms pages | **Merged PR #15** — `privacidad.html` / `terminos.html`; Login + Settings |
 | Income import without APIs | Parser local CSV/líneas Glovo·Uber (sin Gemini); banca/plataformas apuntan a Ingresos |
+| Anti-fiction pass (Risks/Events/KPIs/ModulesCenter) | Fail-closed unavailable shells; Login copy sin «demo»; `money-incomes` deep-link; payrollEngine marcado no-prod |
 | No enterprise demo org | `OrganizationContext` stays null; payroll/policies fail-closed without fake employees |
 
 ## Linking — what works / what needs Lewis
@@ -63,3 +64,4 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 - Banking remains Open Banking / próximamente — fail-closed.
 - Linking is email + `manager_id` RPC — **not** OAuth, **not** invite codes unless already in schema.
 - Do not invent UAT PASS or Play-ready claims.
+- RiskMonitor / EventsView / ProDashboard / ModulesCenter: unavailable or marked blocked — no fake weather, calendar success, or KPI seeds.
