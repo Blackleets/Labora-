@@ -1,50 +1,62 @@
-
 import React from 'react';
-import { MapPin, Navigation, Zap, Clock } from 'lucide-react';
+import { LockKeyhole, MapPin, ShieldCheck, Zap } from 'lucide-react';
 
-export const HotZonesWidget: React.FC = () => {
-  return (
-    <div className="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm relative overflow-hidden group">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-gray-800 flex items-center gap-2">
-          <Zap className="text-yellow-500" size={20} />
-          Zonas Calientes
-        </h3>
-        <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full animate-pulse">Alta Demanda</span>
+/**
+ * Hot zones previously showed fake surge multipliers, heatmaps, and "Alta Demanda".
+ * Until a verified demand feed exists, this surface stays unavailable.
+ */
+export const HotZonesWidget: React.FC = () => (
+  <section className="labora-card mx-auto max-w-3xl overflow-hidden">
+    <div className="relative overflow-hidden bg-[#214E3A] p-5 text-white sm:p-6">
+      <div className="absolute -right-10 -top-16 h-40 w-40 rounded-full bg-[#F1C56B]/15" />
+      <div className="relative flex items-start gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-white/12 bg-white/10 text-[#F1C56B]">
+          <Zap size={21} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="labora-kicker text-white/55">Zonas calientes</p>
+            <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.08em] text-white/75">
+              No disponible
+            </span>
+          </div>
+          <h2 className="labora-display mt-1 text-xl font-semibold text-white">
+            Sin mapa de demanda inventado.
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70">
+            Labora+ no muestra «Alta Demanda», multiplicadores xN ni zonas rojas como datos reales.
+            Haría falta un feed de demanda verificable (plataforma o telemetría), no un heatmap
+            ilustrativo ni un motor de scores aleatorios.
+          </p>
+        </div>
       </div>
-
-      <div className="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden mb-4 border border-gray-200">
-         {/* Static Map Illustration */}
-         <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/e/ec/Mapbox_iOS_SDK_gl.png')] bg-cover bg-center opacity-60 grayscale group-hover:grayscale-0 transition-all duration-500"></div>
-         
-         {/* Hotspots */}
-         <div className="absolute top-1/3 left-1/4 w-8 h-8 bg-red-500 rounded-full blur-md opacity-60 animate-ping"></div>
-         <div className="absolute top-1/3 left-1/4 w-3 h-3 bg-red-600 rounded-full border-2 border-white shadow-lg"></div>
-         
-         <div className="absolute bottom-1/3 right-1/3 w-6 h-6 bg-orange-500 rounded-full blur-md opacity-60 animate-ping delay-500"></div>
-         <div className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-orange-600 rounded-full border-2 border-white shadow-lg"></div>
-      </div>
-
-      <div className="space-y-3">
-         <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-               <MapPin size={16} className="text-gray-400" />
-               <span className="font-medium text-gray-700">Centro / Plaza Mayor</span>
-            </div>
-            <span className="font-bold text-green-600">+2.5x</span>
-         </div>
-         <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-               <Clock size={16} className="text-gray-400" />
-               <span className="font-medium text-gray-700">Mejor hora</span>
-            </div>
-            <span className="font-bold text-gray-900">20:30 - 22:00</span>
-         </div>
-      </div>
-      
-      <button className="w-full mt-4 bg-gray-50 text-blue-600 font-bold py-2 rounded-xl text-sm hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
-        <Navigation size={16} /> Navegar a Zona Roja
-      </button>
     </div>
-  );
-};
+
+    <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+      <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]">
+          <MapPin size={16} />
+        </div>
+        <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Sin surge ni horarios falsos</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+          «+2.5x», «Navegar a Zona Roja» y picos esperados hardcodeados quedan fuera del producto.
+        </p>
+      </div>
+      <div className="rounded-[16px] border border-[#E6E0D7] bg-[#FAF8F4] p-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#F8EDE7] text-[#B95635]">
+          <ShieldCheck size={16} />
+        </div>
+        <p className="mt-3 text-xs font-extrabold text-[#1E231F]">Qué haría falta</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-stone-500">
+          Fuente de demanda autorizada y consentimiento — nunca Math.random ni mapas estáticos
+          con pulsos decorativos.
+        </p>
+      </div>
+    </div>
+
+    <div className="flex items-start gap-2 border-t border-[#EAE3D9] bg-[#FFF9EE] px-4 py-3 text-[10px] font-medium leading-relaxed text-[#80612E] sm:px-5">
+      <LockKeyhole size={14} className="mt-0.5 shrink-0" />
+      Widget bloqueado a propósito. No uses capturas de zonas calientes como prueba de surge en vivo.
+    </div>
+  </section>
+);

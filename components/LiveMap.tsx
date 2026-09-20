@@ -1,4 +1,9 @@
 
+/**
+ * Leaflet map used only by DeliveryDashboard historically.
+ * DeliveryDashboard is now fail-closed; this map is NOT a live fleet —
+ * do not wire it as production tracking without real order coordinates.
+ */
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { MapConfig } from '../modules/country-config/types';
