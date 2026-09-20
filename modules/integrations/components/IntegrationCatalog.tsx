@@ -102,7 +102,7 @@ export const IntegrationCatalog: React.FC = () => {
         </p>
       </header>
 
-      <section className="rounded-2xl border border-[#E3DCD2] bg-[#FFFEFB] p-4 shadow-[0_1px_3px_rgba(46,90,68,0.04)]">
+      <section className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-4 shadow-[0_1px_3px_rgba(46,90,68,0.04)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative min-w-0 flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={16} />
@@ -110,7 +110,7 @@ export const IntegrationCatalog: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar plataforma o servicio"
-              className="w-full rounded-xl border border-[#E2DBD1] bg-[#FAF8F4] py-2.5 pl-9 pr-3 text-xs outline-none transition focus:border-[#9BB3A4] focus:ring-2 focus:ring-[#2E5A44]/10"
+              className="w-full rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface-2)] py-2.5 pl-9 pr-3 text-xs outline-none transition focus:border-[#9BB3A4] focus:ring-2 focus:ring-[#2E5A44]/10"
             />
           </div>
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-stone-400">
@@ -128,8 +128,8 @@ export const IntegrationCatalog: React.FC = () => {
                 onClick={() => setSelectedCat(category.id)}
                 className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                   selectedCat === category.id
-                    ? 'bg-[#2E5A44] text-white shadow-sm'
-                    : 'border border-[#E3DCD2] bg-white text-stone-500 hover:bg-[#F8F5F0]'
+                    ? 'bg-[var(--labora-primary)] text-white shadow-sm'
+                    : 'border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]'
                 }`}
               >
                 <Icon size={14} /> {category.label}
@@ -148,7 +148,7 @@ export const IntegrationCatalog: React.FC = () => {
           return (
             <article
               key={integration.id}
-              className="flex min-h-[236px] flex-col rounded-2xl border border-[#E3DCD2] bg-[#FFFEFB] p-4 shadow-[0_1px_3px_rgba(46,90,68,0.045)] transition hover:border-[#D5CFC4]"
+              className="flex min-h-[236px] flex-col rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-4 shadow-[0_1px_3px_rgba(46,90,68,0.045)] transition hover:border-[var(--labora-border)]"
             >
               <div className="flex items-start justify-between gap-3">
                 <LogoResolver
@@ -159,15 +159,15 @@ export const IntegrationCatalog: React.FC = () => {
                   size="lg"
                 />
                 {added ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF2ED] px-2.5 py-1 text-[10px] font-bold text-[#245338]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--labora-moss-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--labora-primary)]">
                     <Check size={11} /> En mi actividad
                   </span>
                 ) : banking ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-[#E3DCD2] bg-[#F5F2ED] px-2.5 py-1 text-[10px] font-bold text-stone-500">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-bold text-[var(--labora-muted)]">
                     <ShieldCheck size={11} /> Open Banking
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-full border border-[#E8E1D7] bg-[#FAF8F4] px-2.5 py-1 text-[10px] font-bold text-stone-400">
+                  <span className="inline-flex items-center rounded-full border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-bold text-[var(--labora-muted)]">
                     Catálogo
                   </span>
                 )}
@@ -179,7 +179,7 @@ export const IntegrationCatalog: React.FC = () => {
               </p>
               <p className="mt-3 flex-1 text-xs leading-relaxed text-stone-500">{descriptionFor(integration)}</p>
 
-              <div className="mt-4 border-t border-[#EEE7DD] pt-3">
+              <div className="mt-4 border-t border-[var(--labora-border)] pt-3">
                 {selectable ? (
                   <button
                     type="button"
@@ -187,8 +187,8 @@ export const IntegrationCatalog: React.FC = () => {
                     onClick={() => void handleTogglePlatform(integration)}
                     className={`w-full rounded-xl py-2.5 text-xs font-bold transition disabled:opacity-60 ${
                       added
-                        ? 'border border-[#D6E3DA] bg-[#F2F6F3] text-[#2E5A44] hover:bg-[#EAF2ED]'
-                        : 'bg-[#2E5A44] text-white hover:bg-[#244936]'
+                        ? 'border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)] hover:bg-[var(--labora-soft-green)]'
+                        : 'bg-[var(--labora-primary)] text-white hover:opacity-90'
                     }`}
                   >
                     {savingId === integration.id ? 'Guardando…' : added ? 'Quitar de mi actividad' : 'Añadir a mi actividad'}
@@ -197,7 +197,7 @@ export const IntegrationCatalog: React.FC = () => {
                   <button
                     type="button"
                     disabled
-                    className="w-full cursor-not-allowed rounded-xl border border-[#E6DFD5] bg-[#F8F5F0] py-2.5 text-xs font-bold text-stone-400"
+                    className="w-full cursor-not-allowed rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface-2)] py-2.5 text-xs font-bold text-[var(--labora-muted)]"
                   >
                     {banking ? 'Conexión segura próximamente' : 'API próximamente'}
                   </button>
@@ -209,7 +209,7 @@ export const IntegrationCatalog: React.FC = () => {
       </section>
 
       {filtered.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[#DDD5CA] bg-[#FFFEFB] py-12 text-center text-sm text-stone-400">
+        <div className="rounded-2xl border border-dashed border-[var(--labora-border)] bg-[var(--labora-surface)] py-12 text-center text-sm text-[var(--labora-muted)]">
           No hay resultados para esta búsqueda.
         </div>
       )}

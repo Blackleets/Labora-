@@ -183,7 +183,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
           <div>
             <span className="labora-chip labora-kicker text-[#2F5D4A]">Gestoría · {quarter}</span>
             <p className="mt-6 text-sm font-semibold text-[#6B645C]">{managerName}</p>
-            <h1 className="labora-display mt-1.5 max-w-2xl text-[2.05rem] font-semibold leading-[1.05] text-[#1E2A24] sm:text-[2.55rem]">
+            <h1 className="labora-display mt-1.5 max-w-2xl text-[2.05rem] font-semibold leading-[1.05] text-[var(--labora-ink)] sm:text-[2.55rem]">
               Toda tu cartera, con claridad fiscal.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#5C6E64] sm:text-[15px]">
@@ -193,7 +193,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
             <div className="mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => setView?.('messages')}
-                className="inline-flex items-center gap-2 rounded-[14px] border border-[#E8DFC8] bg-[#FFFEFB]/85 px-3.5 py-2.5 text-xs font-extrabold text-[#2F5D4A] shadow-sm backdrop-blur transition hover:bg-white"
+                className="inline-flex items-center gap-2 rounded-[14px] border border-[#E8DFC8] bg-[var(--labora-surface)]/85 px-3.5 py-2.5 text-xs font-extrabold text-[#2F5D4A] shadow-sm backdrop-blur transition hover:bg-white"
               >
                 <MessageSquare size={15} /> Mensajes
               </button>
@@ -218,16 +218,16 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 
       {clients.length === 0 ? (
         <section className="labora-card border-dashed px-6 py-14 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A]">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
             <Users size={24} />
           </div>
-          <h2 className="mt-4 text-base font-extrabold text-[#1E231F]">Aún no tienes clientes vinculados</h2>
+          <h2 className="mt-4 text-base font-extrabold text-[var(--labora-ink)]">Aún no tienes clientes vinculados</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-500">
             Comparte este correo con el autónomo. Él lo introduce en Perfil → Tu gestoría. No hay invitaciones OAuth ni códigos inventados.
           </p>
           {currentUser?.email ? (
             <div className="mx-auto mt-4 flex max-w-md flex-col items-center gap-2 sm:flex-row sm:justify-center">
-              <code className="rounded-[12px] border border-[#D9D0C4] bg-[#FFFEFB] px-3 py-2 text-xs font-bold text-[#214E3A]">
+              <code className="rounded-[12px] border border-[#D9D0C4] bg-[var(--labora-surface)] px-3 py-2 text-xs font-bold text-[#214E3A]">
                 {currentUser.email}
               </code>
               <button
@@ -258,9 +258,9 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
             <div className="mb-3 flex items-center justify-between px-1">
               <div>
                 <p className="labora-kicker text-stone-400">Cartera</p>
-                <h2 className="mt-0.5 text-sm font-extrabold text-[#1E231F]">Clientes</h2>
+                <h2 className="mt-0.5 text-sm font-extrabold text-[var(--labora-ink)]">Clientes</h2>
               </div>
-              <span className="rounded-full bg-[#F1ECE3] px-2 py-1 text-[10px] font-bold text-stone-500">{clients.length}</span>
+              <span className="rounded-full bg-[var(--labora-surface-2)] px-2 py-1 text-[10px] font-bold text-stone-500">{clients.length}</span>
             </div>
 
             <div className="relative mb-3">
@@ -269,7 +269,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar cliente"
-                className="w-full rounded-[13px] border border-[#E2DBD1] bg-[#F8F5F0] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#789582]"
+                className="w-full rounded-[13px] border border-[#E2DBD1] bg-[var(--labora-surface-2)] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#789582]"
               />
             </div>
 
@@ -291,13 +291,13 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                         : 'hover:bg-[#F7F4EF]'
                     }`}
                   >
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-extrabold ${active ? 'bg-[#214E3A] text-white' : 'bg-[#F0ECE6] text-stone-500'}`}>
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-extrabold ${active ? 'bg-[#214E3A] text-white' : 'bg-[var(--labora-surface-2)] text-stone-500'}`}>
                       {client.photoUrl
                         ? <img src={client.photoUrl} alt="" className="h-full w-full object-cover" />
                         : client.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-extrabold text-[#1E231F]">{client.name}</p>
+                      <p className="truncate text-xs font-extrabold text-[var(--labora-ink)]">{client.name}</p>
                       <p className="mt-0.5 truncate text-[10px] font-medium text-stone-500">{client.nif || client.email}</p>
                     </div>
                     {clientPending > 0 ? (
@@ -326,7 +326,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                       </div>
                       <div className="min-w-0">
                         <p className="labora-kicker text-stone-400">Cliente activo</p>
-                        <h2 className="mt-0.5 truncate text-lg font-extrabold tracking-[-0.02em] text-[#1E231F]">{selectedClient.name}</h2>
+                        <h2 className="mt-0.5 truncate text-lg font-extrabold tracking-[-0.02em] text-[var(--labora-ink)]">{selectedClient.name}</h2>
                         <p className="mt-1 truncate text-xs text-stone-500">{selectedClient.nif || 'Sin NIF'} · {selectedClient.email}</p>
                         <p className="mt-1 text-xs text-stone-400">
                           {selectedClient.platforms.length ? selectedClient.platforms.join(' · ') : 'Sin plataformas registradas'}
@@ -376,7 +376,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                                 ) : null}
                                 <div className="min-w-0">
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <p className="text-sm font-extrabold text-[#1E231F]">{expense.category}</p>
+                                    <p className="text-sm font-extrabold text-[var(--labora-ink)]">{expense.category}</p>
                                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${status.className}`}>{status.label}</span>
                                   </div>
                                   <p className="mt-1 text-xs text-stone-500">{expense.date} · {expense.merchant || 'Sin proveedor'}</p>
@@ -395,7 +395,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                               </div>
 
                               <div className="flex flex-col items-stretch gap-2 sm:items-end">
-                                <p className="text-sm font-extrabold text-[#1E231F]">{formatMoney(expense.amount)}</p>
+                                <p className="text-sm font-extrabold text-[var(--labora-ink)]">{formatMoney(expense.amount)}</p>
                                 {expense.status !== 'approved' && (
                                   <button
                                     type="button"
@@ -421,7 +421,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                         <div key={requirement.id} className="p-4 sm:p-5">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-sm font-extrabold text-[#1E231F]">{requirement.title}</p>
+                              <p className="text-sm font-extrabold text-[var(--labora-ink)]">{requirement.title}</p>
                               <p className="mt-1 text-xs leading-relaxed text-stone-500">{requirement.description}</p>
                               <p className="mt-2 text-[11px] text-stone-400">Fecha límite: {requirement.deadline}</p>
                             </div>
@@ -464,12 +464,12 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
           <form
             onSubmit={handleCreateRequirement}
             onClick={(event) => event.stopPropagation()}
-            className="w-full max-w-md rounded-[24px] border border-[#E6DDD2] bg-[#FFFDF9] p-5 shadow-2xl"
+            className="w-full max-w-md rounded-[24px] border border-[#E6DDD2] bg-[var(--labora-surface)] p-5 shadow-2xl"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="labora-kicker text-stone-400">Nueva petición</p>
-                <h2 className="mt-1 text-lg font-extrabold text-[#1E231F]">{selectedClient.name}</h2>
+                <h2 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{selectedClient.name}</h2>
               </div>
               <button type="button" onClick={() => setShowRequirementModal(false)} className="rounded-xl p-1.5 text-stone-400 hover:bg-[#F3EFE8]">
                 <X size={17} />
@@ -500,11 +500,11 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 
       {reviewingExpense && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#18211C]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
-          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[#E3DBD0] bg-[#FFFDF9] shadow-2xl sm:rounded-[26px]">
+          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[#E3DBD0] bg-[var(--labora-surface)] shadow-2xl sm:rounded-[26px]">
             <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-5 py-4">
               <div>
                 <p className="labora-kicker text-[#789582]">Auditoría</p>
-                <h3 className="mt-1 text-lg font-extrabold text-[#1E231F]">{reviewingExpense.merchant || reviewingExpense.category}</h3>
+                <h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{reviewingExpense.merchant || reviewingExpense.category}</h3>
                 <p className="mt-1 text-xs text-stone-500">{formatMoney(reviewingExpense.amount)} · {reviewingExpense.date}</p>
               </div>
               <button type="button" onClick={() => setReviewingExpense(null)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DED2] bg-white text-stone-500"><X size={18} /></button>
@@ -513,7 +513,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
               {reviewingExpense.receiptUrl && (
                 <button type="button" onClick={() => setViewingImage(reviewingExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[#DDE7E0] bg-[#F2F7F4] p-3 text-left">
                   <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#DDE7E0] bg-white text-[#214E3A]"><ImageIcon size={17} /></div>
-                  <div className="min-w-0"><p className="text-sm font-extrabold text-[#1E231F]">Ver ticket</p><p className="text-[11px] text-stone-500">Abre la imagen adjunta</p></div>
+                  <div className="min-w-0"><p className="text-sm font-extrabold text-[var(--labora-ink)]">Ver ticket</p><p className="text-[11px] text-stone-500">Abre la imagen adjunta</p></div>
                 </button>
               )}
               <label className="block space-y-1.5">
@@ -539,23 +539,23 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 };
 
 const HeroStat = ({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) => (
-  <div className={`rounded-[18px] border p-3.5 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur ${accent ? 'border-[#FDE3B8] bg-[#FEF7EB]/90' : 'border-[#E8DFC8] bg-[#FFFEFB]/82'}`}>
+  <div className={`rounded-[18px] border p-3.5 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur ${accent ? 'border-[var(--labora-gold-soft)] bg-[color-mix(in_srgb,var(--labora-gold)_12%,var(--labora-surface))]' : 'border-[var(--labora-border)] bg-[color-mix(in_srgb,var(--labora-surface)_82%,transparent)]'}`}>
     <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#8A9189]">{label}</p>
-    <p className={`mt-1 text-xl font-extrabold tracking-[-0.03em] ${accent ? 'text-[#B87A24]' : 'text-[#1E2A24]'}`}>{value}</p>
+    <p className={`mt-1 text-xl font-extrabold tracking-[-0.03em] ${accent ? 'text-[var(--labora-gold)]' : 'text-[var(--labora-ink)]'}`}>{value}</p>
   </div>
 );
 
 const SummaryBox = ({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) => (
-  <div className={`rounded-[14px] border p-3 ${emphasis ? 'border-[#CFE0D5] bg-[#EAF2ED]' : 'border-[#E8E0D5] bg-[#F8F5F0]'}`}>
+  <div className={`rounded-[14px] border p-3 ${emphasis ? 'border-[var(--labora-border)] bg-[var(--labora-moss-soft)]' : 'border-[var(--labora-border)] bg-[var(--labora-surface-2)]'}`}>
     <p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-stone-400">{label}</p>
-    <p className={`mt-1 truncate text-sm font-extrabold ${emphasis ? 'text-[#214E3A]' : 'text-[#1E231F]'}`}>{value}</p>
+    <p className={`mt-1 truncate text-sm font-extrabold ${emphasis ? 'text-[var(--labora-primary)]' : 'text-[var(--labora-ink)]'}`}>{value}</p>
   </div>
 );
 
 const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
   <button
     onClick={onClick}
-    className={`whitespace-nowrap rounded-[11px] px-3 py-2 text-xs font-bold transition ${active ? 'bg-[#214E3A] text-white shadow-sm' : 'text-stone-500 hover:bg-[#F5F2ED]'}`}
+    className={`whitespace-nowrap rounded-[11px] px-3 py-2 text-xs font-bold transition ${active ? 'bg-[var(--labora-primary)] text-white shadow-sm' : 'text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]'}`}
   >
     {children}
   </button>
@@ -568,21 +568,21 @@ const EmptyState = ({ text }: { text: string }) => (
 const RequirementStatus = ({ status }: { status: string }) => {
   const map: Record<string, string> = { pending: 'Pendiente', submitted: 'En revisión', approved: 'Resuelto' };
   return (
-    <span className="shrink-0 rounded-full bg-[#F3F0EA] px-2.5 py-1 text-[10px] font-bold text-stone-600">
+    <span className="shrink-0 rounded-full bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-bold text-stone-600">
       {map[status] || status}
     </span>
   );
 };
 
 const TaxCard = ({ title, amount, status }: { title: string; amount: string; status: string }) => (
-  <div className="rounded-[16px] border border-[#E7E0D6] bg-[#FAF8F4] p-4">
+  <div className="rounded-[16px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] p-4">
     <div className="flex items-center justify-between">
-      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]">
+      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
         <FileText size={16} />
       </div>
       <span className="text-[10px] font-semibold text-stone-400">{status}</span>
     </div>
-    <p className="mt-3 text-sm font-extrabold text-[#1E231F]">{title}</p>
-    <p className="mt-1 text-lg font-extrabold tracking-[-0.03em] text-[#1E231F]">{amount}</p>
+    <p className="mt-3 text-sm font-extrabold text-[var(--labora-ink)]">{title}</p>
+    <p className="mt-1 text-lg font-extrabold tracking-[-0.03em] text-[var(--labora-ink)]">{amount}</p>
   </div>
 );

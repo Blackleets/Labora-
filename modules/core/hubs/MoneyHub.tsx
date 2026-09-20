@@ -97,10 +97,10 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
       <section className="labora-card overflow-hidden">
         <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
-            <p className="labora-kicker text-[#5A7A68]">
+            <p className="labora-kicker text-[var(--labora-primary-2)]">
               {isManager ? 'Cartera vinculada' : 'Actividad registrada'}
             </p>
-            <h1 className="labora-display mt-1.5 text-2xl font-semibold tracking-[-0.03em] text-[#1E2A24] sm:text-[2.05rem]">
+            <h1 className="labora-display mt-1.5 text-2xl font-semibold tracking-[-0.03em] text-[var(--labora-ink)] sm:text-[2.05rem]">
               {isManager ? 'Auditoría y fiscalidad' : 'Tu dinero, sin ruido'}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
@@ -110,14 +110,14 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
             </p>
           </div>
 
-          <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A] lg:h-14 lg:w-14">
+          <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)] lg:h-14 lg:w-14">
             <Wallet size={22} />
           </div>
         </div>
 
         <div className="labora-divider" />
 
-        <div className="grid grid-cols-2 gap-px bg-[#EAE3D9] sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-px bg-[var(--labora-border)] sm:grid-cols-4">
           <MetricButton label="Ingresos" value={formatCurrency(summary.totalIncome)} onClick={() => setActiveTab('incomes')} />
           <MetricButton label="Gastos reales" value={formatCurrency(summary.totalExpenses)} onClick={() => setActiveTab('expenses')} accent="clay" />
           <MetricButton label="Neto operativo" value={formatCurrency(summary.netProfit)} onClick={() => setActiveTab('expenses')} accent="green" />
@@ -141,8 +141,8 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
                 onClick={() => setActiveTab(tab.id)}
                 className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-[12px] px-3.5 text-xs font-extrabold transition ${
                   active
-                    ? 'bg-[#214E3A] text-white shadow-sm'
-                    : 'text-stone-500 hover:bg-[#F3EFE8] hover:text-[#1E231F]'
+                    ? 'bg-[var(--labora-primary)] text-white shadow-sm'
+                    : 'text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-ink)]'
                 }`}
               >
                 <Icon size={14} strokeWidth={2.2} />
@@ -176,15 +176,15 @@ const MetricButton = ({
   accent?: 'neutral' | 'green' | 'clay' | 'amber';
 }) => {
   const valueClass = accent === 'green'
-    ? 'text-[#214E3A]'
+    ? 'text-[var(--labora-primary)]'
     : accent === 'clay'
-      ? 'text-[#B95635]'
+      ? 'text-[var(--labora-clay-deep)]'
       : accent === 'amber'
-        ? 'text-[#8A641E]'
-        : 'text-[#1E231F]';
+        ? 'text-[var(--labora-gold)]'
+        : 'text-[var(--labora-ink)]';
 
   return (
-    <button onClick={onClick} className="min-w-0 bg-[#FFFDF9] p-3.5 text-left transition hover:bg-[#FAF7F1] sm:p-4">
+    <button onClick={onClick} className="min-w-0 bg-[var(--labora-surface)] p-3.5 text-left transition hover:bg-[var(--labora-surface-2)] sm:p-4">
       <p className="text-[9px] font-extrabold uppercase tracking-[0.12em] text-stone-400">{label}</p>
       <p className={`mt-1 truncate text-base font-extrabold tracking-[-0.03em] sm:text-lg ${valueClass}`}>{value}</p>
     </button>

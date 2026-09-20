@@ -28,6 +28,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ anti-fiction delivery/hot-
 | No enterprise demo org | `OrganizationContext` stays null; payroll/policies fail-closed without fake employees |
 | Anti-fiction delivery / hot zones | Orphan HotZones/Delivery/LiveMap/demandEngine/ModulesCenter **removed**; OperationsHub fail-closed |
 | Agent-safe polish pass | BASE_URL legal links; currency from CountryContext in money UIs; dark cream remaps; ManagerDashboard Ver ticket + % deducible; platform letter accents; honest account-deletion entry |
+| Agent-safe loop 2 (hub CSS vars, Messages empty/soft-grid dark, soft currency toolkit/billing labels, legal relative HTML) | Dark remaps + `var(--labora-*)` on Messages/Money/Catalog/People/Dashboard leftovers; billing flag still OFF |
 
 ## Linking — what works / what needs Lewis
 
