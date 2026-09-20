@@ -31,6 +31,7 @@
       background: #FFFEFB; display: flex; align-items: center; justify-content: center;
       padding: 12px; overflow: hidden;
     }
+    .logo.dark { background: #0A0A0A; border-color: #1A1A1A; }
     .logo img { width: 100%; height: 100%; object-fit: contain; }
     .name { margin-top: 14px; font-weight: 700; font-size: 1rem; }
     .cat { margin-top: 4px; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a8a29e; }
@@ -50,13 +51,27 @@
 <body>
   <p class="eyebrow">Actividad · preview de marcas</p>
   <h1>Plataformas y servicios</h1>
-  <p class="sub">Vista estática de logos (Simple Icons → SVG local → favicon). El catálogo real de la app requiere sesión; no hay OAuth ni “conectado” falso.</p>
+  <p class="sub">Vista estática de logos (Simple Icons CDN → SVG local → favicon → letter avatar). El catálogo real de la app usa iconos Simple Icons en línea (CC0). No hay OAuth ni “conectado” falso.</p>
   <p class="note" id="status">Cargando marcas…</p>
   <div class="grid" id="grid"></div>
   <script>
+    const base = (() => {
+      const path = location.pathname;
+      if (path.includes('/Labora-/')) return '/Labora-/';
+      const dir = path.replace(/[^/]+$/, '');
+      return dir || '/';
+    })();
+
+    const accents = {
+      Delivery: { bg: '#FFF4E5', fg: '#C45C12' },
+      Movilidad: { bg: '#E8F1FB', fg: '#1D4F91' },
+      Bancos: { bg: '#EAF2ED', fg: '#245338' },
+      Pagos: { bg: '#F0ECFF', fg: '#4C3D9E' }
+    };
+
     const items = [
       { id: 'glovo', name: 'Glovo', cat: 'Delivery', domain: 'glovoapp.com', slug: 'glovo', hex: 'F2CC38', selectable: true },
-      { id: 'uber', name: 'Uber Driver', cat: 'Movilidad', domain: 'uber.com', slug: 'uber', hex: '000000', selectable: true },
+      { id: 'uber', name: 'Uber Driver', cat: 'Movilidad', domain: 'uber.com', slug: 'uber', hex: 'FFFFFF', dark: true, selectable: true },
       { id: 'uber_eats', name: 'Uber Eats', cat: 'Delivery', domain: 'ubereats.com', slug: 'ubereats', hex: '06C167', selectable: true },
       { id: 'just_eat', name: 'Just Eat', cat: 'Delivery', domain: 'just-eat.com', slug: 'justeat', hex: 'FF8000', selectable: true },
       { id: 'deliveroo', name: 'Deliveroo', cat: 'Delivery', domain: 'deliveroo.co.uk', slug: 'deliveroo', hex: '00CCBC', selectable: true },
@@ -65,7 +80,7 @@
       { id: 'stuart', name: 'Stuart', cat: 'Delivery', domain: 'stuart.com', selectable: true },
       { id: 'paypal', name: 'PayPal', cat: 'Pagos', domain: 'paypal.com', slug: 'paypal', hex: '002991' },
       { id: 'stripe', name: 'Stripe', cat: 'Pagos', domain: 'stripe.com', slug: 'stripe', hex: '635BFF' },
-      { id: 'revolut', name: 'Revolut Business', cat: 'Bancos', domain: 'revolut.com', slug: 'revolut', hex: '191C1F', banking: true },
+      { id: 'revolut', name: 'Revolut Business', cat: 'Bancos', domain: 'revolut.com', slug: 'revolut', hex: 'FFFFFF', dark: true, banking: true },
       { id: 'amazon_flex', name: 'Amazon Flex', cat: 'Delivery', domain: 'amazon.com', selectable: true }
     ];
 
@@ -90,16 +105,17 @@
       const card = document.createElement('article');
       card.className = 'card';
       const urls = [];
+      // Prefer curated Simple Icons CDN (white glyph for dark brands)
       if (item.slug) urls.push(`https://cdn.simpleicons.org/${item.slug}/${item.hex || '111111'}`);
+      // Local geometric only as secondary fallback
       if (['glovo','uber','uber_eats','just_eat','cabify','bolt'].includes(item.id)) {
-        urls.push(`/brand/platforms/${item.id}.svg`);
+        urls.push(`${base}brand/platforms/${item.id}.svg`);
       }
       urls.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(item.domain)}&sz=128`);
-      urls.push(`https://logo.clearbit.com/${item.domain}`);
 
       card.innerHTML = `
         <div class="row">
-          <div class="logo"><span style="font-size:10px;color:#a8a29e">…</span></div>
+          <div class="logo${item.dark ? ' dark' : ''}"><span style="font-size:10px;color:#a8a29e">…</span></div>
           <span class="badge">${item.banking ? 'Open Banking' : 'Catálogo'}</span>
         </div>
         <div class="name">${item.name}</div>
@@ -116,10 +132,13 @@
         const box = card.querySelector('.logo');
         if (url) {
           box.innerHTML = `<img alt="${item.name}" src="${url}" />`;
-          resolved.push({ id: item.id, via: url.includes('simpleicons') ? 'simpleicons' : url.includes('/brand/') ? 'local' : url.includes('favicons') ? 'favicon' : 'clearbit' });
+          resolved.push({ id: item.id, via: url.includes('simpleicons') ? 'simpleicons' : url.includes('/brand/') ? 'local' : 'favicon' });
         } else {
-          box.innerHTML = `<span style="color:#2E5A44;font-weight:700;font-size:12px">${item.name.slice(0,2).toUpperCase()}</span>`;
-          resolved.push({ id: item.id, via: 'placeholder' });
+          const accent = accents[item.cat] || { bg: '#F5F2ED', fg: '#2E5A44' };
+          box.style.background = accent.bg;
+          box.style.borderColor = accent.bg;
+          box.innerHTML = `<span style="color:${accent.fg};font-weight:700;font-size:14px;letter-spacing:0.08em">${item.name.replace(/[^a-zA-Z0-9 ]/g,' ').trim().split(/\s+/).slice(0,2).map(p=>p[0]).join('').toUpperCase()}</span>`;
+          resolved.push({ id: item.id, via: 'letter' });
         }
         if (resolved.length === items.length) {
           document.getElementById('status').textContent =
