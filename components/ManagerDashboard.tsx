@@ -107,13 +107,13 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   const getExpenseStatus = (expense: Expense) => {
     switch (expense.status) {
       case 'approved':
-        return { label: 'Validado', className: 'bg-[#ECF7F0] text-[#24613F] border-[#CFE7D7]' };
+        return { label: 'Validado', className: 'labora-status-ok' };
       case 'rejected':
-        return { label: 'No deducible', className: 'bg-[#FFF0EE] text-[#93443B] border-[#EBCFCB]' };
+        return { label: 'No deducible', className: 'labora-status-danger' };
       case 'needs_fix':
-        return { label: 'Corregir', className: 'bg-[#FFF3EA] text-[#A4562D] border-[#EDCFBB]' };
+        return { label: 'Corregir', className: 'labora-status-fix' };
       default:
-        return { label: 'Pendiente', className: 'bg-[#FFF8E8] text-[#855D1E] border-[#ECD9A8]' };
+        return { label: 'Pendiente', className: 'labora-status-pending' };
     }
   };
 
@@ -181,26 +181,26 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
         />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
           <div>
-            <span className="labora-chip labora-kicker text-[#2F5D4A]">Gestoría · {quarter}</span>
-            <p className="mt-6 text-sm font-semibold text-[#6B645C]">{managerName}</p>
+            <span className="labora-chip labora-kicker text-[var(--labora-primary)]">Gestoría · {quarter}</span>
+            <p className="mt-6 text-sm font-semibold text-[var(--labora-muted)]">{managerName}</p>
             <h1 className="labora-display mt-1.5 max-w-2xl text-[2.05rem] font-semibold leading-[1.05] text-[var(--labora-ink)] sm:text-[2.55rem]">
               Toda tu cartera, con claridad fiscal.
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#5C6E64] sm:text-[15px]">
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--labora-muted)] sm:text-[15px]">
               Clientes, gastos por revisar, peticiones y modelos en una sola vista — clara, cálida y sin ruido.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => setView?.('messages')}
-                className="inline-flex items-center gap-2 rounded-[14px] border border-[#E8DFC8] bg-[var(--labora-surface)]/85 px-3.5 py-2.5 text-xs font-extrabold text-[#2F5D4A] shadow-sm backdrop-blur transition hover:bg-white"
+                className="inline-flex items-center gap-2 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-surface)]/85 px-3.5 py-2.5 text-xs font-extrabold text-[var(--labora-primary)] shadow-sm backdrop-blur transition hover:bg-[var(--labora-surface)]"
               >
                 <MessageSquare size={15} /> Mensajes
               </button>
               <button
                 onClick={() => setShowRequirementModal(true)}
                 disabled={!selectedClient}
-                className="inline-flex items-center gap-2 rounded-[14px] bg-gradient-to-b from-[#D97757] to-[#C96846] px-3.5 py-2.5 text-xs font-extrabold text-white shadow-[0_10px_24px_rgba(201,104,70,0.22)] transition hover:brightness-105 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-[14px] bg-gradient-to-b from-[var(--labora-clay)] to-[var(--labora-clay-deep)] px-3.5 py-2.5 text-xs font-extrabold text-white shadow-[0_10px_24px_rgba(201,104,70,0.22)] transition hover:brightness-105 disabled:opacity-50"
               >
                 <Plus size={15} /> Nueva petición
               </button>
@@ -222,12 +222,12 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
             <Users size={24} />
           </div>
           <h2 className="mt-4 text-base font-extrabold text-[var(--labora-ink)]">Aún no tienes clientes vinculados</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-500">
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[var(--labora-muted)]">
             Comparte este correo con el autónomo. Él lo introduce en Perfil → Tu gestoría. No hay invitaciones OAuth ni códigos inventados.
           </p>
           {currentUser?.email ? (
             <div className="mx-auto mt-4 flex max-w-md flex-col items-center gap-2 sm:flex-row sm:justify-center">
-              <code className="rounded-[12px] border border-[#D9D0C4] bg-[var(--labora-surface)] px-3 py-2 text-xs font-bold text-[#214E3A]">
+              <code className="rounded-[12px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2 text-xs font-bold text-[var(--labora-primary)]">
                 {currentUser.email}
               </code>
               <button
@@ -238,7 +238,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                     () => showNotification('error', 'No se pudo copiar el correo.')
                   );
                 }}
-                className="rounded-[12px] bg-[#214E3A] px-3.5 py-2 text-xs font-extrabold text-white hover:bg-[#183D2D]"
+                className="rounded-[12px] bg-[var(--labora-primary)] px-3.5 py-2 text-xs font-extrabold text-white hover:opacity-90"
               >
                 Copiar correo
               </button>
@@ -247,7 +247,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
           <button
             type="button"
             onClick={() => setView?.('settings')}
-            className="mt-4 text-xs font-extrabold text-[#214E3A] underline-offset-2 hover:underline"
+            className="mt-4 text-xs font-extrabold text-[var(--labora-primary)] underline-offset-2 hover:underline"
           >
             Ver en Ajustes → Tus clientes
           </button>
@@ -257,19 +257,19 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
           <aside className="labora-card self-start p-3 lg:sticky lg:top-4">
             <div className="mb-3 flex items-center justify-between px-1">
               <div>
-                <p className="labora-kicker text-stone-400">Cartera</p>
+                <p className="labora-kicker text-[var(--labora-muted)]">Cartera</p>
                 <h2 className="mt-0.5 text-sm font-extrabold text-[var(--labora-ink)]">Clientes</h2>
               </div>
-              <span className="rounded-full bg-[var(--labora-surface-2)] px-2 py-1 text-[10px] font-bold text-stone-500">{clients.length}</span>
+              <span className="rounded-full bg-[var(--labora-surface-2)] px-2 py-1 text-[10px] font-bold text-[var(--labora-muted)]">{clients.length}</span>
             </div>
 
             <div className="relative mb-3">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar cliente"
-                className="w-full rounded-[13px] border border-[#E2DBD1] bg-[var(--labora-surface-2)] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[#789582]"
+                className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] py-2.5 pl-9 pr-3 text-xs outline-none focus:border-[var(--labora-primary-2)]"
               />
             </div>
 
@@ -287,21 +287,21 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                     onClick={() => setSelectedClientId(client.id)}
                     className={`flex w-full items-center gap-3 rounded-[14px] p-3 text-left transition ${
                       active
-                        ? 'bg-[#E7F0EA] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.07)]'
-                        : 'hover:bg-[#F7F4EF]'
+                        ? 'bg-[var(--labora-moss-soft)] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.07)]'
+                        : 'hover:bg-[var(--labora-surface-2)]'
                     }`}
                   >
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-extrabold ${active ? 'bg-[#214E3A] text-white' : 'bg-[var(--labora-surface-2)] text-stone-500'}`}>
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-extrabold ${active ? 'bg-[var(--labora-primary)] text-white' : 'bg-[var(--labora-surface-2)] text-[var(--labora-muted)]'}`}>
                       {client.photoUrl
                         ? <img src={client.photoUrl} alt="" className="h-full w-full object-cover" />
                         : client.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-extrabold text-[var(--labora-ink)]">{client.name}</p>
-                      <p className="mt-0.5 truncate text-[10px] font-medium text-stone-500">{client.nif || client.email}</p>
+                      <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--labora-muted)]">{client.nif || client.email}</p>
                     </div>
                     {clientPending > 0 ? (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#D66C47] px-1 text-[10px] font-extrabold text-white">
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--labora-clay)] px-1 text-[10px] font-extrabold text-white">
                         {clientPending}
                       </span>
                     ) : (
@@ -319,24 +319,24 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                 <section className="labora-card p-4 sm:p-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E7F0EA] text-sm font-extrabold text-[#214E3A]">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--labora-moss-soft)] text-sm font-extrabold text-[var(--labora-primary)]">
                         {selectedClient.photoUrl
                           ? <img src={selectedClient.photoUrl} alt="" className="h-full w-full object-cover" />
                           : selectedClient.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="labora-kicker text-stone-400">Cliente activo</p>
+                        <p className="labora-kicker text-[var(--labora-muted)]">Cliente activo</p>
                         <h2 className="mt-0.5 truncate text-lg font-extrabold tracking-[-0.02em] text-[var(--labora-ink)]">{selectedClient.name}</h2>
-                        <p className="mt-1 truncate text-xs text-stone-500">{selectedClient.nif || 'Sin NIF'} · {selectedClient.email}</p>
-                        <p className="mt-1 text-xs text-stone-400">
+                        <p className="mt-1 truncate text-xs text-[var(--labora-muted)]">{selectedClient.nif || 'Sin NIF'} · {selectedClient.email}</p>
+                        <p className="mt-1 text-xs text-[var(--labora-muted)]">
                           {selectedClient.platforms.length ? selectedClient.platforms.join(' · ') : 'Sin plataformas registradas'}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 text-[10px] font-bold">
-                      <span className="rounded-full bg-[#FFF3E8] px-2.5 py-1 text-[#9B5C2C]">{pendingAudit} por revisar</span>
-                      <span className="rounded-full bg-[#EAF2ED] px-2.5 py-1 text-[#2A5A43]">{pendingRequirements} peticiones</span>
+                      <span className="labora-status-fix rounded-full px-2.5 py-1">{pendingAudit} por revisar</span>
+                      <span className="labora-status-ok rounded-full px-2.5 py-1">{pendingRequirements} peticiones</span>
                     </div>
                   </div>
 
@@ -348,14 +348,14 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                 </section>
 
                 <section className="labora-card overflow-hidden">
-                  <div className="flex gap-1 overflow-x-auto border-b border-[#ECE5DB] p-2">
+                  <div className="flex gap-1 overflow-x-auto border-b border-[var(--labora-border)] p-2">
                     <TabButton active={tab === 'audit'} onClick={() => setTab('audit')}>Auditoría</TabButton>
                     <TabButton active={tab === 'requirements'} onClick={() => setTab('requirements')}>Peticiones</TabButton>
                     <TabButton active={tab === 'taxes'} onClick={() => setTab('taxes')}>Modelos</TabButton>
                   </div>
 
                   {tab === 'audit' && (
-                    <div className="divide-y divide-[#EEE8DF]">
+                    <div className="divide-y divide-[var(--labora-border)]">
                       {clientExpenses.length === 0 ? (
                         <EmptyState text="No hay gastos registrados para este cliente." />
                       ) : clientExpenses.map((expense) => {
@@ -368,7 +368,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                                   <button
                                     type="button"
                                     onClick={() => setViewingImage(expense.receiptUrl || null)}
-                                    className="h-12 w-12 shrink-0 overflow-hidden rounded-[12px] border border-[#DDE7E0] bg-[#F2F7F4]"
+                                    className="h-12 w-12 shrink-0 overflow-hidden rounded-[12px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)]"
                                     title="Ver ticket"
                                   >
                                     <img src={expense.receiptUrl} alt="" className="h-full w-full object-cover" />
@@ -379,18 +379,18 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                                     <p className="text-sm font-extrabold text-[var(--labora-ink)]">{expense.category}</p>
                                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${status.className}`}>{status.label}</span>
                                   </div>
-                                  <p className="mt-1 text-xs text-stone-500">{expense.date} · {expense.merchant || 'Sin proveedor'}</p>
-                                  {expense.notes && <p className="mt-1 line-clamp-2 text-xs text-stone-400">{expense.notes}</p>}
+                                  <p className="mt-1 text-xs text-[var(--labora-muted)]">{expense.date} · {expense.merchant || 'Sin proveedor'}</p>
+                                  {expense.notes && <p className="mt-1 line-clamp-2 text-xs text-[var(--labora-muted)]">{expense.notes}</p>}
                                   {expense.receiptUrl && (
                                     <button
                                       type="button"
                                       onClick={() => setViewingImage(expense.receiptUrl || null)}
-                                      className="mt-2 inline-flex items-center gap-1 rounded-[10px] px-2 py-1 text-[11px] font-bold text-[#214E3A] hover:bg-[#EDF4EF]"
+                                      className="mt-2 inline-flex items-center gap-1 rounded-[10px] px-2 py-1 text-[11px] font-bold text-[var(--labora-primary)] hover:bg-[var(--labora-moss-soft)]"
                                     >
                                       <Eye size={14} /> Ver ticket
                                     </button>
                                   )}
-                                  <p className="mt-1 text-[10px] text-stone-400">Deducible actual: {expense.deductiblePercentage ?? 0}%</p>
+                                  <p className="mt-1 text-[10px] text-[var(--labora-muted)]">Deducible actual: {expense.deductiblePercentage ?? 0}%</p>
                                 </div>
                               </div>
 
@@ -400,7 +400,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                                   <button
                                     type="button"
                                     onClick={() => openExpenseReview(expense)}
-                                    className="rounded-[10px] bg-[#214E3A] px-3 py-1.5 text-[10px] font-bold text-white hover:bg-[#183D2D]"
+                                    className="rounded-[10px] bg-[var(--labora-primary)] px-3 py-1.5 text-[10px] font-bold text-white hover:opacity-90"
                                   >
                                     Revisar / % deducible
                                   </button>
@@ -414,7 +414,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                   )}
 
                   {tab === 'requirements' && (
-                    <div className="divide-y divide-[#EEE8DF]">
+                    <div className="divide-y divide-[var(--labora-border)]">
                       {clientRequirements.length === 0 ? (
                         <EmptyState text="No hay peticiones para este cliente." />
                       ) : clientRequirements.map((requirement) => (
@@ -422,8 +422,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="text-sm font-extrabold text-[var(--labora-ink)]">{requirement.title}</p>
-                              <p className="mt-1 text-xs leading-relaxed text-stone-500">{requirement.description}</p>
-                              <p className="mt-2 text-[11px] text-stone-400">Fecha límite: {requirement.deadline}</p>
+                              <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">{requirement.description}</p>
+                              <p className="mt-2 text-[11px] text-[var(--labora-muted)]">Fecha límite: {requirement.deadline}</p>
                             </div>
                             <RequirementStatus status={requirement.status} />
                           </div>
@@ -460,32 +460,32 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
       )}
 
       {showRequirementModal && selectedClient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#18211C]/50 p-4 backdrop-blur-sm" onClick={() => setShowRequirementModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setShowRequirementModal(false)}>
           <form
             onSubmit={handleCreateRequirement}
             onClick={(event) => event.stopPropagation()}
-            className="w-full max-w-md rounded-[24px] border border-[#E6DDD2] bg-[var(--labora-surface)] p-5 shadow-2xl"
+            className="w-full max-w-md rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-5 shadow-2xl"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="labora-kicker text-stone-400">Nueva petición</p>
+                <p className="labora-kicker text-[var(--labora-muted)]">Nueva petición</p>
                 <h2 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{selectedClient.name}</h2>
               </div>
-              <button type="button" onClick={() => setShowRequirementModal(false)} className="rounded-xl p-1.5 text-stone-400 hover:bg-[#F3EFE8]">
+              <button type="button" onClick={() => setShowRequirementModal(false)} className="rounded-xl p-1.5 text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]">
                 <X size={17} />
               </button>
             </div>
 
             <div className="mt-5 space-y-3">
-              <input value={requirementTitle} onChange={(event) => setRequirementTitle(event.target.value)} placeholder="Título" className="w-full rounded-[13px] border border-[#DDD5CA] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" required />
-              <textarea value={requirementDescription} onChange={(event) => setRequirementDescription(event.target.value)} placeholder="Qué necesitas del cliente" rows={4} className="w-full resize-none rounded-[13px] border border-[#DDD5CA] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" />
+              <input value={requirementTitle} onChange={(event) => setRequirementTitle(event.target.value)} placeholder="Título" className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]" required />
+              <textarea value={requirementDescription} onChange={(event) => setRequirementDescription(event.target.value)} placeholder="Qué necesitas del cliente" rows={4} className="w-full resize-none rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]" />
               <div>
-                <label className="mb-1 block text-[11px] font-bold text-stone-500">Fecha límite</label>
-                <input type="date" value={requirementDeadline} onChange={(event) => setRequirementDeadline(event.target.value)} className="w-full rounded-[13px] border border-[#DDD5CA] bg-white px-3 py-2.5 text-sm outline-none" />
+                <label className="mb-1 block text-[11px] font-bold text-[var(--labora-muted)]">Fecha límite</label>
+                <input type="date" value={requirementDeadline} onChange={(event) => setRequirementDeadline(event.target.value)} className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none" />
               </div>
             </div>
 
-            <button type="submit" className="mt-4 w-full rounded-[13px] bg-[#214E3A] py-2.5 text-sm font-extrabold text-white hover:bg-[#183D2D]">
+            <button type="submit" className="mt-4 w-full rounded-[13px] bg-[var(--labora-primary)] py-2.5 text-sm font-extrabold text-white hover:opacity-90">
               Enviar petición
             </button>
           </form>
@@ -493,41 +493,41 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
       )}
       {viewingImage && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-950/90 p-4" onClick={() => setViewingImage(null)}>
-          <button type="button" onClick={() => setViewingImage(null)} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white" aria-label="Cerrar ticket"><X size={20} /></button>
+          <button type="button" onClick={() => setViewingImage(null)} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--labora-surface)]/10 text-white" aria-label="Cerrar ticket"><X size={20} /></button>
           <img src={viewingImage} alt="Justificante del gasto" className="max-h-[86vh] max-w-full rounded-xl object-contain" onClick={(event) => event.stopPropagation()} />
         </div>
       )}
 
       {reviewingExpense && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#18211C]/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
-          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[#E3DBD0] bg-[var(--labora-surface)] shadow-2xl sm:rounded-[26px]">
-            <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D7] px-5 py-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[26px] border border-[var(--labora-border)] bg-[var(--labora-surface)] shadow-2xl sm:rounded-[26px]">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--labora-border)] px-5 py-4">
               <div>
-                <p className="labora-kicker text-[#789582]">Auditoría</p>
+                <p className="labora-kicker text-[var(--labora-primary-2)]">Auditoría</p>
                 <h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{reviewingExpense.merchant || reviewingExpense.category}</h3>
-                <p className="mt-1 text-xs text-stone-500">{formatMoney(reviewingExpense.amount)} · {reviewingExpense.date}</p>
+                <p className="mt-1 text-xs text-[var(--labora-muted)]">{formatMoney(reviewingExpense.amount)} · {reviewingExpense.date}</p>
               </div>
-              <button type="button" onClick={() => setReviewingExpense(null)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DED2] bg-white text-stone-500"><X size={18} /></button>
+              <button type="button" onClick={() => setReviewingExpense(null)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)]"><X size={18} /></button>
             </div>
             <div className="space-y-4 overflow-y-auto p-5">
               {reviewingExpense.receiptUrl && (
-                <button type="button" onClick={() => setViewingImage(reviewingExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[#DDE7E0] bg-[#F2F7F4] p-3 text-left">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#DDE7E0] bg-white text-[#214E3A]"><ImageIcon size={17} /></div>
-                  <div className="min-w-0"><p className="text-sm font-extrabold text-[var(--labora-ink)]">Ver ticket</p><p className="text-[11px] text-stone-500">Abre la imagen adjunta</p></div>
+                <button type="button" onClick={() => setViewingImage(reviewingExpense.receiptUrl || null)} className="flex w-full items-center gap-3 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-3 text-left">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-primary)]"><ImageIcon size={17} /></div>
+                  <div className="min-w-0"><p className="text-sm font-extrabold text-[var(--labora-ink)]">Ver ticket</p><p className="text-[11px] text-[var(--labora-muted)]">Abre la imagen adjunta</p></div>
                 </button>
               )}
               <label className="block space-y-1.5">
-                <span className="text-xs font-extrabold text-stone-600">% deducible (0–100)</span>
-                <input type="number" min="0" max="100" step="1" value={reviewPct} onChange={(event) => setReviewPct(event.target.value)} className="w-full rounded-[13px] border border-[#DDD4C8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" />
+                <span className="text-xs font-extrabold text-[var(--labora-muted)]">% deducible (0–100)</span>
+                <input type="number" min="0" max="100" step="1" value={reviewPct} onChange={(event) => setReviewPct(event.target.value)} className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]" />
               </label>
               <label className="block space-y-1.5">
-                <span className="text-xs font-extrabold text-stone-600">Nota para el autónomo</span>
-                <textarea rows={3} value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} className="w-full resize-none rounded-[13px] border border-[#DDD4C8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#789582]" placeholder="Opcional" />
+                <span className="text-xs font-extrabold text-[var(--labora-muted)]">Nota para el autónomo</span>
+                <textarea rows={3} value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} className="w-full resize-none rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]" placeholder="Opcional" />
               </label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <button type="button" onClick={() => submitExpenseReview('rejected')} className="rounded-[13px] border border-[#EBCFCB] bg-[#FFF0EE] px-3 py-3 text-xs font-extrabold text-[#9A443B]">Rechazar</button>
-                <button type="button" onClick={() => submitExpenseReview('needs_fix')} className="rounded-[13px] border border-[#EDCFBB] bg-[#FFF3EA] px-3 py-3 text-xs font-extrabold text-[#A4562D]">Pedir corrección</button>
-                <button type="button" onClick={() => submitExpenseReview('approved')} className="rounded-[13px] bg-[#214E3A] px-3 py-3 text-xs font-extrabold text-white">Aprobar</button>
+                <button type="button" onClick={() => submitExpenseReview('rejected')} className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3 py-3 text-xs font-extrabold text-[var(--labora-clay-deep)]">Rechazar</button>
+                <button type="button" onClick={() => submitExpenseReview('needs_fix')} className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3 py-3 text-xs font-extrabold text-[var(--labora-clay-deep)]">Pedir corrección</button>
+                <button type="button" onClick={() => submitExpenseReview('approved')} className="rounded-[13px] bg-[var(--labora-primary)] px-3 py-3 text-xs font-extrabold text-white">Aprobar</button>
               </div>
             </div>
           </div>
@@ -540,14 +540,14 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 
 const HeroStat = ({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) => (
   <div className={`rounded-[18px] border p-3.5 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur ${accent ? 'border-[var(--labora-gold-soft)] bg-[color-mix(in_srgb,var(--labora-gold)_12%,var(--labora-surface))]' : 'border-[var(--labora-border)] bg-[color-mix(in_srgb,var(--labora-surface)_82%,transparent)]'}`}>
-    <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#8A9189]">{label}</p>
+    <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[var(--labora-muted)]">{label}</p>
     <p className={`mt-1 text-xl font-extrabold tracking-[-0.03em] ${accent ? 'text-[var(--labora-gold)]' : 'text-[var(--labora-ink)]'}`}>{value}</p>
   </div>
 );
 
 const SummaryBox = ({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) => (
   <div className={`rounded-[14px] border p-3 ${emphasis ? 'border-[var(--labora-border)] bg-[var(--labora-moss-soft)]' : 'border-[var(--labora-border)] bg-[var(--labora-surface-2)]'}`}>
-    <p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-stone-400">{label}</p>
+    <p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-[var(--labora-muted)]">{label}</p>
     <p className={`mt-1 truncate text-sm font-extrabold ${emphasis ? 'text-[var(--labora-primary)]' : 'text-[var(--labora-ink)]'}`}>{value}</p>
   </div>
 );
@@ -562,13 +562,13 @@ const TabButton = ({ active, onClick, children }: { active: boolean; onClick: ()
 );
 
 const EmptyState = ({ text }: { text: string }) => (
-  <div className="p-8 text-center text-xs font-medium text-stone-400">{text}</div>
+  <div className="p-8 text-center text-xs font-medium text-[var(--labora-muted)]">{text}</div>
 );
 
 const RequirementStatus = ({ status }: { status: string }) => {
   const map: Record<string, string> = { pending: 'Pendiente', submitted: 'En revisión', approved: 'Resuelto' };
   return (
-    <span className="shrink-0 rounded-full bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-bold text-stone-600">
+    <span className="shrink-0 rounded-full bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-bold text-[var(--labora-muted)]">
       {map[status] || status}
     </span>
   );
@@ -580,7 +580,7 @@ const TaxCard = ({ title, amount, status }: { title: string; amount: string; sta
       <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
         <FileText size={16} />
       </div>
-      <span className="text-[10px] font-semibold text-stone-400">{status}</span>
+      <span className="text-[10px] font-semibold text-[var(--labora-muted)]">{status}</span>
     </div>
     <p className="mt-3 text-sm font-extrabold text-[var(--labora-ink)]">{title}</p>
     <p className="mt-1 text-lg font-extrabold tracking-[-0.03em] text-[var(--labora-ink)]">{amount}</p>

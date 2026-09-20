@@ -60,7 +60,7 @@ export const RiderToolkit: React.FC = () => {
       </h2>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-6 shadow-sm">
+        <div className="rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-6 shadow-[var(--labora-shadow-soft)]">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-lg font-bold text-[var(--labora-ink)]">
               <CheckSquare size={18} /> Checklist Salida
@@ -116,7 +116,7 @@ export const RiderToolkit: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-6 shadow-sm">
+        <div className="rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-6 shadow-[var(--labora-shadow-soft)]">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--labora-ink)]">
             <Zap size={18} /> Costes Reparación (Est.)
           </h3>

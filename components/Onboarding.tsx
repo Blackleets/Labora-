@@ -100,23 +100,23 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F7F3EA] px-4 py-5 sm:py-8">
+    <div className="min-h-screen bg-[var(--labora-canvas)] px-4 py-5 sm:py-8">
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-5xl items-center justify-center">
         <div className="w-full">
           <div className="mb-5 flex items-center justify-between">
             <Logo size="md" showText animated />
-            <span className="rounded-full border border-[#DED7CC] bg-white/75 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-stone-400">
+            <span className="rounded-full border border-[var(--labora-border)] bg-[var(--labora-surface)]/75 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[var(--labora-muted)]">
               Configuración inicial
             </span>
           </div>
 
           <section className="labora-card overflow-hidden">
-            <div className="border-b border-[#ECE5DB] px-5 py-4 sm:px-7">
+            <div className="border-b border-[var(--labora-border)] px-5 py-4 sm:px-7">
               <div className="flex gap-2">
                 {progress.map((item) => (
                   <span
                     key={item}
-                    className={`h-1.5 flex-1 rounded-full transition ${item <= step ? 'bg-[#214E3A]' : 'bg-[#E8E2D8]'}`}
+                    className={`h-1.5 flex-1 rounded-full transition ${item <= step ? 'bg-[var(--labora-primary)]' : 'bg-[var(--labora-border)]'}`}
                   />
                 ))}
               </div>
@@ -125,14 +125,14 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
             <div className="p-5 sm:p-7">
               {step === 1 && (
                 <div className="mx-auto max-w-2xl py-4 text-center sm:py-8">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#E7F0EA] text-[#214E3A]">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
                     <Sparkles size={28} />
                   </div>
-                  <p className="labora-kicker mt-5 text-[#789582]">Bienvenido a Labora+</p>
-                  <h1 className="labora-display mt-2 text-3xl font-semibold text-[#1E231F] sm:text-[2.4rem]">
+                  <p className="labora-kicker mt-5 text-[var(--labora-primary-2)]">Bienvenido a Labora+</p>
+                  <h1 className="labora-display mt-2 text-3xl font-semibold text-[var(--labora-ink)] sm:text-[2.4rem]">
                     Primero ordenamos tu actividad. Luego automatizamos lo que sea real.
                   </h1>
-                  <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-stone-500">
+                  <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-[var(--labora-muted)]">
                     Labora+ te ayuda a registrar jornada, ingresos, gastos y documentos. No conectaremos ninguna
                     plataforma o banco sin una integración oficial y tu consentimiento.
                   </p>
@@ -148,12 +148,12 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
               {step === 2 && (
                 <div className="mx-auto max-w-2xl py-2">
                   <div className="mb-6 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#E7F0EA] text-[#214E3A]">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
                       <Globe size={21} />
                     </div>
-                    <p className="labora-kicker mt-4 text-[#789582]">Contexto fiscal</p>
-                    <h2 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F]">¿Dónde desarrollas tu actividad?</h2>
-                    <p className="mt-2 text-xs leading-relaxed text-stone-500">
+                    <p className="labora-kicker mt-4 text-[var(--labora-primary-2)]">Contexto fiscal</p>
+                    <h2 className="labora-display mt-1 text-2xl font-semibold text-[var(--labora-ink)]">¿Dónde desarrollas tu actividad?</h2>
+                    <p className="mt-2 text-xs leading-relaxed text-[var(--labora-muted)]">
                       Esto adapta moneda y contexto. No genera por sí solo una obligación fiscal ni una declaración.
                     </p>
                   </div>
@@ -164,9 +164,9 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
               {step === 3 && (
                 <div className="space-y-6">
                   <div className="text-center">
-                    <p className="labora-kicker text-[#789582]">Tus herramientas</p>
-                    <h2 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F]">¿Qué servicios usas?</h2>
-                    <p className="mx-auto mt-2 max-w-2xl text-xs leading-relaxed text-stone-500">
+                    <p className="labora-kicker text-[var(--labora-primary-2)]">Tus herramientas</p>
+                    <h2 className="labora-display mt-1 text-2xl font-semibold text-[var(--labora-ink)]">¿Qué servicios usas?</h2>
+                    <p className="mx-auto mt-2 max-w-2xl text-xs leading-relaxed text-[var(--labora-muted)]">
                       Seleccionarlos solo guarda una preferencia. <strong>No significa que estén conectados.</strong>
                       Puedes importar liquidaciones manualmente mientras no exista una API oficial integrada.
                     </p>
@@ -195,14 +195,14 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
 
               {step === 4 && (
                 <div className="mx-auto max-w-2xl py-4 text-center sm:py-7">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[#E7F0EA] text-[#214E3A]">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
                     <Check size={28} strokeWidth={2.5} />
                   </div>
-                  <p className="labora-kicker mt-5 text-[#789582]">Listo para empezar</p>
-                  <h2 className="labora-display mt-1 text-3xl font-semibold text-[#1E231F]">
+                  <p className="labora-kicker mt-5 text-[var(--labora-primary-2)]">Listo para empezar</p>
+                  <h2 className="labora-display mt-1 text-3xl font-semibold text-[var(--labora-ink)]">
                     Tu espacio queda preparado sin conexiones ficticias.
                   </h2>
-                  <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-stone-500">
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[var(--labora-muted)]">
                     Has indicado {selectedServices} {selectedServices === 1 ? 'servicio' : 'servicios'} que utilizas.
                     Podrás registrar jornada, importar liquidaciones y guardar justificantes desde el primer día.
                   </p>
@@ -216,12 +216,12 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
                 </div>
               )}
 
-              <div className="mt-7 flex flex-col-reverse gap-2 border-t border-[#EEE7DD] pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-7 flex flex-col-reverse gap-2 border-t border-[var(--labora-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <button
                   type="button"
                   onClick={() => setStep((previous) => Math.max(1, previous - 1))}
                   disabled={step === 1 || saving}
-                  className="min-h-11 rounded-[13px] border border-[#DED7CC] bg-white px-4 text-xs font-extrabold text-stone-500 disabled:invisible"
+                  className="min-h-11 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-4 text-xs font-extrabold text-[var(--labora-muted)] disabled:invisible"
                 >
                   Atrás
                 </button>
@@ -230,7 +230,7 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
                   type="button"
                   onClick={handleNext}
                   disabled={saving}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-[#214E3A] px-6 text-sm font-extrabold text-white hover:bg-[#183D2D] disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-6 text-sm font-extrabold text-white hover:opacity-90 disabled:opacity-60"
                 >
                   {saving ? (
                     <><Loader2 size={16} className="animate-spin" /> Guardando…</>
@@ -244,7 +244,7 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
             </div>
           </section>
 
-          <p className="mt-4 text-center text-[10px] leading-relaxed text-stone-400">
+          <p className="mt-4 text-center text-[10px] leading-relaxed text-[var(--labora-muted)]">
             Las preferencias pueden cambiarse después. Seleccionar un servicio nunca equivale a autorizar una conexión externa.
           </p>
         </div>
@@ -262,21 +262,21 @@ const TruthCard = ({
   title: string;
   text: string;
 }) => (
-  <div className="rounded-[16px] border border-[#E7E0D6] bg-[#FAF8F4] p-4">
-    <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#E7F0EA] text-[#214E3A]">
+  <div className="rounded-[16px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-4">
+    <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
       <Icon size={17} />
     </div>
-    <p className="mt-3 text-xs font-extrabold text-[#1E231F]">{title}</p>
-    <p className="mt-1 text-[11px] leading-relaxed text-stone-500">{text}</p>
+    <p className="mt-3 text-xs font-extrabold text-[var(--labora-ink)]">{title}</p>
+    <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">{text}</p>
   </div>
 );
 
 const ReadyRow = ({ text }: { text: string }) => (
-  <div className="flex items-start gap-3 rounded-[14px] border border-[#E7E0D6] bg-[#FAF8F4] px-3.5 py-3">
-    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E7F0EA] text-[#214E3A]">
+  <div className="flex items-start gap-3 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3.5 py-3">
+    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
       <Check size={12} strokeWidth={3} />
     </div>
-    <p className="text-xs leading-relaxed text-stone-600">{text}</p>
+    <p className="text-xs leading-relaxed text-[var(--labora-muted)]">{text}</p>
   </div>
 );
 
@@ -295,9 +295,9 @@ const ServiceSection = ({
   onToggle: (id: string) => void;
   category: 'delivery' | 'banking';
 }) => (
-  <section className="rounded-[20px] border border-[#E5DDD2] bg-[#FBF9F5] p-4">
-    <h3 className="text-sm font-extrabold text-[#1E231F]">{title}</h3>
-    <p className="mt-1 text-[10px] leading-relaxed text-stone-500">{helper}</p>
+  <section className="rounded-[20px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-4">
+    <h3 className="text-sm font-extrabold text-[var(--labora-ink)]">{title}</h3>
+    <p className="mt-1 text-[10px] leading-relaxed text-[var(--labora-muted)]">{helper}</p>
     <div className="mt-4 grid grid-cols-3 gap-2">
       {items.map((service) => {
         const active = selected.includes(service.id);
@@ -307,11 +307,11 @@ const ServiceSection = ({
             key={service.id}
             onClick={() => onToggle(service.id)}
             className={`relative min-h-[92px] rounded-[15px] border p-2.5 text-center transition ${active
-              ? 'border-[#9AB4A3] bg-[#EAF2ED]'
-              : 'border-[#E5DDD2] bg-white hover:bg-[#F7F4EF]'}`}
+              ? 'border-[var(--labora-primary-2)] bg-[var(--labora-moss-soft)]'
+              : 'border-[var(--labora-border)] bg-[var(--labora-surface)] hover:bg-[var(--labora-surface-2)]'}`}
           >
             {active && (
-              <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#214E3A] text-white">
+              <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--labora-primary)] text-white">
                 <Check size={10} strokeWidth={3} />
               </span>
             )}
@@ -323,7 +323,7 @@ const ServiceSection = ({
               size="sm"
               className="mx-auto"
             />
-            <p className={`mt-2 text-[10px] font-extrabold leading-tight ${active ? 'text-[#214E3A]' : 'text-stone-600'}`}>
+            <p className={`mt-2 text-[10px] font-extrabold leading-tight ${active ? 'text-[var(--labora-primary)]' : 'text-[var(--labora-muted)]'}`}>
               {service.name}
             </p>
           </button>
