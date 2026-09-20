@@ -22,7 +22,7 @@ export interface BankAdapter {
   getBalance(accountId: string): Promise<number>;
 }
 
-/** @deprecated Name kept for import compatibility. Never simulates a bank. */
+/** Unavailable adapter. Name `MockBankAdapter` kept for import compatibility — never invents bank data. */
 export class MockBankAdapter implements BankAdapter {
   constructor(
     private readonly providerId: string,

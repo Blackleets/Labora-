@@ -12,7 +12,9 @@ import {
   ReceiptText,
   ShieldCheck,
   Square,
-  Wallet
+  Wallet,
+  ClipboardPaste,
+  Link2
 } from 'lucide-react';
 import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
@@ -173,7 +175,15 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     }
   };
 
+  const hasGestoria = Boolean(currentUser.managerId);
   const quickActions = [
+    {
+      label: 'Importar ingresos',
+      description: hasGestoria ? 'Liquidación CSV o texto' : 'Glovo/Uber: pega liquidación',
+      icon: ClipboardPaste,
+      tone: 'green',
+      onClick: () => setView?.('money')
+    },
     {
       label: 'Registrar gasto',
       description: 'Foto, ticket o factura',
@@ -182,11 +192,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       onClick: () => setIsGasModalOpen(true)
     },
     {
-      label: 'Avisos',
-      description: pendingRequirements.length ? `${pendingRequirements.length} pendientes` : 'Todo revisado',
-      icon: Bell,
+      label: hasGestoria ? 'Avisos gestoría' : 'Vincular gestoría',
+      description: hasGestoria
+        ? (pendingRequirements.length ? `${pendingRequirements.length} pendientes` : 'Todo revisado')
+        : 'Por correo en Perfil',
+      icon: hasGestoria ? Bell : Link2,
       tone: 'amber',
-      onClick: () => setView?.('gestor-requirements')
+      onClick: () => setView?.(hasGestoria ? 'gestor-requirements' : 'settings')
     },
     {
       label: 'Modelos',

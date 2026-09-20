@@ -24,6 +24,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 | Build / typecheck / vitest | Must stay green |
 | Privacy / terms pages | **Merged PR #15** — `privacidad.html` / `terminos.html`; Login + Settings |
 | Income import without APIs | Parser local CSV/líneas Glovo·Uber (sin Gemini); banca/plataformas apuntan a Ingresos |
+| No enterprise demo org | `OrganizationContext` stays null; payroll/policies fail-closed without fake employees |
 
 ## Linking — what works / what needs Lewis
 
