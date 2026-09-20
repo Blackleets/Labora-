@@ -105,7 +105,7 @@ const MainLayout: React.FC = () => {
   ];
 
   const Identity = ({ small = false }: { small?: boolean }) => (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[#E8DFC8] bg-white text-[#2F5D4A] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[color:var(--labora-border,#E8DFC8)] bg-[color:var(--labora-surface,#FFFEFB)] text-[color:var(--labora-primary,#2F5D4A)] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
       {identityImage ? (
         <img src={identityImage} alt="Identidad" className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`} />
       ) : (

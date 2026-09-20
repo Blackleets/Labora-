@@ -3,7 +3,7 @@
 **Estado:** checklist lista para Lewis. **No marcar PASS** sin ejecutar con dos cuentas reales.  
 **Sin secretos de bot:** este documento no inventa resultados. CI solo prueba fail-closed / aislamiento de caché offline.
 
-Rama: `main` · Linking RPCs **live**. Ver `scripts/uat-dual-smoke.md` y `npm run uat:dual`.
+Rama: `main` · Linking RPCs **live**. Ver `scripts/uat-dual-smoke.md` y `npm run uat:dual` (imprime checklist + `PREP_STATUS`; **nunca** marca PASS).
 
 ---
 
@@ -19,7 +19,8 @@ La contraseña de B se entregó a Lewis en chat (no se guarda en el repo). Si la
 
 ## Preparación (Lewis)
 
-1. Proyecto Supabase con URL + anon key en `.env.local` (no service_role en Vite).
+0. Corre `npm run uat:dual` y mira `PREP_STATUS` (`ready` / `ready_with_warnings` / `blocked`). Exit 0 ≠ PASS UAT.
+1. Proyecto Supabase con URL + anon key en `.env.local` (no service_role en Vite). Si `env_local` falla en el prep, copia `.env.example`.
 2. Dos navegadores o perfiles (o un dispositivo + web): **Cuenta A = Rider**, **Cuenta B = Gestoría**.
 3. Correos reales distintos; fotos/logos opcionales pero recomendados.
 4. No uses la misma sesión / mismo `localStorage` sin cerrar sesión entre cuentas.

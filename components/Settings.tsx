@@ -193,13 +193,19 @@ const Settings: React.FC = () => {
     text: string;
     checked: boolean;
     onClick: () => void;
-  }) => (
+  }) => {
+    const switchId = `labora-toggle-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    return (
     <button
       type="button"
+      id={switchId}
+      role="switch"
+      aria-checked={checked}
+      aria-label={title}
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[14px] px-1 py-3 text-left"
+      className="flex w-full items-center gap-3 rounded-[14px] px-1 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden>
         <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">
@@ -207,6 +213,7 @@ const Settings: React.FC = () => {
         <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--labora-muted)]">{text}</p>
       </div>
       <span
+        aria-hidden
         className={`relative h-6 w-11 shrink-0 rounded-full transition ${
           checked ? 'bg-[var(--labora-primary)]' : 'bg-[var(--labora-surface-2)]'
         }`}
@@ -218,7 +225,8 @@ const Settings: React.FC = () => {
         />
       </span>
     </button>
-  );
+    );
+  };
 
   const displayName = isManager
     ? currentUser.companyName || currentUser.name
@@ -298,26 +306,28 @@ const Settings: React.FC = () => {
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>
+            <label htmlFor="labora-settings-name" className={labelClass}>
               {isManager ? 'Nombre de contacto' : 'Nombre y apellidos'}
             </label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+            <input id="labora-settings-name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Correo</label>
+            <label htmlFor="labora-settings-email" className={labelClass}>Correo</label>
             <input
+              id="labora-settings-email"
               value={currentUser.email}
               disabled
               className={`${inputClass} bg-[var(--labora-surface-2)] text-[var(--labora-muted)]`}
             />
           </div>
           <div>
-            <label className={labelClass}>Teléfono</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+            <label htmlFor="labora-settings-phone" className={labelClass}>Teléfono</label>
+            <input id="labora-settings-phone" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>NIF / NIE</label>
+            <label htmlFor="labora-settings-nif" className={labelClass}>NIF / NIE</label>
             <input
+              id="labora-settings-nif"
               value={nif}
               onChange={(e) => setNif(e.target.value.toUpperCase())}
               className={inputClass}
@@ -326,8 +336,9 @@ const Settings: React.FC = () => {
           {isManager ? (
             <>
               <div>
-                <label className={labelClass}>Nombre de la gestoría</label>
+                <label htmlFor="labora-settings-company" className={labelClass}>Nombre de la gestoría</label>
                 <input
+                  id="labora-settings-company"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   className={inputClass}
@@ -467,24 +478,30 @@ const Settings: React.FC = () => {
               </div>
             ) : (
               <div className="mt-3 space-y-2">
-                <p className="text-xs leading-relaxed text-[var(--labora-muted)]">
+                <p id="labora-gestoria-link-help" className="text-xs leading-relaxed text-[var(--labora-muted)]">
                   Introduce el correo de tu gestoría (el mismo que ellos ven en{' '}
                   <span className="font-semibold text-[var(--labora-muted)]">Tus clientes</span>). Solo se
                   aceptan cuentas con rol gestoría o administración.
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row">
+                  <label htmlFor="labora-gestoria-email" className="sr-only">
+                    Correo de tu gestoría
+                  </label>
                   <input
+                    id="labora-gestoria-email"
                     type="email"
                     value={managerEmail}
                     onChange={(e) => setManagerEmail(e.target.value)}
                     placeholder="correo@gestoria.com"
                     className={`${inputClass} min-w-0 flex-1`}
+                    aria-describedby="labora-gestoria-link-help"
+                    autoComplete="email"
                   />
                   <button
                     type="button"
                     onClick={handleLinkManager}
                     disabled={linking}
-                    className="inline-flex items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-clay)] px-4 py-3 text-xs font-extrabold text-white hover:bg-[var(--labora-clay-deep)] disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-clay)] px-4 py-3 text-xs font-extrabold text-white hover:bg-[var(--labora-clay-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-60"
                   >
                     {linking ? (
                       <Loader2 size={14} className="animate-spin" />

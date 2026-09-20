@@ -74,6 +74,29 @@ describe('gestoriaLinking helpers', () => {
     }
   });
 
+  it('rejects self-link with explicit self_link code', () => {
+    const me = rider({ email: 'yo@labora.test' });
+    const users = [me, manager()];
+    const byEmail = validateRiderLinkByEmail(me, 'YO@labora.test', users);
+    expect(byEmail.ok).toBe(false);
+    if (byEmail.ok === false) {
+      expect(byEmail.code).toBe('self_link');
+      expect(byEmail.message).toMatch(/propio correo/i);
+    }
+  });
+
+  it('rejects rider-as-manager link (cannot link peer autónomo)', () => {
+    const me = rider();
+    const otherRider = rider({ id: 'r-other', email: 'otro-rider@x.com', name: 'Otro' });
+    const users = [me, otherRider, manager()];
+    const result = validateRiderLinkByEmail(me, 'otro-rider@x.com', users);
+    expect(result.ok).toBe(false);
+    if (result.ok === false) {
+      expect(result.code).toBe('not_manager');
+      expect(result.message).toMatch(/gestoría/i);
+    }
+  });
+
   it('accepts known gestoría and unknown email (RPC must resolve)', () => {
     const me = rider();
     const users = [me, manager()];
