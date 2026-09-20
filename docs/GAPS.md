@@ -39,7 +39,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 
 | Gap | State |
 | --- | --- |
-| **Dual-account UAT sign-off** | Checklist ready; needs two real accounts + Lewis signature |
+| **Dual-account UAT sign-off** | Checklist ready; **gestoría UAT account created** — Lewis runs checklist + signature |
 | **Apply gestoría link RPCs** on live Supabase | **Done** — `link_manager_by_email` + `unlink_own_manager` live |
 | **Stripe secrets + Price IDs** | **Deferred** (Lewis: sin acceso Stripe por ahora) |
 | **Gemini / OCR API key** | Server secret only (`GEMINI_API_KEY` / `GOOGLE_API_KEY`) |

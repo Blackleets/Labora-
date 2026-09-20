@@ -3,9 +3,19 @@
 **Estado:** checklist lista para Lewis. **No marcar PASS** sin ejecutar con dos cuentas reales.  
 **Sin secretos de bot:** este documento no inventa resultados. CI solo prueba fail-closed / aislamiento de caché offline.
 
-Rama: `main` (o PR `feat/gestoria-link-and-docs`) · Ver también `scripts/uat-dual-smoke.md` y `npm run uat:dual`.
+Rama: `main` · Linking RPCs **live**. Ver `scripts/uat-dual-smoke.md` y `npm run uat:dual`.
 
 ---
+
+## Cuentas de prueba (agente · 2026-09-20)
+
+| Rol | Correo | Notas |
+| --- | --- | --- |
+| Rider (A) | la cuenta ya existente en el proyecto | Perfil `rider` en live |
+| Gestoría (B) | `leerenmos+gestoria-uat@gmail.com` | Creada para UAT; email confirmado en Auth; NIF `B12345674`; colegiado `COL-UAT-001` |
+
+La contraseña de B se entregó a Lewis en chat (no se guarda en el repo). Si la pierdes: reset desde Supabase Auth o vuelve a pedirla al agente para regenerar.
+
 
 ## Preparación (Lewis)
 
@@ -37,7 +47,7 @@ Rama: `main` (o PR `feat/gestoria-link-and-docs`) · Ver también `scripts/uat-d
 | B4 | Mensajes habilitados | A y B | Contactos de mensajería dejan de estar vacíos (ver sección C) |
 | B5 | Rechazo honesto | A intenta correo de otro rider / inválido | Error claro; **no** se crea vínculo |
 | B6 | Desvincular | A confirma desvínculo | `managerId` limpio; listas y mensajes vuelven al vacío honesto |
-| B7 | RPC ausente | Si Lewis aún no aplicó la migración | Error que pide aplicar `link_manager_by_email` — **no** fingir éxito |
+| B7 | RPC ausente | **Migración ya aplicada en live** (2026-09-20) | Error claro — **no** fingir éxito |
 | B8 | Tercera cuenta | C | **No** ve datos de A ni B |
 
 ---
