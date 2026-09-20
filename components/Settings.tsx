@@ -526,6 +526,32 @@ const Settings: React.FC = () => {
         </p>
       </section>
 
+      <section className="labora-card p-4 sm:p-5">
+        <p className="labora-kicker text-stone-400">Legal</p>
+        <h2 className="mt-1 text-base font-extrabold text-[#1E231F]">Privacidad y términos</h2>
+        <p className="mt-1 text-xs text-stone-500">
+          Textos requeridos para tiendas y transparencia. No sustituyen asesoramiento legal.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <a
+            href="/privacidad.html"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-[13px] border border-[#D9D0C4] bg-[#FFFEFB] px-3.5 py-2.5 text-xs font-extrabold text-[#214E3A] hover:bg-[#F7F3ED]"
+          >
+            Política de privacidad
+          </a>
+          <a
+            href="/terminos.html"
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-[13px] border border-[#D9D0C4] bg-[#FFFEFB] px-3.5 py-2.5 text-xs font-extrabold text-[#214E3A] hover:bg-[#F7F3ED]"
+          >
+            Términos de uso
+          </a>
+        </div>
+      </section>
+
       <button
         type="button"
         onClick={handleLogout}

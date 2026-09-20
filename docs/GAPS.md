@@ -10,7 +10,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 | **PR #12** messaging clarity | Merged — rider↔gestoría hub titles, badges, eligibility, `docs/MESSAGING.md` |
 | **PR #13** gestoría signup | Merged — NIF + colegiado required (`docs/REGISTRATION.md`) |
 | Autónomo ↔ gestoría **linking UI** | Settings: **Tu gestoría** / **Tus clientes**; link by email; unlink with confirm |
-| Linking RPCs (repo) | Migration `20260920141000_labora_gestoria_link_rpcs.sql` — must be **applied** on live Supabase |
+| Linking RPCs (live) | Applied on Supabase + synced in repo |
 
 ## Done without secrets (agent-safe)
 
@@ -22,6 +22,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 | Play Store **checklist** | `ANDROID.md` + `docs/PLAY_STORE_GATES.md` — shell **NOT Play-ready** |
 | Billing prep (flag OFF) | `.env.example`; `VITE_BILLING_ENABLED=false`; BillingCard gated |
 | Build / typecheck / vitest | Must stay green |
+| Privacy / terms pages | `public/privacidad.html` + `public/terminos.html`; links in Login + Settings |
 
 ## Linking — what works / what needs Lewis
 
@@ -40,7 +41,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main`. Linking RPCs **live** on Sup
 | --- | --- |
 | **Dual-account UAT sign-off** | Checklist ready; needs two real accounts + Lewis signature |
 | **Apply gestoría link RPCs** on live Supabase | **Done** — `link_manager_by_email` + `unlink_own_manager` live |
-| **Stripe secrets + Price IDs** | Supabase Function secrets; sandbox checkout/webhook/portal UAT |
+| **Stripe secrets + Price IDs** | **Deferred** (Lewis: sin acceso Stripe por ahora) |
 | **Gemini / OCR API key** | Server secret only (`GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
 | **`VITE_BILLING_ENABLED=true`** | Only after sandbox UAT passes |
 | **Play Console / keystore / Data safety / screenshots / privacy URL** | External; shell is not Play-ready |

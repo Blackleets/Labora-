@@ -9,6 +9,7 @@
 | Keystore / App signing | ❌ | Generar upload key; guardar fuera del repo |
 | Play Console app listing | ❌ | Crear app, ficha ES/EN, categoría |
 | Data safety form | ❌ | Auth, storage, posible billing — declarar honestamente |
+| Privacy policy URL | 🟡 | `privacidad.html` in app; needs public HTTPS URL when hosting |
 | Privacy policy URL | ❌ | URL pública accesible |
 | Store screenshots / feature graphic | ❌ | Dispositivo real + branding actual |
 | Content rating questionnaire | ❌ | |
