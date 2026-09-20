@@ -220,7 +220,16 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   }, [users, incomes, expenses, documents, payments, requirements, declarations, vehicle, currentUser, hasOnboarded, privacyMode, darkMode]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('dark', darkMode);
     document.body.classList.toggle('dark', darkMode);
+    root.style.colorScheme = darkMode ? 'dark' : 'light';
+    document.body.style.colorScheme = darkMode ? 'dark' : 'light';
+    try {
+      localStorage.setItem(STORAGE.darkMode, String(darkMode));
+    } catch {
+      /* ignore quota / private mode */
+    }
   }, [darkMode]);
 
   const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
