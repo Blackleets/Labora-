@@ -82,8 +82,8 @@ const Settings: React.FC = () => {
   if (!currentUser) return null;
 
   const inputClass =
-    'w-full rounded-[13px] border border-[#DED7CC] bg-white px-3.5 py-3 text-sm text-[#1E231F] outline-none transition focus:border-[#789582] focus:ring-2 focus:ring-[#DDE9E1]';
-  const labelClass = 'mb-1.5 block text-[11px] font-extrabold text-stone-500';
+    'w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 py-3 text-sm text-[var(--labora-ink)] outline-none transition focus:border-[var(--labora-primary-2)] focus:ring-2 focus:ring-[var(--labora-moss-soft)]';
+  const labelClass = 'mb-1.5 block text-[11px] font-extrabold text-[var(--labora-muted)]';
 
   const saveProfile = async () => {
     if (!name.trim()) {
@@ -199,20 +199,20 @@ const Settings: React.FC = () => {
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-[14px] px-1 py-3 text-left"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#F1ECE3] text-stone-500">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]">
         <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-extrabold text-[#1E231F]">{title}</p>
-        <p className="mt-0.5 text-[11px] leading-relaxed text-stone-500">{text}</p>
+        <p className="text-sm font-extrabold text-[var(--labora-ink)]">{title}</p>
+        <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--labora-muted)]">{text}</p>
       </div>
       <span
         className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-          checked ? 'bg-[#214E3A]' : 'bg-stone-200'
+          checked ? 'bg-[var(--labora-primary)]' : 'bg-[var(--labora-surface-2)]'
         }`}
       >
         <span
-          className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition ${
+          className={`absolute top-1 h-4 w-4 rounded-full bg-[var(--labora-surface)] shadow-sm transition ${
             checked ? 'translate-x-6' : 'translate-x-1'
           }`}
         />
@@ -230,7 +230,7 @@ const Settings: React.FC = () => {
         <div className="grid gap-5 p-5 sm:p-7 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <div className="flex min-w-0 items-center gap-4">
             <div
-              className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border border-[#D9D0C4] bg-[#F7F3ED] text-[#214E3A] shadow-sm ${
+              className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border border-[var(--labora-border)] bg-[var(--labora-canvas)] text-[var(--labora-primary)] shadow-sm ${
                 isManager ? 'rounded-[18px]' : 'rounded-full'
               }`}
             >
@@ -247,21 +247,21 @@ const Settings: React.FC = () => {
               )}
             </div>
             <div className="min-w-0">
-              <p className="labora-kicker text-[#789582]">
+              <p className="labora-kicker text-[var(--labora-primary-2)]">
                 {isManager ? 'Cuenta de gestoría' : 'Cuenta de autónomo'}
               </p>
-              <h1 className="labora-display mt-1.5 truncate text-2xl font-semibold tracking-[-0.03em] text-[#1E2A24] sm:text-[2.05rem]">
+              <h1 className="labora-display mt-1.5 truncate text-2xl font-semibold tracking-[-0.03em] text-[var(--labora-ink)] sm:text-[2.05rem]">
                 {displayName}
               </h1>
-              <p className="mt-1 truncate text-sm text-stone-500">{currentUser.email}</p>
+              <p className="mt-1 truncate text-sm text-[var(--labora-muted)]">{currentUser.email}</p>
             </div>
           </div>
 
           <div
             className={`w-fit rounded-full border px-3 py-1.5 text-[10px] font-extrabold ${
               isManager || linkedManager
-                ? 'border-[#D3E2D8] bg-[#EAF2ED] text-[#214E3A]'
-                : 'border-[#E8D9C8] bg-[#FFF5E9] text-[#8A641E]'
+                ? 'border-[var(--labora-border)] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]'
+                : 'border-[var(--labora-border)] bg-[color-mix(in_srgb,var(--labora-gold)_14%,var(--labora-surface))] text-[var(--labora-gold)]'
             }`}
           >
             {isManager
@@ -277,9 +277,9 @@ const Settings: React.FC = () => {
 
       <section className="labora-card p-4 sm:p-5">
         <div className="mb-5">
-          <p className="labora-kicker text-stone-400">Identidad</p>
-          <h2 className="mt-1 text-base font-extrabold text-[#1E231F]">Datos del perfil</h2>
-          <p className="mt-1 text-xs text-stone-500">
+          <p className="labora-kicker text-[var(--labora-muted)]">Identidad</p>
+          <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Datos del perfil</h2>
+          <p className="mt-1 text-xs text-[var(--labora-muted)]">
             La otra parte verá estos datos en el contexto de trabajo compartido.
           </p>
         </div>
@@ -308,7 +308,7 @@ const Settings: React.FC = () => {
             <input
               value={currentUser.email}
               disabled
-              className={`${inputClass} bg-[#F7F4EF] text-stone-400`}
+              className={`${inputClass} bg-[var(--labora-surface-2)] text-[var(--labora-muted)]`}
             />
           </div>
           <div>
@@ -354,16 +354,16 @@ const Settings: React.FC = () => {
           )}
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 border-t border-[#EEE7DD] pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-xs font-medium text-stone-500">
-            <ShieldCheck size={15} className="text-[#214E3A]" />
+        <div className="mt-5 flex flex-col gap-3 border-t border-[var(--labora-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs font-medium text-[var(--labora-muted)]">
+            <ShieldCheck size={15} className="text-[var(--labora-primary)]" />
             Perfil protegido por sesión y RLS
           </div>
           <button
             type="button"
             onClick={saveProfile}
             disabled={saving}
-            className="inline-flex items-center justify-center gap-2 rounded-[13px] bg-[#214E3A] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#183D2D] disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-4 py-2.5 text-xs font-extrabold text-white hover:opacity-90 disabled:opacity-60"
           >
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Guardar
             cambios
@@ -373,29 +373,29 @@ const Settings: React.FC = () => {
 
       <section className="labora-card p-4 sm:p-5">
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-[#E7F0EA] text-[#214E3A]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
             {isManager ? <Building2 size={19} /> : <Link2 size={19} />}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="labora-kicker text-[#789582]">Relación de trabajo</p>
-            <h2 className="mt-1 text-base font-extrabold text-[#1E231F]">
+            <p className="labora-kicker text-[var(--labora-primary-2)]">Relación de trabajo</p>
+            <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">
               {isManager ? 'Tus clientes' : 'Tu gestoría'}
             </h2>
 
             {isManager ? (
               <>
-                <p className="mt-1 text-xs leading-relaxed text-stone-500">
+                <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">
                   Comparte este correo con tus autónomos. Ellos se vinculan desde{' '}
-                  <span className="font-semibold text-stone-600">Perfil → Tu gestoría</span>. No hay
+                  <span className="font-semibold text-[var(--labora-muted)]">Perfil → Tu gestoría</span>. No hay
                   invitaciones OAuth ni códigos inventados.
                 </p>
-                <div className="mt-3 flex items-center gap-2 rounded-[13px] border border-[#E3DCD2] bg-[#F8F5F0] px-3 py-2.5 text-xs font-bold text-stone-700">
-                  <Mail size={14} className="text-stone-400" />
+                <div className="mt-3 flex items-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-3 py-2.5 text-xs font-bold text-[var(--labora-ink-soft)]">
+                  <Mail size={14} className="text-[var(--labora-muted)]" />
                   {currentUser.email}
                 </div>
 
                 {linkedClients.length === 0 ? (
-                  <p className="mt-3 rounded-[13px] border border-dashed border-[#E3DCD2] bg-[#FBF8F3] px-3 py-3 text-[11px] leading-relaxed text-stone-500">
+                  <p className="mt-3 rounded-[13px] border border-dashed border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3 py-3 text-[11px] leading-relaxed text-[var(--labora-muted)]">
                     Todavía no tienes clientes vinculados. Cuando un autónomo introduzca tu correo,
                     aparecerá aquí y en Mensajes.
                   </p>
@@ -404,9 +404,9 @@ const Settings: React.FC = () => {
                     {linkedClients.map((client) => (
                       <li
                         key={client.id}
-                        className="flex items-center gap-3 rounded-[14px] border border-[#E3DCD2] bg-[#FBF8F3] p-3"
+                        className="flex items-center gap-3 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-3"
                       >
-                        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white text-[#214E3A]">
+                        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--labora-surface)] text-[var(--labora-primary)]">
                           {identityImageStore.getForUser(client) ? (
                             <img
                               src={identityImageStore.getForUser(client)}
@@ -418,10 +418,10 @@ const Settings: React.FC = () => {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-extrabold text-[#1E231F]">
+                          <p className="truncate text-xs font-extrabold text-[var(--labora-ink)]">
                             {client.name}
                           </p>
-                          <p className="mt-0.5 truncate text-[11px] text-stone-500">{client.email}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-[var(--labora-muted)]">{client.email}</p>
                         </div>
                       </li>
                     ))}
@@ -430,8 +430,8 @@ const Settings: React.FC = () => {
               </>
             ) : linkedManager ? (
               <div className="mt-3 space-y-3">
-                <div className="flex items-center gap-3 rounded-[14px] border border-[#D7E5DC] bg-[#F1F7F3] p-3">
-                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[11px] bg-white text-[#214E3A]">
+                <div className="flex items-center gap-3 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-3">
+                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[11px] bg-[var(--labora-surface)] text-[var(--labora-primary)]">
                     {identityImageStore.getForUser(linkedManager) ? (
                       <img
                         src={identityImageStore.getForUser(linkedManager)}
@@ -443,10 +443,10 @@ const Settings: React.FC = () => {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-extrabold text-[#214E3A]">
+                    <p className="truncate text-xs font-extrabold text-[var(--labora-primary)]">
                       {displayGestoriaName(linkedManager)}
                     </p>
-                    <p className="mt-0.5 truncate text-[11px] text-stone-500">
+                    <p className="mt-0.5 truncate text-[11px] text-[var(--labora-muted)]">
                       {linkedManager.email}
                     </p>
                   </div>
@@ -455,7 +455,7 @@ const Settings: React.FC = () => {
                   type="button"
                   onClick={handleUnlinkManager}
                   disabled={unlinking}
-                  className="inline-flex items-center justify-center gap-2 rounded-[13px] border border-[#F0D8D3] bg-[#FFF7F5] px-4 py-2.5 text-xs font-extrabold text-[#A34F42] hover:bg-[#FFF0EC] disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-4 py-2.5 text-xs font-extrabold text-[var(--labora-clay-deep)] hover:bg-[var(--labora-soft-clay)] disabled:opacity-60"
                 >
                   {unlinking ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -467,9 +467,9 @@ const Settings: React.FC = () => {
               </div>
             ) : (
               <div className="mt-3 space-y-2">
-                <p className="text-xs leading-relaxed text-stone-500">
+                <p className="text-xs leading-relaxed text-[var(--labora-muted)]">
                   Introduce el correo de tu gestoría (el mismo que ellos ven en{' '}
-                  <span className="font-semibold text-stone-600">Tus clientes</span>). Solo se
+                  <span className="font-semibold text-[var(--labora-muted)]">Tus clientes</span>). Solo se
                   aceptan cuentas con rol gestoría o administración.
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row">
@@ -484,7 +484,7 @@ const Settings: React.FC = () => {
                     type="button"
                     onClick={handleLinkManager}
                     disabled={linking}
-                    className="inline-flex items-center justify-center gap-2 rounded-[13px] bg-[#D66C47] px-4 py-3 text-xs font-extrabold text-white hover:bg-[#BE5838] disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-clay)] px-4 py-3 text-xs font-extrabold text-white hover:bg-[var(--labora-clay-deep)] disabled:opacity-60"
                   >
                     {linking ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -502,10 +502,10 @@ const Settings: React.FC = () => {
 
       <section className="labora-card p-4 sm:p-5">
         <div className="mb-1">
-          <p className="labora-kicker text-stone-400">Aplicación</p>
-          <h2 className="mt-1 text-base font-extrabold text-[#1E231F]">Preferencias reales</h2>
+          <p className="labora-kicker text-[var(--labora-muted)]">Aplicación</p>
+          <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Preferencias reales</h2>
         </div>
-        <div className="divide-y divide-[#EEE7DD]">
+        <div className="divide-y divide-[var(--labora-border)]">
           <ToggleRow
             icon={privacyMode ? Eye : ShieldCheck}
             title="Ocultar importes"
@@ -521,16 +521,16 @@ const Settings: React.FC = () => {
             onClick={toggleDarkMode}
           />
         </div>
-        <p className="mt-3 rounded-[13px] bg-[#F7F4EE] px-3 py-2.5 text-[10px] leading-relaxed text-stone-400">
+        <p className="mt-3 rounded-[13px] bg-[var(--labora-surface-2)] px-3 py-2.5 text-[10px] leading-relaxed text-[var(--labora-muted)]">
           Las notificaciones push/email todavía no están habilitadas; no mostramos un ajuste falso
           hasta que exista ese canal.
         </p>
       </section>
 
       <section className="labora-card p-4 sm:p-5">
-        <p className="labora-kicker text-stone-400">Legal</p>
-        <h2 className="mt-1 text-base font-extrabold text-[#1E231F]">Privacidad y términos</h2>
-        <p className="mt-1 text-xs text-stone-500">
+        <p className="labora-kicker text-[var(--labora-muted)]">Legal</p>
+        <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Privacidad y términos</h2>
+        <p className="mt-1 text-xs text-[var(--labora-muted)]">
           Textos requeridos para tiendas y transparencia. No sustituyen asesoramiento legal.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -538,7 +538,7 @@ const Settings: React.FC = () => {
             href={withBaseUrl("privacidad.html")}
             target="_blank"
             rel="noreferrer"
-            className="rounded-[13px] border border-[#D9D0C4] bg-[#FFFEFB] px-3.5 py-2.5 text-xs font-extrabold text-[#214E3A] hover:bg-[#F7F3ED]"
+            className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 py-2.5 text-xs font-extrabold text-[var(--labora-primary)] hover:bg-[var(--labora-canvas)]"
           >
             Política de privacidad
           </a>
@@ -546,7 +546,7 @@ const Settings: React.FC = () => {
             href={withBaseUrl("terminos.html")}
             target="_blank"
             rel="noreferrer"
-            className="rounded-[13px] border border-[#D9D0C4] bg-[#FFFEFB] px-3.5 py-2.5 text-xs font-extrabold text-[#214E3A] hover:bg-[#F7F3ED]"
+            className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 py-2.5 text-xs font-extrabold text-[var(--labora-primary)] hover:bg-[var(--labora-canvas)]"
           >
             Términos de uso
           </a>
@@ -554,14 +554,14 @@ const Settings: React.FC = () => {
       </section>
 
       <section className="labora-card p-4 sm:p-5">
-        <p className="labora-kicker text-stone-400">Cuenta</p>
-        <h2 className="mt-1 text-base font-extrabold text-[#1E231F]">Eliminar cuenta</h2>
-        <p className="mt-1 text-xs leading-relaxed text-stone-500">
+        <p className="labora-kicker text-[var(--labora-muted)]">Cuenta</p>
+        <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Eliminar cuenta</h2>
+        <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">
           La eliminación completa de datos en Supabase todavía no está automatizada.
           Si necesitas borrar tu cuenta y datos asociados, contacta soporte — no ofrecemos
           un botón falso que no limpie el backend.
         </p>
-        <p className="mt-3 rounded-[13px] border border-dashed border-[#E3DCD2] bg-[#FBF8F3] px-3 py-2.5 text-[11px] font-bold text-stone-500">
+        <p className="mt-3 rounded-[13px] border border-dashed border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3 py-2.5 text-[11px] font-bold text-[var(--labora-muted)]">
           Próximamente · contacta soporte para solicitudes de borrado (Play User Data policy).
         </p>
       </section>
@@ -569,7 +569,7 @@ const Settings: React.FC = () => {
       <button
         type="button"
         onClick={handleLogout}
-        className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#F0D8D3] bg-[#FFF7F5] py-3 text-sm font-extrabold text-[#A34F42] hover:bg-[#FFF0EC]"
+        className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] py-3 text-sm font-extrabold text-[var(--labora-clay-deep)] hover:bg-[var(--labora-soft-clay)]"
       >
         <LogOut size={17} /> Cerrar sesión
       </button>

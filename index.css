@@ -1078,3 +1078,44 @@ html.dark .labora-intro-splash,
 body.dark .labora-intro-splash {
   background: var(--labora-canvas) !important;
 }
+
+/* agent-safe loop3: theme-aware status chips */
+.labora-status-ok {
+  border: 1px solid color-mix(in srgb, var(--labora-primary) 28%, var(--labora-border));
+  background: var(--labora-moss-soft);
+  color: var(--labora-primary);
+}
+.labora-status-pending {
+  border: 1px solid color-mix(in srgb, var(--labora-gold) 38%, var(--labora-border));
+  background: color-mix(in srgb, var(--labora-gold) 14%, var(--labora-surface));
+  color: var(--labora-gold);
+}
+.labora-status-fix {
+  border: 1px solid color-mix(in srgb, var(--labora-clay) 36%, var(--labora-border));
+  background: var(--labora-soft-clay);
+  color: var(--labora-clay-deep);
+}
+.labora-status-danger {
+  border: 1px solid color-mix(in srgb, var(--labora-clay-deep) 40%, var(--labora-border));
+  background: color-mix(in srgb, var(--labora-clay) 18%, var(--labora-surface));
+  color: var(--labora-clay-deep);
+}
+html.dark .labora-status-ok,
+body.dark .labora-status-ok {
+  border-color: color-mix(in srgb, var(--labora-primary) 35%, var(--labora-border));
+  background: var(--labora-moss-soft);
+  color: var(--labora-primary-3);
+}
+html.dark .labora-status-pending,
+body.dark .labora-status-pending {
+  border-color: color-mix(in srgb, var(--labora-gold) 40%, var(--labora-border));
+  background: color-mix(in srgb, var(--labora-gold) 18%, var(--labora-surface));
+  color: var(--labora-gold-soft);
+}
+html.dark .labora-status-fix,
+body.dark .labora-status-fix,
+html.dark .labora-status-danger,
+body.dark .labora-status-danger {
+  border-color: color-mix(in srgb, var(--labora-clay) 40%, var(--labora-border));
+  color: var(--labora-clay);
+}
