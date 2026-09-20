@@ -41,7 +41,10 @@ export const messageRepository = {
     if (error) {
       console.error('Error loading remote messages:', error);
       // Never return another account's cache. Only the current session user cache is allowed.
-      return offlineFallbackFor(sessionUserId) as Message[];
+      const cached = offlineFallbackFor(sessionUserId);
+      return cached.filter((row): row is Message =>
+        Boolean(row.id && row.personId && row.personName && row.timestamp && row.status && row.type)
+      );
     }
     const messages = mapRows(data || [], users);
     if (sessionUserId) writeMessageCache(sessionUserId, messages);

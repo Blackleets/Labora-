@@ -7,12 +7,19 @@
 export const MESSAGE_STORAGE_PREFIX = 'labora_messages:';
 export const LEGACY_SHARED_CACHE_KEY = 'labora_messages';
 
+/** Cache row shape — Message is assignable (no index signature trap). */
 export type CachedMessage = {
   id: string;
+  personId?: string;
+  personName?: string;
   senderId?: string;
+  senderName?: string;
   recipientId?: string;
+  recipientName?: string;
   message?: string;
-  [key: string]: unknown;
+  timestamp?: string;
+  status?: string;
+  type?: string;
 };
 
 export const cacheKeyFor = (userId: string): string => {
