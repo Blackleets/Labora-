@@ -1,6 +1,6 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 6 cream leftovers / advisors). Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN only; no RLS grant advisories this run).
+Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 7 UAT prep / a11y). **Cream-token sweeps stopped.** Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
 
 ## Merged on main (no longer blocked)
 
@@ -18,7 +18,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 6 cream leftovers / a
 | --- | --- |
 | Banking UI honesty | Copy: **Open Banking próximamente**; fail-closed adapters |
 | Fail-closed vitest | Messaging cache isolation; bank refuse; billing flag default off; gestoría link helpers |
-| Dual-account UAT **prep** | `docs/UAT_DUAL_ACCOUNT.md` + `npm run uat:dual` — checklist only, **not** PASS |
+| Dual-account UAT **prep** | `docs/UAT_DUAL_ACCOUNT.md` + `npm run uat:dual` — checklist + `PREP_STATUS` machine-check; **not** PASS |
 | Play Store **checklist** | `ANDROID.md` + `docs/PLAY_STORE_GATES.md` — shell **NOT Play-ready** |
 | Billing prep (flag OFF) | `.env.example`; `VITE_BILLING_ENABLED=false`; BillingCard gated |
 | Build / typecheck / vitest | Must stay green |
@@ -33,6 +33,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: `main` (+ loop 6 cream leftovers / a
 | Agent-safe loop 4 (GestorRequirements/Expense/Login/Tax/Income + banking·payroll shells cream→tokens) | Remaining parchment hex → `var(--labora-*)`; requirements/expense/income badges → `.labora-status-*`; meadow Login sky gradients kept; billing flag still OFF |
 | Agent-safe loop 5 (Sidebar/Dashboard/GasStation/TaxDeclarations/Education/Identity/FiscalChat/Movements + ProDashboard·Risk·Events·Ops·Policy shells) | Cream/parchment chrome → `var(--labora-*)`; fail-closed shells theme-safe; Education/FiscalChat/Movements blue accents kept; billing flag still OFF |
 | Agent-safe loop 6 (AutomationHub + FeatureFlagSettings cream→tokens; advisors; legal withBaseUrl vitest) | Hub/flags → `var(--labora-*)`; `docs/RLS_ADVISORS.md` (HIBP WARN only); legal href vitest; `dark_mode_force` copy honest (local/in-memory); billing flag still OFF |
+| Agent-safe loop 7 (UAT dual prep + Login/Settings a11y) | `npm run uat:dual` machine prep (`PREP_STATUS`); explicit self-link / not_manager vitest; labels, `role=switch`, `role=alert`, focus-visible on Login + gestoría link; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
 
 ## Linking — what works / what needs Lewis
 

@@ -356,12 +356,13 @@ const Login: React.FC = () => {
                     Accede a tu espacio — autónomo o gestoría.
                   </p>
 
-                  <form onSubmit={handleLogin} className="mt-9 space-y-5">
+                  <form onSubmit={handleLogin} className="mt-9 space-y-5" noValidate>
                     <div>
-                      <label className={labelClass}>Correo</label>
+                      <label htmlFor="labora-login-email" className={labelClass}>Correo</label>
                       <div className="relative">
-                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
+                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" aria-hidden />
                         <input
+                          id="labora-login-email"
                           type="email"
                           autoComplete="email"
                           value={email}
@@ -369,14 +370,17 @@ const Login: React.FC = () => {
                           placeholder="tu@correo.com"
                           className={`${inputClass} pl-11`}
                           required
+                          aria-invalid={!!error}
+                          aria-describedby={error ? 'labora-login-error' : info ? 'labora-login-info' : undefined}
                         />
                       </div>
                     </div>
                     <div>
-                      <label className={labelClass}>Contraseña</label>
+                      <label htmlFor="labora-login-password" className={labelClass}>Contraseña</label>
                       <div className="relative">
-                        <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
+                        <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" aria-hidden />
                         <input
+                          id="labora-login-password"
                           type="password"
                           autoComplete="current-password"
                           value={password}
@@ -384,23 +388,25 @@ const Login: React.FC = () => {
                           placeholder="Tu contraseña"
                           className={`${inputClass} pl-11`}
                           required
+                          aria-invalid={!!error}
+                          aria-describedby={error ? 'labora-login-error' : undefined}
                         />
                       </div>
                     </div>
                     {error && (
-                      <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
+                      <p id="labora-login-error" role="alert" className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
                         {error}
                       </p>
                     )}
                     {info && (
-                      <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3.5 py-3 text-xs font-medium text-[var(--labora-gold)]">
+                      <p id="labora-login-info" role="status" className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3.5 py-3 text-xs font-medium text-[var(--labora-gold)]">
                         {info}
                       </p>
                     )}
                     <button
                       type="submit"
                       disabled={loading}
-                      className="labora-btn-clay mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold transition hover:brightness-105 disabled:opacity-60"
+                      className="labora-btn-clay mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold transition hover:brightness-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-60"
                     >
                       {loading ? <Loader2 size={17} className="animate-spin" /> : <>Entrar <ArrowRight size={17} /></>}
                     </button>
@@ -458,37 +464,37 @@ const Login: React.FC = () => {
                         </p>
                       </div>
                       <div>
-                        <label className={labelClass}>
+                        <label htmlFor="labora-register-name" className={labelClass}>
                           {role === UserRole.MANAGER ? 'Nombre de contacto' : 'Nombre y apellidos'}
                         </label>
                         <div className="relative">
-                          <UserRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
-                          <input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} pl-11`} placeholder="Tu nombre" />
+                          <UserRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" aria-hidden />
+                          <input id="labora-register-name" value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} pl-11`} placeholder="Tu nombre" aria-describedby={error ? 'labora-register-error' : undefined} />
                         </div>
                       </div>
                       <div>
-                        <label className={labelClass}>Correo electrónico</label>
+                        <label htmlFor="labora-register-email" className={labelClass}>Correo electrónico</label>
                         <div className="relative">
-                          <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
-                          <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-11`} placeholder="tu@correo.com" />
+                          <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" aria-hidden />
+                          <input id="labora-register-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-11`} placeholder="tu@correo.com" aria-describedby={error ? 'labora-register-error' : undefined} />
                         </div>
                       </div>
                       <div>
-                        <label className={labelClass}>Contraseña</label>
+                        <label htmlFor="labora-register-password" className={labelClass}>Contraseña</label>
                         <div className="relative">
-                          <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
-                          <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-11`} placeholder="8 caracteres o más" />
+                          <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" aria-hidden />
+                          <input id="labora-register-password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-11`} placeholder="8 caracteres o más" aria-describedby={error ? 'labora-register-error' : undefined} />
                         </div>
                       </div>
                       {error && (
-                        <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
+                        <p id="labora-register-error" role="alert" className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
                           {error}
                         </p>
                       )}
                       <button
                         type="button"
                         onClick={continueRegistration}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--labora-primary)] py-3.5 text-sm font-semibold text-[var(--labora-surface)] transition hover:opacity-90"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--labora-primary)] py-3.5 text-sm font-semibold text-[var(--labora-surface)] transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
                       >
                         Continuar <ArrowRight size={17} />
                       </button>
@@ -549,50 +555,56 @@ const Login: React.FC = () => {
                             Las gestorías deben identificar NIF y colegiado. Los autónomos se registran libremente.
                           </p>
                           <div>
-                            <label className={labelClass}>Nombre de la gestoría</label>
+                            <label htmlFor="labora-register-company" className={labelClass}>Nombre de la gestoría</label>
                             <input
+                              id="labora-register-company"
                               value={companyName}
                               onChange={(e) => { setCompanyName(e.target.value); resetFeedback(); }}
                               className={inputClass}
                               placeholder="Nombre comercial"
                               required
+                              aria-describedby={error ? 'labora-register2-error' : undefined}
                             />
                           </div>
                           <div>
-                            <label className={labelClass}>NIF de la empresa</label>
+                            <label htmlFor="labora-register-nif-company" className={labelClass}>NIF de la empresa</label>
                             <input
+                              id="labora-register-nif-company"
                               value={nif}
                               onChange={(e) => { setNif(e.target.value.toUpperCase()); resetFeedback(); }}
                               className={inputClass}
                               placeholder="B12345674"
                               required
                               autoComplete="off"
+                              aria-describedby={error ? 'labora-register2-error' : 'labora-register-nif-hint'}
                             />
-                            <p className="mt-1.5 text-[10px] text-[var(--labora-muted)]">NIF, CIF o NIE válido (formato). No consultamos AEAT en tiempo real.</p>
+                            <p id="labora-register-nif-hint" className="mt-1.5 text-[10px] text-[var(--labora-muted)]">NIF, CIF o NIE válido (formato). No consultamos AEAT en tiempo real.</p>
                           </div>
                           <div>
-                            <label className={labelClass}>Número de colegiado</label>
+                            <label htmlFor="labora-register-colegiado" className={labelClass}>Número de colegiado</label>
                             <input
+                              id="labora-register-colegiado"
                               value={collegiateNumber}
                               onChange={(e) => { setCollegiateNumber(e.target.value); resetFeedback(); }}
                               className={inputClass}
                               placeholder="Ej. COL-9988"
                               required
                               autoComplete="off"
+                              aria-describedby={error ? 'labora-register2-error' : undefined}
                             />
                           </div>
                         </div>
                       )}
 
                       {error && (
-                        <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
+                        <p id="labora-register2-error" role="alert" className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-3.5 py-3 text-xs font-medium text-[var(--labora-clay)]">
                           {error}
                         </p>
                       )}
                       <button
                         type="submit"
                         disabled={loading}
-                        className="labora-btn-clay flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold disabled:opacity-60"
+                        className="labora-btn-clay flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-60"
                       >
                         {loading ? <Loader2 size={17} className="animate-spin" /> : <>Crear cuenta <ArrowRight size={17} /></>}
                       </button>
