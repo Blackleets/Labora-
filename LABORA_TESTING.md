@@ -51,3 +51,8 @@ Objetivo: una app calmada, premium y humana, diferenciada de los dashboards SaaS
 ## Criterio de merge
 
 No fusionar a `main` hasta completar QA móvil con dos cuentas reales y confirmar que no hay desbordes, botones muertos, datos simulados ni aislamiento roto entre usuarios.
+
+## Dual-cuenta (checklist operativa)
+
+Checklist española detallada (auth, RLS, docs, peticiones, banca): `docs/UAT_DUAL_ACCOUNT.md`.  
+Imprimir: `npm run uat:dual`. No marcar PASS sin ejecutarla con dos cuentas reales.

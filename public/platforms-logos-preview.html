@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Labora+ · Plataformas (preview logos)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --forest:#2E5A44; --parchment:#FAF6EE; --border:#E3DCD2; --canvas:#F7F4EE; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: linear-gradient(165deg, var(--parchment) 0%, #F3F0E6 40%, var(--canvas) 100%);
+      color: #1c1917; padding: 28px 24px 48px;
+    }
+    h1 { font-size: 1.5rem; margin: 4px 0 0; letter-spacing: -0.02em; }
+    .eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #a8a29e; }
+    .sub { max-width: 42rem; color: #78716c; font-size: 0.875rem; line-height: 1.5; margin-top: 8px; }
+    .note { margin-top: 10px; font-size: 0.75rem; color: #a8a29e; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin-top: 22px; max-width: 72rem; }
+    @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    .card {
+      background: #FFFEFB; border: 1px solid var(--border); border-radius: 16px;
+      padding: 16px; min-height: 200px; display: flex; flex-direction: column;
+      box-shadow: 0 1px 3px rgba(46,90,68,0.045);
+    }
+    .logo {
+      width: 72px; height: 72px; border-radius: 16px; border: 1px solid var(--border);
+      background: #FFFEFB; display: flex; align-items: center; justify-content: center;
+      padding: 12px; overflow: hidden;
+    }
+    .logo img { width: 100%; height: 100%; object-fit: contain; }
+    .name { margin-top: 14px; font-weight: 700; font-size: 1rem; }
+    .cat { margin-top: 4px; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a8a29e; }
+    .badge {
+      font-size: 0.625rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+      border: 1px solid #E8E1D7; background: #FAF8F4; color: #a8a29e; height: fit-content;
+    }
+    .row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .desc { margin-top: 12px; flex: 1; font-size: 0.75rem; line-height: 1.5; color: #78716c; }
+    .btn {
+      margin-top: 14px; width: 100%; border: 0; border-radius: 12px; padding: 10px;
+      font-weight: 700; font-size: 0.75rem; background: var(--forest); color: #fff; font-family: inherit;
+    }
+    .btn.soon { background: #F8F5F0; color: #a8a29e; border: 1px solid #E6DFD5; }
+  </style>
+</head>
+<body>
+  <p class="eyebrow">Actividad · preview de marcas</p>
+  <h1>Plataformas y servicios</h1>
+  <p class="sub">Vista estática de logos (Simple Icons → SVG local → favicon). El catálogo real de la app requiere sesión; no hay OAuth ni “conectado” falso.</p>
+  <p class="note" id="status">Cargando marcas…</p>
+  <div class="grid" id="grid"></div>
+  <script>
+    const items = [
+      { id: 'glovo', name: 'Glovo', cat: 'Delivery', domain: 'glovoapp.com', slug: 'glovo', hex: 'F2CC38', selectable: true },
+      { id: 'uber', name: 'Uber Driver', cat: 'Movilidad', domain: 'uber.com', slug: 'uber', hex: '000000', selectable: true },
+      { id: 'uber_eats', name: 'Uber Eats', cat: 'Delivery', domain: 'ubereats.com', slug: 'ubereats', hex: '06C167', selectable: true },
+      { id: 'just_eat', name: 'Just Eat', cat: 'Delivery', domain: 'just-eat.com', slug: 'justeat', hex: 'FF8000', selectable: true },
+      { id: 'deliveroo', name: 'Deliveroo', cat: 'Delivery', domain: 'deliveroo.co.uk', slug: 'deliveroo', hex: '00CCBC', selectable: true },
+      { id: 'cabify', name: 'Cabify', cat: 'Movilidad', domain: 'cabify.com', selectable: true },
+      { id: 'bolt', name: 'Bolt', cat: 'Movilidad', domain: 'bolt.eu', selectable: true },
+      { id: 'stuart', name: 'Stuart', cat: 'Delivery', domain: 'stuart.com', selectable: true },
+      { id: 'paypal', name: 'PayPal', cat: 'Pagos', domain: 'paypal.com', slug: 'paypal', hex: '002991' },
+      { id: 'stripe', name: 'Stripe', cat: 'Pagos', domain: 'stripe.com', slug: 'stripe', hex: '635BFF' },
+      { id: 'revolut', name: 'Revolut Business', cat: 'Bancos', domain: 'revolut.com', slug: 'revolut', hex: '191C1F', banking: true },
+      { id: 'amazon_flex', name: 'Amazon Flex', cat: 'Delivery', domain: 'amazon.com', selectable: true }
+    ];
+
+    const grid = document.getElementById('grid');
+    const resolved = [];
+
+    function tryImg(urls, onDone) {
+      let i = 0;
+      const img = new Image();
+      img.referrerPolicy = 'no-referrer';
+      const next = () => {
+        if (i >= urls.length) { onDone(null); return; }
+        const url = urls[i++];
+        img.onload = () => onDone(url);
+        img.onerror = next;
+        img.src = url;
+      };
+      next();
+    }
+
+    items.forEach((item) => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      const urls = [];
+      if (item.slug) urls.push(`https://cdn.simpleicons.org/${item.slug}/${item.hex || '111111'}`);
+      if (['glovo','uber','uber_eats','just_eat','cabify','bolt'].includes(item.id)) {
+        urls.push(`/brand/platforms/${item.id}.svg`);
+      }
+      urls.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(item.domain)}&sz=128`);
+      urls.push(`https://logo.clearbit.com/${item.domain}`);
+
+      card.innerHTML = `
+        <div class="row">
+          <div class="logo"><span style="font-size:10px;color:#a8a29e">…</span></div>
+          <span class="badge">${item.banking ? 'Open Banking' : 'Catálogo'}</span>
+        </div>
+        <div class="name">${item.name}</div>
+        <div class="cat">${item.cat}</div>
+        <p class="desc">${item.banking
+          ? 'Open Banking regulado (PSD2). Sin banco en vivo todavía.'
+          : 'Preferencia de perfil. Sin sincronización automática ni OAuth.'}</p>
+        <button class="btn ${item.selectable ? '' : 'soon'}" type="button" disabled>
+          ${item.selectable ? 'Añadir a mi actividad' : (item.banking ? 'Conexión segura próximamente' : 'API próximamente')}
+        </button>`;
+      grid.appendChild(card);
+
+      tryImg(urls, (url) => {
+        const box = card.querySelector('.logo');
+        if (url) {
+          box.innerHTML = `<img alt="${item.name}" src="${url}" />`;
+          resolved.push({ id: item.id, via: url.includes('simpleicons') ? 'simpleicons' : url.includes('/brand/') ? 'local' : url.includes('favicons') ? 'favicon' : 'clearbit' });
+        } else {
+          box.innerHTML = `<span style="color:#2E5A44;font-weight:700;font-size:12px">${item.name.slice(0,2).toUpperCase()}</span>`;
+          resolved.push({ id: item.id, via: 'placeholder' });
+        }
+        if (resolved.length === items.length) {
+          document.getElementById('status').textContent =
+            'Marcas resueltas: ' + resolved.map(r => r.id + '=' + r.via).join(' · ');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

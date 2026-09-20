@@ -82,3 +82,9 @@ Until `VITE_BILLING_ENABLED=true`, the Pro card remains hidden and existing prod
 10. No Stripe secret appears in frontend source or network payloads.
 
 Do not switch Stripe to live mode until this passes.
+
+## Bot / agent policy
+
+- Do **not** enable `VITE_BILLING_ENABLED` without Lewis confirming sandbox UAT.
+- Do **not** request or write real Stripe / Gemini secrets into the repo.
+- Secrets live only in Supabase Function secrets (and Lewis’s password manager).

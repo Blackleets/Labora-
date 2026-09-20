@@ -11,6 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import AtmosphericPanel from './AtmosphericPanel';
 import { useCountry } from '../contexts/CountryContext';
 import { Expense, UserRole } from '../types';
 
@@ -145,30 +146,34 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   const managerName = currentUser?.companyName || currentUser?.name || 'Gestoría';
 
   return (
-    <div id="manager-dashboard" className="mx-auto max-w-7xl space-y-5 pb-8">
+    <div id="manager-dashboard" className="mx-auto max-w-7xl space-y-6 pb-8">
       <section className="labora-hero p-5 sm:p-7">
+        <AtmosphericPanel
+          variant="hero"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] w-full opacity-[0.45]"
+        />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
           <div>
-            <span className="labora-chip labora-kicker text-[#EAF4EE]">Gestoría · {quarter}</span>
-            <p className="mt-5 text-sm font-semibold text-white/70">{managerName}</p>
-            <h1 className="labora-display mt-1 max-w-2xl text-[2rem] font-semibold leading-[1.04] text-white sm:text-[2.55rem]">
-              Toda tu cartera, sin perder el contexto.
+            <span className="labora-chip labora-kicker text-[#2F5D4A]">Gestoría · {quarter}</span>
+            <p className="mt-6 text-sm font-semibold text-[#6B645C]">{managerName}</p>
+            <h1 className="labora-display mt-1.5 max-w-2xl text-[2.05rem] font-semibold leading-[1.05] text-[#1E2A24] sm:text-[2.55rem]">
+              Toda tu cartera, con claridad fiscal.
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/72 sm:text-[15px]">
-              Clientes, gastos por revisar, peticiones y modelos en una sola vista, separados por relación real con tu gestoría.
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#5C6E64] sm:text-[15px]">
+              Clientes, gastos por revisar, peticiones y modelos en una sola vista — clara, cálida y sin ruido.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <button
                 onClick={() => setView?.('messages')}
-                className="inline-flex items-center gap-2 rounded-[14px] border border-white/18 bg-white/10 px-3.5 py-2.5 text-xs font-extrabold text-white backdrop-blur transition hover:bg-white/15"
+                className="inline-flex items-center gap-2 rounded-[14px] border border-[#E8DFC8] bg-[#FFFEFB]/85 px-3.5 py-2.5 text-xs font-extrabold text-[#2F5D4A] shadow-sm backdrop-blur transition hover:bg-white"
               >
                 <MessageSquare size={15} /> Mensajes
               </button>
               <button
                 onClick={() => setShowRequirementModal(true)}
                 disabled={!selectedClient}
-                className="inline-flex items-center gap-2 rounded-[14px] bg-[#FFFDF9] px-3.5 py-2.5 text-xs font-extrabold text-[#214E3A] transition hover:bg-white disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-[14px] bg-gradient-to-b from-[#D97757] to-[#C96846] px-3.5 py-2.5 text-xs font-extrabold text-white shadow-[0_10px_24px_rgba(201,104,70,0.22)] transition hover:brightness-105 disabled:opacity-50"
               >
                 <Plus size={15} /> Nueva petición
               </button>
@@ -413,9 +418,9 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 };
 
 const HeroStat = ({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) => (
-  <div className={`rounded-[18px] border p-3.5 backdrop-blur ${accent ? 'border-[#F1C56B]/30 bg-[#F1C56B]/12' : 'border-white/14 bg-white/8'}`}>
-    <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-white/55">{label}</p>
-    <p className={`mt-1 text-xl font-extrabold tracking-[-0.03em] ${accent ? 'text-[#FFE4A5]' : 'text-white'}`}>{value}</p>
+  <div className={`rounded-[18px] border p-3.5 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur ${accent ? 'border-[#FDE3B8] bg-[#FEF7EB]/90' : 'border-[#E8DFC8] bg-[#FFFEFB]/82'}`}>
+    <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[#8A9189]">{label}</p>
+    <p className={`mt-1 text-xl font-extrabold tracking-[-0.03em] ${accent ? 'text-[#B87A24]' : 'text-[#1E2A24]'}`}>{value}</p>
   </div>
 );
 

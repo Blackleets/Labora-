@@ -10,6 +10,7 @@ import { UserRole } from './types';
 import Dashboard from './components/Dashboard';
 import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 import Login from './components/Login';
+import { GhibliLightingControl } from './components/GhibliLightingControl';
 import Logo from './components/Logo';
 import { ManagerDashboard } from './components/ManagerDashboard';
 import Onboarding from './components/Onboarding';
@@ -102,7 +103,7 @@ const MainLayout: React.FC = () => {
   ];
 
   const Identity = ({ small = false }: { small?: boolean }) => (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[#DDD4C8] bg-white text-[#214E3A] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
+    <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[#E8DFC8] bg-white text-[#2F5D4A] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
       {identityImage ? (
         <img src={identityImage} alt="Identidad" className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`} />
       ) : (
@@ -112,7 +113,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden font-sans text-[#1E231F] selection:bg-[#DDE9E1] selection:text-[#214E3A]">
+    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#F7F3EA] font-sans text-[#1E2A24] selection:bg-[#B87A24]/25 selection:text-[#1E2A24]">
       <Toast />
       <Sidebar
         currentView={currentView}
@@ -122,11 +123,11 @@ const MainLayout: React.FC = () => {
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="safe-area-top z-20 flex h-16 shrink-0 items-center justify-between border-b px-3 backdrop-blur-xl sm:px-5 md:px-8">
-          <div className="flex min-w-0 items-center gap-2.5">
+        <header className="safe-area-top z-20 flex h-[80px] shrink-0 items-center justify-between border-b border-[#E8DFC8]/70 bg-[#FFFEFB]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[#E5DDD2] bg-white/80 text-stone-600 shadow-sm lg:hidden"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#E8DFC8] bg-white text-[#1E2A24] shadow-sm lg:hidden"
               aria-label="Abrir menú"
             >
               <Menu size={20} />
@@ -137,22 +138,25 @@ const MainLayout: React.FC = () => {
             </div>
 
             <div className="min-w-0">
-              <p className="hidden text-[9px] font-extrabold uppercase tracking-[0.16em] text-stone-400 lg:block">
+              <p className="labora-section-label hidden text-[#5A7A68] lg:block">
                 {isManager ? 'Gestoría' : 'Autónomo'}
               </p>
-              <span className="block truncate text-sm font-extrabold tracking-[-0.015em] text-[#1E231F]">
+              <span className="labora-title mt-0.5 block truncate text-[1.3rem] text-[#1E2A24]">
                 {getViewTitle()}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <GhibliLightingControl />
+            </div>
             <button
               onClick={togglePrivacyMode}
-              className={`flex h-9 w-9 items-center justify-center rounded-[12px] border transition ${
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
                 privacyMode
-                  ? 'border-[#EAD9B8] bg-[#FFF7EA] text-[#8B652B]'
-                  : 'border-[#E2DAD0] bg-white/80 text-stone-500 hover:text-[#214E3A]'
+                  ? 'border-[#B87A24]/35 bg-[#FEF7EB] text-[#B87A24]'
+                  : 'border-[#E8DFC8] bg-white text-stone-500 hover:text-[#2F5D4A]'
               }`}
               title={privacyMode ? 'Mostrar importes' : 'Ocultar importes'}
             >
@@ -161,14 +165,14 @@ const MainLayout: React.FC = () => {
 
             <button
               onClick={() => setView('settings')}
-              className="flex items-center gap-2 rounded-[14px] border border-transparent p-1 text-left transition hover:border-[#E6DED3] hover:bg-white/70"
+              className="flex items-center gap-2 rounded-2xl border border-[#E8DFC8] bg-white p-1 pr-3 text-left shadow-sm transition hover:border-[#2F5D4A]/30"
             >
               <Identity />
               <div className="hidden text-right sm:block">
-                <p className="max-w-[190px] truncate text-xs font-extrabold text-[#2C312D]">
+                <p className="max-w-[190px] truncate text-xs font-extrabold text-[#1E2A24]">
                   {currentUser.companyName || currentUser.name}
                 </p>
-                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-stone-400">
+                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400">
                   {isManager ? 'Gestoría' : 'Autónomo'}
                 </p>
               </div>
@@ -176,11 +180,11 @@ const MainLayout: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 md:px-8 md:py-7">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-7 md:px-8 md:py-10">
           <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
         </div>
 
-        <nav className="safe-area-bottom shrink-0 border-t px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
+        <nav className="safe-area-bottom shrink-0 border-t border-black/5 bg-[#FFFEFB]/95 px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
           <div className="grid grid-cols-5 gap-0.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -190,16 +194,16 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
-                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#214E3A]' : 'text-stone-400'}`}
+                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#2F5D4A]' : 'text-[#A39B90]'}`}
                 >
-                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[12px] px-2 transition ${active ? 'bg-[#E6F0EA] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.06)]' : ''}`}>
+                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[14px] px-2 transition ${active ? 'bg-[#EBF3ED] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10),0_1px_0_rgba(255,255,255,0.8)_inset]' : ''}`}>
                     {item.id === 'settings' && identityImage ? (
                       <Identity small />
                     ) : (
                       <Icon size={18} strokeWidth={active ? 2.45 : 2} />
                     )}
                     {Boolean(item.badge && item.badge > 0) && (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white bg-[#D66C47] px-1 text-[9px] font-extrabold text-white">
+                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-white bg-[#C96846] px-1 text-[9px] font-extrabold text-white">
                         {item.badge}
                       </span>
                     )}

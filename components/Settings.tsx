@@ -140,8 +140,8 @@ const Settings: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 pb-24 lg:pb-8">
-      <section className="labora-card overflow-hidden">
-        <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+      <section className="labora-card overflow-hidden shadow-[0_1px_0_rgba(255,255,255,0.9)_inset]">
+        <div className="grid gap-5 p-5 sm:p-7 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <div className="flex min-w-0 items-center gap-4">
             <div className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border border-[#D9D0C4] bg-[#F7F3ED] text-[#214E3A] shadow-sm ${isManager ? 'rounded-[18px]' : 'rounded-full'}`}>
               {identityImage ? (
@@ -154,7 +154,7 @@ const Settings: React.FC = () => {
             </div>
             <div className="min-w-0">
               <p className="labora-kicker text-[#789582]">{isManager ? 'Cuenta de gestoría' : 'Cuenta de autónomo'}</p>
-              <h1 className="labora-display mt-1 truncate text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">{displayName}</h1>
+              <h1 className="labora-display mt-1.5 truncate text-2xl font-semibold tracking-[-0.03em] text-[#1E2A24] sm:text-[2.05rem]">{displayName}</h1>
               <p className="mt-1 truncate text-sm text-stone-500">{currentUser.email}</p>
             </div>
           </div>

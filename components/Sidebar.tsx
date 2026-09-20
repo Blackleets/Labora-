@@ -14,6 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { signOutRemote } from '../services/authWorkspace';
 import { identityImageStore } from '../services/identityImage';
 import { UserRole } from '../types';
@@ -35,6 +36,7 @@ type NavItem = {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currentUser, logout, requirements } = useData();
+  const { palette } = useGhibliAtmosphere();
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const identityImage = identityImageStore.getForUser(currentUser);
 
@@ -89,82 +91,126 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
     }
   };
 
-  const renderItems = (items: NavItem[]) => items.map((item) => {
-    const Icon = item.icon;
-    const active = currentView === item.id;
+  const renderItems = (items: NavItem[]) =>
+    items.map((item) => {
+      const Icon = item.icon;
+      const active = currentView === item.id;
 
-    return (
-      <button
-        key={item.id}
-        onClick={() => handleNavigate(item.id)}
-        className={`group relative flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-left text-sm transition-all ${
-          active
-            ? 'bg-[#E7F0EA] font-bold text-[#214E3A] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.08)]'
-            : 'font-semibold text-stone-600 hover:bg-[#F3EFE8] hover:text-[#1E231F]'
-        }`}
-      >
-        <span className={`absolute left-0 h-5 w-1 rounded-r-full transition ${active ? 'bg-[#D66C47]' : 'bg-transparent'}`} />
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] transition ${active ? 'bg-white/80 text-[#214E3A]' : 'text-stone-500 group-hover:bg-white/75'}`}>
-          <Icon size={17} strokeWidth={active ? 2.35 : 2} />
-        </span>
-        <span className="min-w-0 flex-1 truncate">{item.label}</span>
-        {Boolean(item.badge && item.badge > 0) && (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#D66C47] px-1.5 text-[10px] font-extrabold text-white">
-            {item.badge}
+      return (
+        <button
+          key={item.id}
+          onClick={() => handleNavigate(item.id)}
+          className={`group flex w-full items-center gap-3 rounded-[18px] px-3.5 py-3 text-left text-[13.5px] tracking-[-0.01em] transition-all ${
+            active
+              ? 'bg-[#EBF3ED] font-semibold text-[#2F5D4A] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
+              : 'font-medium text-[#6B645C] hover:bg-[#F3EEE4]/90 hover:text-[#2A332E]'
+          }`}
+        >
+          <span
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] transition ${
+              active
+                ? 'bg-white/80 text-[#2F5D4A] shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_1px_3px_rgba(47,93,74,0.08)]'
+                : 'bg-transparent text-[#8A8278] group-hover:text-[#2F5D4A]'
+            }`}
+          >
+            <Icon size={17} strokeWidth={active ? 2.35 : 2} />
           </span>
-        )}
-      </button>
-    );
-  });
+          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+          {Boolean(item.badge && item.badge > 0) && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C96846] px-1.5 text-[10px] font-extrabold text-white">
+              {item.badge}
+            </span>
+          )}
+        </button>
+      );
+    });
 
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-[#18211C]/45 backdrop-blur-[2px] transition-opacity lg:hidden ${isMobileMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        className={`fixed inset-0 z-40 bg-[#2A332E]/35 backdrop-blur-sm transition-opacity lg:hidden ${
+          isMobileMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
         onClick={() => setIsMobileMenuOpen(false)}
       />
 
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-[#E5DDD2] transition-transform duration-200 lg:static lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
-        <div className="flex h-[72px] items-center justify-between border-b border-[#EAE3D9] px-5">
+      <aside
+        className={`labora-sidebar fixed inset-y-0 left-0 z-50 flex w-[272px] flex-col border-r transition-transform duration-200 lg:static lg:translate-x-0 ${
+          isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        }`}
+        style={{
+          borderColor: palette.border,
+          background: `linear-gradient(180deg, #FFFEFB 0%, ${palette.parchment} 60%, #F3EEE4 100%)`
+        }}
+      >
+        <div
+          className="flex h-[84px] items-center justify-between border-b px-5"
+          style={{ borderColor: palette.borderSubtle }}
+        >
           <div>
-            <Logo size="md" showText animated />
-            <p className="mt-1 ml-[48px] text-[9px] font-bold uppercase tracking-[0.16em] text-stone-400">Trabajo claro</p>
+            <Logo size="md" showText variant="light" animated />
+            <p
+              className="labora-section-label ml-[48px] mt-1.5"
+              style={{ color: palette.moss }}
+            >
+              Claridad fiscal
+            </p>
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-stone-500 hover:bg-[#F1EDE6] lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8A8278] hover:bg-[#F0EBE1] lg:hidden"
             aria-label="Cerrar menú"
           >
             <X size={19} />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <div className="px-2 pb-2">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-stone-400">{isManager ? 'Gestoría' : 'Tu espacio'}</p>
+        <nav className="flex-1 overflow-y-auto px-3.5 py-6">
+          <div className="px-2.5 pb-3">
+            <p className="labora-section-label">
+              {isManager ? 'Gestoría' : 'Tu espacio'}
+            </p>
           </div>
-          <div className="space-y-1">{renderItems(primaryItems)}</div>
+          <div className="space-y-1.5">{renderItems(primaryItems)}</div>
 
-          <div className="my-4 h-px bg-gradient-to-r from-transparent via-[#DDD4C7] to-transparent" />
+          <div
+            className="my-7 h-px"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${palette.border}, transparent)`
+            }}
+          />
 
-          <div className="px-2 pb-2">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-stone-400">Comunicación y archivo</p>
+          <div className="px-2.5 pb-3">
+            <p className="labora-section-label">
+              Comunicación
+            </p>
           </div>
-          <div className="space-y-1">{renderItems(workspaceItems)}</div>
+          <div className="space-y-1.5">{renderItems(workspaceItems)}</div>
         </nav>
 
-        <div className="border-t border-[#EAE3D9] p-4">
+        <div className="border-t p-5" style={{ borderColor: palette.borderSubtle }}>
           <button
             onClick={() => handleNavigate('settings')}
-            className={`mb-3 flex w-full items-center gap-3 rounded-[16px] border p-3 text-left transition ${
-              currentView === 'settings'
-                ? 'border-[#CFE0D5] bg-[#EAF2ED]'
-                : 'border-[#E7DFD4] bg-[#F7F3ED] hover:bg-[#F1ECE4]'
-            }`}
+            className="mb-3 flex w-full items-center gap-3 rounded-[20px] border p-3.5 text-left transition shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_8px_24px_rgba(47,93,74,0.04)]"
+            style={{
+              borderColor: currentView === 'settings' ? `${palette.clay}55` : palette.border,
+              background: currentView === 'settings'
+                ? 'linear-gradient(180deg, #FFF9F4 0%, #FAF3EE 100%)'
+                : 'linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%)'
+            }}
           >
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border border-[#DDD4C8] bg-white text-[#214E3A] ${isManager ? 'rounded-xl' : 'rounded-full'}`}>
+            <div
+              className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border bg-white text-[#2F5D4A] ${
+                isManager ? 'rounded-xl' : 'rounded-full'
+              }`}
+              style={{ borderColor: palette.border }}
+            >
               {identityImage ? (
-                <img src={identityImage} alt="Identidad" className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`} />
+                <img
+                  src={identityImage}
+                  alt="Identidad"
+                  className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`}
+                />
               ) : isManager ? (
                 <Building2 size={17} />
               ) : (
@@ -172,15 +218,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-extrabold text-[#1E231F]">{currentUser?.companyName || currentUser?.name || 'Usuario'}</p>
-              <p className="mt-0.5 truncate text-[10px] font-medium text-stone-500">{isManager ? 'Gestoría' : 'Autónomo'} · {currentUser?.email}</p>
+              <p className="truncate text-xs font-extrabold text-[#1E2A24]">
+                {currentUser?.companyName || currentUser?.name || 'Usuario'}
+              </p>
+              <p className="mt-0.5 truncate text-[10px] font-medium text-[#8A8278]">
+                {isManager ? 'Gestoría' : 'Autónomo'} · {currentUser?.email}
+              </p>
             </div>
-            <Settings size={15} className="shrink-0 text-stone-400" />
+            <Settings size={15} className="shrink-0 text-[#9A9186]" />
           </button>
 
           <button
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-stone-500 transition hover:bg-[#F4EFE8] hover:text-[#A84F34]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#8A8278] transition hover:bg-[#FAF3EE] hover:text-[#C96846]"
           >
             <LogOut size={15} /> Cerrar sesión
           </button>

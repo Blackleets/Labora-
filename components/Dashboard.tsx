@@ -17,6 +17,7 @@ import {
 import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
+import AtmosphericPanel from './AtmosphericPanel';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
 
@@ -26,6 +27,12 @@ interface DashboardProps { setView?: (view: string) => void; }
 const currentQuarter = () => {
   const now = new Date();
   return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
+};
+
+const greetSpanish = (hour: number) => {
+  if (hour < 12) return 'Buenos días';
+  if (hour < 20) return 'Buenas tardes';
+  return 'Buenas noches';
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
@@ -191,45 +198,49 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   ] as const;
 
   return (
-    <div id="rider-dashboard" className="mx-auto max-w-5xl space-y-5 pb-8">
-      <section className="labora-hero p-5 sm:p-7">
-        <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_230px] lg:items-end">
+    <div id="rider-dashboard" className="mx-auto max-w-6xl space-y-8 pb-12">
+      <section className="labora-hero p-6 sm:p-8 lg:p-10 xl:p-12">
+        <AtmosphericPanel
+          variant="hero"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] w-full opacity-[0.55]"
+        />
+        <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="labora-chip labora-kicker text-[#EAF4EE]">Autónomo · {period}</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="labora-chip labora-kicker text-[#2F5D4A]">Autónomo · {period}</span>
               {pendingRequirements.length === 0 ? (
-                <span className="labora-chip text-[11px] font-bold text-[#F8E9B7]">
+                <span className="labora-chip text-[11px] font-bold text-[#B87A24]">
                   <CheckCircle2 size={13} /> Sin tareas pendientes
                 </span>
               ) : (
-                <span className="labora-chip text-[11px] font-bold text-[#FFE1D5]">
+                <span className="labora-chip text-[11px] font-bold text-[#C96846]">
                   <Bell size={13} /> {pendingRequirements.length} {pendingRequirements.length === 1 ? 'tarea pendiente' : 'tareas pendientes'}
                 </span>
               )}
             </div>
 
-            <p className="mt-5 text-sm font-semibold text-white/70">Hola, {firstName}</p>
-            <h1 className="labora-display mt-1 max-w-2xl text-[2rem] font-semibold leading-[1.04] text-white sm:text-[2.65rem]">
-              Tu trimestre, claro y bajo control.
+            <p className="labora-kicker mt-7 text-[#6B645C]">{greetSpanish(nowDate.getHours())}, {firstName}</p>
+            <h1 className="labora-display mt-3 max-w-2xl text-[var(--labora-display-sm)] font-semibold text-[#1E2A24] sm:text-[2.85rem] lg:text-[3.15rem]">
+              Tu trimestre, con claridad y evidencia.
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/72 sm:text-[15px]">
-              Gastos, modelos, documentos y tu gestoría conectados sin llenar la pantalla de ruido.
+            <p className="labora-body mt-4 max-w-xl text-[15px] leading-[1.7] text-[#5C6E64] sm:text-base">
+              Gastos, modelos y gestoría en un mismo espacio — calmado, verificable, sin ruido.
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold text-white/70">
-              {currentUser.iaeCode && <span>IAE <strong className="text-white">{currentUser.iaeCode}</strong></span>}
-              {currentUser.vehicleType && <span>Vehículo <strong className="capitalize text-white">{currentUser.vehicleType}</strong></span>}
-              {currentUser.nif && <span>NIF <strong className="text-white">{currentUser.nif}</strong></span>}
+            <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2.5 text-[11px] font-semibold tracking-[0.02em] text-[#6B645C]">
+              {currentUser.iaeCode && <span>IAE <strong className="text-[#1E2A24]">{currentUser.iaeCode}</strong></span>}
+              {currentUser.vehicleType && <span>Vehículo <strong className="capitalize text-[#1E2A24]">{currentUser.vehicleType}</strong></span>}
+              {currentUser.nif && <span>NIF <strong className="text-[#1E2A24]">{currentUser.nif}</strong></span>}
             </div>
           </div>
 
           <button
             onClick={() => setView?.('money')}
-            className="relative z-10 rounded-[22px] border border-white/15 bg-white/10 p-4 text-left backdrop-blur transition hover:bg-white/15"
+            className="relative z-10 rounded-[22px] border border-[#E8DFC8] bg-[#FFFEFB]/82 p-6 text-left shadow-[0_12px_36px_rgba(47,93,74,0.07),0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur transition hover:bg-[#FFFEFB]"
           >
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/55">Neto operativo</p>
-            <p className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-white">{formatCurrency(summary.netProfit)}</p>
-            <div className="mt-4 flex items-center justify-between text-xs font-bold text-[#F7D99B]">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8A8278]">Neto operativo</p>
+            <p className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-[#1E2A24]">{formatCurrency(summary.netProfit)}</p>
+            <div className="mt-4 flex items-center justify-between text-xs font-bold text-[#2F5D4A]">
               <span>Ver dinero</span>
               <ChevronRight size={15} />
             </div>
@@ -244,7 +255,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               <Clock3 size={19} />
             </div>
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <p className="text-sm font-extrabold text-[#1E231F]">Jornada Labora</p>
                 {activeSession && <span className="rounded-full bg-[#E7F0EA] px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#214E3A]">En curso</span>}
               </div>
@@ -303,15 +314,15 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       </section>
 
       <section>
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <p className="labora-kicker text-[#8A8E89]">Ahora</p>
-            <h2 className="mt-0.5 text-base font-extrabold tracking-[-0.02em] text-[#1E231F]">Acciones rápidas</h2>
+            <h2 className="labora-title mt-1.5 text-[1.35rem] text-[#1E2A24]">Acciones rápidas</h2>
           </div>
           <span className="hidden text-xs font-medium text-stone-400 sm:block">Lo más usado, sin menús extra</span>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-6">
           {quickActions.map((action) => {
             const Icon = action.icon;
             const tone = action.tone === 'clay'
@@ -324,7 +335,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
               <button
                 key={action.label}
                 onClick={action.onClick}
-                className="labora-card labora-card-interactive group px-4 py-4 text-left"
+                className="labora-card labora-card-interactive group px-4 py-5 text-left"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
@@ -345,11 +356,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       </section>
 
       <section>
-        <div className="mb-3">
+        <div className="mb-5">
           <p className="labora-kicker text-[#8A8E89]">Este periodo</p>
-          <h2 className="mt-0.5 text-base font-extrabold tracking-[-0.02em] text-[#1E231F]">Tus números</h2>
+          <h2 className="labora-title mt-1.5 text-[1.35rem] text-[#1E2A24]">Tus números</h2>
         </div>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
           <Metric onClick={() => setView?.('money')} icon={Wallet} label="Ingresos" value={formatCurrency(summary.totalIncome)} />
           <Metric onClick={() => setView?.('money')} icon={ReceiptText} label="Gastos" value={formatCurrency(summary.totalExpenses)} accent />
           <Metric onClick={() => setView?.('money')} icon={ShieldCheck} label="Neto operativo" value={formatCurrency(summary.netProfit)} />
@@ -391,12 +402,12 @@ const MiniMetric = ({ label, value, emphasis = false }: { label: string; value: 
 );
 
 const Metric = ({ onClick, icon: Icon, label, value, accent = false, compact = false }: any) => (
-  <button onClick={onClick} className="labora-card labora-card-interactive p-4 text-left">
-    <div className={`flex h-9 w-9 items-center justify-center rounded-[13px] ${accent ? 'bg-[#F8EDE7] text-[#C55E3C]' : 'bg-[#E7F0EA] text-[#214E3A]'}`}>
-      <Icon size={17} strokeWidth={2.2} />
+  <button onClick={onClick} className="labora-card labora-card-interactive p-5 sm:p-6 text-left">
+    <div className={`flex h-10 w-10 items-center justify-center rounded-[14px] ${accent ? 'bg-[#F8EDE7] text-[#C55E3C]' : 'bg-[#E7F0EA] text-[#214E3A]'}`}>
+      <Icon size={18} strokeWidth={2.2} />
     </div>
-    <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.13em] text-[#9A9B96]">{label}</p>
-    <p className={`mt-1 font-extrabold tracking-[-0.03em] text-[#1E231F] ${compact ? 'text-sm' : 'text-xl'}`}>{value}</p>
+    <p className="mt-3.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#8A9189]">{label}</p>
+    <p className={`mt-1.5 font-extrabold tracking-[-0.03em] text-[#1E2A24] ${compact ? 'text-sm' : 'text-[1.35rem]'}`}>{value}</p>
   </button>
 );
 

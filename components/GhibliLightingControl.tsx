@@ -71,17 +71,17 @@ export const GhibliLightingControl: React.FC = () => {
   };
 
   const timeOptions: { id: GhibliTimeOfDay; name: string; hours: string; film: string; icon: any }[] = [
-    { id: 'dawn', name: 'Amanecer', hours: '06:00 - 10:00', film: 'Totoro & Arrietty', icon: Sunrise },
-    { id: 'midday', name: 'Mediodía Solar', hours: '10:00 - 18:00', film: 'Kiki & Porco Rosso', icon: Sun },
-    { id: 'golden_hour', name: 'Atardecer Ámbar', hours: '18:00 - 22:00', film: 'Chihiro & Susurros', icon: Sunset },
-    { id: 'night', name: 'Noche Serena', hours: '22:00 - 06:00', film: 'Mononoke & Howl', icon: Moon },
+    { id: 'dawn', name: 'Mañana', hours: '06:00 - 10:00', film: 'Tonos frescos', icon: Sunrise },
+    { id: 'midday', name: 'Mediodía', hours: '10:00 - 18:00', film: 'Claridad diurna', icon: Sun },
+    { id: 'golden_hour', name: 'Tarde', hours: '18:00 - 22:00', film: 'Calidez ámbar', icon: Sunset },
+    { id: 'night', name: 'Noche', hours: '22:00 - 06:00', film: 'Quietud serena', icon: Moon },
   ];
 
   const seasonOptions: { id: GhibliSeason; name: string; icon: any; hint: string }[] = [
-    { id: 'spring', name: 'Primavera', icon: Leaf, hint: 'Brote fresco & rocío' },
-    { id: 'summer', name: 'Verano', icon: Sun, hint: 'Follaje denso & terracota' },
-    { id: 'autumn', name: 'Otoño', icon: Trees, hint: 'Ocre dorado & hojas de arce' },
-    { id: 'winter', name: 'Invierno', icon: Snowflake, hint: 'Pino escarchado & calma' },
+    { id: 'spring', name: 'Primavera', icon: Leaf, hint: 'Tonos frescos' },
+    { id: 'summer', name: 'Verano', icon: Sun, hint: 'Contraste diurno' },
+    { id: 'autumn', name: 'Otoño', icon: Trees, hint: 'Calidez otoñal' },
+    { id: 'winter', name: 'Invierno', icon: Snowflake, hint: 'Quietud invernal' },
   ];
 
   return (
@@ -95,7 +95,7 @@ export const GhibliLightingControl: React.FC = () => {
             ? 'bg-white border-[#2E5A44] text-[#245338] ring-2 ring-[#2E5A44]/15'
             : 'bg-[#FAF7F2] hover:bg-white border-[#E5DAC2] text-stone-700'
         }`}
-        title="Luz y atmósfera inspirada en Studio Ghibli"
+        title="Ajustar luz ambiental"
         aria-expanded={isOpen}
       >
         <span className="relative flex items-center justify-center">
@@ -106,7 +106,7 @@ export const GhibliLightingControl: React.FC = () => {
         </span>
         
         <span className="hidden lg:inline text-stone-800">
-          {title.split(' ')[0]}: <span className="text-[#2E5A44]">{filmInspiration.split(' ')[0]}</span>
+          {title}
         </span>
         
         <span className="lg:hidden text-stone-800">
@@ -132,10 +132,10 @@ export const GhibliLightingControl: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-serif font-bold text-sm text-stone-900 leading-tight">
-                  Luz de Studio Ghibli
+                  Luz ambiental
                 </h3>
-                <p className="text-[11px] text-stone-500 font-serif">
-                  Tonalidad de verdes y tierras en el dashboard
+                <p className="text-[11px] text-stone-500">
+                  Tonos del espacio de trabajo
                 </p>
               </div>
             </div>
@@ -180,8 +180,8 @@ export const GhibliLightingControl: React.FC = () => {
           {/* Time of Day Presets */}
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-serif font-bold text-stone-800">
-                Momento del Día & Película
+              <span className="text-xs font-semibold text-stone-800">
+                Momento del día
               </span>
               {!isAuto && (
                 <button
@@ -314,8 +314,8 @@ export const GhibliLightingControl: React.FC = () => {
           </div>
 
           {/* Artistic Philosophy Quote */}
-          <div className="mt-3 text-[10px] text-stone-400 font-serif italic text-center px-2">
-            "La luz en la naturaleza nunca se repite; cada hora viste el camino de una emoción distinta."
+          <div className="mt-3 text-[10px] text-stone-400 text-center px-2">
+            La luz ambiental adapta tonos según la hora — sin cambiar tu lógica de trabajo.
           </div>
         </div>
       )}

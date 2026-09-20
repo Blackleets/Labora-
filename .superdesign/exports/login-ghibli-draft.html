@@ -1,0 +1,322 @@
+<!DOCTYPE html><html lang="es" class="h-full"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Labora+ Login - Prados y Claridad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://api.fontshare.com/v2/css?f[]=bespoke-serif@400,500,600,700&amp;f[]=satoshi@400,500,700,900&amp;display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Satoshi', 'sans-serif'],
+                        serif: ['Bespoke Serif', 'serif'],
+                    },
+                    colors: {
+                        labora: {
+                            ink: '#1E2A24',
+                            inksoft: '#2A332E',
+                            forest: '#2F5D4A',
+                            moss: '#3B7258',
+                            clay: '#C96846',
+                            claydeep: '#B55738',
+                            gold: '#B87A24',
+                            canvas: '#F7F3EA',
+                            surface: '#FFFEFB',
+                            border: '#E8DFC8',
+                            muted: '#6B645C',
+                            softgreen: '#EBF3ED',
+                            sunglow: '#FAD082',
+                            hillnear: '#8DAA9A',
+                            hillmid: '#A5BEAF',
+                            hillfar: '#C1D3C7',
+                            parchment: '#FAF6EE',
+                            warmearth: '#FAF3EE',
+                            bordergreen: '#D0E5D7'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 20px 60px rgba(47, 93, 74, 0.10)',
+                        'card': '0 24px 70px rgba(47, 93, 74, 0.10)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F3EA;
+            color: #1E2A24;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .ghibli-ambient {
+            background: 
+                radial-gradient(ellipse at 78% 14%, rgba(250, 208, 130, 0.8), transparent 38%),
+                radial-gradient(ellipse at 18% 10%, rgba(180, 210, 230, 0.42), transparent 46%),
+                radial-gradient(ellipse at 50% 70%, rgba(141, 170, 154, 0.4), transparent 55%),
+                linear-gradient(180deg, #C9DDEE 0%, #DCEAE6 28%, #E8F0E0 52%, #FAF6EE 78%, #FAF3EE 100%);
+        }
+        
+        .card-gradient {
+            background: linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%);
+        }
+
+        .input-labora {
+            background: #FFFEFB;
+            border: 1px solid #E8DFC8;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .input-labora:focus {
+            border-color: rgba(47, 93, 74, 0.45);
+            box-shadow: 0 0 0 4px rgba(47, 93, 74, 0.1);
+        }
+        .input-labora::placeholder {
+            color: #9A9186;
+        }
+
+        .btn-clay {
+            background: linear-gradient(180deg, #D97757 0%, #C96846 100%);
+            box-shadow: 0 12px 32px rgba(201, 104, 70, 0.28);
+        }
+        
+        /* Mobile Specific Overrides */
+        @media (max-width: 639px) {
+            .mobile-strip-bg {
+                background: 
+                    radial-gradient(ellipse at 80% 20%, rgba(250, 208, 130, 0.73), transparent 40%),
+                    linear-gradient(180deg, #D2E4F0 0%, #E4EFE4 55%, #8DAA9A 100%);
+            }
+        }
+    </style>
+</head>
+<body class="h-full">
+    <!-- Desktop: Split layout (Meadow left, Card right). Mobile: Stacked -->
+    <div class="min-h-screen w-full flex flex-col lg:flex-row bg-labora-canvas relative overflow-hidden" data-sd-id="1">
+        
+        <!-- Mobile Landscape Strip (Visible only on mobile) -->
+        <div class="h-40 w-full mobile-strip-bg relative shrink-0 lg:hidden overflow-hidden border-b border-labora-border" data-sd-id="2">
+            <!-- Simplified meadow for mobile strip -->
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 220" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" data-sd-id="3">
+                <!-- Sun -->
+                <circle cx="655" cy="48" r="37" fill="rgba(250, 208, 130, 0.85)"></circle>
+                <circle cx="655" cy="48" r="22" fill="#F7BA55"></circle>
+                
+                <!-- Clouds -->
+                <ellipse cx="140" cy="36" rx="58" ry="18" fill="#FFFFFF" opacity="0.58"></ellipse>
+                <ellipse cx="420" cy="28" rx="70" ry="16" fill="#FFFFFF" opacity="0.4"></ellipse>
+                
+                <!-- Hills -->
+                <path d="M0 95 C100 75 180 88 280 82 C380 76 470 98 580 85 C680 74 740 92 800 88 L800 220 L0 220 Z" fill="#C1D3C7" opacity="0.7"></path>
+                <path d="M0 125 C120 105 220 130 350 118 C480 105 580 138 700 122 C760 114 790 125 800 128 L800 220 L0 220 Z" fill="#A5BEAF" opacity="0.9"></path>
+                
+                <!-- Near meadow -->
+                <path d="M0 155 C140 140 260 168 400 155 C540 142 660 172 800 158 L800 220 L0 220 Z" fill="#8DAA9A"></path>
+                <path d="M0 175 C160 165 300 190 480 175 C640 162 740 195 800 182 L800 220 L0 220 Z" fill="#3B7258" opacity="0.35"></path>
+                
+                <!-- Path -->
+                <path d="M380 220 C400 200 420 185 445 172 C470 160 500 155 530 148" fill="none" stroke="#C4A574" stroke-width="14" stroke-linecap="round" opacity="0.7"></path>
+            </svg>
+            
+            <div class="relative z-10 p-5 pt-14 flex items-start justify-between" data-sd-id="4">
+                <!-- Logo Mobile -->
+                <div class="flex items-center gap-2" data-sd-id="5">
+                    <div class="w-8 h-8 rounded-xl shadow-md overflow-hidden ring-1 ring-white/20" data-sd-id="6">
+                        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full" data-sd-id="7">
+                            <rect width="64" height="64" rx="16" fill="#1A5C42"></rect>
+                            <path d="M14 42C19.5 42 20.5 30 27 30C33.2 30 33.2 40 39.5 40C44 40 45.8 33.5 49.5 28" stroke="#FFFEFB" stroke-width="3.4" stroke-linecap="round"></path>
+                            <circle cx="14" cy="42" r="3" fill="#FFFEFB"></circle>
+                            <circle cx="50" cy="27.5" r="3.2" fill="#E85D3B" stroke="#FFFEFB" stroke-width="1.4"></circle>
+                        </svg>
+                    </div>
+                    <span class="font-sans font-extrabold text-lg text-labora-surface drop-shadow-md" data-sd-id="8">Labora<span class="text-labora-sunglow" data-sd-id="9">+</span></span>
+                </div>
+                <span class="px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] rounded-full bg-white/90 text-labora-forest border border-labora-bordergreen shadow-sm" data-sd-id="10">Prado</span>
+            </div>
+        </div>
+
+        <!-- Desktop Landscape (Hidden on mobile) -->
+        <section class="hidden lg:flex lg:flex-1 relative overflow-hidden flex-col ghibli-ambient" data-sd-id="11">
+            <!-- Watercolor wash -->
+            <div class="absolute inset-0 opacity-45 pointer-events-none" style="background: radial-gradient(circle at 80% 20%, rgba(250, 208, 130, 0.10) 0%, rgba(250, 246, 238, 0.04) 60%, transparent 100%);" data-sd-id="12"></div>
+            
+            <!-- Landscape SVG -->
+            <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 520" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" data-sd-id="13">
+                <!-- Sun glow & Sun -->
+                <circle cx="655" cy="78" r="61" fill="url(#sunGlow)"></circle>
+                <circle cx="655" cy="78" r="36" fill="#F7BA55"></circle>
+                
+                <defs>
+                    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#FAD082" stop-opacity="0.85"></stop>
+                        <stop offset="55%" stop-color="#FAD082" stop-opacity="0.28"></stop>
+                        <stop offset="100%" stop-color="#FAD082" stop-opacity="0"></stop>
+                    </radialGradient>
+                    <linearGradient id="hillFar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#C1D3C7" stop-opacity="0.45"></stop>
+                        <stop offset="100%" stop-color="#C1D3C7" stop-opacity="0.7"></stop>
+                    </linearGradient>
+                    <linearGradient id="hillMid" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#A5BEAF" stop-opacity="0.65"></stop>
+                        <stop offset="100%" stop-color="#A5BEAF" stop-opacity="0.9"></stop>
+                    </linearGradient>
+                    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="1.2"></feGaussianBlur>
+                    </filter>
+                </defs>
+
+                <!-- Clouds -->
+                <g opacity="0.58" filter="url(#soft)">
+                    <ellipse cx="140" cy="58" rx="58" ry="18" fill="#FFFFFF"></ellipse>
+                    <ellipse cx="420" cy="44" rx="70" ry="16" fill="#FFFFFF" opacity="0.7"></ellipse>
+                    <ellipse cx="280" cy="95" rx="48" ry="14" fill="#FFFFFF" opacity="0.4"></ellipse>
+                </g>
+
+                <!-- Birds -->
+                <g opacity="0.35" fill="none" stroke="#213B2F" stroke-linecap="round" stroke-width="1.2">
+                    <path d="M237 95 Q240 92.5 243 95"></path>
+                    <path d="M477 70 Q480 67.5 483 70"></path>
+                    <path d="M557 105 Q560 102.5 563 105"></path>
+                </g>
+
+                <!-- Hills Layers -->
+                <path d="M0 210 C100 175 190 195 300 185 C420 172 510 215 620 195 C700 182 760 205 800 200 L800 520 L0 520 Z" fill="url(#hillFar)"></path>
+                <path d="M0 275 C130 240 240 275 370 255 C500 235 600 290 720 265 C770 255 790 270 800 275 L800 520 L0 520 Z" fill="url(#hillMid)"></path>
+                
+                <!-- Trees Silhouette -->
+                <g opacity="0.55">
+                    <g transform="translate(145, 265)">
+                        <rect x="-1.5" y="0" width="3" height="28" fill="#213B2F" opacity="0.5" rx="1"></rect>
+                        <ellipse cx="0" cy="-8" rx="14" ry="18" fill="#2F5D4A" opacity="0.65"></ellipse>
+                    </g>
+                    <g transform="translate(560, 268)">
+                        <rect x="-1.5" y="0" width="3" height="28" fill="#213B2F" opacity="0.5" rx="1"></rect>
+                        <ellipse cx="0" cy="-8" rx="16" ry="18" fill="#2F5D4A" opacity="0.65"></ellipse>
+                    </g>
+                </g>
+
+                <!-- Near Meadow -->
+                <path d="M0 340 C150 310 280 355 430 340 C560 328 680 370 800 350 L800 520 L0 520 Z" fill="#8DAA9A"></path>
+                <path d="M0 400 C180 375 320 420 500 400 C660 385 740 430 800 415 L800 520 L0 520 Z" fill="#3B7258" opacity="0.35"></path>
+
+                <!-- Dirt path -->
+                <path d="M310 520 C340 470 360 430 390 400 C430 360 480 345 540 330 C600 315 650 305 700 295" fill="none" stroke="#C4A574" stroke-width="22" stroke-linecap="round" opacity="0.7"></path>
+            </svg>
+
+            <!-- Text Content over Landscape -->
+            <div class="relative z-10 flex-1 flex flex-col justify-between p-10 xl:p-14 h-full" data-sd-id="14">
+                <div class="flex items-center justify-between" data-sd-id="15">
+                    <!-- Logo Desktop -->
+                    <div class="flex items-center gap-3" data-sd-id="16">
+                        <div class="w-[52px] h-[52px] rounded-2xl shadow-soft overflow-hidden ring-1 ring-white/20" data-sd-id="17">
+                            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full" data-sd-id="18">
+                                <rect width="64" height="64" rx="16" fill="#1A5C42"></rect>
+                                <path d="M14 42C19.5 42 20.5 30 27 30C33.2 30 33.2 40 39.5 40C44 40 45.8 33.5 49.5 28" stroke="#FFFEFB" stroke-width="3.4" stroke-linecap="round"></path>
+                                <circle cx="14" cy="42" r="3" fill="#FFFEFB"></circle>
+                                <circle cx="50" cy="27.5" r="3.2" fill="#E85D3B" stroke="#FFFEFB" stroke-width="1.4"></circle>
+                            </svg>
+                        </div>
+                        <span class="font-sans font-extrabold text-2xl text-labora-surface drop-shadow-md" data-sd-id="19">Labora<span class="text-labora-sunglow" data-sd-id="20">+</span></span>
+                    </div>
+                    <span class="px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] rounded-full bg-labora-softgreen/80 text-labora-forest border border-labora-bordergreen backdrop-blur-sm" data-sd-id="21">Luz &amp; cuidado</span>
+                </div>
+
+                <div class="max-w-xl pb-8 mt-auto" data-sd-id="22">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-[#A66A1E]" data-sd-id="23">Amanecer en la colina</p>
+                    <h1 class="mt-4 font-serif text-5xl xl:text-6xl font-semibold leading-[1.02] tracking-[-0.03em] text-[#1E2A24]" data-sd-id="24">
+                        Trabajo claro, entre colinas y hierba al sol.
+                    </h1>
+                    <p class="mt-5 max-w-md text-[15px] leading-relaxed text-[#4A5D52]" data-sd-id="25">
+                        Fiscalidad y gestoría sin ruido: evidencia real, permisos limpios y un espacio con la calma de un prado.
+                    </p>
+
+                    <div class="mt-9 grid max-w-lg grid-cols-3 gap-3" data-sd-id="26">
+                        <div class="rounded-2xl border border-labora-border bg-white/70 backdrop-blur-md px-3.5 py-3 shadow-[0_8px_28px_rgba(47,93,74,0.06)]" data-sd-id="27">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-labora-clay" data-sd-id="28">Auth</p>
+                            <p class="mt-1 text-xs font-semibold text-labora-inksoft" data-sd-id="29">Sesión segura</p>
+                        </div>
+                        <div class="rounded-2xl border border-labora-border bg-white/70 backdrop-blur-md px-3.5 py-3 shadow-[0_8px_28px_rgba(47,93,74,0.06)]" data-sd-id="30">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-labora-clay" data-sd-id="31">Docs</p>
+                            <p class="mt-1 text-xs font-semibold text-labora-inksoft" data-sd-id="32">Archivo privado</p>
+                        </div>
+                        <div class="rounded-2xl border border-labora-border bg-white/70 backdrop-blur-md px-3.5 py-3 shadow-[0_8px_28px_rgba(47,93,74,0.06)]" data-sd-id="33">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-labora-clay" data-sd-id="34">Fiscal</p>
+                            <p class="mt-1 text-xs font-semibold text-labora-inksoft" data-sd-id="35">Estados claros</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side: Auth Card Area -->
+        <main class="flex-1 flex flex-col justify-center items-center p-4 lg:p-8 xl:p-12 relative z-20 shrink-0 lg:max-w-[540px] xl:max-w-[640px] lg:bg-labora-canvas pb-[34px] lg:pb-0" data-sd-id="36">
+            
+            <!-- Soft radial glow behind card on desktop -->
+            <div class="hidden lg:block absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse at 50% 0%, rgba(235, 243, 237, 0.8), transparent 60%);" data-sd-id="37"></div>
+
+            <div class="w-full max-w-[420px] relative" data-sd-id="38">
+                <!-- Auth Card -->
+                <div class="card-gradient rounded-[28px] border border-labora-border shadow-card overflow-hidden" data-sd-id="39">
+                    
+                    <!-- Tabs -->
+                    <div class="border-b border-labora-border/60 px-2 pt-2" data-sd-id="40">
+                        <div class="grid grid-cols-2 gap-1 p-1" data-sd-id="41">
+                            <a href="#login" id="tab-login" class="rounded-2xl py-3 text-xs font-bold transition text-center bg-labora-forest text-labora-surface shadow-sm" data-sd-id="42">
+                                Entrar
+                            </a>
+                            <a href="#register" id="tab-register" class="rounded-2xl py-3 text-xs font-bold transition text-center text-labora-muted hover:bg-labora-surface-2 hover:text-labora-inksoft" data-sd-id="43">
+                                Crear cuenta
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Login Form -->
+                    <div class="p-6 sm:p-8" data-sd-id="44">
+                        <h2 class="font-serif text-3xl font-semibold leading-none tracking-tight text-labora-ink" data-sd-id="45">
+                            Bienvenido de nuevo
+                        </h2>
+                        <p class="mt-2 text-sm text-labora-muted" data-sd-id="46">
+                            Entra a tu espacio de autónomo o gestoría, con luz suave.
+                        </p>
+
+                        <form class="mt-8 space-y-4" data-sd-id="47">
+                            <div data-sd-id="48">
+                                <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-labora-muted" data-sd-id="49">Correo</label>
+                                <div class="relative" data-sd-id="50">
+                                    <iconify-icon icon="lucide:mail" class="absolute left-4 top-1/2 -translate-y-1/2 text-labora-muted/80 text-base"></iconify-icon>
+                                    <input type="email" placeholder="tu@correo.com" class="input-labora w-full rounded-2xl py-3.5 pl-11 pr-4 text-[15px] text-labora-ink" required="" data-sd-id="51">
+                                </div>
+                            </div>
+                            
+                            <div data-sd-id="52">
+                                <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-labora-muted" data-sd-id="53">Contraseña</label>
+                                <div class="relative" data-sd-id="54">
+                                    <iconify-icon icon="lucide:key-round" class="absolute left-4 top-1/2 -translate-y-1/2 text-labora-muted/80 text-base"></iconify-icon>
+                                    <input type="password" placeholder="Tu contraseña" class="input-labora w-full rounded-2xl py-3.5 pl-11 pr-4 text-[15px] text-labora-ink" required="" data-sd-id="55">
+                                </div>
+                                <div class="mt-2 text-right" data-sd-id="56">
+                                    <a href="#recover" id="link-recover" class="text-xs font-medium text-labora-forest hover:underline" data-sd-id="57">¿Olvidaste tu contraseña?</a>
+                                </div>
+                            </div>
+
+                            <button type="button" id="btn-submit" class="btn-clay mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-extrabold text-white transition hover:brightness-105 active:scale-[0.98]" data-sd-id="58">
+                                Entrar
+                                <iconify-icon icon="lucide:arrow-right" class="text-lg"></iconify-icon>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Footer Trust Badge -->
+                <div class="mt-6 flex items-center justify-center gap-2 text-[10px] font-medium text-[#8A8278]" data-sd-id="59">
+                    <iconify-icon icon="lucide:shield-check" class="text-labora-forest/80 text-sm"></iconify-icon>
+                    Auth segura · archivo privado · sin datos inventados
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+</body></html>

@@ -1,11 +1,262 @@
 import React from 'react';
 
-interface LogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  showText?: boolean;
+type LogoSize = 'sm' | 'md' | 'lg' | 'xl' | 'hero';
+type LogoTone = 'dark' | 'light';
+/** Mark geometry variants — default `ascent` is the primary brand */
+export type MarkVariant = 'ascent' | 'fold' | 'signal';
+
+interface SharedLogoProps {
+  size?: LogoSize;
   className?: string;
-  variant?: 'dark' | 'light';
+  /** Color tone for wordmark text */
+  variant?: LogoTone;
+  /** Mark geometry */
+  markVariant?: MarkVariant;
   animated?: boolean;
+  /** Enable startup entrance motion (stroke draw + scale) */
+  entrance?: boolean;
+}
+
+const SIZE = {
+  sm: { mark: 28, text: 'text-[0.95rem]', gap: 'gap-2', rx: 7 },
+  md: { mark: 36, text: 'text-lg', gap: 'gap-2.5', rx: 9 },
+  lg: { mark: 48, text: 'text-2xl', gap: 'gap-3', rx: 12 },
+  xl: { mark: 64, text: 'text-[2.15rem]', gap: 'gap-3.5', rx: 16 },
+  hero: { mark: 80, text: 'text-[2.75rem]', gap: 'gap-4', rx: 20 }
+} as const;
+
+const uid = () => `labora-${Math.random().toString(36).slice(2, 9)}`;
+
+/**
+ * Labora+ mark — geometric dual-ascent symbol.
+ * Suggests clarity + rising path + dual entities (autónomo ↔ gestoría)
+ * without literal bike/briefcase or monogram-in-squircle.
+ */
+function MarkGlyph({
+  gid: _gid,
+  markVariant = 'ascent' as MarkVariant,
+  entrance = false
+}: {
+  gid: string;
+  markVariant?: MarkVariant;
+  entrance?: boolean;
+}) {
+  if (markVariant === 'fold') {
+    /* Twin ascending chevrons — dual entities rising into clarity */
+    return (
+      <>
+        <path
+          d="M17 47.5L32 30.5L47 47.5H39.6L32 38.2L24.4 47.5H17Z"
+          fill="#C9A574"
+        />
+        <path
+          d="M14 38L32 17L50 38H42.2L32 26.2L21.8 38H14Z"
+          fill="#FFFEFB"
+        />
+        <circle cx="32" cy="17" r="3.25" fill="#C96846" />
+      </>
+    );
+  }
+
+  if (markVariant === 'signal') {
+    /* Three ascending capsules on a diagonal — refined signal, not a chart */
+    return (
+      <>
+        <path
+          d="M16 46 L26 36"
+          stroke="#FFFEFB"
+          strokeOpacity="0.5"
+          strokeWidth="6.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M24 42 L38 28"
+          stroke="#FFFEFB"
+          strokeOpacity="0.78"
+          strokeWidth="6.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M32 36 L48 20"
+          stroke="#FFFEFB"
+          strokeWidth="6.5"
+          strokeLinecap="round"
+        />
+        <circle cx="48" cy="20" r="3.4" fill="#C96846" />
+      </>
+    );
+  }
+
+  /* Default: ascent — dual parallel beams rising SW→NE with clay apex */
+  return (
+    <>
+      {/* Secondary beam — partnership / gestoría (champagne) */}
+      <path
+        className={entrance ? 'labora-beam-draw labora-beam-draw--champagne' : undefined}
+        d="M20 52 L50 22"
+        stroke="#C9A574"
+        strokeWidth="6.5"
+        strokeLinecap="round"
+      />
+      {/* Primary beam — clarity path / autónomo (ivory) */}
+      <path
+        className={entrance ? 'labora-beam-draw labora-beam-draw--ivory' : undefined}
+        d="M13 47 L44 16"
+        stroke="#FFFEFB"
+        strokeWidth="9.5"
+        strokeLinecap="round"
+      />
+      {/* Apex node — the + moment */}
+      <g className={entrance ? 'labora-apex-node' : undefined}>
+        <circle cx="44" cy="16" r="4.6" fill="#C96846" />
+        <circle cx="44" cy="16" r="1.7" fill="#FFFEFB" fillOpacity="0.95" />
+      </g>
+    </>
+  );
+}
+
+/** App icon — soft squircle + distinctive geometric glyph */
+export const LogoMark: React.FC<
+  SharedLogoProps & { title?: string }
+> = ({
+  size = 'md',
+  className = '',
+  animated = false,
+  entrance = false,
+  markVariant = 'ascent' as MarkVariant,
+  title
+}) => {
+  const config = SIZE[size];
+  const gid = React.useId().replace(/:/g, '') || uid();
+
+  return (
+    <div
+      className={`relative shrink-0 overflow-hidden shadow-[0_10px_28px_rgba(15,61,46,0.22)] ring-1 ring-black/[0.04] ${
+        entrance ? 'labora-mark-squircle' : ''
+      } ${animated && !entrance ? 'transition-transform duration-500 hover:-rotate-1 hover:scale-[1.03]' : ''} ${className}`}
+      style={{
+        width: config.mark,
+        height: config.mark,
+        borderRadius: config.rx
+      }}
+      aria-hidden={title ? undefined : true}
+      role={title ? 'img' : undefined}
+      aria-label={title}
+    >
+      <svg
+        width={config.mark}
+        height={config.mark}
+        viewBox="0 0 64 64"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="block h-full w-full"
+      >
+        <defs>
+          <linearGradient
+            id={`markFill-${gid}`}
+            x1="6"
+            y1="0"
+            x2="58"
+            y2="64"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#0A2E23" />
+            <stop offset="0.42" stopColor="#0F3D2E" />
+            <stop offset="1" stopColor="#1A5240" />
+          </linearGradient>
+          <linearGradient
+            id={`markSheen-${gid}`}
+            x1="10"
+            y1="2"
+            x2="32"
+            y2="40"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#FFFFFF" stopOpacity="0.16" />
+            <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+          <radialGradient
+            id={`markGlow-${gid}`}
+            cx="0"
+            cy="0"
+            r="1"
+            gradientUnits="userSpaceOnUse"
+            gradientTransform="translate(40 18) rotate(90) scale(28 28)"
+          >
+            <stop stopColor="#C9A574" stopOpacity="0.22" />
+            <stop offset="1" stopColor="#C9A574" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <rect width="64" height="64" rx="15" fill={`url(#markFill-${gid})`} />
+        <rect width="64" height="64" rx="15" fill={`url(#markGlow-${gid})`} />
+        <rect width="64" height="64" rx="15" fill={`url(#markSheen-${gid})`} />
+        <MarkGlyph gid={gid} markVariant={markVariant} entrance={entrance} />
+      </svg>
+    </div>
+  );
+};
+
+/** Wordmark — Labora ExtraBold + refined clay/champagne + */
+export const LogoWordmark: React.FC<SharedLogoProps> = ({
+  size = 'md',
+  className = '',
+  variant = 'light',
+  entrance = false
+}) => {
+  const config = SIZE[size];
+  const textColor = variant === 'dark' ? 'text-[#FFFEFB]' : 'text-[#0A1210]';
+  const plusColor = variant === 'dark' ? 'text-[#C9A574]' : 'text-[#C96846]';
+
+  return (
+    <span
+      className={`font-sans font-extrabold tracking-[-0.045em] ${config.text} ${textColor} ${
+        entrance ? 'labora-wordmark-entrance' : ''
+      } ${className}`}
+      style={{
+        fontFamily:
+          "var(--labora-font-sans, 'Plus Jakarta Sans', system-ui, sans-serif)"
+      }}
+    >
+      Labora<span className={`${plusColor} font-extrabold`}>+</span>
+    </span>
+  );
+};
+
+/** Horizontal lockup — mark + wordmark */
+export const LogoLockup: React.FC<
+  SharedLogoProps & { showText?: boolean }
+> = ({
+  size = 'md',
+  showText = true,
+  className = '',
+  variant = 'light',
+  markVariant = 'ascent',
+  animated = false,
+  entrance = false
+}) => {
+  const config = SIZE[size];
+
+  return (
+    <div
+      className={`flex items-center ${config.gap} ${entrance ? 'labora-logo-entrance' : ''} ${className}`}
+      aria-label="Labora+"
+    >
+      <LogoMark
+        size={size}
+        animated={animated}
+        entrance={entrance}
+        markVariant={markVariant}
+      />
+      {showText && (
+        <LogoWordmark size={size} variant={variant} entrance={entrance} />
+      )}
+    </div>
+  );
+};
+
+/** Backward-compatible default export used across Login / Sidebar / App */
+interface LogoProps extends SharedLogoProps {
+  showText?: boolean;
 }
 
 const Logo: React.FC<LogoProps> = ({
@@ -13,61 +264,19 @@ const Logo: React.FC<LogoProps> = ({
   showText = true,
   className = '',
   variant = 'light',
-  animated = false
-}) => {
-  const sizeConfig = {
-    sm: { mark: 32, container: 'w-8 h-8', text: 'text-base' },
-    md: { mark: 38, container: 'w-[38px] h-[38px]', text: 'text-lg' },
-    lg: { mark: 50, container: 'w-[50px] h-[50px]', text: 'text-2xl' },
-    xl: { mark: 66, container: 'w-[66px] h-[66px]', text: 'text-4xl' }
-  };
-
-  const config = sizeConfig[size];
-  const textColor = variant === 'dark' ? 'text-[#FFFDF9]' : 'text-[#1E231F]';
-
-  return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
-      <div
-        className={`${config.container} overflow-hidden rounded-[14px] shadow-[0_8px_24px_rgba(33,78,58,0.18)] ${animated ? 'transition-transform duration-500 hover:-rotate-2 hover:scale-[1.03]' : ''}`}
-        aria-hidden="true"
-      >
-        <svg
-          width={config.mark}
-          height={config.mark}
-          viewBox="0 0 44 44"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="block h-full w-full"
-        >
-          <defs>
-            <linearGradient id="laboraMark" x1="4" y1="2" x2="39" y2="42" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#214E3A" />
-              <stop offset="1" stopColor="#2F6B50" />
-            </linearGradient>
-          </defs>
-          <rect x="0.75" y="0.75" width="42.5" height="42.5" rx="13.25" fill="url(#laboraMark)" stroke="#6F967F" strokeWidth="1.5" />
-          <path
-            d="M9.5 28C13.2 28 13.8 20.2 18 20.2C22.1 20.2 22.1 26 26.3 26C29.5 26 30.4 22.2 32.6 18.8"
-            stroke="#FFFDF9"
-            strokeWidth="2.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <circle cx="9.5" cy="28" r="2.35" fill="#FFFDF9" />
-          <circle cx="32.8" cy="18.4" r="2.35" fill="#D66C47" stroke="#FFFDF9" strokeWidth="1.1" />
-          <path d="M31.8 8.6V14.6" stroke="#F1C56B" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M28.8 11.6H34.8" stroke="#F1C56B" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M13.4 11.8C15.2 10.1 17.5 9.2 20 9.2" stroke="#8EAD9A" strokeWidth="1.4" strokeLinecap="round" opacity="0.85" />
-        </svg>
-      </div>
-
-      {showText && (
-        <span className={`font-sans font-extrabold tracking-[-0.045em] ${config.text} ${textColor}`}>
-          Labora<span className="text-[#D66C47]">+</span>
-        </span>
-      )}
-    </div>
-  );
-};
+  markVariant = 'ascent',
+  animated = false,
+  entrance = false
+}) => (
+  <LogoLockup
+    size={size}
+    showText={showText}
+    className={className}
+    variant={variant}
+    markVariant={markVariant}
+    animated={animated}
+    entrance={entrance}
+  />
+);
 
 export default Logo;

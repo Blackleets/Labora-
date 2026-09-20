@@ -1,41 +1,66 @@
 import React, { useEffect, useState } from 'react';
-import Logo from './Logo';
+import { LogoLockup } from './Logo';
 
 interface IntroAnimationProps {
   onComplete: () => void;
 }
 
+const prefersReducedMotion = (): boolean => {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+};
+
 const IntroAnimation: React.FC<IntroAnimationProps> = ({ onComplete }) => {
-  const [visible, setVisible] = useState(false);
-  const [leaving, setLeaving] = useState(false);
+  const [phase, setPhase] = useState<'idle' | 'play' | 'leave'>('idle');
+  const reduced = prefersReducedMotion();
 
   useEffect(() => {
-    const show = setTimeout(() => setVisible(true), 120);
-    const leave = setTimeout(() => setLeaving(true), 1850);
-    const done = setTimeout(onComplete, 2350);
+    const playDelay = 40;
+    const leaveAt = reduced ? 700 : 1950;
+    const doneAt = reduced ? 1100 : 2400;
+
+    const show = setTimeout(() => setPhase('play'), playDelay);
+    const leave = setTimeout(() => setPhase('leave'), leaveAt);
+    const done = setTimeout(onComplete, doneAt);
 
     return () => {
       clearTimeout(show);
       clearTimeout(leave);
       clearTimeout(done);
     };
-  }, [onComplete]);
+  }, [onComplete, reduced]);
+
+  const playing = phase === 'play' || phase === 'leave';
 
   return (
     <div
-      className={`fixed inset-0 z-[100] bg-[#F7F4ED] flex items-center justify-center transition-all duration-500 ${
-        leaving ? 'opacity-0' : 'opacity-100'
-      }`}
+      className={`labora-intro-splash fixed inset-0 z-[100] flex items-center justify-center bg-[#F7F3EA] transition-opacity duration-500 ${
+        phase === 'leave' ? 'opacity-0' : 'opacity-100'
+      } ${reduced ? 'labora-intro-reduced' : ''}`}
+      role="presentation"
+      aria-hidden="true"
     >
       <div
-        className={`flex flex-col items-center text-center transition-all duration-700 ${
-          visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+        className={`labora-intro-lockup flex flex-col items-center text-center ${
+          playing ? 'is-playing' : ''
         }`}
       >
-        <Logo size="xl" showText={true} />
-        <p className="mt-4 text-sm text-stone-500 font-medium">Gestión fiscal para riders y gestorías</p>
-        <div className="mt-8 h-px w-24 bg-[#DDD5C8]" />
-        <p className="mt-4 text-[11px] tracking-wide text-stone-400">Powered by Gemini 2.0</p>
+        <LogoLockup size="hero" showText variant="light" entrance />
+        <p
+          className={`labora-intro-tagline mt-5 max-w-[18rem] text-[13px] font-medium leading-relaxed tracking-[-0.01em] text-[#6B645C] ${
+            playing ? 'is-visible' : ''
+          }`}
+        >
+          Claridad fiscal para autónomos y gestorías
+        </p>
+        <div
+          className={`labora-intro-rule mt-7 h-px w-20 bg-gradient-to-r from-transparent via-[#C9A574]/70 to-transparent ${
+            playing ? 'is-visible' : ''
+          }`}
+        />
       </div>
     </div>
   );

@@ -1,31 +1,110 @@
 :root {
-  --labora-ink: #1E231F;
-  --labora-primary: #214E3A;
-  --labora-primary-2: #2F6B50;
-  --labora-clay: #D66C47;
-  --labora-amber: #F1C56B;
+  /* Editorial warm fintech — single shared system */
+  --labora-ink: #1E2A24;
+  --labora-ink-soft: #2A332E;
+  --labora-primary: #2F5D4A;
+  --labora-primary-2: #3B7258;
+  --labora-primary-3: #4A8568;
+  --labora-clay: #C96846;
+  --labora-clay-deep: #B55738;
+  --labora-gold: #B87A24;
+  --labora-gold-soft: #E8D48A;
+  --labora-champagne: #C4A574;
   --labora-canvas: #F7F3EA;
-  --labora-surface: #FFFDF9;
-  --labora-surface-2: #F1ECE3;
-  --labora-border: #E5DDD2;
-  --labora-muted: #6E756F;
-  --labora-soft-green: #E6F0EA;
-  --labora-soft-clay: #F8EDE7;
-  --labora-shadow: 0 18px 60px rgba(33, 78, 58, 0.10);
-  --labora-shadow-soft: 0 8px 30px rgba(30, 35, 31, 0.06);
-  --labora-radius: 24px;
+  --labora-parchment: #FAF6EE;
+  --labora-ivory: #FFFEFB;
+  --labora-moss: #3B7258;
+  --labora-moss-soft: #EBF3ED;
+  --labora-surface: #FFFEFB;
+  --labora-surface-2: #F0EBE1;
+  --labora-border: #E8DFC8;
+  --labora-border-hairline: rgba(30, 42, 36, 0.08);
+  --labora-muted: #6B645C;
+  --labora-soft-green: #EBF3ED;
+  --labora-soft-clay: #FAF3EE;
+  --labora-shadow: 0 24px 64px rgba(30, 42, 36, 0.08);
+  --labora-shadow-soft: 0 12px 36px rgba(30, 42, 36, 0.05);
+  --labora-shadow-glow: 0 0 0 1px rgba(196, 165, 116, 0.14), 0 20px 56px rgba(30, 42, 36, 0.08);
+  --labora-shadow-paper: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 28px 80px rgba(30, 42, 36, 0.09);
+  --labora-radius: 20px;
+  --labora-radius-sm: 12px;
+  --labora-radius-lg: 28px;
+
+  /* Type scale — private-banking / editorial */
+  --labora-font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --labora-font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --labora-sans: var(--labora-font-sans);
+  --labora-display: clamp(2.75rem, 4.2vw, 4.25rem);
+  --labora-display-sm: clamp(2.05rem, 3.2vw, 2.85rem);
+  --labora-title: clamp(1.75rem, 2.2vw, 2rem);
+  --labora-title-sm: 1.25rem;
+  --labora-body: 0.9375rem;
+  --labora-body-lg: 1rem;
+  --labora-label: 0.625rem;
+  --labora-leading-display: 1.05;
+  --labora-leading-body: 1.65;
+  --labora-tracking-display: -0.03em;
+  --labora-tracking-label: 0.14em;
+
+  /* Spacing rhythm */
+  --labora-space-1: 0.25rem;
+  --labora-space-2: 0.5rem;
+  --labora-space-3: 0.75rem;
+  --labora-space-4: 1rem;
+  --labora-space-5: 1.25rem;
+  --labora-space-6: 1.5rem;
+  --labora-space-8: 2rem;
+  --labora-space-10: 2.5rem;
+  --labora-space-12: 3rem;
+  --labora-gap-fields: 1.35rem;
+  --labora-gap-section: 1.75rem;
+  --labora-gap-grid: 1.5rem;
+  --labora-pad-card: 2rem;
+  --labora-pad-card-lg: 2.5rem;
+  --labora-pad-hero: 2.5rem;
+
+  /* Atmosphere aliases (overridden by GhibliAtmosphereContext for time-of-day) */
+  --ghibli-forest: #2F5D4A;
+  --ghibli-deepforest: #213B2F;
+  --ghibli-moss: #3B7258;
+  --ghibli-softgreen: #EBF3ED;
+  --ghibli-bordergreen: #D0E5D7;
+  --ghibli-clay: #C96846;
+  --ghibli-terracotta: #D97757;
+  --ghibli-warmearth: #FAF3EE;
+  --ghibli-borderclay: #EAD6C9;
+  --ghibli-amber: #D9943B;
+  --ghibli-gold: #B87A24;
+  --ghibli-softamber: #FEF7EB;
+  --ghibli-borderamber: #FDE3B8;
+  --ghibli-canvas: #F7F3EA;
+  --ghibli-card: #FCFAF7;
+  --ghibli-parchment: #FAF6EE;
+  --ghibli-border: #E8DFC8;
+  --ghibli-border-subtle: #EBE4D8;
+  --ghibli-sun-fill: #F7BA55;
+  --ghibli-sun-glow: #FAD082;
+  --ghibli-ambient-gradient: radial-gradient(circle at 80% 20%, rgba(250, 208, 130, 0.08) 0%, rgba(250, 246, 238, 0.03) 60%, transparent 100%);
 }
 
 html {
   background: var(--labora-canvas);
+  color: var(--labora-ink);
 }
 
 body:not(.dark) {
   background:
-    radial-gradient(circle at 12% -4%, rgba(241, 197, 107, 0.18), transparent 26rem),
-    radial-gradient(circle at 95% 14%, rgba(47, 107, 80, 0.10), transparent 24rem),
+    radial-gradient(ellipse 70% 45% at 8% -8%, rgba(196, 165, 116, 0.07), transparent 52%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(47, 93, 74, 0.05), transparent 48%),
+    radial-gradient(ellipse 45% 35% at 50% 100%, rgba(201, 104, 70, 0.03), transparent 45%),
     var(--labora-canvas);
   color: var(--labora-ink);
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-body);
+  line-height: var(--labora-leading-body);
+  font-feature-settings: 'ss01' on, 'cv11' on;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body:not(.dark) .bg-white {
@@ -37,26 +116,26 @@ body:not(.dark) main {
 }
 
 body:not(.dark) main > header {
-  background: color-mix(in srgb, var(--labora-surface) 90%, transparent) !important;
-  border-color: rgba(137, 123, 107, 0.20) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.75) inset;
+  background: color-mix(in srgb, var(--labora-ivory) 90%, transparent) !important;
+  border-color: var(--labora-border-hairline) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.92) inset;
+  backdrop-filter: blur(20px);
 }
 
 body:not(.dark) aside {
-  background:
-    linear-gradient(180deg, rgba(255,253,249,0.98), rgba(249,245,238,0.98)) !important;
-  border-color: rgba(137, 123, 107, 0.20) !important;
+  border-color: var(--labora-border) !important;
 }
 
 body:not(.dark) main > nav {
-  background: rgba(255,253,249,0.96) !important;
-  border-color: rgba(137, 123, 107, 0.18) !important;
-  box-shadow: 0 -12px 40px rgba(30,35,31,0.05);
+  background: rgba(255, 254, 251, 0.96) !important;
+  border-color: rgba(232, 223, 200, 0.65) !important;
+  box-shadow: 0 -12px 40px rgba(30, 42, 36, 0.04);
+  backdrop-filter: blur(20px);
 }
 
 ::selection {
-  background: rgba(47,107,80,0.18);
-  color: var(--labora-primary);
+  background: rgba(196, 165, 116, 0.28);
+  color: var(--labora-ink);
 }
 
 button, a, input, select, textarea {
@@ -68,39 +147,71 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(241, 197, 107, 0.55);
+  outline: 2px solid rgba(47, 93, 74, 0.45);
   outline-offset: 2px;
 }
 
+/* Editorial hero — soft Mediterranean atmosphere, not cartoon meadow */
 .labora-hero {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(33,78,58,0.16);
+  border: 1px solid var(--labora-border);
+  border-radius: var(--labora-radius-lg);
   background:
-    radial-gradient(circle at 83% 14%, rgba(241,197,107,0.32), transparent 14rem),
-    linear-gradient(135deg, #214E3A 0%, #2B6048 58%, #3B7258 100%);
-  color: #fff;
-  border-radius: 28px;
-  box-shadow: var(--labora-shadow);
+    radial-gradient(ellipse at 88% 10%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 55%, transparent), transparent 42%),
+    radial-gradient(ellipse at 12% 0%, rgba(180, 200, 215, 0.28), transparent 48%),
+    radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--ghibli-moss, #3B7258) 8%, transparent), transparent 55%),
+    linear-gradient(165deg, var(--labora-parchment) 0%, #F3F0E6 40%, var(--labora-canvas) 100%);
+  color: var(--labora-ink);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    var(--labora-shadow-soft);
+}
+
+.labora-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse at 70% 18%, rgba(255, 255, 255, 0.35), transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .labora-hero::after {
   content: '';
   position: absolute;
-  width: 220px;
-  height: 220px;
-  right: -78px;
-  bottom: -112px;
-  border: 1px solid rgba(255,255,255,0.16);
-  border-radius: 44% 56% 58% 42%;
-  transform: rotate(-12deg);
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: multiply;
 }
 
 .labora-card {
   border: 1px solid var(--labora-border);
-  background: var(--labora-surface);
+  background: linear-gradient(180deg, rgba(255, 254, 251, 0.98), rgba(252, 249, 243, 0.96));
   border-radius: var(--labora-radius);
-  box-shadow: var(--labora-shadow-soft);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    var(--labora-shadow-soft);
+}
+
+.labora-card-premium {
+  border: 1px solid var(--labora-border);
+  background: linear-gradient(180deg, rgba(255,254,251,0.99), rgba(251,247,240,0.97));
+  border-radius: calc(var(--labora-radius) + 4px);
+  box-shadow: var(--labora-shadow-paper);
+}
+
+.labora-card-parchment,
+.labora-card-auth {
+  border: 1px solid var(--labora-border);
+  background: linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%);
+  border-radius: var(--labora-radius-lg);
+  box-shadow: var(--labora-shadow-paper);
 }
 
 .labora-card-interactive {
@@ -108,74 +219,144 @@ textarea:focus-visible {
 }
 
 .labora-card-interactive:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 36px rgba(30,35,31,0.08);
-  border-color: rgba(33,78,58,0.24);
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--labora-primary) 18%, transparent);
+  box-shadow: 0 16px 44px rgba(30, 42, 36, 0.08);
 }
 
 .labora-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  border: 1px solid rgba(255,255,255,0.20);
-  background: rgba(255,255,255,0.10);
   border-radius: 999px;
-  padding: 0.38rem 0.7rem;
-  backdrop-filter: blur(10px);
+  border: 1px solid var(--ghibli-bordergreen, #D0E5D7);
+  background: color-mix(in srgb, var(--labora-moss-soft) 80%, white);
+  padding: 0.4rem 0.9rem;
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-label);
+  font-weight: 600;
+  letter-spacing: var(--labora-tracking-label);
+  text-transform: uppercase;
+  color: var(--labora-primary);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
 .labora-kicker {
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-label);
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  font-size: 0.68rem;
-  font-weight: 800;
+  color: var(--labora-muted);
+}
+
+.labora-label {
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-label);
+  font-weight: 600;
+  letter-spacing: var(--labora-tracking-label);
+  text-transform: uppercase;
+  color: var(--labora-muted);
 }
 
 .labora-display {
-  font-family: 'Fraunces', Georgia, serif;
-  letter-spacing: -0.035em;
+  font-family: var(--labora-font-display);
+  font-size: var(--labora-display);
+  line-height: var(--labora-leading-display);
+  letter-spacing: var(--labora-tracking-display);
+  font-weight: 800;
+}
+
+.labora-title {
+  font-family: var(--labora-font-display);
+  font-size: var(--labora-title);
+  line-height: 1.15;
+  letter-spacing: var(--labora-tracking-display);
+  font-weight: 700;
+}
+
+.labora-body {
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-body);
+  line-height: var(--labora-leading-body);
+  color: var(--labora-muted);
+}
+
+.labora-section-label {
+  font-family: var(--labora-font-sans);
+  font-size: var(--labora-label);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7A8F82;
 }
 
 .labora-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(33,78,58,0.16), transparent);
+  background: linear-gradient(90deg, transparent, rgba(30,42,36,0.10), transparent);
 }
 
 .labora-soft-grid {
   background-image:
-    linear-gradient(rgba(33,78,58,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(33,78,58,0.035) 1px, transparent 1px);
-  background-size: 24px 24px;
+    linear-gradient(rgba(30, 42, 36, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 42, 36, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
-#rider-dashboard {
-  position: relative;
+.labora-btn-primary {
+  background: linear-gradient(180deg, #3B7258, #2F5D4A);
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(47, 93, 74, 0.20);
 }
 
-#rider-dashboard > section {
-  scroll-margin-top: 84px;
+.labora-btn-accent,
+.labora-btn-clay {
+  background: linear-gradient(180deg, #D97757, #C96846);
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(201, 104, 70, 0.24);
 }
 
-@media (max-width: 640px) {
-  :root {
-    --labora-radius: 20px;
-  }
-
-  .labora-hero {
-    border-radius: 24px;
-  }
+.labora-gold-line {
+  height: 1.5px;
+  width: 48px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--labora-champagne), transparent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+/* Atmospheric editorial wash (login left / hero) */
+.labora-atmosphere {
+  background:
+    radial-gradient(ellipse at 78% 12%, rgba(250, 208, 130, 0.55), transparent 40%),
+    radial-gradient(ellipse at 16% 8%, rgba(180, 200, 215, 0.35), transparent 48%),
+    radial-gradient(ellipse at 50% 85%, rgba(47, 93, 74, 0.12), transparent 55%),
+    linear-gradient(180deg, #C5D5E4 0%, #D5E2DC 32%, #E8E6D8 62%, #F7F3EA 100%);
 }
 
-/* Mobile shell: prevent accidental horizontal scroll and honor notches */
+.labora-film-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+/* Sidebar parchment language */
+.labora-sidebar {
+  background: linear-gradient(180deg, #FFFEFB 0%, #FAF6EE 55%, #F5F1E8 100%);
+  border-color: var(--labora-border);
+}
+
+.labora-nav-active {
+  background: color-mix(in srgb, var(--labora-moss-soft) 92%, white);
+  color: var(--labora-primary);
+  box-shadow: inset 0 0 0 1px rgba(47, 93, 74, 0.10);
+  font-weight: 700;
+}
+
+/* Mobile shell */
 html,
 body,
 #root {
@@ -183,9 +364,7 @@ body,
   overflow-x: hidden;
 }
 
-html {
-  height: 100%;
-}
+html { height: 100%; }
 
 body,
 #root {
@@ -193,29 +372,189 @@ body,
   min-height: 100dvh;
 }
 
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-.safe-area-bottom {
-  padding-bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
-}
-
+.safe-area-top { padding-top: env(safe-area-inset-top, 0px); }
+.safe-area-bottom { padding-bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px)); }
 .safe-area-x {
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
 }
 
 @media (max-width: 640px) {
-  button,
-  a,
-  [role='button'] {
-    touch-action: manipulation;
+  :root {
+    --labora-radius: 16px;
+    --labora-radius-lg: 22px;
+    --labora-display: clamp(2.15rem, 8vw, 2.75rem);
+    --labora-title: 1.65rem;
+    --labora-pad-card: 1.75rem;
+    --labora-pad-hero: 1.5rem;
+  }
+  .labora-hero { border-radius: 18px; }
+  button, a, [role='button'] { touch-action: manipulation; }
+  input, select, textarea { font-size: 16px; }
+}
+
+
+/* ── Logo intro entrance (startup splash) ─────────────────────────── */
+@keyframes labora-mark-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes labora-beam-draw {
+  from {
+    stroke-dashoffset: 48;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes labora-apex-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes labora-wordmark-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes labora-tagline-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes labora-rule-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.labora-intro-splash {
+  background: #F7F3EA;
+}
+
+.labora-intro-lockup {
+  opacity: 0;
+}
+
+.labora-intro-lockup.is-playing {
+  opacity: 1;
+}
+
+.labora-logo-entrance .labora-mark-squircle {
+  animation: labora-mark-scale-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.labora-logo-entrance .labora-beam-draw {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: labora-beam-draw 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.labora-logo-entrance .labora-beam-draw--champagne {
+  animation-delay: 0.28s;
+}
+
+.labora-logo-entrance .labora-beam-draw--ivory {
+  animation-delay: 0.48s;
+}
+
+.labora-logo-entrance .labora-apex-node {
+  opacity: 0;
+  transform-origin: 44px 16px;
+  transform-box: fill-box;
+  animation: labora-apex-pulse 0.55s cubic-bezier(0.34, 1.4, 0.64, 1) 0.9s forwards;
+}
+
+.labora-logo-entrance .labora-wordmark-entrance {
+  opacity: 0;
+  display: inline-block;
+  animation: labora-wordmark-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 1.1s forwards;
+}
+
+.labora-intro-tagline {
+  opacity: 0;
+}
+
+.labora-intro-tagline.is-visible {
+  animation: labora-tagline-in 0.5s ease-out 1.35s both;
+}
+
+.labora-intro-rule {
+  opacity: 0;
+  transform-origin: center;
+}
+
+.labora-intro-rule.is-visible {
+  animation: labora-rule-in 0.45s ease-out 1.5s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labora-intro-reduced .labora-logo-entrance .labora-mark-squircle,
+  .labora-intro-reduced .labora-logo-entrance .labora-wordmark-entrance,
+  .labora-intro-reduced .labora-intro-tagline.is-visible,
+  .labora-intro-reduced .labora-intro-rule.is-visible {
+    animation: labora-wordmark-in 0.35s ease-out both;
   }
 
-  input,
-  select,
-  textarea {
-    font-size: 16px; /* avoid iOS zoom-on-focus */
+  .labora-intro-reduced .labora-logo-entrance .labora-beam-draw {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    animation: none;
+    opacity: 1;
   }
+
+  .labora-intro-reduced .labora-logo-entrance .labora-apex-node {
+    animation: labora-wordmark-in 0.35s ease-out 0.08s both;
+  }
+
+  .labora-intro-reduced .labora-logo-entrance .labora-wordmark-entrance {
+    animation-delay: 0.12s;
+  }
+
+  .labora-intro-reduced .labora-intro-tagline.is-visible {
+    animation-delay: 0.18s;
+  }
+
+  .labora-intro-reduced .labora-intro-rule.is-visible {
+    animation-delay: 0.22s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labora-card-interactive { transition: none; }
 }

@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Bike,
   BriefcaseBusiness,
-  CheckCircle2,
   KeyRound,
   Loader2,
   Mail,
@@ -12,12 +11,16 @@ import {
   ShieldCheck,
   UserRound
 } from 'lucide-react';
+import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { recoverRemoteSession, signInRemote, signUpRemote } from '../services/authWorkspace';
 import { UserRole } from '../types';
+import AtmosphericPanel from './AtmosphericPanel';
 import IdentityImagePicker from './IdentityImagePicker';
+import IntroAnimation from './IntroAnimation';
 import Logo from './Logo';
 
 const Login: React.FC = () => {
+  const { palette } = useGhibliAtmosphere();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [registerStep, setRegisterStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
@@ -34,6 +37,13 @@ const Login: React.FC = () => {
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [recovering, setRecovering] = useState(true);
+  const [introDone, setIntroDone] = useState(() => {
+    try {
+      return sessionStorage.getItem('labora_intro_seen') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     let active = true;
@@ -49,8 +59,9 @@ const Login: React.FC = () => {
   }, []);
 
   const normalizeEmail = (value: string) => value.trim().toLowerCase();
-  const inputClass = 'w-full rounded-[15px] border border-[#DED7CC] bg-white px-4 py-3.5 text-[15px] text-[#1E231F] outline-none transition placeholder:text-stone-300 focus:border-[#789582] focus:ring-4 focus:ring-[#DDE9E1]/70';
-  const labelClass = 'mb-2 block text-xs font-extrabold text-stone-600';
+  const inputClass =
+    'w-full rounded-xl border border-[#E8DFC8] bg-[#FFFEFB] px-4 py-3.5 text-[15px] leading-normal text-[#1E2A24] outline-none transition placeholder:text-[#9A9186] focus:border-[#2F5D4A]/40 focus:ring-4 focus:ring-[#2F5D4A]/08';
+  const labelClass = 'labora-label mb-2.5 block';
 
   const resetFeedback = () => {
     setError('');
@@ -152,141 +163,322 @@ const Login: React.FC = () => {
 
   if (recovering) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F7F3EA]">
-        <div className="flex items-center gap-2 rounded-2xl border border-[#E5DDD2] bg-white/80 px-4 py-3 text-sm font-bold text-stone-500 shadow-sm">
-          <Loader2 size={18} className="animate-spin" /> Recuperando sesión…
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#F7F3EA]">
+        <div className="flex items-center gap-3 rounded-2xl border border-[#E8DFC8] bg-[#FFFEFB] px-5 py-3.5 text-sm font-medium text-[#2F5D4A] shadow-[0_12px_40px_rgba(30,42,36,0.06)]">
+          <Loader2 size={18} className="animate-spin text-[#C96846]" /> Recuperando sesión…
         </div>
       </div>
     );
   }
 
+  if (!introDone) {
+    return (
+      <IntroAnimation
+        onComplete={() => {
+          try {
+            sessionStorage.setItem('labora_intro_seen', '1');
+          } catch {
+            /* ignore quota / private mode */
+          }
+          setIntroDone(true);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen px-4 py-5 sm:py-8">
-      <div className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-6xl items-stretch gap-5 lg:grid-cols-[minmax(0,1.05fr)_440px]">
-        <section className="labora-hero hidden p-8 lg:flex lg:flex-col lg:justify-between xl:p-10">
-          <div className="relative z-10">
-            <Logo size="lg" showText variant="dark" animated />
-            <div className="mt-16 max-w-xl">
-              <span className="labora-chip labora-kicker text-[#EAF4EE]">Rider + Gestoría</span>
-              <h1 className="labora-display mt-5 text-[3.2rem] font-semibold leading-[0.98] text-white">
-                Menos ruido. Más control sobre tu trabajo.
-              </h1>
-              <p className="mt-5 max-w-lg text-base leading-relaxed text-white/72">
-                Labora+ une identidad, gastos, documentos, modelos, peticiones y mensajes sin fingir integraciones que todavía no existen.
-              </p>
-            </div>
+    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#F7F3EA] text-[#1E2A24] lg:flex-row">
+      {/* Mobile atmospheric strip */}
+      <div
+        className="labora-film-grain relative h-36 w-full shrink-0 overflow-hidden border-b lg:hidden"
+        style={{
+          borderColor: palette.border,
+          background: `
+            radial-gradient(ellipse at 80% 20%, ${palette.sunGlow}99, transparent 42%),
+            linear-gradient(180deg, #C5D5E4 0%, #D8E4DC 55%, ${palette.parchment} 100%)
+          `
+        }}
+      >
+        <AtmosphericPanel
+          variant="strip"
+          className="pointer-events-none absolute inset-0 h-full w-full"
+        />
+        <div className="relative z-10 flex h-full items-start justify-between p-5 pt-6">
+          <Logo size="lg" showText variant="light" animated />
+          <span
+            className="rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] backdrop-blur-sm"
+            style={{
+              borderColor: 'rgba(30,42,36,0.10)',
+              background: 'rgba(255,254,251,0.88)',
+              color: palette.forest
+            }}
+          >
+            Confianza
+          </span>
+        </div>
+      </div>
+
+      {/* Desktop left — editorial atmospheric narrative */}
+      <section className="labora-film-grain relative hidden overflow-hidden lg:flex lg:flex-1 lg:flex-col">
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse at 78% 12%, ${palette.sunGlow}aa, transparent 40%),
+              radial-gradient(ellipse at 16% 8%, rgba(180, 200, 215, 0.38), transparent 48%),
+              radial-gradient(ellipse at 50% 88%, ${palette.hillNear}55, transparent 55%),
+              linear-gradient(180deg, #C5D5E4 0%, #D5E2DC 30%, #E8E6D8 58%, ${palette.parchment} 82%, ${palette.warmearth} 100%)
+            `
+          }}
+        />
+        <AtmosphericPanel
+          variant="panel"
+          className="pointer-events-none absolute inset-0 h-full w-full opacity-90"
+        />
+
+        <div className="relative z-10 flex flex-1 flex-col justify-between p-12 xl:p-16 2xl:p-20">
+          <div className="flex items-center justify-between">
+            <Logo size="hero" showText variant="light" animated />
+            <span
+              className="rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] backdrop-blur-sm"
+              style={{
+                borderColor: 'rgba(30,42,36,0.10)',
+                background: 'rgba(255,254,251,0.72)',
+                color: palette.forest
+              }}
+            >
+              Espacio de trabajo
+            </span>
           </div>
 
-          <div className="relative z-10 grid grid-cols-3 gap-3">
-            <Feature icon={ShieldCheck} title="Datos privados" text="Permisos por relación" />
-            <Feature icon={CheckCircle2} title="Sin simulación" text="Estados verificables" />
-            <Feature icon={BriefcaseBusiness} title="Dos espacios" text="Rider y gestoría" />
-          </div>
-        </section>
+          <div className="mt-auto max-w-lg pb-12 xl:max-w-xl">
+            <p
+              className="labora-kicker"
+              style={{ color: palette.gold }}
+            >
+              Claridad fiscal
+            </p>
+            <div className="labora-gold-line mt-4" />
+            <h1 className="labora-display mt-6 text-[#1E2A24] xl:text-[4rem] 2xl:text-[4.35rem]">
+              Evidencia.<br />Confianza.<br />Sin ruido.
+            </h1>
+            <p className="labora-body mt-6 max-w-md text-[15px] leading-[1.7] text-[#4A5D52] xl:text-base">
+              Espacio de trabajo para autónomos y gestorías: claridad fiscal,
+              archivo privado y estados demostrables.
+            </p>
 
-        <main className="flex w-full items-center justify-center">
-          <div className="w-full max-w-md">
-            <div className="mb-5 flex items-center justify-between lg:hidden">
-              <Logo size="md" showText animated />
-              <span className="rounded-full border border-[#E0D8CD] bg-white/75 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-stone-400">Acceso seguro</span>
+            <div className="mt-12 grid max-w-lg grid-cols-3 gap-5">
+              {[
+                { k: 'Auth', v: 'Sesión segura' },
+                { k: 'Docs', v: 'Archivo privado' },
+                { k: 'Fiscal', v: 'Estados claros' }
+              ].map((item) => (
+                <div
+                  key={item.k}
+                  className="rounded-2xl border bg-[#FFFEFB]/75 px-4 py-4 shadow-[0_8px_28px_rgba(30,42,36,0.05)] backdrop-blur-md"
+                  style={{ borderColor: 'rgba(30,42,36,0.08)' }}
+                >
+                  <p className="labora-label" style={{ color: palette.clay }}>
+                    {item.k}
+                  </p>
+                  <p className="mt-2 text-[13px] font-semibold leading-snug text-[#2A332E]">{item.v}</p>
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
+      </section>
 
-            <section className="labora-card p-5 sm:p-7">
-              <div className="mb-6 grid grid-cols-2 rounded-[15px] bg-[#F1ECE3] p-1">
+      {/* Auth column — elevated paper card */}
+      <section className="relative z-20 flex flex-1 shrink-0 flex-col items-center justify-center px-5 py-10 pb-[40px] sm:px-10 lg:max-w-[540px] lg:bg-[#F7F3EA] lg:pb-0 lg:py-14 xl:max-w-[620px] xl:px-14">
+        <div
+          className="pointer-events-none absolute inset-0 hidden lg:block"
+          style={{
+            background: `radial-gradient(ellipse at 50% 0%, ${palette.softgreen}88, transparent 58%)`
+          }}
+        />
+        <div className="relative w-full max-w-[420px]">
+          <div className="labora-card-auth overflow-hidden">
+            <div className="border-b px-3 pt-3" style={{ borderColor: 'rgba(232,223,200,0.55)' }}>
+              <div className="grid grid-cols-2 gap-1.5 p-1.5">
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className={`rounded-[12px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'login' ? 'bg-white text-[#1E231F] shadow-sm' : 'text-stone-500'}`}
+                  className={`rounded-xl py-3 text-[13px] font-semibold tracking-[-0.01em] transition ${
+                    mode === 'login'
+                      ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
+                      : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
+                  }`}
                 >
                   Entrar
                 </button>
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className={`rounded-[12px] px-3 py-2.5 text-xs font-extrabold transition ${mode === 'register' ? 'bg-white text-[#1E231F] shadow-sm' : 'text-stone-500'}`}
+                  className={`rounded-xl py-3 text-[13px] font-semibold tracking-[-0.01em] transition ${
+                    mode === 'register'
+                      ? 'bg-[#2F5D4A] text-[#FFFEFB] shadow-sm'
+                      : 'text-[#6B645C] hover:bg-[#F0EBE1] hover:text-[#2A332E]'
+                  }`}
                 >
                   Crear cuenta
                 </button>
               </div>
+            </div>
 
+            <div className="p-8 sm:p-10">
               {mode === 'login' ? (
                 <>
-                  <div className="mb-7">
-                    <p className="labora-kicker text-[#789582]">Labora+</p>
-                    <h2 className="labora-display mt-2 text-3xl font-semibold text-[#1E231F]">Qué bueno verte.</h2>
-                    <p className="mt-2 text-sm leading-relaxed text-stone-500">Entra a tu espacio de autónomo o gestoría.</p>
-                  </div>
+                  <h2 className="labora-title text-[#1E2A24]">
+                    Bienvenido de nuevo
+                  </h2>
+                  <p className="labora-body mt-3 text-[15px] leading-[1.65]">
+                    Accede a tu espacio — autónomo o gestoría.
+                  </p>
 
-                  <form onSubmit={handleLogin} className="space-y-4">
+                  <form onSubmit={handleLogin} className="mt-9 space-y-5">
                     <div>
-                      <label className={labelClass}>Correo electrónico</label>
+                      <label className={labelClass}>Correo</label>
                       <div className="relative">
-                        <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input type="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); resetFeedback(); }} placeholder="tu@correo.com" className={`${inputClass} pl-12`} required />
+                        <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                        <input
+                          type="email"
+                          autoComplete="email"
+                          value={email}
+                          onChange={(e) => { setEmail(e.target.value); resetFeedback(); }}
+                          placeholder="tu@correo.com"
+                          className={`${inputClass} pl-11`}
+                          required
+                        />
                       </div>
                     </div>
                     <div>
                       <label className={labelClass}>Contraseña</label>
                       <div className="relative">
-                        <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
-                        <input type="password" autoComplete="current-password" value={password} onChange={(e) => { setPassword(e.target.value); resetFeedback(); }} placeholder="Tu contraseña" className={`${inputClass} pl-12`} required />
+                        <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                        <input
+                          type="password"
+                          autoComplete="current-password"
+                          value={password}
+                          onChange={(e) => { setPassword(e.target.value); resetFeedback(); }}
+                          placeholder="Tu contraseña"
+                          className={`${inputClass} pl-11`}
+                          required
+                        />
                       </div>
                     </div>
-
-                    {error && <p className="rounded-[14px] border border-[#F0D8D1] bg-[#FFF5F2] p-3.5 text-xs font-bold text-[#944B3D]">{error}</p>}
-                    {info && <p className="rounded-[14px] border border-[#CFE1D6] bg-[#F0F7F2] p-3.5 text-xs font-bold text-[#214E3A]">{info}</p>}
-
-                    <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white transition hover:bg-[#183D2D] disabled:opacity-60">
+                    {error && (
+                      <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
+                        {error}
+                      </p>
+                    )}
+                    {info && (
+                      <p className="rounded-xl border border-[#FDE3B8] bg-[#FEF7EB] px-3.5 py-3 text-xs font-medium text-[#B87A24]">
+                        {info}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="labora-btn-clay mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold transition hover:brightness-105 disabled:opacity-60"
+                    >
                       {loading ? <Loader2 size={17} className="animate-spin" /> : <>Entrar <ArrowRight size={17} /></>}
                     </button>
                   </form>
                 </>
               ) : (
                 <>
-                  <div className="mb-6 flex items-start justify-between gap-4">
+                  <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
-                      <p className="labora-kicker text-[#789582]">Nueva cuenta</p>
-                      <h2 className="labora-display mt-2 text-3xl font-semibold text-[#1E231F]">
-                        {registerStep === 1 ? 'Crea tu espacio.' : 'Hazlo reconocible.'}
+                      <h2 className="labora-title text-[#1E2A24]">
+                        Crea tu espacio
                       </h2>
-                      <p className="mt-2 text-sm leading-relaxed text-stone-500">
-                        {registerStep === 1 ? 'Elige cómo usarás Labora+ y crea tu acceso.' : 'Añade la identidad que verá la otra parte.'}
-                      </p>
+                      <p className="labora-body mt-3 text-[15px]">Paso {registerStep} de 2</p>
                     </div>
-                  </div>
-
-                  <div className="mb-6 flex items-center gap-2">
-                    <span className="h-1.5 flex-1 rounded-full bg-[#214E3A]" />
-                    <span className={`h-1.5 flex-1 rounded-full transition ${registerStep === 2 ? 'bg-[#D66C47]' : 'bg-[#E8E2D8]'}`} />
+                    <div className="flex gap-1.5">
+                      <span className={`h-1 w-7 rounded-full ${registerStep >= 1 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
+                      <span className={`h-1 w-7 rounded-full ${registerStep >= 2 ? 'bg-[#C96846]' : 'bg-[#E8DFC8]'}`} />
+                    </div>
                   </div>
 
                   {registerStep === 1 ? (
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       <div>
-                        <label className={labelClass}>¿Cómo vas a usar Labora+?</label>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          <button type="button" onClick={() => setRole(UserRole.RIDER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.RIDER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#214E3A] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
-                            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/75"><Bike size={18} /></div>
-                            <p className="mt-2 text-sm font-extrabold">Autónomo</p>
-                            <p className="mt-0.5 text-[10px] font-medium opacity-70">Gestiono mi actividad</p>
+                        <label className={labelClass}>Tipo de cuenta</label>
+                        <div className="grid grid-cols-2 gap-3.5">
+                          <button
+                            type="button"
+                            onClick={() => setRole(UserRole.RIDER)}
+                            className={`rounded-xl border p-3.5 text-left transition ${
+                              role === UserRole.RIDER
+                                ? 'border-[#2F5D4A]/35 bg-[#EBF3ED] text-[#1E2A24]'
+                                : 'border-[#E8DFC8] bg-[#FFFEFB] text-[#6B645C]'
+                            }`}
+                          >
+                            <Bike size={18} className={role === UserRole.RIDER ? 'text-[#2F5D4A]' : ''} />
+                            <p className="mt-2 text-sm font-semibold">Autónomo</p>
+                            <p className="mt-0.5 text-[10px] opacity-70">Mi actividad</p>
                           </button>
-                          <button type="button" onClick={() => setRole(UserRole.MANAGER)} className={`rounded-[16px] border p-3.5 text-left transition ${role === UserRole.MANAGER ? 'border-[#9AB4A3] bg-[#EAF2ED] text-[#214E3A] shadow-[inset_0_0_0_1px_rgba(33,78,58,0.05)]' : 'border-[#E0D9CE] bg-white text-stone-500'}`}>
-                            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/75"><BriefcaseBusiness size={18} /></div>
-                            <p className="mt-2 text-sm font-extrabold">Gestoría</p>
-                            <p className="mt-0.5 text-[10px] font-medium opacity-70">Gestiono clientes</p>
+                          <button
+                            type="button"
+                            onClick={() => setRole(UserRole.MANAGER)}
+                            className={`rounded-xl border p-3.5 text-left transition ${
+                              role === UserRole.MANAGER
+                                ? 'border-[#2F5D4A]/35 bg-[#EBF3ED] text-[#1E2A24]'
+                                : 'border-[#E8DFC8] bg-[#FFFEFB] text-[#6B645C]'
+                            }`}
+                          >
+                            <BriefcaseBusiness size={18} className={role === UserRole.MANAGER ? 'text-[#2F5D4A]' : ''} />
+                            <p className="mt-2 text-sm font-semibold">Gestoría</p>
+                            <p className="mt-0.5 text-[10px] opacity-70">Mis clientes</p>
                           </button>
                         </div>
                       </div>
-
-                      <div><label className={labelClass}>{role === UserRole.MANAGER ? 'Nombre de contacto' : 'Nombre y apellidos'}</label><div className="relative"><UserRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} pl-12`} placeholder="Tu nombre" /></div></div>
-                      <div><label className={labelClass}>Correo electrónico</label><div className="relative"><Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-12`} placeholder="tu@correo.com" /></div></div>
-                      <div><label className={labelClass}>Contraseña</label><div className="relative"><KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-12`} placeholder="8 caracteres o más" /></div></div>
-                      {error && <p className="rounded-[14px] bg-[#FFF5F2] px-3.5 py-3 text-xs font-bold text-[#944B3D]">{error}</p>}
-                      <button type="button" onClick={continueRegistration} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white">Continuar <ArrowRight size={17} /></button>
+                      <div>
+                        <label className={labelClass}>
+                          {role === UserRole.MANAGER ? 'Nombre de contacto' : 'Nombre y apellidos'}
+                        </label>
+                        <div className="relative">
+                          <UserRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                          <input value={name} onChange={(e) => setName(e.target.value)} className={`${inputClass} pl-11`} placeholder="Tu nombre" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelClass}>Correo electrónico</label>
+                        <div className="relative">
+                          <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                          <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} pl-11`} placeholder="tu@correo.com" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelClass}>Contraseña</label>
+                        <div className="relative">
+                          <KeyRound size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                          <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${inputClass} pl-11`} placeholder="8 caracteres o más" />
+                        </div>
+                      </div>
+                      {error && (
+                        <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
+                          {error}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={continueRegistration}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2F5D4A] py-3.5 text-sm font-semibold text-[#FFFEFB] transition hover:bg-[#264A3C]"
+                      >
+                        Continuar <ArrowRight size={17} />
+                      </button>
                     </div>
                   ) : (
-                    <form onSubmit={handleRegister} className="space-y-4">
-                      <button type="button" onClick={() => { setRegisterStep(1); resetFeedback(); }} className="mb-1 inline-flex items-center gap-1.5 text-xs font-extrabold text-stone-500 hover:text-stone-800"><ArrowLeft size={14} /> Volver</button>
+                    <form onSubmit={handleRegister} className="space-y-5">
+                      <button
+                        type="button"
+                        onClick={() => { setRegisterStep(1); resetFeedback(); }}
+                        className="mb-1 inline-flex items-center gap-1.5 text-xs font-semibold text-[#6B645C] hover:text-[#2F5D4A]"
+                      >
+                        <ArrowLeft size={14} /> Volver
+                      </button>
 
                       <IdentityImagePicker
                         mode={role === UserRole.MANAGER ? 'logo' : 'avatar'}
@@ -296,44 +488,71 @@ const Login: React.FC = () => {
                         helper={role === UserRole.MANAGER ? 'Tus clientes la verán en mensajes y peticiones.' : 'Tu gestoría la verá al revisar tu actividad.'}
                       />
 
-                      <div><label className={labelClass}>Teléfono <span className="font-normal text-stone-400">(opcional)</span></label><div className="relative"><Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" /><input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-12`} placeholder="+34 600 000 000" /></div></div>
-                      <div><label className={labelClass}>NIF / NIE <span className="font-normal text-stone-400">(opcional)</span></label><input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678A" /></div>
+                      <div>
+                        <label className={labelClass}>
+                          Teléfono <span className="font-normal text-[#9A9186]">(opcional)</span>
+                        </label>
+                        <div className="relative">
+                          <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9186]" />
+                          <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-11`} placeholder="+34 600 000 000" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelClass}>
+                          NIF / NIE <span className="font-normal text-[#9A9186]">(opcional)</span>
+                        </label>
+                        <input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678A" />
+                      </div>
 
                       {role === UserRole.RIDER ? (
-                        <div><label className={labelClass}>Matrícula <span className="font-normal text-stone-400">(opcional)</span></label><input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" /></div>
+                        <div>
+                          <label className={labelClass}>
+                            Matrícula <span className="font-normal text-[#9A9186]">(opcional)</span>
+                          </label>
+                          <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" />
+                        </div>
                       ) : (
-                        <div className="space-y-4">
-                          <div><label className={labelClass}>Nombre de la gestoría</label><input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputClass} placeholder="Nombre comercial" /></div>
-                          <div><label className={labelClass}>N.º colegiado <span className="font-normal text-stone-400">(opcional)</span></label><input value={collegiateNumber} onChange={(e) => setCollegiateNumber(e.target.value)} className={inputClass} placeholder="Número de colegiado" /></div>
+                        <div className="space-y-5">
+                          <div>
+                            <label className={labelClass}>Nombre de la gestoría</label>
+                            <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputClass} placeholder="Nombre comercial" />
+                          </div>
+                          <div>
+                            <label className={labelClass}>
+                              N.º colegiado <span className="font-normal text-[#9A9186]">(opcional)</span>
+                            </label>
+                            <input value={collegiateNumber} onChange={(e) => setCollegiateNumber(e.target.value)} className={inputClass} placeholder="Número de colegiado" />
+                          </div>
                         </div>
                       )}
 
-                      {error && <p className="rounded-[14px] bg-[#FFF5F2] px-3.5 py-3 text-xs font-bold text-[#944B3D]">{error}</p>}
-                      <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-[#214E3A] py-3.5 text-sm font-extrabold text-white disabled:opacity-60">
+                      {error && (
+                        <p className="rounded-xl border border-[#EAD6C9] bg-[#FAF3EE] px-3.5 py-3 text-xs font-medium text-[#C96846]">
+                          {error}
+                        </p>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="labora-btn-clay flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold disabled:opacity-60"
+                      >
                         {loading ? <Loader2 size={17} className="animate-spin" /> : <>Crear cuenta <ArrowRight size={17} /></>}
                       </button>
                     </form>
                   )}
                 </>
               )}
-            </section>
-
-            <p className="mt-4 text-center text-[10px] font-medium leading-relaxed text-stone-400">
-              Sesión protegida con Supabase Auth. El acceso a datos se limita mediante RLS.
-            </p>
+            </div>
           </div>
-        </main>
-      </div>
+
+          <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-medium tracking-[0.02em] text-[#8A8278]">
+            <ShieldCheck size={12} className="text-[#2F5D4A]/70" />
+            Auth segura · archivo privado · sin datos inventados
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
-
-const Feature = ({ icon: Icon, title, text }: { icon: React.ComponentType<{ size?: number }>; title: string; text: string }) => (
-  <div className="rounded-[18px] border border-white/12 bg-white/8 p-3.5 backdrop-blur">
-    <Icon size={17} />
-    <p className="mt-2 text-xs font-extrabold text-white">{title}</p>
-    <p className="mt-0.5 text-[10px] font-medium text-white/55">{text}</p>
-  </div>
-);
 
 export default Login;

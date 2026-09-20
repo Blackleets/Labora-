@@ -95,12 +95,12 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
   return (
     <div id="money-hub-workspace" className="min-w-0 space-y-4 animate-in fade-in duration-200">
       <section className="labora-card overflow-hidden">
-        <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
-            <p className="labora-kicker text-[#789582]">
+            <p className="labora-kicker text-[#5A7A68]">
               {isManager ? 'Cartera vinculada' : 'Actividad registrada'}
             </p>
-            <h1 className="labora-display mt-1 text-2xl font-semibold text-[#1E231F] sm:text-[2rem]">
+            <h1 className="labora-display mt-1.5 text-2xl font-semibold tracking-[-0.03em] text-[#1E2A24] sm:text-[2.05rem]">
               {isManager ? 'Auditoría y fiscalidad' : 'Tu dinero, sin ruido'}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">
