@@ -18,6 +18,7 @@ Updated: 2026-09-20 (Europe/Paris). Feature work may live on unmerged branches; 
 | Agent-safe loop 2 (hub CSS vars, Messages dark empty/soft-grid, soft currency, legal relative `/Labora-/`) | Done on `agent/loop2-dark-currency-legal` — billing flag still OFF |
 | Agent-safe loop 3 (Settings/Onboarding/Documents tokens, ManagerDashboard `.labora-status-*`, toolkit shadows) | Done on `agent/loop3-settings-docs-chips` — no secrets / invented features |
 | Agent-safe loop 4 (GestorRequirements/Expense/Login/Tax/Income + banking·payroll fail-closed shells) | Done on `agent/loop4-cream-tokens` — billing flag still OFF |
+| Agent-safe loop 5 (Sidebar/Dashboard/modals/Education/chat/Movements + KPI/Risk/Events/Ops/Policy shells) | Done on `agent/loop5-cream-tokens` — billing flag still OFF |
 
 ## Blocked / external (secrets or official data)
 

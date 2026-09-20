@@ -110,22 +110,22 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
           onClick={() => handleNavigate(item.id)}
           className={`group flex w-full items-center gap-3 rounded-[18px] px-3.5 py-3 text-left text-[13.5px] tracking-[-0.01em] transition-all ${
             active
-              ? 'bg-[#EBF3ED] font-semibold text-[#2F5D4A] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
-              : 'font-medium text-[#6B645C] hover:bg-[#F3EEE4]/90 hover:text-[#2A332E]'
+              ? 'bg-[var(--labora-moss-soft)] font-semibold text-[var(--labora-primary)] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
+              : 'font-medium text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]/90 hover:text-[var(--labora-ink-soft)]'
           }`}
         >
           <span
             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[12px] transition ${
               active
-                ? 'bg-white/80 text-[#2F5D4A] shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_1px_3px_rgba(47,93,74,0.08)]'
-                : 'bg-transparent text-[#8A8278] group-hover:text-[#2F5D4A]'
+                ? 'bg-[var(--labora-surface)]/80 text-[var(--labora-primary)] shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_1px_3px_rgba(47,93,74,0.08)]'
+                : 'bg-transparent text-[var(--labora-muted)] group-hover:text-[var(--labora-primary)]'
             }`}
           >
             <Icon size={17} strokeWidth={active ? 2.35 : 2} />
           </span>
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
           {Boolean(item.badge && item.badge > 0) && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C96846] px-1.5 text-[10px] font-extrabold text-white">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--labora-clay)] px-1.5 text-[10px] font-extrabold text-white">
               {item.badge}
             </span>
           )}
@@ -136,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-[#2A332E]/35 backdrop-blur-sm transition-opacity lg:hidden ${
+        className={`fixed inset-0 z-40 bg-[var(--labora-ink-soft)]/35 backdrop-blur-sm transition-opacity lg:hidden ${
           isMobileMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={() => setIsMobileMenuOpen(false)}
@@ -148,7 +148,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
         }`}
         style={{
           borderColor: palette.border,
-          background: `linear-gradient(180deg, #FFFEFB 0%, ${palette.parchment} 60%, #F3EEE4 100%)`
+          background: `linear-gradient(180deg, var(--labora-ivory) 0%, var(--labora-parchment) 60%, var(--labora-surface-2) 100%)`
         }}
       >
         <div
@@ -166,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-[#8A8278] hover:bg-[#F0EBE1] lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] lg:hidden"
             aria-label="Cerrar menú"
           >
             <X size={19} />
@@ -203,12 +203,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
             style={{
               borderColor: currentView === 'settings' ? `${palette.clay}55` : palette.border,
               background: currentView === 'settings'
-                ? 'linear-gradient(180deg, #FFF9F4 0%, #FAF3EE 100%)'
-                : 'linear-gradient(180deg, #FFFEFB 0%, #FBF7F0 100%)'
+                ? 'linear-gradient(180deg, var(--labora-soft-clay) 0%, var(--labora-soft-clay) 100%)'
+                : 'linear-gradient(180deg, var(--labora-ivory) 0%, var(--labora-parchment) 100%)'
             }}
           >
             <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border bg-white text-[#2F5D4A] ${
+              className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border bg-[var(--labora-surface)] text-[var(--labora-primary)] ${
                 isManager ? 'rounded-xl' : 'rounded-full'
               }`}
               style={{ borderColor: palette.border }}
@@ -226,19 +226,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-extrabold text-[#1E2A24]">
+              <p className="truncate text-xs font-extrabold text-[var(--labora-ink)]">
                 {currentUser?.companyName || currentUser?.name || 'Usuario'}
               </p>
-              <p className="mt-0.5 truncate text-[10px] font-medium text-[#8A8278]">
+              <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--labora-muted)]">
                 {isManager ? 'Gestoría' : 'Autónomo'} · {currentUser?.email}
               </p>
             </div>
-            <Settings size={15} className="shrink-0 text-[#9A9186]" />
+            <Settings size={15} className="shrink-0 text-[var(--labora-muted)]" />
           </button>
 
           <button
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[#8A8278] transition hover:bg-[#FAF3EE] hover:text-[#C96846]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[var(--labora-muted)] transition hover:bg-[var(--labora-soft-clay)] hover:text-[var(--labora-clay)]"
           >
             <LogOut size={15} /> Cerrar sesión
           </button>

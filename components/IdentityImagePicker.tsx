@@ -100,7 +100,7 @@ const IdentityImagePicker: React.FC<IdentityImagePickerProps> = ({
     : 'Se mostrará a tu gestor y en tus comunicaciones.';
 
   return (
-    <div className={`rounded-2xl border border-[#E2DBD0] bg-white ${compact ? 'p-3.5' : 'p-4'}`}>
+    <div className={`rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] ${compact ? 'p-3.5' : 'p-4'}`}>
       <input
         ref={inputRef}
         type="file"
@@ -113,7 +113,7 @@ const IdentityImagePicker: React.FC<IdentityImagePickerProps> = ({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[#D9D1C6] bg-[#F5F2ED] text-stone-400 transition hover:border-[#9EB5A6] ${
+          className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-[var(--labora-border)] bg-[var(--labora-surface-2)] text-[var(--labora-muted)] transition hover:border-[var(--labora-primary-2)] ${
             mode === 'logo'
               ? compact ? 'h-14 w-20 rounded-xl' : 'h-16 w-24 rounded-2xl'
               : compact ? 'h-14 w-14 rounded-full' : 'h-16 w-16 rounded-full'
@@ -127,20 +127,20 @@ const IdentityImagePicker: React.FC<IdentityImagePickerProps> = ({
               className={`h-full w-full ${mode === 'logo' ? 'object-contain p-1.5' : 'object-cover'}`}
             />
           ) : fallback}
-          <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-[#2E5A44] text-white shadow-sm">
+          <span className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--labora-primary)] text-white shadow-sm">
             <Camera size={12} />
           </span>
         </button>
 
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-stone-900">{title || defaultTitle}</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-stone-500">{helper || defaultHelper}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">{helper || defaultHelper}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
               disabled={busy}
               onClick={() => inputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCD4C9] bg-[#FCFBF8] px-2.5 py-1.5 text-[11px] font-semibold text-stone-600 hover:bg-[#F5F1EA] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--labora-border)] bg-[var(--labora-ivory)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] disabled:opacity-50"
             >
               <ImagePlus size={13} />
               {busy ? 'Procesando…' : value ? 'Cambiar' : 'Subir imagen'}
@@ -149,7 +149,7 @@ const IdentityImagePicker: React.FC<IdentityImagePickerProps> = ({
               <button
                 type="button"
                 onClick={() => onChange(undefined)}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[#9B493C] hover:bg-[#FFF3F0]"
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[var(--labora-clay-deep)] hover:bg-[var(--labora-soft-clay)]"
               >
                 <Trash2 size={13} />
                 Quitar
@@ -159,7 +159,7 @@ const IdentityImagePicker: React.FC<IdentityImagePickerProps> = ({
         </div>
       </div>
 
-      {error && <p className="mt-3 rounded-xl bg-[#FFF4F1] px-3 py-2 text-[11px] font-semibold text-[#944B3D]">{error}</p>}
+      {error && <p className="mt-3 rounded-xl bg-[var(--labora-soft-clay)] px-3 py-2 text-[11px] font-semibold text-[var(--labora-clay-deep)]">{error}</p>}
     </div>
   );
 };
