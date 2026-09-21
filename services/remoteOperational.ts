@@ -9,6 +9,11 @@ import {
   UserRole
 } from '../types';
 import { supabase } from './supabaseClient';
+import {
+  captureOperationalSnapshotGeneration,
+  enqueueOperationalSnapshot,
+  runExplicitOperationalMutation
+} from './operationalWriteCoordinator';
 
 const LEGACY_KEYS = [
   'labora_incomes',
@@ -62,6 +67,27 @@ const writeOperationalCache = (userId: string, payload: {
 };
 
 const numberValue = (value: any) => Number(value ?? 0);
+
+type TombstonedOperationalTable = 'expenses' | 'incomes' | 'documents';
+
+/**
+ * A network error can happen after PostgreSQL committed a delete. Confirm the
+ * row's absence before reporting failure, so stale local state cannot upsert it
+ * back into the database on the next sync.
+ */
+const confirmRemoteDeletionAfterError = async (
+  table: TombstonedOperationalTable,
+  id: string,
+  originalError: unknown
+) => {
+  const { data, error } = await supabase.from(table).select('id').eq('id', id).maybeSingle();
+  if (!error && !data) return;
+  throw originalError;
+};
+
+const isStaleTombstoneError = (error: unknown) =>
+  String((error as { message?: unknown })?.message ?? error)
+    .includes('Deleted operational records cannot be recreated');
 
 const signedDocumentUrl = async (path?: string | null) => {
   if (!path) return undefined;
@@ -365,47 +391,82 @@ export const reviewRemoteExpense = async (
 };
 
 export const deleteRemoteExpense = async (expenseId: string) => {
-  const { data, error: readError } = await supabase
-    .from('expenses')
-    .select('receipt_url')
-    .eq('id', expenseId)
-    .maybeSingle();
-  if (readError) throw readError;
+  await runExplicitOperationalMutation(async () => {
+    const { data, error: readError } = await supabase
+      .from('expenses')
+      .select('receipt_url')
+      .eq('id', expenseId)
+      .maybeSingle();
+    if (readError) throw readError;
 
-  const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
-  if (error) throw error;
+    const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+    if (error) await confirmRemoteDeletionAfterError('expenses', expenseId, error);
 
-  const path = data?.receipt_url as string | undefined;
-  if (path && !path.startsWith('http')) {
-    const { error: storageError } = await supabase.storage.from('labora-documents').remove([path]);
-    if (storageError) console.warn('No se pudo borrar el justificante huérfano.', storageError);
-  }
+    const path = data?.receipt_url as string | undefined;
+    if (path && !path.startsWith('http')) {
+      const { error: storageError } = await supabase.storage.from('labora-documents').remove([path]);
+      if (storageError) console.warn('No se pudo borrar el justificante huérfano.', storageError);
+    }
+  });
 };
 
 export const deleteRemoteIncome = async (incomeId: string) => {
-  const { error } = await supabase.from('incomes').delete().eq('id', incomeId);
-  if (error) throw error;
+  await runExplicitOperationalMutation(async () => {
+    const { error } = await supabase.from('incomes').delete().eq('id', incomeId);
+    if (error) await confirmRemoteDeletionAfterError('incomes', incomeId, error);
+  });
 };
 
 export const deleteRemoteDocument = async (documentId: string) => {
-  const { data, error: readError } = await supabase
-    .from('documents')
-    .select('content')
-    .eq('id', documentId)
-    .maybeSingle();
-  if (readError) throw readError;
+  await runExplicitOperationalMutation(async () => {
+    const { data, error: readError } = await supabase
+      .from('documents')
+      .select('content')
+      .eq('id', documentId)
+      .maybeSingle();
+    if (readError) throw readError;
 
-  const { error } = await supabase.from('documents').delete().eq('id', documentId);
-  if (error) throw error;
+    const { error } = await supabase.from('documents').delete().eq('id', documentId);
+    if (error) await confirmRemoteDeletionAfterError('documents', documentId, error);
 
-  const path = data?.content as string | undefined;
-  if (path && !path.startsWith('http')) {
-    const { error: storageError } = await supabase.storage.from('labora-documents').remove([path]);
-    if (storageError) console.warn('No se pudo borrar el archivo huérfano.', storageError);
-  }
+    const path = data?.content as string | undefined;
+    if (path && !path.startsWith('http')) {
+      const { error: storageError } = await supabase.storage.from('labora-documents').remove([path]);
+      if (storageError) console.warn('No se pudo borrar el archivo huérfano.', storageError);
+    }
+  });
+};
+
+/**
+ * Deletes an owner document and its imported incomes in one database transaction.
+ * Storage cleanup happens only after the committed database deletion and is best-effort.
+ */
+export const deleteRemoteDocumentWithLinkedIncomes = async (documentId: string) => {
+  await runExplicitOperationalMutation(async () => {
+    const { data, error: readError } = await supabase
+      .from('documents')
+      .select('content')
+      .eq('id', documentId)
+      .maybeSingle();
+    if (readError) throw readError;
+
+    const { error } = await supabase.rpc('delete_own_document_with_linked_incomes', {
+      p_document_id: documentId
+    });
+    if (error) await confirmRemoteDeletionAfterError('documents', documentId, error);
+
+    const path = data?.content as string | undefined;
+    if (path && !path.startsWith('http')) {
+      const { error: storageError } = await supabase.storage.from('labora-documents').remove([path]);
+      if (storageError) console.warn('No se pudo borrar el archivo huérfano.', storageError);
+    }
+  });
 };
 
 export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => {
+  const capturedGeneration = captureOperationalSnapshotGeneration();
+  return enqueueOperationalSnapshot(capturedGeneration, async () => {
+  let refreshRequired = false;
   const { currentUser, users, incomes, expenses, requirements, documents, declarations, payments } = snapshot;
   const linkedIds = new Set(users.filter((user) => user.managerId === currentUser.id).map((user) => user.id));
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
@@ -415,29 +476,13 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     const ownDocumentItems = documents.filter((document) => document.userId === currentUser.id);
     const ownIncomeItems = incomes.filter((income) => income.userId === currentUser.id);
 
-    const [remoteExpenseIds, remoteDocumentIds, remoteIncomeIds] = await Promise.all([
-      supabase.from('expenses').select('id').eq('user_id', currentUser.id),
-      supabase.from('documents').select('id').eq('user_id', currentUser.id),
-      supabase.from('incomes').select('id').eq('user_id', currentUser.id)
-    ]);
+    const remoteExpenseIds = await supabase.from('expenses').select('id').eq('user_id', currentUser.id);
     if (remoteExpenseIds.error) throw remoteExpenseIds.error;
-    if (remoteDocumentIds.error) throw remoteDocumentIds.error;
-    if (remoteIncomeIds.error) throw remoteIncomeIds.error;
 
-    const localExpenseIds = new Set(ownExpenseItems.map((item) => item.id));
     const remoteExpenseIdSet = new Set((remoteExpenseIds.data || []).map((item) => item.id));
-    const localDocumentIds = new Set(ownDocumentItems.map((item) => item.id));
-    const localIncomeIds = new Set(ownIncomeItems.map((item) => item.id));
 
-    for (const row of remoteExpenseIds.data || []) {
-      if (!localExpenseIds.has(row.id)) await deleteRemoteExpense(row.id);
-    }
-    for (const row of remoteDocumentIds.data || []) {
-      if (!localDocumentIds.has(row.id)) await deleteRemoteDocument(row.id);
-    }
-    for (const row of remoteIncomeIds.data || []) {
-      if (!localIncomeIds.has(row.id)) await deleteRemoteIncome(row.id);
-    }
+    // A missing item in a local snapshot is never proof that a user intended to
+    // delete it. Remote deletion is only allowed through explicit owner actions.
 
     for (const item of ownExpenseItems) {
       let receiptPath: string | undefined;
@@ -478,7 +523,13 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
           user_id: item.userId,
           ...rawExpense
         });
-        if (error) throw error;
+        if (error) {
+          if (isStaleTombstoneError(error)) {
+            refreshRequired = true;
+            continue;
+          }
+          throw error;
+        }
       }
     }
 
@@ -501,9 +552,15 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
         page_count: item.pageCount ?? null
       });
     }
-    if (ownDocuments.length) {
-      const { error } = await supabase.from('documents').upsert(ownDocuments);
-      if (error) throw error;
+    for (const document of ownDocuments) {
+      const { error } = await supabase.from('documents').upsert(document);
+      if (error) {
+        if (isStaleTombstoneError(error)) {
+          refreshRequired = true;
+          continue;
+        }
+        throw error;
+      }
     }
 
     const ownIncomes = incomes.filter((item) => item.userId === currentUser.id).map((item) => ({
@@ -522,9 +579,15 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       source_document_id: item.sourceDocumentId || null,
       source_hash: item.sourceHash || null
     }));
-    if (ownIncomes.length) {
-      const { error } = await supabase.from('incomes').upsert(ownIncomes);
-      if (error) throw error;
+    for (const income of ownIncomes) {
+      const { error } = await supabase.from('incomes').upsert(income);
+      if (error) {
+        if (isStaleTombstoneError(error)) {
+          refreshRequired = true;
+          continue;
+        }
+        throw error;
+      }
     }
 
     const ownPayments = payments.map((item) => ({
@@ -666,4 +729,6 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       }
     }
   }
+  return { refreshRequired };
+  });
 };

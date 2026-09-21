@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Eye, EyeOff, LayoutDashboard, Menu, Scale, User, Wallet } from 'lucide-react';
+import { Bell, Eye, EyeOff, FileText, LayoutDashboard, Menu, MessageCircle, Scale, User, Wallet } from 'lucide-react';
 import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { GhibliAtmosphereProvider } from './contexts/GhibliAtmosphereContext';
@@ -98,9 +98,9 @@ const MainLayout: React.FC = () => {
     { id: 'settings', label: 'Ajustes', icon: User }
   ] : [
     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
+    { id: 'docs', label: 'Documentos', icon: FileText },
     { id: 'money', label: 'Dinero', icon: Wallet },
-    { id: 'tax-declarations', label: 'Modelos', icon: Scale },
-    { id: 'gestor-requirements', label: 'Avisos', icon: Bell, badge: pendingReqCount },
+    { id: 'messages', label: 'Mensajes', icon: MessageCircle, badge: pendingReqCount },
     { id: 'settings', label: 'Perfil', icon: User }
   ];
 

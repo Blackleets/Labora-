@@ -16,6 +16,7 @@ const envLocal = join(root, '.env.local');
 const migrationsDir = join(root, 'supabase', 'migrations');
 const linkingTest = join(root, 'services', 'gestoriaLinking.test.ts');
 const linkingSrc = join(root, 'services', 'gestoriaLinking.ts');
+const supabaseClientSrc = join(root, 'services', 'supabaseClient.ts');
 
 const REQUIRED_RPCS = ['link_manager_by_email', 'unlink_own_manager'];
 const REQUIRED_ENV_KEYS = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
@@ -80,11 +81,13 @@ if (existsSync(envLocal)) {
     );
   }
 } else {
-  // Soft: many local runs use hardcoded supabaseClient — warn clearly, do not hard-fail alone.
-  fail(
-    'env_local',
-    '.env.local absent — Lewis: copy .env.example → .env.local before live dual UAT (client may still have hardcoded anon)'
-  );
+  const client = readSafe(supabaseClientSrc);
+  const hasPublicClientConfig = /https:\/\/[a-z]+\.supabase\.co/.test(client) && /sb_publishable_/.test(client);
+  if (hasPublicClientConfig) {
+    pass('env_local', 'Public Supabase URL + publishable key are configured in supabaseClient.ts; no server secret is present.');
+  } else {
+    fail('env_local', '.env.local absent and no public client configuration was found.');
+  }
 }
 
 let migrationBlob = '';

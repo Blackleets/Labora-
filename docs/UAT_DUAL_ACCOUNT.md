@@ -114,3 +114,5 @@ _______________________________________________
 ```
 
 **No fusionar a `main` solo porque el checklist existe.** PASS requiere esta firma.
+
+Tras completar y firmar el recorrido, registrar evidencia estructurada en `docs/UAT_DUAL_ACCOUNT_RESULT.json` con `status`, `executedAt`, `environment` y notas. No incluir contraseñas, tokens ni datos personales innecesarios.

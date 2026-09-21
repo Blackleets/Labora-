@@ -28,6 +28,7 @@ Configure these as server-side Supabase secrets, never as `VITE_*` variables:
 - `STRIPE_PRO_MONTHLY_PRICE_ID`
 - `STRIPE_PRO_ANNUAL_PRICE_ID`
 - `LABORA_APP_URL`
+- `LABORA_ALLOWED_ORIGINS` (comma-separated web/native origins; never use `*`)
 
 Supabase provides `SUPABASE_URL`, `SUPABASE_ANON_KEY` / publishable key and `SUPABASE_SERVICE_ROLE_KEY` to Edge Functions.
 

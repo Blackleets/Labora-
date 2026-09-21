@@ -97,16 +97,25 @@ const RemoteSyncBridge: React.FC = () => {
 
     if (syncTimerRef.current) window.clearTimeout(syncTimerRef.current);
     syncTimerRef.current = window.setTimeout(() => {
-      void syncOperationalSnapshot({
-        currentUser,
-        users,
-        incomes,
-        expenses,
-        requirements,
-        documents,
-        declarations,
-        payments
-      }).catch((error) => reportSyncError('LABORA_SYNC_WRITE_FAILED', error));
+      void (async () => {
+        try {
+          const result = await syncOperationalSnapshot({
+            currentUser,
+            users,
+            incomes,
+            expenses,
+            requirements,
+            documents,
+            declarations,
+            payments
+          });
+          if (!result?.refreshRequired) return;
+          await loadRemoteOperationalData(users);
+          window.location.reload();
+        } catch (error) {
+          reportSyncError('LABORA_SYNC_WRITE_FAILED', error);
+        }
+      })();
     }, 700);
 
     return () => {

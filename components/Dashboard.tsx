@@ -19,7 +19,6 @@ import {
 import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
-import AtmosphericPanel from './AtmosphericPanel';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
 
@@ -209,55 +208,53 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     }
   ] as const;
 
+  const nextRequirement = pendingRequirements[0];
+  const longDate = nowDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
   return (
-    <div id="rider-dashboard" className="mx-auto max-w-6xl space-y-8 pb-12">
-      <section className="labora-hero p-6 sm:p-8 lg:p-10 xl:p-12">
-        <AtmosphericPanel
-          variant="hero"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] w-full opacity-[0.55]"
-        />
-        <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="labora-chip labora-kicker text-[var(--labora-primary)]">Autónomo · {period}</span>
-              {pendingRequirements.length === 0 ? (
-                <span className="labora-chip text-[11px] font-bold text-[var(--labora-gold)]">
-                  <CheckCircle2 size={13} /> Sin tareas pendientes
-                </span>
-              ) : (
-                <span className="labora-chip text-[11px] font-bold text-[var(--labora-clay)]">
-                  <Bell size={13} /> {pendingRequirements.length} {pendingRequirements.length === 1 ? 'tarea pendiente' : 'tareas pendientes'}
-                </span>
-              )}
+    <div id="rider-dashboard" className="mx-auto max-w-6xl space-y-9 pb-12">
+      <section className="labora-editorial-hero overflow-hidden rounded-[30px] border border-[var(--labora-border)]">
+        <div className="relative min-h-[510px] p-7 sm:p-10 lg:p-14">
+          <img src="/brand/labora-editorial-hero.webp" alt="Mesa de trabajo con olivo, libros y café" className="absolute inset-0 h-full w-full object-cover object-[70%_center]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(247,243,234,0.99)_0%,rgba(247,243,234,0.96)_40%,rgba(247,243,234,0.18)_75%,rgba(247,243,234,0.05)_100%)]" />
+          <div className="relative z-10 flex min-h-[398px] max-w-[520px] flex-col justify-between">
+            <div>
+              <p className="labora-kicker capitalize text-[var(--labora-primary)]">{longDate}</p>
+              <p className="mt-5 text-sm font-semibold text-[var(--labora-muted)]">{greetSpanish(nowDate.getHours())}, {firstName}</p>
+              <h1 className="mt-2 text-[clamp(3rem,7vw,5.2rem)] font-semibold leading-[0.93] tracking-[-0.065em] text-[var(--labora-primary)]">
+                Tu trabajo,<br />en orden.
+              </h1>
+              <p className="mt-5 text-lg font-medium text-[var(--labora-muted)]">Tu gestor, cerca. Todo lo demás, claro.</p>
             </div>
-
-            <p className="labora-kicker mt-7 text-[var(--labora-muted)]">{greetSpanish(nowDate.getHours())}, {firstName}</p>
-            <h1 className="labora-display mt-3 max-w-2xl text-[var(--labora-display-sm)] font-semibold text-[var(--labora-ink)] sm:text-[2.85rem] lg:text-[3.15rem]">
-              Tu trimestre, con claridad y evidencia.
-            </h1>
-            <p className="labora-body mt-4 max-w-xl text-[15px] leading-[1.7] text-[var(--labora-muted)] sm:text-base">
-              Gastos, modelos y gestoría en un mismo espacio — calmado, verificable, sin ruido.
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2.5 text-[11px] font-semibold tracking-[0.02em] text-[var(--labora-muted)]">
-              {currentUser.iaeCode && <span>IAE <strong className="text-[var(--labora-ink)]">{currentUser.iaeCode}</strong></span>}
-              {currentUser.vehicleType && <span>Vehículo <strong className="capitalize text-[var(--labora-ink)]">{currentUser.vehicleType}</strong></span>}
-              {currentUser.nif && <span>NIF <strong className="text-[var(--labora-ink)]">{currentUser.nif}</strong></span>}
+            <div className="mt-10 max-w-[390px]">
+              <button onClick={() => setView?.('docs')} className="flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-[var(--labora-primary)] px-6 text-sm font-extrabold text-white shadow-[0_14px_35px_rgba(33,78,58,0.24)] transition hover:-translate-y-0.5 hover:bg-[var(--labora-primary-2)]">
+                <FileText size={19} /> Enviar documento <ChevronRight size={17} />
+              </button>
+              <p className="mt-3 text-center text-xs font-medium text-[var(--labora-muted)]">Facturas, justificantes y contratos, en un momento.</p>
             </div>
           </div>
-
-          <button
-            onClick={() => setView?.('money')}
-            className="relative z-10 rounded-[22px] border border-[var(--labora-border)] bg-[color-mix(in_srgb,var(--labora-surface)_82%,transparent)] p-6 text-left shadow-[0_12px_36px_rgba(47,93,74,0.07),0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur transition hover:bg-[var(--labora-surface)]"
-          >
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--labora-muted)]">Neto operativo</p>
-            <p className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-[var(--labora-ink)]">{formatCurrency(summary.netProfit)}</p>
-            <div className="mt-4 flex items-center justify-between text-xs font-bold text-[var(--labora-primary)]">
-              <span>Ver dinero</span>
-              <ChevronRight size={15} />
-            </div>
-          </button>
         </div>
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-end justify-between">
+          <div><p className="labora-kicker text-[var(--labora-muted)]">Lo siguiente</p><h2 className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-[var(--labora-ink)]">Tu prioridad</h2></div>
+          <button onClick={() => setView?.('gestor-requirements')} className="text-xs font-extrabold text-[var(--labora-primary)]">Ver todo →</button>
+        </div>
+        <button onClick={() => setView?.(nextRequirement ? 'gestor-requirements' : 'docs')} className="group flex w-full items-center gap-4 border-y border-[var(--labora-border)] py-5 text-left">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--labora-soft-clay)] text-[var(--labora-clay)]"><ReceiptText size={21} /></span>
+          <span className="min-w-0 flex-1">
+            <strong className="block truncate text-sm text-[var(--labora-ink)]">{nextRequirement?.title || 'Tus documentos están al día'}</strong>
+            <span className="mt-1 block truncate text-xs text-[var(--labora-muted)]">{nextRequirement ? 'Tu gestoría necesita este documento.' : 'Puedes subir el próximo justificante cuando quieras.'}</span>
+          </span>
+          <span className={`rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em] ${nextRequirement ? 'bg-[var(--labora-soft-clay)] text-[var(--labora-clay-deep)]' : 'bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]'}`}>{nextRequirement ? 'Pendiente' : 'En orden'}</span>
+          <ChevronRight size={17} className="text-[var(--labora-muted)] transition group-hover:translate-x-0.5" />
+        </button>
+      </section>
+
+      <section className="grid gap-7 rounded-[28px] bg-[var(--labora-primary)] p-7 text-white sm:grid-cols-[1fr_auto] sm:items-center sm:p-9">
+        <div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/60">Tu gestoría</p><h2 className="mt-2 text-3xl font-semibold tracking-[-0.045em]">{hasGestoria ? 'Tu gestor está contigo' : 'Conecta con tu gestor'}</h2><p className="mt-3 max-w-xl text-sm leading-6 text-white/70">{hasGestoria ? 'Mensajes, peticiones y documentos compartidos en el mismo lugar.' : 'Un equipo para que tú solo te preocupes de lo importante.'}</p></div>
+        <button onClick={() => setView?.(hasGestoria ? 'messages' : 'settings')} className="rounded-full border border-white/45 px-5 py-3 text-sm font-extrabold transition hover:bg-white hover:text-[var(--labora-primary)]">{hasGestoria ? 'Abrir mensajes' : 'Vincular gestoría'} →</button>
       </section>
 
       <section className="labora-card p-4 sm:p-5">

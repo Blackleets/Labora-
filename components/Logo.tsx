@@ -127,11 +127,10 @@ export const LogoMark: React.FC<
   title
 }) => {
   const config = SIZE[size];
-  const gid = React.useId().replace(/:/g, '') || uid();
 
   return (
     <div
-      className={`relative shrink-0 overflow-hidden shadow-[0_10px_28px_rgba(15,61,46,0.22)] ring-1 ring-black/[0.04] ${
+      className={`relative shrink-0 overflow-hidden ${
         entrance ? 'labora-mark-squircle' : ''
       } ${animated && !entrance ? 'transition-transform duration-500 hover:-rotate-1 hover:scale-[1.03]' : ''} ${className}`}
       style={{
@@ -143,55 +142,11 @@ export const LogoMark: React.FC<
       role={title ? 'img' : undefined}
       aria-label={title}
     >
-      <svg
-        width={config.mark}
-        height={config.mark}
-        viewBox="0 0 64 64"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="block h-full w-full"
-      >
-        <defs>
-          <linearGradient
-            id={`markFill-${gid}`}
-            x1="6"
-            y1="0"
-            x2="58"
-            y2="64"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#0A2E23" />
-            <stop offset="0.42" stopColor="#0F3D2E" />
-            <stop offset="1" stopColor="#1A5240" />
-          </linearGradient>
-          <linearGradient
-            id={`markSheen-${gid}`}
-            x1="10"
-            y1="2"
-            x2="32"
-            y2="40"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#FFFFFF" stopOpacity="0.16" />
-            <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
-          </linearGradient>
-          <radialGradient
-            id={`markGlow-${gid}`}
-            cx="0"
-            cy="0"
-            r="1"
-            gradientUnits="userSpaceOnUse"
-            gradientTransform="translate(40 18) rotate(90) scale(28 28)"
-          >
-            <stop stopColor="#C9A574" stopOpacity="0.22" />
-            <stop offset="1" stopColor="#C9A574" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        <rect width="64" height="64" rx="15" fill={`url(#markFill-${gid})`} />
-        <rect width="64" height="64" rx="15" fill={`url(#markGlow-${gid})`} />
-        <rect width="64" height="64" rx="15" fill={`url(#markSheen-${gid})`} />
-        <MarkGlyph gid={gid} markVariant={markVariant} entrance={entrance} />
-      </svg>
+      <img
+        src="/brand/labora-mark.webp"
+        alt={title || ''}
+        className="block h-full w-full scale-[1.42] object-cover"
+      />
     </div>
   );
 };

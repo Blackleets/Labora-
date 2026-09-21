@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useCountryConfig } from '../../country-config/hooks/useCountryConfig';
 import { Navigation, DollarSign, Clock, Fuel, ArrowRight, History, Trash2, MapPin, Save, Calendar, Search, Map as MapIcon, Loader2 } from 'lucide-react';
 import { useData } from '../../../contexts/DataContext';
@@ -13,12 +15,6 @@ interface SavedRoute {
   baseFare: number;
   net: number;
   date: string;
-}
-
-declare global {
-  interface Window {
-    L: any;
-  }
 }
 
 export const RouteOptimizer: React.FC = () => {
@@ -59,10 +55,9 @@ export const RouteOptimizer: React.FC = () => {
 
   // Inicializar Mapa
   useEffect(() => {
-    if (!window.L || !mapContainerRef.current || mapInstanceRef.current) return;
+    if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     try {
-      const L = window.L;
       const { center, zoom } = config.map_config;
       
       const map = L.map(mapContainerRef.current).setView([center.lat, center.lng], zoom);
@@ -99,57 +94,16 @@ export const RouteOptimizer: React.FC = () => {
       return;
     }
 
+    if (!Number.isFinite(distance) || distance <= 0 || !Number.isFinite(duration) || duration <= 0) {
+      showNotification('error', 'Introduce distancia y duración reales mayores que cero.');
+      return;
+    }
+
     setIsSimulating(true);
-
-    // Simulate API delay and routing logic
-    setTimeout(() => {
-      if (mapInstanceRef.current && window.L && routeLayerRef.current) {
-        const L = window.L;
-        const group = routeLayerRef.current;
-        group.clearLayers();
-
-        // 1. Generate fake coordinates around the city center
-        // (In a real app, this would use a Geocoding API)
-        const center = config.map_config.center;
-        const offset = 0.04; // approx 4km radius
-        
-        const startLat = center.lat + (Math.random() - 0.5) * offset;
-        const startLng = center.lng + (Math.random() - 0.5) * offset;
-        const endLat = center.lat + (Math.random() - 0.5) * offset;
-        const endLng = center.lng + (Math.random() - 0.5) * offset;
-
-        const startPoint = [startLat, startLng];
-        const endPoint = [endLat, endLng];
-
-        // 2. Calculate Distance (Haversine-ish provided by Leaflet)
-        const calculatedDistMeters = mapInstanceRef.current.distance(startPoint, endPoint);
-        const calculatedDistKm = parseFloat((calculatedDistMeters / 1000 * 1.3).toFixed(1)); // x1.3 for road factor
-        const calculatedDuration = Math.ceil(calculatedDistKm * 4); // approx 15km/h city avg speed including lights
-
-        // 3. Draw on Map
-        const startIcon = L.divIcon({
-          className: 'bg-green-500 w-4 h-4 rounded-full border-2 border-white shadow-md',
-          iconSize: [16, 16]
-        });
-        const endIcon = L.divIcon({
-          className: 'bg-red-500 w-4 h-4 rounded-full border-2 border-white shadow-md',
-          iconSize: [16, 16]
-        });
-
-        L.marker(startPoint, { icon: startIcon }).bindPopup(`<b>Origen:</b> ${origin}`).addTo(group);
-        L.marker(endPoint, { icon: endIcon }).bindPopup(`<b>Destino:</b> ${destination}`).addTo(group);
-        
-        const polyline = L.polyline([startPoint, endPoint], { color: '#2D6CDF', weight: 4, opacity: 0.7, dashArray: '10, 10' }).addTo(group);
-        
-        mapInstanceRef.current.fitBounds(polyline.getBounds(), { padding: [50, 50] });
-
-        // 4. Update State
-        setDistance(calculatedDistKm);
-        setDuration(calculatedDuration);
-        showNotification('success', 'Ruta calculada y optimizada');
-      }
+    window.setTimeout(() => {
       setIsSimulating(false);
-    }, 1000);
+      showNotification('info', 'Estimación calculada con tus datos manuales. La ruta no usa geocodificación en vivo.');
+    }, 250);
   };
 
   const handleSaveRoute = () => {
@@ -190,9 +144,9 @@ export const RouteOptimizer: React.FC = () => {
       <div className="text-center">
         <h2 className="text-3xl font-black text-gray-900 flex items-center justify-center gap-3">
           <Navigation className="text-[#1A73E8]" size={32} /> 
-          Optimización de Rutas
+          Estimador de Rutas
         </h2>
-        <p className="text-gray-500 mt-2 font-medium">Visualiza y calcula la rentabilidad real de tus trayectos.</p>
+        <p className="text-gray-500 mt-2 font-medium">Calcula una estimación con la distancia y duración reales que tú introduces.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -237,7 +191,7 @@ export const RouteOptimizer: React.FC = () => {
                   className="w-full py-3 bg-white border-2 border-[#1A73E8] text-[#1A73E8] hover:bg-blue-50 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
                 >
                   {isSimulating ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} />}
-                  {isSimulating ? 'Calculando Ruta...' : 'Simular Ruta'}
+                  {isSimulating ? 'Calculando…' : 'Calcular estimación'}
                 </button>
              </div>
              
@@ -306,7 +260,7 @@ export const RouteOptimizer: React.FC = () => {
            <div className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-200 h-[400px] relative">
               <div ref={mapContainerRef} className="w-full h-full z-0 bg-slate-100" />
               <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-white/50 text-xs font-bold text-gray-600 z-[400]">
-                 Vista Satélite: {config.map_config.default_city}
+                 Mapa de referencia: {config.map_config.default_city}
               </div>
            </div>
 

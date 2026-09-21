@@ -15,6 +15,7 @@ import {
 } from '../types';
 import {
   deleteRemoteDocument,
+  deleteRemoteDocumentWithLinkedIncomes,
   deleteRemoteExpense,
   deleteRemoteIncome
 } from '../services/remoteOperational';
@@ -54,6 +55,7 @@ interface DataContextType {
   deleteExpense: (id: string, options?: DeleteOptions) => Promise<boolean>;
   deleteIncome: (id: string, options?: DeleteOptions) => Promise<boolean>;
   deleteDocument: (id: string, options?: DeleteOptions) => Promise<boolean>;
+  deleteDocumentWithLinkedIncomes: (id: string, options?: DeleteOptions) => Promise<boolean>;
   updateExpenseAudit: (
     expenseId: string,
     status: 'pending_review' | 'approved' | 'rejected' | 'needs_fix',
@@ -426,9 +428,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
 
     try {
-      if (await hasAuthSession()) {
-        await deleteRemoteExpense(id);
-      }
+      if (!await hasAuthSession()) throw new Error('Sesión requerida para eliminar datos sincronizados.');
+      await deleteRemoteExpense(id);
     } catch (error) {
       console.error(error);
       if (!options?.quiet) showNotification('error', 'No se pudo eliminar el gasto.');
@@ -449,9 +450,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
 
     try {
-      if (await hasAuthSession()) {
-        await deleteRemoteIncome(id);
-      }
+      if (!await hasAuthSession()) throw new Error('Sesión requerida para eliminar datos sincronizados.');
+      await deleteRemoteIncome(id);
     } catch (error) {
       console.error(error);
       if (!options?.quiet) showNotification('error', 'No se pudo eliminar el ingreso.');
@@ -472,9 +472,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
 
     try {
-      if (await hasAuthSession()) {
-        await deleteRemoteDocument(id);
-      }
+      if (!await hasAuthSession()) throw new Error('Sesión requerida para eliminar datos sincronizados.');
+      await deleteRemoteDocument(id);
     } catch (error) {
       console.error(error);
       if (!options?.quiet) showNotification('error', 'No se pudo eliminar el documento.');
@@ -483,6 +482,29 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
     setDocuments((previous) => previous.filter((item) => item.id !== id));
     if (!options?.quiet) showNotification('success', 'Documento eliminado del expediente.');
+    return true;
+  };
+
+  const deleteDocumentWithLinkedIncomes = async (id: string, options?: DeleteOptions): Promise<boolean> => {
+    const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+    const document = documents.find((item) => item.id === id);
+    if (!document || !canOwnerDeleteRow(document.userId, currentUser?.id, Boolean(isManager))) {
+      if (!options?.quiet) showNotification('error', 'No puedes eliminar este documento.');
+      return false;
+    }
+
+    try {
+      if (!await hasAuthSession()) throw new Error('Sesión requerida para eliminar datos sincronizados.');
+      await deleteRemoteDocumentWithLinkedIncomes(id);
+    } catch (error) {
+      console.error(error);
+      if (!options?.quiet) showNotification('error', 'No se pudo eliminar el documento ni sus ingresos vinculados.');
+      return false;
+    }
+
+    setIncomes((previous) => previous.filter((item) => item.sourceDocumentId !== id));
+    setDocuments((previous) => previous.filter((item) => item.id !== id));
+    if (!options?.quiet) showNotification('success', 'Documento e ingresos vinculados eliminados.');
     return true;
   };
 
@@ -865,6 +887,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     deleteExpense,
     deleteIncome,
     deleteDocument,
+    deleteDocumentWithLinkedIncomes,
     updateExpenseAudit,
     addDocument,
     addPayment,

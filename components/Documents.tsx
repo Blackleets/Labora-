@@ -87,8 +87,7 @@ export const Documents: React.FC = () => {
     users,
     getFiscalSummary,
     addDocument,
-    deleteIncome,
-    deleteDocument,
+    deleteDocumentWithLinkedIncomes,
     showNotification
   } = useData();
 
@@ -296,16 +295,9 @@ export const Documents: React.FC = () => {
 
     setDeletingId(item.id);
     try {
-      for (const income of linked) {
-        const ok = await deleteIncome(income.id, { quiet: true });
-        if (!ok) {
-          showNotification('error', 'No se pudieron eliminar los ingresos vinculados. El documento no se ha borrado.');
-          return;
-        }
-      }
-      const ok = await deleteDocument(item.id, { quiet: true });
+      const ok = await deleteDocumentWithLinkedIncomes(item.id, { quiet: true });
       if (!ok) {
-        showNotification('error', 'No se pudo eliminar el documento.');
+        showNotification('error', 'No se pudo eliminar el documento ni sus ingresos vinculados.');
         return;
       }
       showNotification(
