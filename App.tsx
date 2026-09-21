@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Eye, EyeOff, LayoutDashboard, Menu, Scale, User, Wallet } from 'lucide-react';
+import { Bell, Eye, EyeOff, FileText, Home, LayoutDashboard, Menu, MessageSquare, Scale, User, Wallet } from 'lucide-react';
 import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { GhibliAtmosphereProvider } from './contexts/GhibliAtmosphereContext';
@@ -95,10 +95,10 @@ const MainLayout: React.FC = () => {
     { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount },
     { id: 'settings', label: 'Ajustes', icon: User }
   ] : [
-    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Inicio', icon: Home },
+    { id: 'docs', label: 'Documentos', icon: FileText },
     { id: 'money', label: 'Dinero', icon: Wallet },
-    { id: 'tax-declarations', label: 'Modelos', icon: Scale },
-    { id: 'gestor-requirements', label: 'Avisos', icon: Bell, badge: pendingReqCount },
+    { id: 'messages', label: 'Mensajes', icon: MessageSquare },
     { id: 'settings', label: 'Perfil', icon: User }
   ];
 
@@ -123,7 +123,7 @@ const MainLayout: React.FC = () => {
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="safe-area-top z-20 flex h-[80px] shrink-0 items-center justify-between border-b border-[#E8DFC8]/70 bg-[#FFFEFB]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
+        <header className={`${!isManager && currentView === 'dashboard' ? 'hidden lg:flex' : 'flex'} safe-area-top z-20 h-[80px] shrink-0 items-center justify-between border-b border-[#E8DFC8]/70 bg-[#FFFEFB]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8`}>
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -180,11 +180,11 @@ const MainLayout: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-7 md:px-8 md:py-10">
+        <div className={`flex-1 overflow-x-hidden overflow-y-auto ${!isManager && currentView === 'dashboard' ? 'px-0 py-0 md:px-8 md:py-10' : 'px-4 py-7 md:px-8 md:py-10'}`}>
           <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
         </div>
 
-        <nav className="safe-area-bottom shrink-0 border-t border-black/5 bg-[#FFFEFB]/95 px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
+        <nav className="safe-area-bottom shrink-0 border-t border-[#E7E0D5] bg-[#FFFCF7]/96 px-2 pb-1.5 pt-2 backdrop-blur-xl lg:hidden">
           <div className="grid grid-cols-5 gap-0.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -194,9 +194,9 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
-                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[#2F5D4A]' : 'text-[#A39B90]'}`}
+                  className={`relative flex min-w-0 flex-col items-center gap-0.5 px-1 py-1.5 transition ${active ? 'text-[#145039]' : 'text-[#78857E]'}`}
                 >
-                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[14px] px-2 transition ${active ? 'bg-[#EBF3ED] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10),0_1px_0_rgba(255,255,255,0.8)_inset]' : ''}`}>
+                  <div className="relative flex h-8 min-w-10 items-center justify-center px-2">
                     {item.id === 'settings' && identityImage ? (
                       <Identity small />
                     ) : (
@@ -211,6 +211,7 @@ const MainLayout: React.FC = () => {
                   <span className={`w-full truncate text-center text-[9px] ${active ? 'font-extrabold' : 'font-semibold'}`}>
                     {item.label}
                   </span>
+                  {active && <span className="absolute -bottom-1 h-[3px] w-8 rounded-full bg-[#145039]" />}
                 </button>
               );
             })}
