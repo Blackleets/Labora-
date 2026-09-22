@@ -21,12 +21,13 @@ interface ActionSuggestion {
 const FiscalChat: React.FC<{ embedded?: boolean; contextLabel?: string }> = ({ embedded = false, contextLabel }) => {
   const { currentUser } = useData();
   const { selectedCountry } = useCountry();
+  const fiscalReady = selectedCountry.knowledge.status === 'verified';
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: 'model', 
       text: `¡Hola ${currentUser?.name.split(' ')[0] || ''}! Soy tu copiloto Labora+ para ${selectedCountry.display_name}. \n\nPuedo ayudarte a organizar tu trabajo, entender tus números, preparar documentos y resolver dudas fiscales. ¿Qué necesitas?`,
       actions: [
-        { label: 'Calcular Impuestos', icon: Calculator, query: `¿Cómo funciona el cálculo de impuestos para riders en ${selectedCountry.display_name}?` },
+        { label: fiscalReady ? 'Calcular impuestos' : 'Preparar consulta fiscal', icon: Calculator, query: fiscalReady ? `¿Cómo funciona el cálculo de impuestos para trabajadores en ${selectedCountry.display_name}?` : 'Ayúdame a preparar una pregunta fiscal clara para mi gestoría' },
         { label: 'Gastos Deducibles', icon: TrendingUp, query: 'Dime ejemplos de gastos deducibles para mi actividad' },
         { label: 'Obligaciones', icon: FileText, query: '¿Qué modelos o declaraciones debo presentar?' }
       ]
@@ -43,7 +44,7 @@ const FiscalChat: React.FC<{ embedded?: boolean; contextLabel?: string }> = ({ e
         role: 'model', 
         text: `¡Hola ${currentUser?.name.split(' ')[0] || ''}! Soy tu copiloto Labora+ para ${selectedCountry.display_name}. \n\nPuedo ayudarte a organizar tu trabajo, entender tus números, preparar documentos y resolver dudas fiscales. ¿Qué necesitas?`,
         actions: [
-          { label: 'Calcular Impuestos', icon: Calculator, query: `¿Cómo funciona el cálculo de impuestos para riders en ${selectedCountry.display_name}?` },
+          { label: fiscalReady ? 'Calcular impuestos' : 'Preparar consulta fiscal', icon: Calculator, query: fiscalReady ? `¿Cómo funciona el cálculo de impuestos para trabajadores en ${selectedCountry.display_name}?` : 'Ayúdame a preparar una pregunta fiscal clara para mi gestoría' },
           { label: 'Gastos Deducibles', icon: TrendingUp, query: 'Dime ejemplos de gastos deducibles para mi actividad' },
           { label: 'Obligaciones', icon: FileText, query: '¿Qué modelos o declaraciones debo presentar?' }
         ]
@@ -196,7 +197,7 @@ const FiscalChat: React.FC<{ embedded?: boolean; contextLabel?: string }> = ({ e
             </div>
             <div className="bg-[var(--labora-surface)] px-4 py-3 rounded-2xl rounded-bl-none shadow-sm border border-[var(--labora-border)] flex items-center gap-2">
               <Loader2 size={16} className="animate-spin text-[#2D6CDF]" />
-              <span className="text-xs text-gray-400 font-bold">Consultando normativa de {selectedCountry.display_name}...</span>
+              <span className="text-xs text-gray-400 font-bold">{fiscalReady ? `Consultando contexto de ${selectedCountry.display_name}...` : 'Organizando tu consulta...'}</span>
             </div>
           </div>
         )}
@@ -226,7 +227,7 @@ const FiscalChat: React.FC<{ embedded?: boolean; contextLabel?: string }> = ({ e
         </div>
         <div className="mt-3 flex justify-center items-center gap-2 text-[10px] text-gray-400 font-medium uppercase tracking-wider">
            <Shield size={10} />
-           <span>Normativa activa: {selectedCountry.labor_advisor?.tax_entity_name || 'Estándar'}. Verifica con tu gestor.</span>
+           <span>{fiscalReady ? `Fuentes verificadas para ${selectedCountry.display_name}` : `Fiscalidad de ${selectedCountry.display_name} en revisión`}</span>
         </div>
       </form>
     </div>

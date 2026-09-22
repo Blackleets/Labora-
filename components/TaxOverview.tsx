@@ -33,6 +33,7 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const currentYear = new Date().getFullYear();
   const countryCode = selectedCountry.country_code;
+  const fiscalReady = selectedCountry.knowledge.status === 'verified';
   const isSpain = countryCode === 'ES';
   const isMexico = countryCode === 'MX';
 
@@ -52,7 +53,7 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
     : currentUser;
 
   const riderId = activeUser?.id || '';
-  const taxData = riderId && isSpain ? calculateQuarterlyTaxes(riderId, selectedQuarter) : null;
+  const taxData = riderId && isSpain && fiscalReady ? calculateQuarterlyTaxes(riderId, selectedQuarter) : null;
 
   const formatCurrency = (amount: number) => {
     if (privacyMode) return '••••';
@@ -105,14 +106,14 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
               Fiscal · {selectedCountry.display_name} · {selectedCountry.currency}
             </p>
             <h1 className="labora-display mt-1 text-2xl font-semibold text-[var(--labora-ink)] sm:text-[2rem]">
-              {isSpain ? 'Modelos trimestrales' : isMexico ? 'Obligaciones fiscales (MX)' : 'Fiscal por país'}
+              {fiscalReady && isSpain ? 'Modelos trimestrales' : isMexico ? 'Obligaciones fiscales (MX)' : 'Fiscal por país'}
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--labora-muted)]">
-              {isSpain
+                {fiscalReady && isSpain
                 ? 'Revisa importes y documentación antes de preparar cualquier presentación oficial ante la AEAT.'
                 : isMexico
                   ? 'Vista honesta: sin tasas inventadas. Cuando existan tablas oficiales verificadas, se conectarán aquí.'
-                  : `País ${selectedCountry.display_name}: aún sin modelos oficiales cableados en Labora+.`}
+                  : `País ${selectedCountry.display_name}: conocimiento fiscal pendiente de validación documental.`}
             </p>
           </div>
 
@@ -260,9 +261,9 @@ export const TaxOverview: React.FC<TaxOverviewProps> = () => {
         </>
       ) : (
         <section className="labora-card border-dashed p-8 text-center">
-          <p className="text-sm font-extrabold text-[var(--labora-muted)]">Modelos oficiales no cableados para {selectedCountry.display_name}</p>
+          <p className="text-sm font-extrabold text-[var(--labora-muted)]">Fiscalidad en revisión para {selectedCountry.display_name}</p>
           <p className="mt-2 text-xs text-[var(--labora-muted)]">
-            Moneda configurada: {selectedCountry.currency}. Sin tasas inventadas hasta fuentes oficiales.
+            Bandera y moneda configuradas. Los cálculos se habilitarán únicamente con fuentes oficiales, fecha de vigencia y revisión registrada.
           </p>
         </section>
       )}

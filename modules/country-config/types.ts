@@ -63,6 +63,21 @@ export interface MapConfig {
   zoom: number;
 }
 
+export type FiscalKnowledgeStatus = 'identity_only' | 'under_review' | 'verified';
+
+export interface CountryKnowledge {
+  status: FiscalKnowledgeStatus;
+  effective_from?: string;
+  reviewed_at?: string;
+  reviewer?: string;
+  sources: Array<{
+    title: string;
+    url: string;
+    authority: string;
+    retrieved_at: string;
+  }>;
+}
+
 export interface CountryConfig {
   country_code: string; // ISO2: ES, MX, US
   display_name: string;
@@ -88,6 +103,7 @@ export interface CountryConfig {
   events: Event[];
   cities: CityCost[];
   map_config: MapConfig;
+  knowledge: CountryKnowledge;
 }
 
 export const DEFAULT_SPAIN_CONFIG: CountryConfig = {
@@ -163,7 +179,8 @@ export const DEFAULT_SPAIN_CONFIG: CountryConfig = {
     default_city: "Madrid",
     center: { lat: 40.4168, lng: -3.7038 },
     zoom: 13
-  }
+  },
+  knowledge: { status: 'under_review', sources: [] }
 };
 
 export const DEFAULT_MEXICO_CONFIG: CountryConfig = {
@@ -234,7 +251,8 @@ export const DEFAULT_MEXICO_CONFIG: CountryConfig = {
     default_city: "Ciudad de México",
     center: { lat: 19.4326, lng: -99.1332 },
     zoom: 12
-  }
+  },
+  knowledge: { status: 'under_review', sources: [] }
 };
 
 export const DEFAULT_USA_CONFIG: CountryConfig = {
@@ -303,29 +321,57 @@ export const DEFAULT_USA_CONFIG: CountryConfig = {
     default_city: "New York",
     center: { lat: 40.7128, lng: -74.0060 },
     zoom: 12
-  }
+  },
+  knowledge: { status: 'under_review', sources: [] }
 };
 
-// --- ADDITIONAL COUNTRIES (MOCK) ---
+// Country identity records. Fiscal and pricing fields stay neutral until the
+// jurisdiction has official sources, an effective date and a named review.
 
-const createBasicProfile = (code: string, name: string, curr: string, symbol: string, vat: number) => ({
-  ...DEFAULT_SPAIN_CONFIG, // Base template
+const createBasicProfile = (code: string, name: string, curr: string, symbol: string): CountryConfig => ({
+  ...DEFAULT_SPAIN_CONFIG,
   country_code: code,
   display_name: name,
   currency: curr,
   currency_symbol: symbol,
-  vat_pct: vat,
-  platforms: DEFAULT_SPAIN_CONFIG.platforms.map(p => ({...p, id: `${code.toLowerCase()}_${p.id}`})), // Unique IDs
-  labor_advisor: { ...DEFAULT_SPAIN_CONFIG.labor_advisor, tax_entity_name: `Tax Authority ${code}` }
+  min_fare: 0,
+  per_km_rate: 0,
+  per_min_rate: 0,
+  default_commission_pct: 0,
+  vat_pct: 0,
+  income_tax_brackets: [],
+  legal_notes: 'Información fiscal pendiente de revisión documental.',
+  platforms: [],
+  service_fee_flat: 0,
+  social_security_pct: 0,
+  avg_fuel_price: 0,
+  banking_metadata: {
+    instant_payment_options: [],
+    platform_payouts: {},
+    deposit_time_standard: 'Pendiente de validar',
+    avg_transfer_fee: 0,
+    compatible_banks: []
+  },
+  labor_advisor: {
+    tax_entity_name: 'Autoridad fiscal pendiente de verificar',
+    registration_steps: [],
+    tax_obligations: [],
+    contract_types: [],
+    recommended_retention_pct: 0,
+    freelancer_threshold_note: 'Pendiente de revisión por jurisdicción.'
+  },
+  events: [],
+  cities: [],
+  knowledge: { status: 'identity_only', sources: [] }
 });
 
 export const OTHER_COUNTRIES: CountryConfig[] = [
-  createBasicProfile('CO', 'Colombia', 'COP', '$', 0.19),
-  createBasicProfile('AR', 'Argentina', 'ARS', '$', 0.21),
-  createBasicProfile('CL', 'Chile', 'CLP', '$', 0.19),
-  createBasicProfile('PE', 'Perú', 'PEN', 'S/', 0.18),
-  createBasicProfile('FR', 'France', 'EUR', '€', 0.20),
-  createBasicProfile('IT', 'Italia', 'EUR', '€', 0.22),
-  createBasicProfile('DE', 'Deutschland', 'EUR', '€', 0.19),
-  createBasicProfile('GB', 'United Kingdom', 'GBP', '£', 0.20),
+  createBasicProfile('CO', 'Colombia', 'COP', '$'),
+  createBasicProfile('AR', 'Argentina', 'ARS', '$'),
+  createBasicProfile('CL', 'Chile', 'CLP', '$'),
+  createBasicProfile('PE', 'Perú', 'PEN', 'S/'),
+  createBasicProfile('FR', 'Francia', 'EUR', '€'),
+  createBasicProfile('IT', 'Italia', 'EUR', '€'),
+  createBasicProfile('DE', 'Alemania', 'EUR', '€'),
+  createBasicProfile('GB', 'Reino Unido', 'GBP', '£'),
 ];

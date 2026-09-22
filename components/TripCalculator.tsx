@@ -6,6 +6,7 @@ import TooltipSlider from './TooltipSlider';
 
 export const TripCalculator: React.FC = () => {
   const { selectedCountry } = useCountry();
+  const fiscalReady = selectedCountry.knowledge.status === 'verified';
   
   // State
   const [selectedPlatformId, setSelectedPlatformId] = useState<string>(selectedCountry.platforms?.[0]?.id || '');
@@ -76,7 +77,9 @@ export const TripCalculator: React.FC = () => {
     };
   }, [platform, distance, duration, tripsPerHour, surge, vehicleType, selectedCountry]);
 
-  if (!platform) return <div className="p-8 text-center text-gray-400">No hay plataformas configuradas para este país.</div>;
+  if (!fiscalReady) return <div className="labora-card mx-auto max-w-2xl p-8 text-center"><Info size={28} className="mx-auto text-[var(--labora-primary)]" /><h2 className="mt-3 text-base font-extrabold text-[var(--labora-ink)]">Calculadora en revisión para {selectedCountry.display_name}</h2><p className="mx-auto mt-2 max-w-lg text-xs leading-relaxed text-[var(--labora-muted)]">La bandera y la moneda ya están disponibles, pero las tarifas, impuestos y costes permanecerán bloqueados hasta verificar fuentes oficiales y su fecha de vigencia.</p></div>;
+
+  if (!platform) return <div className="p-8 text-center text-gray-400">No hay plataformas verificadas para este país.</div>;
 
   const formatCurrency = (val: number) => {
     return val.toLocaleString('es-ES', { 

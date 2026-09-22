@@ -21,14 +21,15 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
     );
   }, [countries, filterQuery]);
 
-  const getFlag = (code: string) => {
-    switch (code) {
-      case 'ES': return '🇪🇸';
-      case 'MX': return '🇲🇽';
-      case 'US': return '🇺🇸';
-      default: return '🌍';
-    }
-  };
+  const getFlag = (code: string) => /^[A-Z]{2}$/.test(code)
+    ? String.fromCodePoint(...code.split('').map((letter) => 127397 + letter.charCodeAt(0)))
+    : '🌍';
+
+  const knowledgeLabel = (status: string) => status === 'verified'
+    ? 'Fiscalidad verificada'
+    : status === 'under_review'
+      ? 'Fiscalidad en revisión'
+      : 'País disponible';
 
   if (variant === 'cards') {
     return (
@@ -65,7 +66,8 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
               }`}
             >
               <span className="text-2xl block mb-1">{getFlag(c.country_code)}</span>
-              <span className="text-xs">{c.country_code}</span>
+              <span className="block text-xs">{c.country_code}</span>
+              <span className="mt-1 block text-[8px] font-medium text-[var(--labora-muted)]">{knowledgeLabel(c.knowledge.status)}</span>
             </button>
           ))}
           {filteredCountries.length === 0 && (
@@ -117,7 +119,7 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
             >
               <div className="flex items-center gap-3">
                 <span className="text-lg">{getFlag(c.country_code)}</span>
-                <span>{c.display_name}</span>
+                <span><span className="block">{c.display_name}</span><span className="block text-[9px] font-medium text-[var(--labora-muted)]">{knowledgeLabel(c.knowledge.status)}</span></span>
               </div>
               <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded uppercase">
                 {c.country_code}

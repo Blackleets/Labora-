@@ -95,13 +95,20 @@ export const getFiscalAdvice = async (
 ): Promise<string> => {
   const countryName = countryConfig?.display_name || 'España';
   const taxEntity = countryConfig?.labor_advisor?.tax_entity_name || 'Hacienda (AEAT)';
+  const fiscalQuestion = /\b(impuesto|irpf|iva|isr|tax|retenci[oó]n|declaraci[oó]n|modelo\s?\d|deducible|hacienda|aeat|sat|irs)\b/i.test(newMessage);
+
+  if (fiscalQuestion && countryConfig?.knowledge.status !== 'verified') {
+    return `La información fiscal de ${countryName} está en revisión documental. Puedo ayudarte a ordenar tus ingresos, gastos y preguntas para tu gestoría, pero no voy a darte tipos, modelos u obligaciones como si estuvieran verificados.`;
+  }
 
   try {
     return await invokeAI<string>('fiscal_advice', {
       history,
       message: newMessage,
       countryName,
-      taxEntity
+      taxEntity,
+      knowledgeStatus: countryConfig?.knowledge.status || 'identity_only',
+      officialSources: countryConfig?.knowledge.sources || []
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : 'AI_REQUEST_FAILED';
