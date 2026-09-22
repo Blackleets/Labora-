@@ -233,7 +233,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
                 {currentUser?.companyName || currentUser?.name || 'Usuario'}
               </p>
               <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--labora-muted)]">
-                {isManager ? 'Gestoría' : 'Autónomo'} · {currentUser?.email}
+                {isManager ? 'Gestoría' : 'Trabajador'} · {currentUser?.email}
               </p>
             </div>
             <Settings size={15} className="shrink-0 text-[var(--labora-muted)]" />

@@ -21,12 +21,11 @@ export const EventsView: React.FC = () => (
             </span>
           </div>
           <h2 className="labora-display mt-1 text-xl font-semibold text-white">
-            Sin calendario inventado.
+            Oportunidades cerca de ti, próximamente.
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70">
-            Labora+ no promete eventos masivos ni «añadido a tu calendario». Haría falta un feed de
-            eventos verificable y una escritura real al calendario del dispositivo (ICS / API nativa),
-            no un toast de éxito simulado.
+            Estamos preparando una agenda con eventos profesionales, fechas importantes y oportunidades
+            relevantes para tu actividad.
           </p>
         </div>
       </div>
@@ -37,25 +36,25 @@ export const EventsView: React.FC = () => (
         <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
           <MapPin size={16} />
         </div>
-        <p className="mt-3 text-xs font-extrabold text-[var(--labora-ink)]">Sin demanda xN inventada</p>
+        <p className="mt-3 text-xs font-extrabold text-[var(--labora-ink)]">Agenda personalizada</p>
         <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-          Multiplicadores de demanda y consejos de posicionamiento quedan fuera hasta tener fuente real.
+          Verás encuentros, formaciones y fechas laborales adaptadas a tu perfil y ubicación.
         </p>
       </div>
       <div className="rounded-[16px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[var(--labora-soft-clay)] text-[var(--labora-clay-deep)]">
           <ShieldCheck size={16} />
         </div>
-        <p className="mt-3 text-xs font-extrabold text-[var(--labora-ink)]">Qué haría falta</p>
+        <p className="mt-3 text-xs font-extrabold text-[var(--labora-ink)]">Control en tus manos</p>
         <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-          Catálogo de eventos auditado + permiso de calendario del sistema. Hoy el núcleo usable es dinero, documentos y gestoría.
+          Tú decidirás qué guardar en tu calendario y qué notificaciones deseas recibir.
         </p>
       </div>
     </div>
 
     <div className="flex items-start gap-2 border-t border-[var(--labora-border)] bg-[var(--labora-parchment)] px-4 py-3 text-[10px] font-medium leading-relaxed text-[var(--labora-gold)] sm:px-5">
       <LockKeyhole size={14} className="mt-0.5 shrink-0" />
-      Módulo bloqueado a propósito. No simular éxito de calendario.
+      Te avisaremos cuando la agenda esté disponible en tu país.
     </div>
   </section>
 );

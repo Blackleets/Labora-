@@ -378,7 +378,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
             <p className="labora-kicker text-[var(--labora-primary-2)]">{isManager ? 'Cartera vinculada' : 'Registro de actividad'}</p>
             <h2 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{isManager ? 'Ingresos de clientes' : 'Ingresos'}</h2>
             <p className="mt-1 text-xs text-[var(--labora-muted)]">
-              {isManager ? 'Lectura de ingresos registrados por tus clientes vinculados.' : 'Sin conexión a Glovo/Uber. Registra importes a mano o importa liquidación/CSV; nada se inventa.'}
+              {isManager ? 'Consulta y revisa los ingresos de tus clientes vinculados.' : 'Reúne ingresos de cualquier empresa o plataforma en un solo lugar.'}
             </p>
           </div>
 
@@ -402,7 +402,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
         </div>
 
         {filteredIncomes.length === 0 ? (
-          <div className="px-4 py-12 text-center" role="status" aria-live="polite"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden><TrendingUp size={23} /></div><p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">No hay ingresos en este periodo.</p><p className="mt-1 text-xs text-[var(--labora-muted)]">Añade un ingreso manual o importa una liquidación/CSV. Nada se inventa automáticamente.</p></div>
+          <div className="px-4 py-12 text-center" role="status" aria-live="polite"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden><TrendingUp size={23} /></div><p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">No hay ingresos en este periodo.</p><p className="mt-1 text-xs text-[var(--labora-muted)]">Añade un ingreso o importa una liquidación para empezar.</p></div>
         ) : (
           <div className="divide-y divide-[var(--labora-border)]">
             {filteredIncomes.map((income) => (
@@ -508,7 +508,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
           {pendingImports.length === 0 ? (
             <>
               <p className="mb-3 text-xs leading-relaxed text-[var(--labora-muted)]">
-                Sin API de Glovo/Uber: importa liquidación (PDF/captura si hay IA) o pega CSV / líneas «Glovo 10/09/2026 89,90». Nada se guarda hasta que confirmes.
+                Sube una liquidación en PDF o imagen, o pega los movimientos desde un CSV. Podrás revisarlos antes de confirmar.
               </p>
               <input
                 ref={importFileRef}

@@ -21,6 +21,11 @@ import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
+import LogoResolver from './LogoResolver';
+import workIcon from '@material-symbols/svg-400/rounded/work.svg?url';
+import bikeIcon from '@material-symbols/svg-400/rounded/directions_bike.svg?url';
+import storeIcon from '@material-symbols/svg-400/rounded/storefront.svg?url';
+import laptopIcon from '@material-symbols/svg-400/rounded/laptop_mac.svg?url';
 
 
 interface DashboardProps { setView?: (view: string) => void; }
@@ -213,7 +218,14 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
   return (
     <div id="rider-dashboard" className="mx-auto max-w-6xl space-y-9 pb-12">
-      <section className="labora-editorial-hero overflow-hidden rounded-[30px] border border-[var(--labora-border)]">
+      <WorkPassportOverview
+        firstName={firstName}
+        platforms={currentUser.platforms || []}
+        hasGestoria={hasGestoria}
+        pendingCount={pendingRequirements.length}
+        setView={setView}
+      />
+      <section className="hidden">
         <div className="relative min-h-[510px] p-7 sm:p-10 lg:p-14">
           <img src="/brand/labora-editorial-hero.webp" alt="Mesa de trabajo con olivo, libros y café" className="absolute inset-0 h-full w-full object-cover object-[70%_center]" />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(247,243,234,0.99)_0%,rgba(247,243,234,0.96)_40%,rgba(247,243,234,0.18)_75%,rgba(247,243,234,0.05)_100%)]" />
@@ -419,5 +431,77 @@ const Metric = ({ onClick, icon: Icon, label, value, accent = false, compact = f
     <p className={`mt-1.5 font-extrabold tracking-[-0.03em] text-[var(--labora-ink)] ${compact ? 'text-sm' : 'text-[1.35rem]'}`}>{value}</p>
   </button>
 );
+
+const PLATFORM_META: Record<string, { id: string; name: string; category: 'delivery' | 'mobility' }> = {
+  glovo: { id: 'glovo', name: 'Glovo', category: 'delivery' },
+  uber_eats: { id: 'uber_eats', name: 'Uber Eats', category: 'delivery' },
+  justeat: { id: 'just_eat', name: 'Just Eat', category: 'delivery' },
+  just_eat: { id: 'just_eat', name: 'Just Eat', category: 'delivery' },
+  uber: { id: 'uber', name: 'Uber Driver', category: 'mobility' },
+  cabify: { id: 'cabify', name: 'Cabify', category: 'mobility' },
+  bolt: { id: 'bolt', name: 'Bolt', category: 'mobility' }
+};
+
+const WorkPassportOverview = ({ firstName, platforms, hasGestoria, pendingCount, setView }: { firstName: string; platforms: string[]; hasGestoria: boolean; pendingCount: number; setView?: (view: string) => void }) => {
+  const workSources = platforms.map((item) => PLATFORM_META[item.toLowerCase()]).filter(Boolean).slice(0, 4);
+  const roles = [
+    ['Empleado', workIcon],
+    ['Rider', bikeIcon],
+    ['Autónomo', storeIcon],
+    ['Freelancer', laptopIcon]
+  ] as const;
+
+  return (
+    <section className="space-y-5">
+      <header>
+        <p className="text-sm font-medium text-[var(--labora-muted)]">Pasaporte Laboral</p>
+        <h1 className="labora-display mt-1 text-[clamp(2.1rem,5vw,3.8rem)] font-semibold leading-none text-[var(--labora-ink)]">Hola, {firstName}</h1>
+        <p className="mt-2 text-sm text-[var(--labora-muted)] sm:text-base">Tu vida laboral, clara y reunida en un mismo lugar.</p>
+      </header>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(280px,0.8fr)]">
+        <div className="relative overflow-hidden rounded-[28px] bg-[var(--labora-primary)] p-6 text-white sm:p-9">
+          <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/[0.04]" />
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/60">Tu historia profesional</p>
+          <h2 className="labora-display mt-4 max-w-2xl text-4xl font-semibold leading-[0.98] sm:text-5xl">Todo tu trabajo.<br />Una sola historia.</h2>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-white/72">Empleos, plataformas, documentos y gestoría conectados alrededor de ti.</p>
+          <button onClick={() => setView?.('integrations')} className="mt-7 min-h-12 rounded-full bg-[var(--labora-clay)] px-5 text-sm font-extrabold text-white shadow-lg transition hover:brightness-105">Añadir trabajo o plataforma</button>
+        </div>
+
+        <button onClick={() => setView?.(hasGestoria ? 'messages' : 'settings')} className="labora-card p-5 text-left">
+          <p className="labora-kicker text-[var(--labora-primary)]">Tu gestor de confianza</p>
+          <h3 className="mt-3 text-xl font-extrabold text-[var(--labora-ink)]">{hasGestoria ? 'Tu gestoría está contigo' : 'Vincula tu gestoría'}</h3>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--labora-muted)]">{hasGestoria ? 'Comparte documentos, dudas y próximos pasos desde un único lugar.' : 'Conecta tu cuenta por correo y empieza a trabajar en equipo.'}</p>
+          <div className="mt-5 flex items-center justify-between border-t border-[var(--labora-border)] pt-4 text-xs font-extrabold text-[var(--labora-primary)]"><span>{hasGestoria ? 'Abrir conversación' : 'Configurar ahora'}</span><span>→</span></div>
+        </button>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto rounded-[20px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-2">
+        {roles.map(([label, icon]) => <button key={label} onClick={() => setView?.('integrations')} className="flex min-h-11 shrink-0 items-center gap-2 rounded-[14px] px-3.5 text-xs font-bold text-[var(--labora-ink-soft)] transition hover:bg-[var(--labora-moss-soft)] hover:text-[var(--labora-primary)]"><img src={icon} alt="" className="h-5 w-5 opacity-75" aria-hidden />{label}</button>)}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.7fr)]">
+        <section className="labora-card p-5 sm:p-6">
+          <div className="flex items-end justify-between gap-3"><div><p className="labora-kicker text-[var(--labora-muted)]">Mi vida laboral</p><h2 className="mt-1 text-xl font-extrabold text-[var(--labora-ink)]">Empresas y plataformas</h2></div><button onClick={() => setView?.('integrations')} className="text-xs font-extrabold text-[var(--labora-primary)]">Gestionar</button></div>
+          <div className="mt-5 divide-y divide-[var(--labora-border)]">
+            {workSources.length ? workSources.map((platform) => (
+              <button key={platform.id} onClick={() => setView?.('integrations')} className="flex min-h-[76px] w-full items-center gap-3 py-3 text-left">
+                <LogoResolver id={platform.id} name={platform.name} category={platform.category} size="sm" />
+                <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-[var(--labora-ink)]">{platform.name}</strong><span className="mt-1 block text-xs text-[var(--labora-muted)]">{platform.category === 'delivery' ? 'Reparto' : 'Movilidad'} · En tu actividad</span></span>
+                <span className="rounded-full bg-[var(--labora-moss-soft)] px-2.5 py-1 text-[10px] font-extrabold text-[var(--labora-primary)]">Activo</span>
+              </button>
+            )) : <div className="py-8 text-center"><p className="text-sm font-bold text-[var(--labora-ink)]">Añade tu primer trabajo</p><p className="mt-1 text-xs text-[var(--labora-muted)]">Empresas, plataformas o actividad profesional.</p><button onClick={() => setView?.('integrations')} className="mt-4 rounded-full bg-[var(--labora-primary)] px-4 py-2.5 text-xs font-extrabold text-white">Explorar plataformas</button></div>}
+          </div>
+        </section>
+        <button onClick={() => setView?.(pendingCount ? 'gestor-requirements' : 'docs')} className="labora-card p-5 text-left sm:p-6">
+          <p className="labora-kicker text-[var(--labora-clay)]">Tu atención</p>
+          <p className="mt-4 text-4xl font-extrabold text-[var(--labora-ink)]">{pendingCount}</p>
+          <h3 className="mt-2 text-sm font-extrabold text-[var(--labora-ink)]">{pendingCount ? 'Documentos o tareas pendientes' : 'Todo está al día'}</h3>
+          <p className="mt-2 text-xs leading-relaxed text-[var(--labora-muted)]">{pendingCount ? 'Revisa lo que necesita tu gestoría.' : 'Sube contratos, nóminas o justificantes cuando los necesites.'}</p>
+        </button>
+      </div>
+    </section>
+  );
+};
 
 export default Dashboard;

@@ -10,6 +10,7 @@ interface CountrySelectorProps {
 const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' }) => {
   const { selectedCountry, selectCountry, countries } = useCountry();
   const [filterQuery, setFilterQuery] = useState('');
+  const [open, setOpen] = useState(false);
 
   const filteredCountries = useMemo(() => {
     const query = filterQuery.toLowerCase().trim();
@@ -78,14 +79,14 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
   }
 
   return (
-    <div className="relative group">
-      <button className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-full transition-colors">
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((value) => !value)} className="flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2 transition-colors hover:bg-[var(--labora-surface-2)]" aria-expanded={open} aria-label="Cambiar país">
         <span className="text-lg">{getFlag(selectedCountry.country_code)}</span>
-        <span className="text-sm font-bold text-gray-700">{selectedCountry.country_code}</span>
-        <ChevronDown size={14} className="text-gray-400" />
+        <span className="hidden text-xs font-bold text-[var(--labora-ink-soft)] sm:inline">{selectedCountry.country_code}</span>
+        <ChevronDown size={14} className="text-[var(--labora-muted)]" />
       </button>
       
-      <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden hidden group-hover:block z-50 animate-in fade-in zoom-in-95 duration-200">
+      {open && <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         {/* Mini Search inside Dropdown */}
         <div className="p-2 border-b border-gray-50 bg-gray-50/50">
           <div className="relative">
@@ -95,7 +96,7 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
               placeholder="Filtrar..."
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
-              className="w-full pl-7 pr-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs outline-none focus:border-[#4285F4]"
+              className="w-full rounded-lg border border-[var(--labora-border)] bg-[var(--labora-surface)] py-1.5 pl-7 pr-2 text-xs outline-none focus:border-[var(--labora-primary)]"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -108,9 +109,10 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
               onClick={() => {
                 selectCountry(c.country_code);
                 setFilterQuery('');
+                setOpen(false);
               }}
-              className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between text-sm font-medium ${
-                selectedCountry.country_code === c.country_code ? 'text-[#4285F4] bg-blue-50/50' : 'text-gray-700'
+              className={`flex min-h-11 w-full items-center justify-between px-4 py-2.5 text-left text-sm font-medium hover:bg-[var(--labora-surface-2)] ${
+                selectedCountry.country_code === c.country_code ? 'bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]' : 'text-[var(--labora-ink-soft)]'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -128,7 +130,7 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   );
 };

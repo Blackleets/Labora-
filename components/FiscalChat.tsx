@@ -18,13 +18,13 @@ interface ActionSuggestion {
   view?: string;  // Si es para navegar (simulado)
 }
 
-const FiscalChat: React.FC = () => {
+const FiscalChat: React.FC<{ embedded?: boolean; contextLabel?: string }> = ({ embedded = false, contextLabel }) => {
   const { currentUser } = useData();
   const { selectedCountry } = useCountry();
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: 'model', 
-      text: `¡Hola ${currentUser?.name.split(' ')[0] || ''}! Soy tu asistente fiscal inteligente de Labora+ para ${selectedCountry.display_name}. \n\nPuedo ayudarte a entender tus impuestos, categorizar gastos o explicarte normativa de riders. ¿En qué te ayudo hoy?`,
+      text: `¡Hola ${currentUser?.name.split(' ')[0] || ''}! Soy tu copiloto Labora+ para ${selectedCountry.display_name}. \n\nPuedo ayudarte a organizar tu trabajo, entender tus números, preparar documentos y resolver dudas fiscales. ¿Qué necesitas?`,
       actions: [
         { label: 'Calcular Impuestos', icon: Calculator, query: `¿Cómo funciona el cálculo de impuestos para riders en ${selectedCountry.display_name}?` },
         { label: 'Gastos Deducibles', icon: TrendingUp, query: 'Dime ejemplos de gastos deducibles para mi actividad' },
@@ -41,7 +41,7 @@ const FiscalChat: React.FC = () => {
     if (messages.length === 1 && messages[0].role === 'model') {
        setMessages([{ 
         role: 'model', 
-        text: `¡Hola ${currentUser?.name.split(' ')[0] || ''}! Soy tu asistente fiscal inteligente de Labora+ para ${selectedCountry.display_name}. \n\nPuedo ayudarte a entender tus impuestos, categorizar gastos o explicarte normativa de riders. ¿En qué te ayudo hoy?`,
+        text: `¡Hola ${currentUser?.name.split(' ')[0] || ''}! Soy tu copiloto Labora+ para ${selectedCountry.display_name}. \n\nPuedo ayudarte a organizar tu trabajo, entender tus números, preparar documentos y resolver dudas fiscales. ¿Qué necesitas?`,
         actions: [
           { label: 'Calcular Impuestos', icon: Calculator, query: `¿Cómo funciona el cálculo de impuestos para riders en ${selectedCountry.display_name}?` },
           { label: 'Gastos Deducibles', icon: TrendingUp, query: 'Dime ejemplos de gastos deducibles para mi actividad' },
@@ -97,8 +97,11 @@ const FiscalChat: React.FC = () => {
       // 2. Preparar historial para la API
       const historyForService = messages.map(m => ({ role: m.role, text: m.text }));
       
-      // 3. Llamar a Gemini con el contexto del país seleccionado
-      const responseText = await getFiscalAdvice(historyForService, textToSend, selectedCountry);
+      // Add the active screen as private context while keeping the message clean in the UI.
+      const contextualPrompt = contextLabel
+        ? `[Contexto actual: ${contextLabel}] ${textToSend}`
+        : textToSend;
+      const responseText = await getFiscalAdvice(historyForService, contextualPrompt, selectedCountry);
       
       // 4. Generar acciones sugeridas basadas en la respuesta
       const newActions = generateSmartActions(responseText);
@@ -119,22 +122,22 @@ const FiscalChat: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col bg-[var(--labora-surface)] rounded-[32px] shadow-2xl border border-[var(--labora-border)] overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+    <div className={`${embedded ? 'h-full rounded-none border-0 shadow-none' : 'h-[calc(100vh-140px)] rounded-[32px] border shadow-2xl'} flex flex-col bg-[var(--labora-surface)] border-[var(--labora-border)] overflow-hidden animate-in slide-in-from-bottom-4 duration-500`}>
       {/* Header */}
-      <div className="p-6 bg-gradient-to-r from-[#1A73E8] to-[#2D6CDF] text-white flex items-center justify-between shadow-md z-10">
+      <div className="p-6 bg-[var(--labora-primary)] text-white flex items-center justify-between shadow-md z-10">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner ring-1 ring-white/30">
             <Sparkles size={24} className="text-white" />
           </div>
           <div>
-            <h3 className="font-black text-xl tracking-tight">Asistente Labora+</h3>
+            <h3 className="font-black text-xl tracking-tight">Copiloto Labora+</h3>
             <div className="flex items-center gap-1.5 opacity-90">
                <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
                 </span>
                <span className="text-[10px] font-bold text-blue-50 uppercase tracking-widest flex items-center gap-1">
-                 IA Fiscal Activa <span className="bg-white/20 px-1.5 rounded text-white">{selectedCountry.country_code}</span>
+                 Listo para ayudarte <span className="bg-white/20 px-1.5 rounded text-white">{selectedCountry.country_code}</span>{contextLabel ? <span className="hidden sm:inline"> · {contextLabel}</span> : null}
                </span>
             </div>
           </div>
@@ -152,7 +155,7 @@ const FiscalChat: React.FC = () => {
               
               {/* Avatar */}
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm mt-auto ${
-                msg.role === 'user' ? 'bg-[#1A73E8] text-white' : 'bg-[var(--labora-surface)] text-[#2D6CDF] border border-[var(--labora-border)]'
+                msg.role === 'user' ? 'bg-[var(--labora-primary)] text-white' : 'bg-[var(--labora-surface)] text-[var(--labora-primary)] border border-[var(--labora-border)]'
               }`}>
                 {msg.role === 'user' ? <UserIcon size={16} /> : <Bot size={18} />}
               </div>
@@ -160,7 +163,7 @@ const FiscalChat: React.FC = () => {
               {/* Bubble */}
               <div className={`p-4 md:p-5 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
                 msg.role === 'user' 
-                  ? 'bg-[#1A73E8] text-white rounded-br-none' 
+                  ? 'bg-[var(--labora-primary)] text-white rounded-br-none'
                   : 'bg-[var(--labora-surface)] text-gray-700 rounded-bl-none border border-[var(--labora-border)]'
               }`}>
                 {renderFormattedText(msg.text)}
@@ -174,7 +177,7 @@ const FiscalChat: React.FC = () => {
                   <button
                     key={i}
                     onClick={() => action.query && handleSend(action.query)}
-                    className="flex items-center gap-2 px-3 py-2 bg-[var(--labora-surface)] text-[#1A73E8] text-xs font-bold rounded-xl border border-[var(--labora-border)] shadow-sm hover:bg-[var(--labora-moss-soft)] hover:border-[var(--labora-border)] transition-all active:scale-95 animate-in zoom-in duration-300"
+                    className="flex items-center gap-2 px-3 py-2 bg-[var(--labora-surface)] text-[var(--labora-primary)] text-xs font-bold rounded-xl border border-[var(--labora-border)] shadow-sm hover:bg-[var(--labora-moss-soft)] hover:border-[var(--labora-border)] transition-all active:scale-95 animate-in zoom-in duration-300"
                     style={{ animationDelay: `${i * 100}ms` }}
                   >
                     <action.icon size={14} className="text-[#2D6CDF]" />
@@ -211,12 +214,12 @@ const FiscalChat: React.FC = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={`Consulta fiscal para ${selectedCountry.display_name}...`}
-            className="w-full pl-6 pr-14 py-4 bg-[var(--labora-surface-2)] border border-[var(--labora-border)] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[var(--labora-moss-soft)] focus:bg-[var(--labora-surface)] focus:border-[#2D6CDF] transition-all text-[var(--labora-ink)] placeholder-[var(--labora-muted)] font-medium"
+            className="w-full pl-6 pr-14 py-4 bg-[var(--labora-surface-2)] border border-[var(--labora-border)] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[var(--labora-moss-soft)] focus:bg-[var(--labora-surface)] focus:border-[var(--labora-primary)] transition-all text-[var(--labora-ink)] placeholder-[var(--labora-muted)] font-medium"
           />
           <button 
             type="submit" 
             disabled={isLoading || !input.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-[#1A73E8] text-white rounded-xl hover:bg-[#1557B0] disabled:opacity-50 disabled:bg-[var(--labora-surface-2)] disabled:cursor-not-allowed transition-all shadow-md active:scale-95"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-[var(--labora-primary)] text-white rounded-xl hover:bg-[var(--labora-primary-2)] disabled:opacity-50 disabled:bg-[var(--labora-surface-2)] disabled:cursor-not-allowed transition-all shadow-md active:scale-95"
           >
             <Send size={20} strokeWidth={2.5} />
           </button>

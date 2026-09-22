@@ -9,6 +9,8 @@ import { UserRole } from './types';
 
 import Dashboard from './components/Dashboard';
 import { AdminHub } from './components/AdminHub';
+import { AiCopilot } from './components/AiCopilot';
+import CountrySelector from './components/CountrySelector';
 import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 import Login from './components/Login';
 import { GhibliLightingControl } from './components/GhibliLightingControl';
@@ -146,7 +148,7 @@ const MainLayout: React.FC = () => {
 
             <div className="min-w-0">
               <p className="labora-section-label hidden text-[color:var(--labora-muted,#5A7A68)] lg:block">
-                {isManager ? 'Gestoría' : 'Autónomo'}
+                {isManager ? 'Gestoría' : 'Trabajador'}
               </p>
               <span className="labora-title mt-0.5 block truncate text-[1.3rem] text-[color:var(--labora-ink,#1E2A24)]">
                 {getViewTitle()}
@@ -155,6 +157,7 @@ const MainLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <CountrySelector />
             <div className="hidden sm:block">
               <GhibliLightingControl />
             </div>
@@ -180,7 +183,7 @@ const MainLayout: React.FC = () => {
                   {currentUser.companyName || currentUser.name}
                 </p>
                 <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400">
-                  {isManager ? 'Gestoría' : 'Autónomo'}
+                  {isManager ? 'Gestoría' : 'Trabajador'}
                 </p>
               </div>
             </button>
@@ -223,6 +226,7 @@ const MainLayout: React.FC = () => {
             })}
           </div>
         </nav>
+        <AiCopilot currentView={currentView} />
       </main>
     </div>
   );

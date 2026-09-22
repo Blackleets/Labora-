@@ -69,12 +69,12 @@ export const IntegrationCatalog: React.FC = () => {
 
   const descriptionFor = (integration: IntegrationDef) => {
     if (integration.category === 'banking') {
-      return 'Open Banking PSD2 aún no está cableado. No hay botón Conectar. Alternativa: importar movimientos/liquidaciones en Ingresos.';
+      return 'Organiza tus movimientos y prepara la conciliación de tu actividad en un mismo lugar.';
     }
     if (integration.category === 'delivery' || integration.category === 'mobility') {
-      return 'Preferencia de perfil («en mi actividad»), no OAuth. Sin API Glovo/Uber: importa liquidaciones en Movimientos → Ingresos.';
+      return 'Añádela a tu perfil para organizar ingresos, documentos y actividad asociados a este trabajo.';
     }
-    return 'Integración API prevista. Labora+ no marcará este servicio como conectado hasta que exista una autorización real.';
+    return 'Disponible en el catálogo de servicios de Labora+. Te avisaremos cuando puedas vincularla.';
   };
 
   const categoryLabel = (category: IntegrationCategory) => {
@@ -97,8 +97,7 @@ export const IntegrationCatalog: React.FC = () => {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Actividad</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-stone-900">Plataformas y servicios</h1>
         <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-stone-500">
-          Marca las plataformas que usas («en mi actividad» = preferencia de perfil). No hay OAuth de Glovo/Uber ni banco en vivo;
-          los ingresos se registran a mano o importando liquidaciones.
+          Personaliza tu espacio con las empresas, plataformas y servicios que forman parte de tu vida laboral.
         </p>
       </header>
 
@@ -164,7 +163,7 @@ export const IntegrationCatalog: React.FC = () => {
                   </span>
                 ) : banking ? (
                   <span className="inline-flex items-center gap-1 rounded-full border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-bold text-[var(--labora-muted)]">
-                    <ShieldCheck size={11} /> Open Banking
+                    <ShieldCheck size={11} /> Próximamente
                   </span>
                 ) : (
                   <span className="inline-flex items-center rounded-full border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-bold text-[var(--labora-muted)]">
@@ -199,7 +198,7 @@ export const IntegrationCatalog: React.FC = () => {
                     disabled
                     className="w-full cursor-not-allowed rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface-2)] py-2.5 text-xs font-bold text-[var(--labora-muted)]"
                   >
-                    {banking ? 'Conexión segura próximamente' : 'API próximamente'}
+                    {banking ? 'Disponible próximamente' : 'Próximamente'}
                   </button>
                 )}
               </div>

@@ -22,7 +22,7 @@ export interface LogoResolverProps {
 
 /**
  * Fallback chain (fail-closed, never blank):
- * inline Simple Icons → curated CDN → local geometric SVG → Google favicon → letter avatar.
+ * inline Simple Icons → curated CDN → verified domain favicon → local SVG → letter avatar.
  * Clearbit omitted (API dead → empty image that never fires onError).
  */
 type LoadStep = 'inline' | 'curated' | 'local' | 'favicon' | 'placeholder';
@@ -47,8 +47,8 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
   const initialStep = useMemo((): LoadStep => {
     if (inlineIcon) return 'inline';
     if (curatedUrl) return 'curated';
-    if (localUrl) return 'local';
     if (faviconUrl) return 'favicon';
+    if (localUrl) return 'local';
     return 'placeholder';
   }, [inlineIcon, curatedUrl, localUrl, faviconUrl]);
 
@@ -60,7 +60,7 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
 
   const advance = () => {
     setStep((current) => {
-      const order: LoadStep[] = ['inline', 'curated', 'local', 'favicon', 'placeholder'];
+      const order: LoadStep[] = ['inline', 'curated', 'favicon', 'local', 'placeholder'];
       const idx = order.indexOf(current);
       for (let i = idx + 1; i < order.length; i++) {
         const next = order[i];

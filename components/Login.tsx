@@ -442,8 +442,8 @@ const Login: React.FC = () => {
                             }`}
                           >
                             <Bike size={18} className={role === UserRole.RIDER ? 'text-[var(--labora-primary)]' : ''} />
-                            <p className="mt-2 text-sm font-semibold">Autónomo</p>
-                            <p className="mt-0.5 text-[10px] opacity-70">Mi actividad</p>
+                            <p className="mt-2 text-sm font-semibold">Trabajador</p>
+                            <p className="mt-0.5 text-[10px] opacity-70">Mi vida laboral</p>
                           </button>
                           <button
                             type="button"
@@ -460,7 +460,7 @@ const Login: React.FC = () => {
                           </button>
                         </div>
                         <p className="mt-3 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-                          Las gestorías deben identificar NIF y colegiado. Los autónomos se registran libremente.
+                          Para empleados, riders, autónomos y freelancers. Las gestorías disponen de un espacio profesional independiente.
                         </p>
                       </div>
                       <div>
