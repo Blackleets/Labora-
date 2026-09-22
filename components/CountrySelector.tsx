@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { useCountry } from '../contexts/CountryContext';
-import { Globe, ChevronDown, Search, X } from 'lucide-react';
+import { ChevronDown, Search, X } from 'lucide-react';
+import CountryFlag from './CountryFlag';
 
 interface CountrySelectorProps {
   variant?: 'dropdown' | 'cards';
@@ -20,10 +21,6 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
       c.display_name.toLowerCase().includes(query)
     );
   }, [countries, filterQuery]);
-
-  const getFlag = (code: string) => /^[A-Z]{2}$/.test(code)
-    ? String.fromCodePoint(...code.split('').map((letter) => 127397 + letter.charCodeAt(0)))
-    : '🌍';
 
   const knowledgeLabel = (status: string) => status === 'verified'
     ? 'Fiscalidad verificada'
@@ -65,7 +62,7 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
                   : 'border-gray-200 bg-white hover:bg-gray-50'
               }`}
             >
-              <span className="text-2xl block mb-1">{getFlag(c.country_code)}</span>
+              <CountryFlag code={c.country_code} name={c.display_name} className="mx-auto mb-1 w-8" />
               <span className="block text-xs">{c.country_code}</span>
               <span className="mt-1 block text-[8px] font-medium text-[var(--labora-muted)]">{knowledgeLabel(c.knowledge.status)}</span>
             </button>
@@ -83,7 +80,7 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
   return (
     <div className="relative">
       <button type="button" onClick={() => setOpen((value) => !value)} className="flex min-h-10 items-center gap-2 rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2 transition-colors hover:bg-[var(--labora-surface-2)]" aria-expanded={open} aria-label="Cambiar país">
-        <span className="text-lg">{getFlag(selectedCountry.country_code)}</span>
+        <CountryFlag code={selectedCountry.country_code} name={selectedCountry.display_name} />
         <span className="hidden text-xs font-bold text-[var(--labora-ink-soft)] sm:inline">{selectedCountry.country_code}</span>
         <ChevronDown size={14} className="text-[var(--labora-muted)]" />
       </button>
@@ -118,7 +115,7 @@ const CountrySelector: React.FC<CountrySelectorProps> = ({ variant = 'dropdown' 
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-lg">{getFlag(c.country_code)}</span>
+                <CountryFlag code={c.country_code} name={c.display_name} />
                 <span><span className="block">{c.display_name}</span><span className="block text-[9px] font-medium text-[var(--labora-muted)]">{knowledgeLabel(c.knowledge.status)}</span></span>
               </div>
               <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded uppercase">
