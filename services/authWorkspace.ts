@@ -1,4 +1,4 @@
-import { User, UserRole } from '../types';
+import { User, UserRole, WorkMode } from '../types';
 import { assertManagerSignupFields } from './registrationValidation';
 import {
   friendlyLinkError,
@@ -35,6 +35,9 @@ type ProfileRow = {
   country_code?: string | null;
   platforms?: string[] | null;
   banks?: string[] | null;
+  work_modes?: WorkMode[] | null;
+  workplaces?: string[] | null;
+  wants_manager?: boolean | null;
   onboarding_completed?: boolean | null;
   identity_image_path?: string | null;
   identity_image_kind?: string | null;
@@ -91,12 +94,15 @@ const rowToUser = async (row: ProfileRow): Promise<User> => ({
   companyName: row.company_name || undefined,
   collegiateNumber: row.collegiate_number || undefined,
   countryCode: row.country_code || 'ES'
+  ,workModes: Array.isArray(row.work_modes) ? row.work_modes : []
+  ,workplaces: Array.isArray(row.workplaces) ? row.workplaces : []
+  ,wantsManager: Boolean(row.wants_manager)
 });
 
 export const loadRemoteWorkspace = async (currentUserId: string) => {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id,role,name,email,phone,nif,company_name,collegiate_number,manager_id,fiscal_regime,iae_code,social_security_type,vehicle_type,vehicle_plate,vehicle_fuel,country_code,platforms,banks,onboarding_completed,identity_image_path,identity_image_kind');
+    .select('id,role,name,email,phone,nif,company_name,collegiate_number,manager_id,fiscal_regime,iae_code,social_security_type,vehicle_type,vehicle_plate,vehicle_fuel,country_code,platforms,banks,work_modes,workplaces,wants_manager,onboarding_completed,identity_image_path,identity_image_kind');
 
   if (error) throw error;
 
@@ -204,6 +210,9 @@ export const signUpRemote = async (
     vehicle_plate: userData.vehiclePlate || '',
     vehicle_fuel: userData.vehicleFuel || '',
     country_code: userData.countryCode || 'ES'
+    ,work_modes: userData.workModes || []
+    ,workplaces: userData.workplaces || []
+    ,wants_manager: Boolean(userData.wantsManager)
   };
 
   const { data, error } = await supabase.auth.signUp({
@@ -344,6 +353,9 @@ export const updateRemoteProfile = async (userId: string, patch: Partial<User>) 
   if (patch.collegiateNumber !== undefined) payload.collegiate_number = patch.collegiateNumber || null;
   if (patch.vehiclePlate !== undefined) payload.vehicle_plate = patch.vehiclePlate || null;
   if (patch.countryCode !== undefined) payload.country_code = patch.countryCode || 'ES';
+  if (patch.workModes !== undefined) payload.work_modes = patch.workModes;
+  if (patch.workplaces !== undefined) payload.workplaces = patch.workplaces;
+  if (patch.wantsManager !== undefined) payload.wants_manager = patch.wantsManager;
 
   if (Object.keys(payload).length === 0) return;
   const { error } = await supabase

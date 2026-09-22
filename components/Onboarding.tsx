@@ -2,11 +2,15 @@ import React, { useMemo, useState } from 'react';
 import {
   ArrowRight,
   Bike,
+  BriefcaseBusiness,
   Check,
   Globe,
+  Laptop,
   Loader2,
   ShieldCheck,
   Sparkles,
+  Store,
+  UserRound,
   Wallet
 } from 'lucide-react';
 import CountrySelector from './CountrySelector';
@@ -19,6 +23,14 @@ import {
   updateRemoteProfile,
   updateRemoteUserConfig
 } from '../services/authWorkspace';
+import { WorkMode } from '../types';
+
+const workOptions: Array<{ id: WorkMode; title: string; text: string; icon: React.ElementType }> = [
+  { id: 'employee', title: 'Empleado', text: 'Trabajo para una empresa.', icon: BriefcaseBusiness },
+  { id: 'rider', title: 'Rider', text: 'Reparto o movilidad por plataformas.', icon: Bike },
+  { id: 'self_employed', title: 'Autónomo', text: 'Gestiono mi propia actividad.', icon: Store },
+  { id: 'freelancer', title: 'Freelancer', text: 'Trabajo por proyectos o clientes.', icon: Laptop }
+];
 
 const platforms = [
   { id: 'uber_eats', name: 'Uber Eats', domain: 'ubereats.com' },
@@ -53,9 +65,13 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
   const [step, setStep] = useState(1);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(currentUser?.platforms || []);
   const [selectedBanks, setSelectedBanks] = useState<string[]>(currentUser?.banks || []);
+  const [workModes, setWorkModes] = useState<WorkMode[]>(currentUser?.workModes || []);
+  const [workplaces, setWorkplaces] = useState<string[]>(currentUser?.workplaces || []);
+  const [workplaceDraft, setWorkplaceDraft] = useState('');
+  const [wantsManager, setWantsManager] = useState(Boolean(currentUser?.wantsManager));
   const [saving, setSaving] = useState(false);
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const selectedServices = selectedPlatforms.length + selectedBanks.length;
 
   const toggle = (value: string, current: string[], setCurrent: React.Dispatch<React.SetStateAction<string[]>>) => {
@@ -70,12 +86,22 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
     try {
       await Promise.all([
         updateRemoteUserConfig(selectedPlatforms, selectedBanks),
-        updateRemoteProfile(currentUser.id, { countryCode: selectedCountry.country_code })
+        updateRemoteProfile(currentUser.id, {
+          countryCode: selectedCountry.country_code,
+          workModes,
+          workplaces,
+          wantsManager
+        })
       ]);
       await completeRemoteOnboarding();
 
       updateUserConfig(selectedPlatforms, selectedBanks);
-      updateUserFiscalProfile({ countryCode: selectedCountry.country_code });
+      updateUserFiscalProfile({
+        countryCode: selectedCountry.country_code,
+        workModes,
+        workplaces,
+        wantsManager
+      });
       showNotification('success', 'Tu espacio de Labora+ está preparado.');
       onFinish();
     } catch (error) {
@@ -87,6 +113,10 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
   };
 
   const handleNext = () => {
+    if (step === 3 && workModes.length === 0) {
+      showNotification('info', 'Selecciona al menos una forma de trabajo.');
+      return;
+    }
     if (step < totalSteps) {
       setStep((previous) => previous + 1);
       return;
@@ -162,6 +192,64 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
               )}
 
               {step === 3 && (
+                <div className="mx-auto max-w-3xl space-y-6">
+                  <div className="text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
+                      <UserRound size={21} />
+                    </div>
+                    <p className="labora-kicker mt-4 text-[var(--labora-primary-2)]">Pasaporte Laboral</p>
+                    <h2 className="labora-display mt-1 text-2xl font-semibold text-[var(--labora-ink)]">¿Cómo trabajas actualmente?</h2>
+                    <p className="mt-2 text-xs leading-relaxed text-[var(--labora-muted)]">Puedes elegir varias opciones y cambiarlas cuando tu situación evolucione.</p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {workOptions.map(({ id, title, text, icon: Icon }) => {
+                      const active = workModes.includes(id);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setWorkModes((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])}
+                          className={`flex min-h-24 items-start gap-3 rounded-[18px] border p-4 text-left transition ${active ? 'border-[var(--labora-primary)] bg-[var(--labora-moss-soft)]' : 'border-[var(--labora-border)] bg-[var(--labora-surface)] hover:bg-[var(--labora-parchment)]'}`}
+                        >
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[var(--labora-surface)] text-[var(--labora-primary)]"><Icon size={18} /></span>
+                          <span><strong className="block text-sm text-[var(--labora-ink)]">{title}</strong><span className="mt-1 block text-[11px] leading-relaxed text-[var(--labora-muted)]">{text}</span></span>
+                          {active && <Check size={16} className="ml-auto shrink-0 text-[var(--labora-primary)]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="rounded-[18px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-4">
+                    <label htmlFor="labora-workplace" className="text-xs font-extrabold text-[var(--labora-ink)]">Empresas, clientes o plataformas</label>
+                    <p className="mt-1 text-[10px] text-[var(--labora-muted)]">Añade dónde trabajas para organizar tu historial. No crea una conexión externa.</p>
+                    <div className="mt-3 flex gap-2">
+                      <input id="labora-workplace" value={workplaceDraft} onChange={(event) => setWorkplaceDraft(event.target.value)} onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          const value = workplaceDraft.trim();
+                          if (value && !workplaces.includes(value)) setWorkplaces((current) => [...current, value]);
+                          setWorkplaceDraft('');
+                        }
+                      }} className="min-h-11 min-w-0 flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 text-sm" placeholder="Ej. Glovo, Mercadona o Cliente ABC" />
+                      <button type="button" onClick={() => {
+                        const value = workplaceDraft.trim();
+                        if (value && !workplaces.includes(value)) setWorkplaces((current) => [...current, value]);
+                        setWorkplaceDraft('');
+                      }} className="rounded-[13px] bg-[var(--labora-primary)] px-4 text-xs font-extrabold text-white">Añadir</button>
+                    </div>
+                    {workplaces.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{workplaces.map((item) => <button key={item} type="button" onClick={() => setWorkplaces((current) => current.filter((value) => value !== item))} className="rounded-full border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-1.5 text-[10px] font-bold text-[var(--labora-ink)]" title="Quitar">{item} ×</button>)}</div>}
+                  </div>
+
+                  <label className="flex cursor-pointer items-center justify-between gap-4 rounded-[18px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-4">
+                    <span><strong className="block text-sm text-[var(--labora-ink)]">Quiero conectar con una gestoría</strong><span className="mt-1 block text-[10px] text-[var(--labora-muted)]">Podrás vincularla ahora o más adelante desde tu espacio.</span></span>
+                    <input type="checkbox" checked={wantsManager} onChange={(event) => setWantsManager(event.target.checked)} className="h-5 w-5 accent-[var(--labora-primary)]" />
+                  </label>
+                </div>
+              )}
+
+              {step === 4 && (
                 <div className="space-y-6">
                   <div className="text-center">
                     <p className="labora-kicker text-[var(--labora-primary-2)]">Tus herramientas</p>
@@ -193,7 +281,7 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
                 </div>
               )}
 
-              {step === 4 && (
+              {step === 5 && (
                 <div className="mx-auto max-w-2xl py-4 text-center sm:py-7">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]">
                     <Check size={28} strokeWidth={2.5} />
@@ -203,12 +291,12 @@ const Onboarding: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
                     Tu espacio queda preparado sin conexiones ficticias.
                   </h2>
                   <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[var(--labora-muted)]">
-                    Has indicado {selectedServices} {selectedServices === 1 ? 'servicio' : 'servicios'} que utilizas.
-                    Podrás registrar jornada, importar liquidaciones y guardar justificantes desde el primer día.
+                    Has configurado {workModes.length} {workModes.length === 1 ? 'forma' : 'formas'} de trabajo y {selectedServices} {selectedServices === 1 ? 'servicio' : 'servicios'}.
+                    Tu espacio se adaptará a esta combinación desde el primer día.
                   </p>
 
                   <div className="mt-6 space-y-2 text-left">
-                    <ReadyRow text="Jornada Labora lista para registrar horas y odómetro." />
+                    <ReadyRow text={`${workplaces.length || 'Ninguna'} ${workplaces.length === 1 ? 'empresa o cliente añadido' : 'empresas o clientes añadidos'} a tu historial.`} />
                     <ReadyRow text="Ingresos manuales, por texto y por PDF/captura con revisión antes de guardar." />
                     <ReadyRow text="Gastos y documentos privados preparados para revisión de gestoría." />
                     <ReadyRow text="Cálculos fiscales no verificados permanecen marcados como «Por revisar»." />

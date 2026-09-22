@@ -45,7 +45,9 @@ export const PeopleHub: React.FC = () => {
       totalExpenses: clientExpenses.filter((expense) => expense.status !== 'rejected').reduce((sum, expense) => sum + expense.amount * ((expense.deductiblePercentage ?? 0) / 100), 0),
       pendingExpenses: clientExpenses.filter((expense) => expense.status === 'pending_review' || expense.status === 'needs_fix').length,
       pendingRequirements: clientRequirements.filter((requirement) => requirement.status === 'pending' || requirement.status === 'submitted').length,
-      platforms: selectedClient.platforms
+      platforms: selectedClient.platforms,
+      workModes: selectedClient.workModes || [],
+      workplaces: selectedClient.workplaces || []
     };
   }, [selectedClient, incomes, expenses, requirements]);
 
@@ -55,10 +57,10 @@ export const PeopleHub: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 pb-8">
-      <header><p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Gestoría</p><h1 className="mt-1 text-2xl font-bold text-stone-900">Clientes</h1><p className="mt-1 text-sm text-stone-500">Autónomos vinculados a esta cuenta.</p></header>
+      <header><p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-400">Gestoría</p><h1 className="mt-1 text-2xl font-bold text-stone-900">Clientes</h1><p className="mt-1 text-sm text-stone-500">Trabajadores y profesionales vinculados a esta cuenta.</p></header>
 
       {clients.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-[var(--labora-border)] bg-[var(--labora-surface)] px-6 py-14 text-center"><UserRound size={30} className="mx-auto text-stone-300" /><h2 className="mt-3 text-sm font-bold text-stone-700">Aún no hay clientes vinculados</h2><p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-stone-400">Cuando un autónomo quede asociado a esta gestoría aparecerá aquí con sus movimientos, tareas y datos de contacto.</p></section>
+        <section className="rounded-2xl border border-dashed border-[var(--labora-border)] bg-[var(--labora-surface)] px-6 py-14 text-center"><UserRound size={30} className="mx-auto text-stone-300" /><h2 className="mt-3 text-sm font-bold text-stone-700">Aún no hay clientes vinculados</h2><p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-stone-400">Cuando un trabajador o profesional vincule esta gestoría aparecerá aquí con sus movimientos, tareas y datos de contacto.</p></section>
       ) : (
         <section className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-3">
@@ -84,7 +86,7 @@ export const PeopleHub: React.FC = () => {
 
               <section className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-5"><h3 className="text-sm font-bold text-stone-900">Contacto</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><ContactRow icon={Mail} label="Correo" value={selectedClient.email} href={`mailto:${selectedClient.email}`} /><ContactRow icon={Phone} label="Teléfono" value={selectedClient.phone || 'No registrado'} href={selectedClient.phone ? `tel:${selectedClient.phone}` : undefined} /></div></section>
 
-              <section className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-5"><h3 className="text-sm font-bold text-stone-900">Actividad</h3><div className="mt-4 grid gap-4 sm:grid-cols-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">Plataformas</p><p className="mt-1 text-sm text-stone-700">{clientStats.platforms.length ? clientStats.platforms.join(' · ') : 'Sin plataformas registradas'}</p></div><div><p className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">Vehículo</p><p className="mt-1 text-sm text-stone-700">{[selectedClient.vehicleType, selectedClient.vehiclePlate].filter(Boolean).join(' · ') || 'No registrado'}</p></div></div></section>
+              <section className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-5"><h3 className="text-sm font-bold text-stone-900">Pasaporte Laboral</h3><div className="mt-4 grid gap-4 sm:grid-cols-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">Situación profesional</p><p className="mt-1 text-sm text-stone-700">{clientStats.workModes.length ? clientStats.workModes.map((mode) => ({ employee: 'Empleado', rider: 'Rider', self_employed: 'Autónomo', freelancer: 'Freelancer' }[mode])).join(' · ') : 'Pendiente de completar'}</p></div><div><p className="text-[10px] font-semibold uppercase tracking-wide text-stone-400">Empresas y clientes</p><p className="mt-1 text-sm text-stone-700">{clientStats.workplaces.length ? clientStats.workplaces.join(' · ') : clientStats.platforms.length ? clientStats.platforms.join(' · ') : 'Sin registrar'}</p></div></div></section>
             </div>
           )}
         </section>

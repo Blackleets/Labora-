@@ -20,7 +20,7 @@ import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
-import { WorkSession } from '../types';
+import { WorkMode, WorkSession } from '../types';
 import LogoResolver from './LogoResolver';
 import workIcon from '@material-symbols/svg-400/rounded/work.svg?url';
 import bikeIcon from '@material-symbols/svg-400/rounded/directions_bike.svg?url';
@@ -221,6 +221,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       <WorkPassportOverview
         firstName={firstName}
         platforms={currentUser.platforms || []}
+        workModes={currentUser.workModes || []}
+        workplaces={currentUser.workplaces || []}
         hasGestoria={hasGestoria}
         pendingCount={pendingRequirements.length}
         setView={setView}
@@ -442,14 +444,20 @@ const PLATFORM_META: Record<string, { id: string; name: string; category: 'deliv
   bolt: { id: 'bolt', name: 'Bolt', category: 'mobility' }
 };
 
-const WorkPassportOverview = ({ firstName, platforms, hasGestoria, pendingCount, setView }: { firstName: string; platforms: string[]; hasGestoria: boolean; pendingCount: number; setView?: (view: string) => void }) => {
-  const workSources = platforms.map((item) => PLATFORM_META[item.toLowerCase()]).filter(Boolean).slice(0, 4);
-  const roles = [
-    ['Empleado', workIcon],
-    ['Rider', bikeIcon],
-    ['Autónomo', storeIcon],
-    ['Freelancer', laptopIcon]
-  ] as const;
+const WORK_MODE_META: Record<WorkMode, { label: string; icon: string }> = {
+  employee: { label: 'Empleado', icon: workIcon },
+  rider: { label: 'Rider', icon: bikeIcon },
+  self_employed: { label: 'Autónomo', icon: storeIcon },
+  freelancer: { label: 'Freelancer', icon: laptopIcon }
+};
+
+const WorkPassportOverview = ({ firstName, platforms, workModes, workplaces, hasGestoria, pendingCount, setView }: { firstName: string; platforms: string[]; workModes: WorkMode[]; workplaces: string[]; hasGestoria: boolean; pendingCount: number; setView?: (view: string) => void }) => {
+  const platformSources = platforms.map((item) => PLATFORM_META[item.toLowerCase()]).filter(Boolean);
+  const workplaceSources = workplaces.map((name) => ({ id: `workplace-${name.toLowerCase().replace(/\s+/g, '-')}`, name, category: 'other' as const }));
+  const workSources = [...workplaceSources, ...platformSources].filter((item, index, all) => all.findIndex((candidate) => candidate.name.toLowerCase() === item.name.toLowerCase()) === index).slice(0, 5);
+  const roles = workModes.length > 0
+    ? workModes.map((mode) => WORK_MODE_META[mode])
+    : Object.values(WORK_MODE_META);
 
   return (
     <section className="space-y-5">
@@ -477,7 +485,7 @@ const WorkPassportOverview = ({ firstName, platforms, hasGestoria, pendingCount,
       </div>
 
       <div className="flex gap-2 overflow-x-auto rounded-[20px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-2">
-        {roles.map(([label, icon]) => <button key={label} onClick={() => setView?.('integrations')} className="flex min-h-11 shrink-0 items-center gap-2 rounded-[14px] px-3.5 text-xs font-bold text-[var(--labora-ink-soft)] transition hover:bg-[var(--labora-moss-soft)] hover:text-[var(--labora-primary)]"><img src={icon} alt="" className="h-5 w-5 opacity-75" aria-hidden />{label}</button>)}
+        {roles.map(({ label, icon }) => <button key={label} onClick={() => setView?.('settings')} className="flex min-h-11 shrink-0 items-center gap-2 rounded-[14px] bg-[var(--labora-moss-soft)] px-3.5 text-xs font-bold text-[var(--labora-primary)] transition hover:brightness-95"><img src={icon} alt="" className="h-5 w-5 opacity-75" aria-hidden />{label}</button>)}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.7fr)]">
@@ -487,7 +495,7 @@ const WorkPassportOverview = ({ firstName, platforms, hasGestoria, pendingCount,
             {workSources.length ? workSources.map((platform) => (
               <button key={platform.id} onClick={() => setView?.('integrations')} className="flex min-h-[76px] w-full items-center gap-3 py-3 text-left">
                 <LogoResolver id={platform.id} name={platform.name} category={platform.category} size="sm" />
-                <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-[var(--labora-ink)]">{platform.name}</strong><span className="mt-1 block text-xs text-[var(--labora-muted)]">{platform.category === 'delivery' ? 'Reparto' : 'Movilidad'} · En tu actividad</span></span>
+                <span className="min-w-0 flex-1"><strong className="block truncate text-sm text-[var(--labora-ink)]">{platform.name}</strong><span className="mt-1 block text-xs text-[var(--labora-muted)]">{platform.category === 'delivery' ? 'Reparto' : platform.category === 'mobility' ? 'Movilidad' : 'Empresa o cliente'} · En tu actividad</span></span>
                 <span className="rounded-full bg-[var(--labora-moss-soft)] px-2.5 py-1 text-[10px] font-extrabold text-[var(--labora-primary)]">Activo</span>
               </button>
             )) : <div className="py-8 text-center"><p className="text-sm font-bold text-[var(--labora-ink)]">Añade tu primer trabajo</p><p className="mt-1 text-xs text-[var(--labora-muted)]">Empresas, plataformas o actividad profesional.</p><button onClick={() => setView?.('integrations')} className="mt-4 rounded-full bg-[var(--labora-primary)] px-4 py-2.5 text-xs font-extrabold text-white">Explorar plataformas</button></div>}

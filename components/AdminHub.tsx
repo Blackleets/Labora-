@@ -18,7 +18,7 @@ export const AdminHub: React.FC = () => {
 
   const cards = [
     ['Usuarios', metrics.users, Users],
-    ['Autónomos', metrics.riders, UserRound],
+    ['Trabajadores', metrics.riders, UserRound],
     ['Gestorías', metrics.managers, Building2],
     ['Peticiones abiertas', metrics.pending, BellRing],
     ['Documentos', metrics.documents, FileText],

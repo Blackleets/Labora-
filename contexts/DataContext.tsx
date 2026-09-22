@@ -298,6 +298,9 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       companyName: userData.companyName,
       collegiateNumber: userData.collegiateNumber,
       countryCode: userData.countryCode || 'ES',
+      workModes: userData.workModes || [],
+      workplaces: userData.workplaces || [],
+      wantsManager: Boolean(userData.wantsManager),
       organizationId: userData.organizationId
     };
 

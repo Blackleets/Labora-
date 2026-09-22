@@ -23,7 +23,7 @@ import {
 } from '../services/authWorkspace';
 import { displayGestoriaName, listLinkedClients } from '../services/gestoriaLinking';
 import { identityImageStore } from '../services/identityImage';
-import { UserRole } from '../types';
+import { UserRole, WorkMode } from '../types';
 import BillingCard from './BillingCard';
 import IdentityImagePicker from './IdentityImagePicker';
 import { withBaseUrl } from './brandMarks';
@@ -47,6 +47,9 @@ const Settings: React.FC = () => {
   const [companyName, setCompanyName] = useState(currentUser?.companyName || '');
   const [collegiateNumber, setCollegiateNumber] = useState(currentUser?.collegiateNumber || '');
   const [vehiclePlate, setVehiclePlate] = useState(currentUser?.vehiclePlate || '');
+  const [workModes, setWorkModes] = useState<WorkMode[]>(currentUser?.workModes || []);
+  const [workplacesText, setWorkplacesText] = useState((currentUser?.workplaces || []).join(', '));
+  const [wantsManager, setWantsManager] = useState(Boolean(currentUser?.wantsManager));
   const [identityImage, setIdentityImage] = useState<string | undefined>(() =>
     identityImageStore.getForUser(currentUser)
   );
@@ -62,6 +65,9 @@ const Settings: React.FC = () => {
     setCompanyName(currentUser?.companyName || '');
     setCollegiateNumber(currentUser?.collegiateNumber || '');
     setVehiclePlate(currentUser?.vehiclePlate || '');
+    setWorkModes(currentUser?.workModes || []);
+    setWorkplacesText((currentUser?.workplaces || []).join(', '));
+    setWantsManager(Boolean(currentUser?.wantsManager));
     setIdentityImage(identityImageStore.getForUser(currentUser));
   }, [currentUser]);
 
@@ -101,7 +107,12 @@ const Settings: React.FC = () => {
         : currentUser.collegiateNumber,
       vehiclePlate: !isManager
         ? vehiclePlate.trim().toUpperCase() || undefined
-        : currentUser.vehiclePlate
+        : currentUser.vehiclePlate,
+      workModes: !isManager ? workModes : currentUser.workModes,
+      workplaces: !isManager
+        ? Array.from(new Set(workplacesText.split(',').map((value) => value.trim()).filter(Boolean)))
+        : currentUser.workplaces,
+      wantsManager: !isManager ? wantsManager : currentUser.wantsManager
     };
 
     setSaving(true);
@@ -280,6 +291,41 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {!isManager && (
+        <section className="labora-card p-4 sm:p-5">
+          <p className="labora-kicker text-[var(--labora-primary-2)]">Pasaporte Laboral</p>
+          <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Tu situación profesional</h2>
+          <p className="mt-1 text-xs text-[var(--labora-muted)]">Mantén actualizado cómo trabajas y con quién. Puedes combinar varias opciones.</p>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {([
+              ['employee', 'Empleado'],
+              ['rider', 'Rider'],
+              ['self_employed', 'Autónomo'],
+              ['freelancer', 'Freelancer']
+            ] as Array<[WorkMode, string]>).map(([mode, label]) => {
+              const active = workModes.includes(mode);
+              return <button key={mode} type="button" aria-pressed={active} onClick={() => setWorkModes((current) => current.includes(mode) ? current.filter((item) => item !== mode) : [...current, mode])} className={`min-h-11 rounded-[13px] border px-3 text-xs font-extrabold transition ${active ? 'border-[var(--labora-primary)] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]' : 'border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)]'}`}>{label}</button>;
+            })}
+          </div>
+
+          <div className="mt-4">
+            <label htmlFor="labora-settings-workplaces" className={labelClass}>Empresas, clientes o plataformas</label>
+            <input id="labora-settings-workplaces" value={workplacesText} onChange={(event) => setWorkplacesText(event.target.value)} className={inputClass} placeholder="Glovo, Mercadona, Cliente ABC" />
+            <p className="mt-1.5 text-[10px] text-[var(--labora-muted)]">Sepáralos con comas. Se mostrarán en tu Pasaporte Laboral.</p>
+          </div>
+
+          <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-[14px] bg-[var(--labora-parchment)] p-3">
+            <span><strong className="block text-xs text-[var(--labora-ink)]">Busco apoyo de una gestoría</strong><span className="mt-0.5 block text-[10px] text-[var(--labora-muted)]">Activa esta preferencia aunque todavía no tengas una vinculada.</span></span>
+            <input type="checkbox" checked={wantsManager} onChange={(event) => setWantsManager(event.target.checked)} className="h-5 w-5 accent-[var(--labora-primary)]" />
+          </label>
+
+          <div className="mt-4 flex justify-end border-t border-[var(--labora-border)] pt-4">
+            <button type="button" onClick={saveProfile} disabled={saving || workModes.length === 0} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-4 text-xs font-extrabold text-white disabled:opacity-50">{saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Guardar Pasaporte</button>
+          </div>
+        </section>
+      )}
 
       <BillingCard />
 

@@ -45,7 +45,12 @@ export interface User {
   companyName?: string;
   collegiateNumber?: string;
   countryCode?: string;
+  workModes?: WorkMode[];
+  workplaces?: string[];
+  wantsManager?: boolean;
 }
+
+export type WorkMode = 'employee' | 'rider' | 'self_employed' | 'freelancer';
 
 export type IntegrationCategory = 'delivery' | 'mobility' | 'banking' | 'payments' | 'accounting' | 'hr';
 
