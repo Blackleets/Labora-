@@ -26,6 +26,7 @@ import { identityImageStore } from '../services/identityImage';
 import { UserRole, WorkMode } from '../types';
 import BillingCard from './BillingCard';
 import IdentityImagePicker from './IdentityImagePicker';
+import LanguageSelector from './LanguageSelector';
 import { withBaseUrl } from './brandMarks';
 
 const Settings: React.FC = () => {
@@ -567,6 +568,9 @@ const Settings: React.FC = () => {
         <div className="mb-1">
           <p className="labora-kicker text-[var(--labora-muted)]">Aplicación</p>
           <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Preferencias reales</h2>
+        </div>
+        <div className="mt-4 mb-2">
+          <LanguageSelector variant="settings" />
         </div>
         <div className="divide-y divide-[var(--labora-border)]">
           <ToggleRow

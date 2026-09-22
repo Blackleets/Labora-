@@ -16,6 +16,7 @@ import { useData } from '../contexts/DataContext';
 import AtmosphericPanel from './AtmosphericPanel';
 import { useCountry } from '../contexts/CountryContext';
 import { Expense, UserRole } from '../types';
+import CountryFlag from './CountryFlag';
 
 interface ManagerDashboardProps {
   setView?: (view: string) => void;
@@ -40,7 +41,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
     calculateQuarterlyTaxes,
     showNotification
   } = useData();
-  const { selectedCountry } = useCountry();
+  const { selectedCountry, countries } = useCountry();
 
   const clients = useMemo(
     () => users.filter((user) => user.role === UserRole.RIDER && user.managerId === currentUser?.id),
@@ -64,6 +65,9 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   );
 
   const selectedClient = clients.find((client) => client.id === selectedClientId) || clients[0];
+  const clientCountry = countries.find((country) => country.country_code === selectedClient?.countryCode)
+    || selectedCountry;
+  const clientFiscalReady = clientCountry.knowledge.status === 'verified';
   const filteredClients = clients.filter((client) => {
     const term = search.trim().toLowerCase();
     if (!term) return true;
@@ -100,7 +104,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 
   const formatMoney = (amount: number) => amount.toLocaleString('es-ES', {
     style: 'currency',
-    currency: selectedCountry.currency || 'EUR',
+    currency: clientCountry.currency || 'EUR',
     maximumFractionDigits: 0
   });
 
@@ -169,7 +173,9 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
     setReviewingExpense(null);
   };
 
-  const taxModels = selectedClient ? calculateQuarterlyTaxes(selectedClient.id, quarter) : null;
+  const taxModels = selectedClient && clientCountry.country_code === 'ES' && clientFiscalReady
+    ? calculateQuarterlyTaxes(selectedClient.id, quarter)
+    : null;
   const managerName = currentUser?.companyName || currentUser?.name || 'Gestoría';
 
   return (
@@ -223,7 +229,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
           </div>
           <h2 className="mt-4 text-base font-extrabold text-[var(--labora-ink)]">Aún no tienes clientes vinculados</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[var(--labora-muted)]">
-            Comparte este correo con el autónomo. Él lo introduce en Perfil → Tu gestoría. No hay invitaciones OAuth ni códigos inventados.
+            Comparte este correo con el trabajador o profesional. Podrá vincular la gestoría desde Perfil → Tu gestoría.
           </p>
           {currentUser?.email ? (
             <div className="mx-auto mt-4 flex max-w-md flex-col items-center gap-2 sm:flex-row sm:justify-center">
@@ -328,6 +334,13 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                         <p className="labora-kicker text-[var(--labora-muted)]">Cliente activo</p>
                         <h2 className="mt-0.5 truncate text-lg font-extrabold tracking-[-0.02em] text-[var(--labora-ink)]">{selectedClient.name}</h2>
                         <p className="mt-1 truncate text-xs text-[var(--labora-muted)]">{selectedClient.nif || 'Sin NIF'} · {selectedClient.email}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <CountryFlag code={clientCountry.country_code} name={clientCountry.display_name} className="w-5" />
+                          <span className="text-[10px] font-bold text-[var(--labora-muted)]">{clientCountry.display_name} · {clientCountry.currency}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${clientFiscalReady ? 'labora-status-ok' : 'labora-status-pending'}`}>
+                            {clientFiscalReady ? 'Fiscalidad verificada' : 'Fiscalidad en revisión'}
+                          </span>
+                        </div>
                         <p className="mt-1 text-xs text-[var(--labora-muted)]">
                           {selectedClient.platforms.length ? selectedClient.platforms.join(' · ') : 'Sin plataformas registradas'}
                         </p>
@@ -448,7 +461,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                           />
                         </div>
                       ) : (
-                        <EmptyState text="No hay cálculo fiscal disponible." />
+                        <EmptyState text={`Los modelos de ${clientCountry.display_name} permanecen bloqueados hasta validar fuentes oficiales, vigencia y revisión profesional.`} />
                       )}
                     </div>
                   )}

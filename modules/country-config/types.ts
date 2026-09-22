@@ -123,7 +123,7 @@ export const DEFAULT_SPAIN_CONFIG: CountryConfig = {
     { min: 35200, max: 60000, rate: 0.37 },
     { min: 60000, max: 300000, rate: 0.45 },
   ],
-  legal_notes: "Cálculo basado en IRPF progresivo y cuota de autónomos (RETA). El IVA en reparto de comida puede estar exento si se usa bici (consultar art. 20).",
+  legal_notes: "Contenido fiscal pendiente de consolidar en un paquete España con fuentes oficiales, vigencia y revisión profesional.",
   platforms: [
     { id: 'glovo', name: 'Glovo', logo_domain: 'glovoapp.com', base_fare: 2.80, rate_km: 0.85, rate_min: 0.10, commission_pct: 0.30, payment_speed: 'biweekly', incentives_summary: 'Bonus lluvia x1.2' },
     { id: 'uber', name: 'Uber Eats', logo_domain: 'uber.com', base_fare: 3.00, rate_km: 0.90, rate_min: 0.12, commission_pct: 0.30, payment_speed: 'weekly', incentives_summary: 'Quest semanal' },
@@ -157,16 +157,13 @@ export const DEFAULT_SPAIN_CONFIG: CountryConfig = {
   labor_advisor: {
     tax_entity_name: "Agencia Tributaria (Hacienda)",
     registration_steps: ["Alta en Censo (036/037)", "Alta en RETA (Seg. Social)", "Obtención Certificado Digital"],
-    tax_obligations: [
-      { title: "Modelo 130 (IRPF)", description: "Pago fraccionado trimestral del 20% del beneficio.", severity: "critical" },
-      { title: "Modelo 303 (IVA)", description: "Solo si usas moto/coche. Bicis suelen estar exentas (Art 20).", severity: "warning" }
-    ],
+    tax_obligations: [],
     contract_types: [
       { title: "Autónomo (TRADE)", description: "Trabajador Autónomo Económicamente Dependiente. Si el 75% ingresos vienen de una plataforma.", severity: "critical" },
       { title: "Autónomo General", description: "Régimen común para trabajar con múltiples apps." }
     ],
-    recommended_retention_pct: 0.20,
-    freelancer_threshold_note: "Si facturas menos del SMI, algunas sentencias eximen de cuota RETA, pero Hacienda siempre exige IRPF."
+    recommended_retention_pct: 0,
+    freelancer_threshold_note: "Pendiente de validar por actividad, régimen y periodo."
   },
   events: [
     { id: 'e1', name: 'Derbi Madrileño', date: '2024-04-15T20:00:00', location: 'Estadio Metropolitano', type: 'sports', demand_multiplier: 1.8 }

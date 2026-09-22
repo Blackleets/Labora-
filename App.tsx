@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Bell, Eye, EyeOff, FileText, LayoutDashboard, Menu, MessageCircle, Scale, ShieldCheck, User, Wallet } from 'lucide-react';
+import { Bell, Eye, EyeOff, FileText, LayoutDashboard, Menu, MessageCircle, User, Wallet } from 'lucide-react';
 import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { GhibliAtmosphereProvider } from './contexts/GhibliAtmosphereContext';
+import { LocaleProvider } from './contexts/LocaleContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
 import { identityImageStore } from './services/identityImage';
 import { UserRole } from './types';
@@ -13,6 +14,7 @@ import { AiCopilot } from './components/AiCopilot';
 import CountrySelector from './components/CountrySelector';
 import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 import Login from './components/Login';
+import LanguageSelector from './components/LanguageSelector';
 import { GhibliLightingControl } from './components/GhibliLightingControl';
 import Logo from './components/Logo';
 import { ManagerDashboard } from './components/ManagerDashboard';
@@ -98,10 +100,9 @@ const MainLayout: React.FC = () => {
 
   const navItems = isManager ? [
     { id: 'dashboard', label: 'Resumen', icon: LayoutDashboard },
-    { id: 'money', label: 'Auditoría', icon: Wallet },
-    { id: 'tax-declarations', label: 'Modelos', icon: Scale },
-    { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount },
-    ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: ShieldCheck }] : []),
+    { id: 'people', label: 'Clientes', icon: User },
+    { id: 'gestor-requirements', label: 'Tareas', icon: Bell, badge: pendingReqCount },
+    { id: 'messages', label: 'Mensajes', icon: MessageCircle },
     { id: 'settings', label: 'Ajustes', icon: User }
   ] : [
     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
@@ -157,6 +158,7 @@ const MainLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <LanguageSelector />
             <CountrySelector />
             <div className="hidden sm:block">
               <GhibliLightingControl />
@@ -235,12 +237,14 @@ const MainLayout: React.FC = () => {
 const App: React.FC = () => (
   <OrganizationProvider>
     <DataProvider>
-      <CountryProvider>
-        <GhibliAtmosphereProvider>
-          <RemoteSyncBridge />
-          <MainLayout />
-        </GhibliAtmosphereProvider>
-      </CountryProvider>
+      <LocaleProvider>
+        <CountryProvider>
+          <GhibliAtmosphereProvider>
+            <RemoteSyncBridge />
+            <MainLayout />
+          </GhibliAtmosphereProvider>
+        </CountryProvider>
+      </LocaleProvider>
     </DataProvider>
   </OrganizationProvider>
 );

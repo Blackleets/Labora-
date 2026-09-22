@@ -4,6 +4,7 @@ import { useData } from '../../../contexts/DataContext';
 import { useCountry } from '../../../contexts/CountryContext';
 import { identityImageStore } from '../../../services/identityImage';
 import { User, UserRole } from '../../../types';
+import CountryFlag from '../../../components/CountryFlag';
 
 const ClientIdentity = ({ client, active = false, large = false }: { client: User; active?: boolean; large?: boolean }) => {
   const image = identityImageStore.getForUser(client);
@@ -18,7 +19,7 @@ const ClientIdentity = ({ client, active = false, large = false }: { client: Use
 
 export const PeopleHub: React.FC = () => {
   const { currentUser, users, incomes, expenses, requirements, privacyMode } = useData();
-  const { selectedCountry } = useCountry();
+  const { selectedCountry, countries } = useCountry();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedId, setSelectedId] = useState('');
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
@@ -35,6 +36,8 @@ export const PeopleHub: React.FC = () => {
   }, [clients, searchTerm]);
 
   const selectedClient = clients.find((client) => client.id === selectedId) || filteredClients[0] || clients[0];
+  const clientCountry = countries.find((country) => country.country_code === selectedClient?.countryCode)
+    || selectedCountry;
   const clientStats = useMemo(() => {
     if (!selectedClient) return null;
     const clientIncomes = incomes.filter((income) => income.userId === selectedClient.id);
@@ -51,7 +54,7 @@ export const PeopleHub: React.FC = () => {
     };
   }, [selectedClient, incomes, expenses, requirements]);
 
-  const formatMoney = (amount: number) => privacyMode ? '••••' : amount.toLocaleString('es-ES', { style: 'currency', currency: selectedCountry.currency || 'EUR', maximumFractionDigits: 0 });
+  const formatMoney = (amount: number) => privacyMode ? '••••' : amount.toLocaleString('es-ES', { style: 'currency', currency: clientCountry.currency || 'EUR', maximumFractionDigits: 0 });
 
   if (!isManager) return <div className="mx-auto max-w-3xl rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-8 text-center"><Users size={28} className="mx-auto text-stone-300" /><p className="mt-3 text-sm font-semibold text-stone-600">Esta sección está disponible para cuentas de gestoría.</p></div>;
 
@@ -78,7 +81,7 @@ export const PeopleHub: React.FC = () => {
             <div className="min-w-0 space-y-4">
               <section className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex items-center gap-3"><ClientIdentity client={selectedClient} large /><div><h2 className="text-lg font-bold text-stone-900">{selectedClient.name}</h2><p className="mt-1 text-xs text-stone-500">{selectedClient.nif || 'NIF no registrado'}</p></div></div>
+                  <div className="flex items-center gap-3"><ClientIdentity client={selectedClient} large /><div><h2 className="text-lg font-bold text-stone-900">{selectedClient.name}</h2><p className="mt-1 text-xs text-stone-500">{selectedClient.nif || 'Identificación fiscal no registrada'}</p><div className="mt-2 flex items-center gap-2"><CountryFlag code={clientCountry.country_code} name={clientCountry.display_name} className="w-5" /><span className="text-[10px] font-semibold text-[var(--labora-muted)]">{clientCountry.display_name} · {clientCountry.currency}</span></div></div></div>
                   <span className="w-fit rounded-full bg-[var(--labora-moss-soft)] px-2.5 py-1 text-[10px] font-semibold text-[var(--labora-primary)]">Cliente vinculado</span>
                 </div>
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"><InfoCard label="Ingresos" value={formatMoney(clientStats.totalIncome)} icon={Wallet} /><InfoCard label="Gastos" value={formatMoney(clientStats.totalExpenses)} icon={Wallet} /><InfoCard label="Por revisar" value={String(clientStats.pendingExpenses)} icon={Bell} /><InfoCard label="Peticiones" value={String(clientStats.pendingRequirements)} icon={Bell} /></div>

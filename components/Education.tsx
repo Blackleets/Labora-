@@ -17,20 +17,20 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
 
   const articles = [
     {
-      title: "¿Por qué no pago IVA en mis facturas?",
-      content: "Si repartes en bici o andando, tu actividad suele estar exenta de IVA (Art. 20 Ley IVA). Esto significa que NO cobras IVA a Uber/Glovo, y por tanto NO presentas modelo 303. ¡Ojo! Si usas moto, la cosa cambia y podrías tener que declararlo.",
+      title: "Tu actividad determina tus obligaciones",
+      content: "El tratamiento fiscal no depende únicamente del vehículo o de la plataforma. Depende del país, la actividad registrada, la relación contractual y el periodo. Reúne esos datos y confírmalos con una fuente oficial o tu gestoría.",
       icon: Info,
       color: "bg-blue-50 text-blue-600"
     },
     {
-      title: "IRPF: La 'Hucha' Trimestral",
-      content: "El IRPF (Modelo 130) no es un pago a fondo perdido, es un adelanto. Pagas el 20% de tu beneficio cada trimestre. Si al final del año tus ingresos reales fueron bajos, Hacienda te devuelve ese dinero en la Declaración de la Renta.",
+      title: "Separa cobros, gastos y reservas",
+      content: "Mantener ingresos, gastos y dinero reservado en categorías distintas facilita la revisión. Labora+ organiza la evidencia; el porcentaje y el modelo aplicable deben venir del paquete fiscal verificado de tu país o de tu gestoría.",
       icon: BookOpen,
       color: "bg-purple-50 text-purple-600"
     },
     {
-      title: "Mitos sobre Bancos (Revolut/Wise)",
-      content: "Hacienda lo sabe todo. Por la directiva europea DAC7, las plataformas avisan de tus ingresos automáticamente. Tener el dinero en un banco lituano o alemán no lo esconde. Declara todo para evitar sanciones.",
+      title: "La cuenta bancaria no sustituye tus registros",
+      content: "Conserva liquidaciones, facturas y justificantes independientemente del banco que utilices. Las obligaciones de información varían por jurisdicción y periodo; evita conclusiones automáticas sin comprobar la norma aplicable.",
       icon: ShieldCheck,
       color: "bg-green-50 text-green-600"
     }
@@ -38,26 +38,26 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
 
   const steps = [
     {
-      title: "Paso 1: Rendimiento Neto (La Base)",
-      desc: "Hacienda solo quiere impuestos sobre lo que te queda en el bolsillo, no sobre el total que facturas.",
+      title: "Paso 1: Ordenar el resultado de la actividad",
+      desc: "Separa los cobros de los gastos respaldados por justificantes antes de cualquier revisión.",
       formula: "INGRESOS - GASTOS = BENEFICIO",
       detail: "Ejemplo: Si facturas 1000€ pero gastas 200€ en cuota y gasolina, tu beneficio real es 800€. Sobre estos 800€ se calculan los impuestos.",
       icon: PieChart,
       color: "bg-indigo-50 text-indigo-600"
     },
     {
-      title: "Paso 2: Calcular el IRPF (20%)",
-      desc: "De ese beneficio, debes guardar una quinta parte para adelantar al Estado.",
-      formula: "BENEFICIO x 0.20 = CUOTA IRPF",
-      detail: "Siguiendo el ejemplo: 800€ x 0.20 = 160€. Esos 160€ los pagas en el trimestre. Los 640€ restantes son tuyos (menos la cuota de autónomos).",
+      title: "Paso 2: Identificar la regla aplicable",
+      desc: "Antes de calcular, confirma país, actividad, régimen y periodo.",
+      formula: "CONTEXTO + FUENTE VIGENTE = REGLA REVISABLE",
+      detail: "Labora+ solo habilita cálculos cuando el país dispone de fuentes oficiales, fecha de vigencia y revisión registrada.",
       icon: Calculator,
       color: "bg-pink-50 text-pink-600"
     },
     {
-      title: "Paso 3: Cuota de Autónomos",
-      desc: "Tu seguridad social. Te cubre médico, baja por enfermedad y jubilación.",
-      formula: "SEGÚN TABLAS DE INGRESOS REALES",
-      detail: "Si tu beneficio neto (800€) está en el tramo bajo, pagas la cuota mínima (~230€). Si tienes tarifa plana, pagas ~80€ el primer año.",
+      title: "Paso 3: Preparar la revisión",
+      desc: "Entrega a tu gestoría información completa y trazable.",
+      formula: "DATOS + JUSTIFICANTES + PREGUNTAS",
+      detail: "Un expediente ordenado permite que la gestoría determine obligaciones sin depender de cifras genéricas o desactualizadas.",
       icon: Coins,
       color: "bg-orange-50 text-orange-600"
     }
@@ -65,22 +65,22 @@ const Education: React.FC<EducationProps> = ({ setView }) => {
 
   const quizQuestions = [
     {
-      question: "Si soy rider con bicicleta, ¿tengo que presentar el modelo 303 de IVA?",
-      options: ["Sí, siempre", "No, estoy exento", "Solo si gano más de 1000€"],
+      question: "¿Basta con saber qué vehículo utilizas para determinar tus obligaciones fiscales?",
+      options: ["Sí", "No, hace falta revisar el contexto completo", "Solo si es bicicleta"],
       correct: 1,
-      explanation: "¡Correcto! El transporte de mercancías en bicicleta está exento de IVA según la normativa actual."
+      explanation: "Correcto. También importan la jurisdicción, actividad, relación contractual, régimen y periodo aplicable."
     },
     {
-      question: "¿Qué porcentaje de tus beneficios se paga en el Modelo 130 (IRPF)?",
-      options: ["10%", "15%", "20%"],
+      question: "¿Cuándo debe Labora+ mostrar un cálculo fiscal como válido?",
+      options: ["Cuando parezca razonable", "Cuando exista una cifra popular", "Con fuentes oficiales, vigencia y revisión"],
       correct: 2,
-      explanation: "Exacto. Adelantas el 20% de tu rendimiento neto (ingresos - gastos) cada trimestre."
+      explanation: "Exacto. Sin evidencia vigente, Labora+ debe organizar la consulta y mantener el cálculo bloqueado."
     },
     {
-      question: "¿La cuota de autónomos es un gasto deducible?",
-      options: ["Sí, por supuesto", "No, es un impuesto", "Solo la mitad"],
-      correct: 0,
-      explanation: "¡Sí! Es uno de los gastos más importantes que puedes restar a tus ingresos para bajar impuestos."
+      question: "¿Qué debe acompañar a un gasto para facilitar su revisión?",
+      options: ["Solo una cifra", "Un justificante y su contexto", "Una captura sin fecha"],
+      correct: 1,
+      explanation: "Correcto. El justificante, la fecha, el proveedor y la relación con la actividad permiten revisarlo con criterio."
     }
   ];
 
