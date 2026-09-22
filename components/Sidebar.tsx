@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Receipt,
   Settings,
+  ShieldCheck,
   Users,
   Wallet,
   X
@@ -40,6 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   const { currentUser, logout, requirements } = useData();
   const { palette } = useGhibliAtmosphere();
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
   const identityImage = identityImageStore.getForUser(currentUser);
 
   const pendingReqCount = requirements.filter((requirement) => {
@@ -79,7 +81,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
 
   const managerWorkspace: NavItem[] = [
     { id: 'messages', label: 'Mensajes', icon: MessageSquare, badge: unreadMessages },
-    { id: 'docs', label: 'Documentos', icon: BookOpen }
+    { id: 'docs', label: 'Documentos', icon: BookOpen },
+    ...(isAdmin ? [{ id: 'admin', label: 'Centro de administración', icon: ShieldCheck }] : [])
   ];
 
   const primaryItems = isManager ? managerPrimary : riderPrimary;

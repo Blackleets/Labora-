@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Eye, EyeOff, FileText, LayoutDashboard, Menu, MessageCircle, Scale, User, Wallet } from 'lucide-react';
+import { Bell, Eye, EyeOff, FileText, LayoutDashboard, Menu, MessageCircle, Scale, ShieldCheck, User, Wallet } from 'lucide-react';
 import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { GhibliAtmosphereProvider } from './contexts/GhibliAtmosphereContext';
@@ -8,6 +8,7 @@ import { identityImageStore } from './services/identityImage';
 import { UserRole } from './types';
 
 import Dashboard from './components/Dashboard';
+import { AdminHub } from './components/AdminHub';
 import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 import Login from './components/Login';
 import { GhibliLightingControl } from './components/GhibliLightingControl';
@@ -45,6 +46,7 @@ const MainLayout: React.FC = () => {
   }
 
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
+  const isAdmin = currentUser.role === UserRole.ADMIN;
   const identityImage = identityImageStore.getForUser(currentUser);
   const pendingReqCount = requirements.filter((requirement) =>
     currentUser.role === UserRole.RIDER
@@ -66,7 +68,8 @@ const MainLayout: React.FC = () => {
       messages: 'Mensajes',
       settings: 'Perfil y ajustes',
       profile: 'Mi perfil',
-      docs: 'Documentos'
+      docs: 'Documentos',
+      admin: 'Administración'
     };
     return titles[currentView] || 'Labora+';
   };
@@ -86,6 +89,7 @@ const MainLayout: React.FC = () => {
       case 'settings': return <SettingsHub />;
       case 'profile': return <Profile />;
       case 'docs': return <MoneyHub initialTab="docs" setView={setView} />;
+      case 'admin': return isAdmin ? <AdminHub /> : (isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />);
       default: return isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
     }
   };
@@ -95,6 +99,7 @@ const MainLayout: React.FC = () => {
     { id: 'money', label: 'Auditoría', icon: Wallet },
     { id: 'tax-declarations', label: 'Modelos', icon: Scale },
     { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount },
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: ShieldCheck }] : []),
     { id: 'settings', label: 'Ajustes', icon: User }
   ] : [
     { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
