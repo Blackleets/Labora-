@@ -112,7 +112,6 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
           <feComponentTransfer in="g" result="g2">
             <feFuncA type="linear" slope="0.045" />
           </feComponentTransfer>
-          <feBlend in="SourceGraphic" in2="g2" mode="overlay" />
         </filter>
       </defs>
 
@@ -207,6 +206,7 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
         y="0"
         width="100%"
         height="100%"
+        fill="#FFFFFF"
         filter={`url(#${gid('grain')})`}
         opacity="0.55"
         style={{ mixBlendMode: 'multiply' as any }}
