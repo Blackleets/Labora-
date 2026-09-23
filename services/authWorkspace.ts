@@ -7,6 +7,13 @@ import {
   validateRiderLinkByEmail
 } from './gestoriaLinking';
 import { supabase } from './supabaseClient';
+import {
+  safeStorageGet,
+  safeStorageReadJson,
+  safeStorageRemove,
+  safeStorageSet,
+  safeStorageSetJson
+} from './safeStorage';
 
 const LOCAL = {
   users: 'labora_users',
@@ -106,10 +113,10 @@ export const loadRemoteWorkspace = async (currentUserId: string) => {
   const currentRow = rows.find((row) => row.id === currentUserId);
   if (!current || !currentRow) throw new Error('No se encontró el perfil asociado a la sesión.');
 
-  localStorage.setItem(LOCAL.users, JSON.stringify(users));
-  localStorage.setItem(LOCAL.currentUser, JSON.stringify(current));
-  localStorage.setItem(LOCAL.onboarded, String(Boolean(currentRow.onboarding_completed)));
-  localStorage.setItem(LOCAL.country, current.countryCode || 'ES');
+  safeStorageSetJson(LOCAL.users, users);
+  safeStorageSetJson(LOCAL.currentUser, current);
+  safeStorageSet(LOCAL.onboarded, String(Boolean(currentRow.onboarding_completed)));
+  safeStorageSet(LOCAL.country, current.countryCode || 'ES');
   return { users, currentUser: current };
 };
 
@@ -147,13 +154,13 @@ export const signInRemote = async (email: string, password: string) => {
   if (error) throw error;
   if (!data.user) throw new Error('No se pudo iniciar la sesión.');
 
-  const pendingRaw = localStorage.getItem(LOCAL.pendingIdentity);
+  const pendingRaw = safeStorageGet(LOCAL.pendingIdentity);
   if (pendingRaw) {
     try {
       const pending = JSON.parse(pendingRaw) as { email: string; image?: string; kind: 'avatar' | 'logo' };
       if (pending.email === data.user.email && pending.image) {
         await uploadIdentityDataUrl(data.user.id, pending.image, pending.kind);
-        localStorage.removeItem(LOCAL.pendingIdentity);
+        safeStorageRemove(LOCAL.pendingIdentity);
       }
     } catch {
       // A pending local image must never block a valid sign in.
@@ -219,7 +226,7 @@ export const signUpRemote = async (
     if (data.session) {
       await uploadIdentityDataUrl(data.user.id, identityImage, kind);
     } else {
-      localStorage.setItem(LOCAL.pendingIdentity, JSON.stringify({ email, image: identityImage, kind }));
+      safeStorageSetJson(LOCAL.pendingIdentity, { email, image: identityImage, kind });
     }
   }
 
@@ -232,10 +239,10 @@ export const signUpRemote = async (
 
 export const signOutRemote = async () => {
   await supabase.auth.signOut();
-  localStorage.removeItem(LOCAL.users);
-  localStorage.removeItem(LOCAL.currentUser);
-  localStorage.removeItem(LOCAL.onboarded);
-  localStorage.removeItem(LOCAL.country);
+  safeStorageRemove(LOCAL.users);
+  safeStorageRemove(LOCAL.currentUser);
+  safeStorageRemove(LOCAL.onboarded);
+  safeStorageRemove(LOCAL.country);
 };
 
 export const recoverRemoteSession = async () => {
@@ -259,8 +266,7 @@ export const linkManagerByEmail = async (
   directory: User[] = []
 ) => {
   const authenticatedUser = await requireAuthenticatedUser();
-  const currentRaw = localStorage.getItem(LOCAL.currentUser);
-  const current = currentRaw ? (JSON.parse(currentRaw) as User) : undefined;
+  const current = safeStorageReadJson<User | undefined>(LOCAL.currentUser, undefined);
   if (!current || current.id !== authenticatedUser.id) {
     throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
   }
@@ -289,8 +295,7 @@ export const linkManagerByEmail = async (
  */
 export const unlinkOwnManager = async () => {
   const authenticatedUser = await requireAuthenticatedUser();
-  const currentRaw = localStorage.getItem(LOCAL.currentUser);
-  const current = currentRaw ? (JSON.parse(currentRaw) as User) : undefined;
+  const current = safeStorageReadJson<User | undefined>(LOCAL.currentUser, undefined);
   if (!current || current.id !== authenticatedUser.id) {
     throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
   }
