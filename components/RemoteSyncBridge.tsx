@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { useData } from '../contexts/DataContext';
 import { loadRemoteOperationalData, syncOperationalSnapshot } from '../services/remoteOperational';
 import { supabase } from '../services/supabaseClient';
+import { operationalCacheFingerprint } from '../services/operationalCache';
 
 const RemoteSyncBridge: React.FC = () => {
   const {
@@ -57,27 +58,13 @@ const RemoteSyncBridge: React.FC = () => {
 
     const hydrate = async () => {
       try {
-        const before = JSON.stringify({
-          incomes: localStorage.getItem('labora_incomes'),
-          expenses: localStorage.getItem('labora_expenses'),
-          requirements: localStorage.getItem('labora_requirements'),
-          documents: localStorage.getItem('labora_docs'),
-          declarations: localStorage.getItem('labora_declarations'),
-          payments: localStorage.getItem('labora_payments')
-        });
+        const before = operationalCacheFingerprint(currentUser.id);
 
         await loadRemoteOperationalData(users);
         if (!active) return;
         sessionStorage.setItem(hydrationKey, 'true');
 
-        const after = JSON.stringify({
-          incomes: localStorage.getItem('labora_incomes'),
-          expenses: localStorage.getItem('labora_expenses'),
-          requirements: localStorage.getItem('labora_requirements'),
-          documents: localStorage.getItem('labora_docs'),
-          declarations: localStorage.getItem('labora_declarations'),
-          payments: localStorage.getItem('labora_payments')
-        });
+        const after = operationalCacheFingerprint(currentUser.id);
 
         if (before !== after) window.location.reload();
       } catch (error) {

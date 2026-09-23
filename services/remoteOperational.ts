@@ -9,57 +9,7 @@ import {
   UserRole
 } from '../types';
 import { supabase } from './supabaseClient';
-
-const LEGACY_KEYS = [
-  'labora_incomes',
-  'labora_expenses',
-  'labora_docs',
-  'labora_payments',
-  'labora_requirements',
-  'labora_declarations'
-] as const;
-
-const KEY_BASE = {
-  incomes: 'labora_incomes',
-  expenses: 'labora_expenses',
-  documents: 'labora_docs',
-  payments: 'labora_payments',
-  requirements: 'labora_requirements',
-  declarations: 'labora_declarations'
-} as const;
-
-const scopedOperationalKey = (base: string, userId: string) => `${base}:${userId}`;
-
-const purgeLegacyOperationalCache = () => {
-  for (const key of LEGACY_KEYS) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* ignore */
-    }
-  }
-};
-
-const writeOperationalCache = (userId: string, payload: {
-  incomes: unknown;
-  expenses: unknown;
-  requirements: unknown;
-  documents: unknown;
-  declarations: unknown;
-  payments: unknown;
-}) => {
-  purgeLegacyOperationalCache();
-  try {
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.incomes, userId), JSON.stringify(payload.incomes));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.expenses, userId), JSON.stringify(payload.expenses));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.requirements, userId), JSON.stringify(payload.requirements));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.documents, userId), JSON.stringify(payload.documents));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.declarations, userId), JSON.stringify(payload.declarations));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.payments, userId), JSON.stringify(payload.payments));
-  } catch {
-    /* cache is optional */
-  }
-};
+import { purgeLegacyOperationalCache, writeOperationalCache } from './operationalCache';
 
 const numberValue = (value: any) => Number(value ?? 0);
 
