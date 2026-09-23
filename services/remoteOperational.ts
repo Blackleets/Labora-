@@ -326,8 +326,11 @@ export const deleteRemoteExpense = async (expenseId: string) => {
     .maybeSingle();
   if (readError) throw readError;
 
-  const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+  const { data: deleted, error } = await supabase.from('expenses').delete().eq('id', expenseId).select('id');
   if (error) throw error;
+  if (data && !deleted?.some((row) => row.id === expenseId)) {
+    throw new Error('No se pudo confirmar el borrado del gasto.');
+  }
 
   const path = data?.receipt_url as string | undefined;
   if (path && !path.startsWith('http')) {
@@ -337,8 +340,18 @@ export const deleteRemoteExpense = async (expenseId: string) => {
 };
 
 export const deleteRemoteIncome = async (incomeId: string) => {
-  const { error } = await supabase.from('incomes').delete().eq('id', incomeId);
+  const { data, error: readError } = await supabase
+    .from('incomes')
+    .select('id')
+    .eq('id', incomeId)
+    .maybeSingle();
+  if (readError) throw readError;
+
+  const { data: deleted, error } = await supabase.from('incomes').delete().eq('id', incomeId).select('id');
   if (error) throw error;
+  if (data && !deleted?.some((row) => row.id === incomeId)) {
+    throw new Error('No se pudo confirmar el borrado del ingreso.');
+  }
 };
 
 export const deleteRemoteDocument = async (documentId: string) => {
@@ -349,8 +362,11 @@ export const deleteRemoteDocument = async (documentId: string) => {
     .maybeSingle();
   if (readError) throw readError;
 
-  const { error } = await supabase.from('documents').delete().eq('id', documentId);
+  const { data: deleted, error } = await supabase.from('documents').delete().eq('id', documentId).select('id');
   if (error) throw error;
+  if (data && !deleted?.some((row) => row.id === documentId)) {
+    throw new Error('No se pudo confirmar el borrado del documento.');
+  }
 
   const path = data?.content as string | undefined;
   if (path && !path.startsWith('http')) {
