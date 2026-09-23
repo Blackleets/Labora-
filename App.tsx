@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { Bell, Eye, EyeOff, FileText, Home, LayoutDashboard, Menu, MessageSquare, Scale, User, Wallet } from 'lucide-react';
 import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
@@ -7,25 +7,38 @@ import { OrganizationProvider } from './contexts/OrganizationContext';
 import { identityImageStore } from './services/identityImage';
 import { UserRole } from './types';
 
-import Dashboard from './components/Dashboard';
-import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 import Login from './components/Login';
-import { GhibliLightingControl } from './components/GhibliLightingControl';
 import Logo from './components/Logo';
-import { ManagerDashboard } from './components/ManagerDashboard';
-import Onboarding from './components/Onboarding';
-import Profile from './components/Profile';
 import RemoteSyncBridge from './components/RemoteSyncBridge';
 import Sidebar from './components/Sidebar';
-import { TaxOverview } from './components/TaxOverview';
 import Toast from './components/Toast';
-import { AutomationHub } from './modules/core/hubs/AutomationHub';
-import { MoneyHub } from './modules/core/hubs/MoneyHub';
-import { OperationsHub } from './modules/core/hubs/OperationsHub';
-import { PeopleHub } from './modules/core/hubs/PeopleHub';
-import { SettingsHub } from './modules/core/hubs/SettingsHub';
-import { IntegrationCatalog } from './modules/integrations/components/IntegrationCatalog';
-import { MessagesHub } from './modules/messages/components/MessagesHub';
+
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const GestorRequirementsWidget = lazy(() => import('./components/GestorRequirementsWidget').then((module) => ({ default: module.GestorRequirementsWidget })));
+const GhibliLightingControl = lazy(() => import('./components/GhibliLightingControl').then((module) => ({ default: module.GhibliLightingControl })));
+const ManagerDashboard = lazy(() => import('./components/ManagerDashboard').then((module) => ({ default: module.ManagerDashboard })));
+const Onboarding = lazy(() => import('./components/Onboarding'));
+const Profile = lazy(() => import('./components/Profile'));
+const TaxOverview = lazy(() => import('./components/TaxOverview').then((module) => ({ default: module.TaxOverview })));
+const AutomationHub = lazy(() => import('./modules/core/hubs/AutomationHub').then((module) => ({ default: module.AutomationHub })));
+const MoneyHub = lazy(() => import('./modules/core/hubs/MoneyHub').then((module) => ({ default: module.MoneyHub })));
+const OperationsHub = lazy(() => import('./modules/core/hubs/OperationsHub').then((module) => ({ default: module.OperationsHub })));
+const PeopleHub = lazy(() => import('./modules/core/hubs/PeopleHub').then((module) => ({ default: module.PeopleHub })));
+const SettingsHub = lazy(() => import('./modules/core/hubs/SettingsHub').then((module) => ({ default: module.SettingsHub })));
+const IntegrationCatalog = lazy(() => import('./modules/integrations/components/IntegrationCatalog').then((module) => ({ default: module.IntegrationCatalog })));
+const MessagesHub = lazy(() => import('./modules/messages/components/MessagesHub').then((module) => ({ default: module.MessagesHub })));
+
+const ViewLoading = () => (
+  <div className="mx-auto flex min-h-[45vh] max-w-3xl items-center justify-center px-6" role="status" aria-live="polite">
+    <div className="w-full rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-6 shadow-sm">
+      <div className="h-3 w-24 animate-pulse rounded-full bg-[var(--labora-moss-soft)]" />
+      <div className="mt-5 h-8 w-2/3 animate-pulse rounded-xl bg-[var(--labora-surface-2)]" />
+      <div className="mt-3 h-4 w-full animate-pulse rounded-lg bg-[var(--labora-surface-2)]" />
+      <div className="mt-2 h-4 w-4/5 animate-pulse rounded-lg bg-[var(--labora-surface-2)]" />
+      <span className="sr-only">Cargando pantalla</span>
+    </div>
+  </div>
+);
 
 const MainLayout: React.FC = () => {
   const {
@@ -41,7 +54,7 @@ const MainLayout: React.FC = () => {
 
   if (!currentUser) return <Login />;
   if (currentUser.role === UserRole.RIDER && !hasOnboarded) {
-    return <Onboarding onFinish={completeOnboarding} />;
+    return <Suspense fallback={<ViewLoading />}><Onboarding onFinish={completeOnboarding} /></Suspense>;
   }
 
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
@@ -183,7 +196,9 @@ const MainLayout: React.FC = () => {
         </header>
 
         <div className={`flex-1 overflow-x-hidden overflow-y-auto ${!isManager && currentView === 'dashboard' ? 'px-0 py-0 md:px-8 md:py-10' : 'px-4 py-6 md:px-8 md:py-10'}`}>
-          <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
+          <div className="mx-auto min-h-full max-w-7xl min-w-0">
+            <Suspense fallback={<ViewLoading />}>{renderView()}</Suspense>
+          </div>
         </div>
 
         <nav className="safe-area-bottom shrink-0 border-t border-[#E6DED1] bg-[#FFFCF7]/96 px-2 pb-1.5 pt-2 backdrop-blur-xl lg:hidden">
