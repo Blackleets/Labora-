@@ -39,7 +39,7 @@ export const uploadOperationalFile = async (userId: string, dataUrl: string, pre
   return path;
 };
 
-export const loadRemoteOperationalData = async (users: User[]) => {
+export const loadRemoteOperationalData = async (users: User[], expectedUserId?: string) => {
   const profileName = new Map(users.map((user) => [user.id, user.companyName || user.name]));
 
   const [incomesResult, expensesResult, requirementsResult, documentsResult, declarationsResult, paymentsResult] = await Promise.all([
@@ -169,8 +169,12 @@ export const loadRemoteOperationalData = async (users: User[]) => {
 
   const { data: authData } = await supabase.auth.getUser();
   const sessionUserId = authData.user?.id;
+  if (expectedUserId && sessionUserId !== expectedUserId) {
+    throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
+  }
+  let cachePersisted = false;
   if (sessionUserId) {
-    writeOperationalCache(sessionUserId, {
+    cachePersisted = writeOperationalCache(sessionUserId, {
       incomes,
       expenses,
       requirements,
@@ -182,7 +186,7 @@ export const loadRemoteOperationalData = async (users: User[]) => {
     purgeLegacyOperationalCache();
   }
 
-  return { incomes, expenses, requirements, documents, declarations, payments };
+  return { incomes, expenses, requirements, documents, declarations, payments, cachePersisted };
 };
 
 type OperationalSnapshot = {
@@ -365,29 +369,11 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     const ownDocumentItems = documents.filter((document) => document.userId === currentUser.id);
     const ownIncomeItems = incomes.filter((income) => income.userId === currentUser.id);
 
-    const [remoteExpenseIds, remoteDocumentIds, remoteIncomeIds] = await Promise.all([
-      supabase.from('expenses').select('id').eq('user_id', currentUser.id),
-      supabase.from('documents').select('id').eq('user_id', currentUser.id),
-      supabase.from('incomes').select('id').eq('user_id', currentUser.id)
-    ]);
+    const remoteExpenseIds = await supabase.from('expenses').select('id').eq('user_id', currentUser.id);
     if (remoteExpenseIds.error) throw remoteExpenseIds.error;
-    if (remoteDocumentIds.error) throw remoteDocumentIds.error;
-    if (remoteIncomeIds.error) throw remoteIncomeIds.error;
-
-    const localExpenseIds = new Set(ownExpenseItems.map((item) => item.id));
     const remoteExpenseIdSet = new Set((remoteExpenseIds.data || []).map((item) => item.id));
-    const localDocumentIds = new Set(ownDocumentItems.map((item) => item.id));
-    const localIncomeIds = new Set(ownIncomeItems.map((item) => item.id));
-
-    for (const row of remoteExpenseIds.data || []) {
-      if (!localExpenseIds.has(row.id)) await deleteRemoteExpense(row.id);
-    }
-    for (const row of remoteDocumentIds.data || []) {
-      if (!localDocumentIds.has(row.id)) await deleteRemoteDocument(row.id);
-    }
-    for (const row of remoteIncomeIds.data || []) {
-      if (!localIncomeIds.has(row.id)) await deleteRemoteIncome(row.id);
-    }
+    // Missing local rows are not deletion requests. Owner actions above call the
+    // explicit remote delete functions; a blocked or stale cache must not erase data.
 
     for (const item of ownExpenseItems) {
       let receiptPath: string | undefined;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { StorageLike } from './safeStorage';
 import {
+  canResumeHydratedCache,
   operationalCacheFingerprint,
   scopedOperationalKey,
   writeOperationalCache
@@ -44,5 +45,30 @@ describe('operationalCache', () => {
 
     expect(storage.getItem(scopedOperationalKey('labora_incomes', 'rider-1'))).toContain('rider-income');
     expect(storage.getItem(scopedOperationalKey('labora_incomes', 'manager-1'))).toContain('manager-view');
+  });
+
+  it('never resumes from a stale receipt, missing keys, or a different account', () => {
+    const storage = memoryStorage();
+    expect(writeOperationalCache('rider-1', emptyPayload(), storage)).toBe(true);
+    const receipt = operationalCacheFingerprint('rider-1', storage);
+
+    expect(canResumeHydratedCache('rider-1', receipt, storage)).toBe(true);
+    expect(canResumeHydratedCache('manager-1', receipt, storage)).toBe(false);
+    writeOperationalCache('rider-1', { ...emptyPayload(), incomes: [{ id: 'newer-income' }] }, storage);
+    expect(canResumeHydratedCache('rider-1', receipt, storage)).toBe(false);
+    storage.removeItem(scopedOperationalKey('labora_incomes', 'rider-1'));
+    expect(canResumeHydratedCache('rider-1', receipt, storage)).toBe(false);
+    expect(canResumeHydratedCache('rider-1', null, storage)).toBe(false);
+  });
+
+  it('does not claim hydration succeeded when storage is blocked', () => {
+    const blocked: StorageLike = {
+      getItem: () => { throw new Error('private mode'); },
+      setItem: () => { throw new Error('quota'); },
+      removeItem: () => { throw new Error('private mode'); }
+    };
+
+    expect(writeOperationalCache('rider-1', emptyPayload(), blocked)).toBe(false);
+    expect(canResumeHydratedCache('rider-1', operationalCacheFingerprint('rider-1', blocked), blocked)).toBe(false);
   });
 });

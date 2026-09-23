@@ -28,13 +28,15 @@ export const writeOperationalCache = (
   storage?: StorageLike
 ) => {
   purgeLegacyOperationalCache(storage);
+  let persisted = true;
   for (const [name, base] of Object.entries(OPERATIONAL_KEY_BASE)) {
-    safeStorageSetJson(
+    persisted = safeStorageSetJson(
       scopedOperationalKey(base, userId),
       payload[name as keyof OperationalCachePayload],
       storage
-    );
+    ) && persisted;
   }
+  return persisted;
 };
 
 /** Stable comparison used to decide whether remote hydration changed this account. */
@@ -44,3 +46,14 @@ export const operationalCacheFingerprint = (userId: string, storage?: StorageLik
       safeStorageGet(scopedOperationalKey(base, userId), storage)
     )
   );
+
+/** A reload receipt is valid only for an intact cache belonging to this user. */
+export const canResumeHydratedCache = (
+  userId: string,
+  receipt: string | null,
+  storage?: StorageLike
+) => Boolean(receipt)
+  && Object.values(OPERATIONAL_KEY_BASE).every((base) =>
+    safeStorageGet(scopedOperationalKey(base, userId), storage) !== null
+  )
+  && operationalCacheFingerprint(userId, storage) === receipt;
