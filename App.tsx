@@ -1,12 +1,14 @@
-import React, { lazy, Suspense, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Bell, Eye, EyeOff, FileText, Home, LayoutDashboard, Menu, MessageSquare, Scale, User, Wallet } from 'lucide-react';
 import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { GhibliAtmosphereProvider } from './contexts/GhibliAtmosphereContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
 import { identityImageStore } from './services/identityImage';
+import { AppView, canOpenView, hashForView, resolveAppView, viewStorageKey } from './services/appNavigation';
 import { UserRole } from './types';
 
+import { AppErrorBoundary } from './components/AppErrorBoundary';
 import Login from './components/Login';
 import Logo from './components/Logo';
 import RemoteSyncBridge from './components/RemoteSyncBridge';
@@ -40,6 +42,22 @@ const ViewLoading = () => (
   </div>
 );
 
+const readStoredView = (userId: string) => {
+  try {
+    return sessionStorage.getItem(viewStorageKey(userId));
+  } catch {
+    return null;
+  }
+};
+
+const rememberView = (userId: string, view: AppView) => {
+  try {
+    sessionStorage.setItem(viewStorageKey(userId), view);
+  } catch {
+    // Private browsing or a full storage quota must not break navigation.
+  }
+};
+
 const MainLayout: React.FC = () => {
   const {
     currentUser,
@@ -49,8 +67,34 @@ const MainLayout: React.FC = () => {
     privacyMode,
     togglePrivacyMode
   } = useData();
-  const [currentView, setView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    const stored = currentUser?.id ? readStoredView(currentUser.id) : null;
+    return resolveAppView(window.location.hash, stored, currentUser?.role);
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const setView = useCallback((nextView: string) => {
+    if (!currentUser || !canOpenView(nextView, currentUser.role)) return;
+    setCurrentView(nextView);
+    rememberView(currentUser.id, nextView);
+    const nextHash = hashForView(nextView);
+    if (window.location.hash !== nextHash) window.location.hash = nextHash;
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const restoreFromLocation = () => {
+      const stored = readStoredView(currentUser.id);
+      const resolved = resolveAppView(window.location.hash, stored, currentUser.role);
+      setCurrentView(resolved);
+      rememberView(currentUser.id, resolved);
+    };
+
+    restoreFromLocation();
+    window.addEventListener('hashchange', restoreFromLocation);
+    return () => window.removeEventListener('hashchange', restoreFromLocation);
+  }, [currentUser]);
 
   if (!currentUser) return <Login />;
   if (currentUser.role === UserRole.RIDER && !hasOnboarded) {
@@ -197,7 +241,9 @@ const MainLayout: React.FC = () => {
 
         <div className={`flex-1 overflow-x-hidden overflow-y-auto ${!isManager && currentView === 'dashboard' ? 'px-0 py-0 md:px-8 md:py-10' : 'px-4 py-6 md:px-8 md:py-10'}`}>
           <div className="mx-auto min-h-full max-w-7xl min-w-0">
-            <Suspense fallback={<ViewLoading />}>{renderView()}</Suspense>
+            <AppErrorBoundary resetKey={currentView}>
+              <Suspense fallback={<ViewLoading />}>{renderView()}</Suspense>
+            </AppErrorBoundary>
           </div>
         </div>
 
@@ -211,6 +257,7 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
+                  aria-current={active ? 'page' : undefined}
                   className={`relative flex min-w-0 flex-col items-center gap-0.5 px-1 py-1.5 transition ${active ? 'text-[#145039]' : 'text-[#758078]'}`}
                 >
                   <div className="relative flex h-8 min-w-10 items-center justify-center px-2">

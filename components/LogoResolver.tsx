@@ -10,12 +10,13 @@ import {
   getPlatformLetterAccent,
   isDarkGlyphBrand
 } from './brandMarks';
+import { IntegrationCategory } from '../types';
 
 export interface LogoResolverProps {
   id: string;
   name: string;
   domain?: string;
-  category?: 'delivery' | 'mobility' | 'banking' | 'payments' | 'accounting' | 'other';
+  category?: IntegrationCategory | 'other';
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }

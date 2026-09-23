@@ -108,6 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
         <button
           key={item.id}
           onClick={() => handleNavigate(item.id)}
+          aria-current={active ? 'page' : undefined}
           className={`group flex w-full items-center gap-3 rounded-[18px] px-3.5 py-3 text-left text-[13.5px] tracking-[-0.01em] transition-all ${
             active
               ? 'bg-[var(--labora-moss-soft)] font-semibold text-[var(--labora-primary)] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10)]'
