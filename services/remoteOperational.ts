@@ -473,7 +473,10 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       estimated: item.estimated,
       domain: item.domain || null
     }));
-    if (ownPayments.length) await supabase.from('payments').upsert(ownPayments);
+    if (ownPayments.length) {
+      const { error } = await supabase.from('payments').upsert(ownPayments);
+      if (error) throw error;
+    }
   } else {
     for (const expense of expenses.filter((item) => linkedIds.has(item.userId))) {
       await reviewRemoteExpense(
