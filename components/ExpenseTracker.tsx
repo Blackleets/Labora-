@@ -14,6 +14,7 @@ import {
   Plus,
   Receipt,
   Repeat,
+  Search,
   Save,
   Shield,
   ShoppingBag,
@@ -29,6 +30,10 @@ import { analyzeReceipt } from '../services/geminiService';
 import { Expense, ExpenseCategory, UserRole } from '../types';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
 import { canOwnerDeleteRow, expenseDeleteConfirmMessage } from '../services/deleteEligibility';
+import { canAccessClientRecord } from '../services/gestoriaLinking';
+import { sortExpensesForReview } from '../services/expenseOrganization';
+import MerchantLogo from './MerchantLogo';
+import { resolveMerchantBrand } from '../data/merchantBrands';
 
 interface ExpenseTrackerProps {
   startDate: string;
@@ -64,21 +69,44 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   const [reviewPct, setReviewPct] = useState('0');
   const [reviewNote, setReviewNote] = useState('');
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
+  const [expenseSearch, setExpenseSearch] = useState('');
+  const [expenseCategoryFilter, setExpenseCategoryFilter] = useState('all');
+  const [expenseMerchantFilter, setExpenseMerchantFilter] = useState('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
 
-  const filteredExpenses = useMemo(() => expenses.filter((expense) => {
+  const filteredExpenses = useMemo(() => sortExpensesForReview(expenses.filter((expense) => {
     if (!currentUser) return false;
     if (!isManager && expense.userId !== currentUser.id) return false;
     if (isManager) {
-      const linked = expense.userId !== currentUser.id;
-      if (!linked) return false;
+      const client = users.find((user) => user.id === expense.userId);
+      if (!canAccessClientRecord(currentUser, client)) return false;
     }
     if (startDate && expense.date < startDate) return false;
     if (endDate && expense.date > endDate) return false;
+    if (expenseCategoryFilter !== 'all' && String(expense.category) !== expenseCategoryFilter) return false;
+    const match = resolveMerchantBrand(expense.merchant || '');
+    const merchantId = match.brand?.id || `custom:${(expense.merchant || 'sin comercio').trim().toLocaleLowerCase('es')}`;
+    if (expenseMerchantFilter !== 'all' && merchantId !== expenseMerchantFilter) return false;
+    const query = expenseSearch.trim().toLocaleLowerCase('es');
+    if (query && ![expense.merchant, expense.category, expense.notes, isManager ? users.find((user) => user.id === expense.userId)?.name : '']
+      .some((value) => String(value || '').toLocaleLowerCase('es').includes(query))) return false;
     return true;
-  }), [expenses, startDate, endDate, currentUser, isManager]);
+  })), [expenses, startDate, endDate, currentUser, isManager, users, expenseSearch, expenseCategoryFilter, expenseMerchantFilter]);
+
+  const merchantGroups = useMemo(() => {
+    const groups = new Map<string, { label: string; count: number }>();
+    for (const expense of filteredExpenses) {
+      const match = resolveMerchantBrand(expense.merchant || '');
+      const id = match.brand?.id || `custom:${(expense.merchant || 'sin comercio').trim().toLocaleLowerCase('es')}`;
+      const label = match.brand?.name || expense.merchant || 'Sin comercio';
+      const group = groups.get(id) || { label, count: 0 };
+      group.count += 1;
+      groups.set(id, group);
+    }
+    return [...groups.entries()].sort((a, b) => b[1].count - a[1].count).slice(0, 6);
+  }, [filteredExpenses]);
 
   const formatCurrency = (amount: number) => {
     if (privacyMode) return '••••';
@@ -364,6 +392,25 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
           <span className="rounded-full bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-extrabold text-[var(--labora-muted)]">{filteredExpenses.length}</span>
         </header>
 
+        <div className="space-y-3 border-b border-[var(--labora-border)] p-3.5">
+          <label className="flex min-h-11 items-center gap-2.5 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 text-[var(--labora-muted)]">
+            <Search size={16} aria-hidden />
+            <input value={expenseSearch} onChange={(event) => setExpenseSearch(event.target.value)} placeholder={isManager ? 'Buscar comercio, categoría o cliente' : 'Buscar comercio o categoría'} className="min-w-0 flex-1 bg-transparent text-sm text-[var(--labora-ink)] outline-none placeholder:text-[var(--labora-muted)]" aria-label="Buscar gastos" />
+          </label>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <FilterChip active={expenseCategoryFilter === 'all'} onClick={() => setExpenseCategoryFilter('all')}>Todas las categorías</FilterChip>
+            {[...new Set(expenses.filter((expense) => !isManager || canAccessClientRecord(currentUser, users.find((user) => user.id === expense.userId))).map((expense) => String(expense.category)))].sort().map((category) => (
+              <FilterChip key={category} active={expenseCategoryFilter === category} onClick={() => setExpenseCategoryFilter(category)}>{category}</FilterChip>
+            ))}
+          </div>
+          {merchantGroups.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filtrar por comercio">
+              <FilterChip active={expenseMerchantFilter === 'all'} onClick={() => setExpenseMerchantFilter('all')}>Todos los comercios</FilterChip>
+              {merchantGroups.map(([id, group]) => <FilterChip key={id} active={expenseMerchantFilter === id} onClick={() => setExpenseMerchantFilter(expenseMerchantFilter === id ? 'all' : id)}>{group.label} · {group.count}</FilterChip>)}
+            </div>
+          )}
+        </div>
+
         <div className="divide-y divide-[var(--labora-border)]">
           {filteredExpenses.map((expense) => {
             const status = getStatus(expense);
@@ -375,9 +422,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
                 className="min-w-0 cursor-pointer p-4 transition hover:bg-[var(--labora-parchment)]"
               >
                 <div className="grid min-w-0 grid-cols-[42px_minmax(0,1fr)] items-start gap-3">
-                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]">
-                    {getCategoryIcon(String(expense.category))}
-                  </div>
+                  <MerchantLogo merchantName={expense.merchant || ''} category={merchantCategory(expense.category)} size="md" className="h-[42px] w-[42px] rounded-[14px]" />
 
                   <div className="min-w-0">
                     <div className="flex min-w-0 items-start justify-between gap-2">
@@ -564,6 +609,19 @@ const ActionCard = ({ icon: Icon, title, text, tone, onClick, loading = false, w
     </button>
   );
 };
+
+const merchantCategory = (category: ExpenseCategory | string): 'fuel' | 'restaurant' | 'supermarket' | 'other' => {
+  if (category === ExpenseCategory.GASOLINA || String(category).toLowerCase().includes('combustible')) return 'fuel';
+  if (String(category).toLowerCase().includes('comida')) return 'restaurant';
+  if (String(category).toLowerCase().includes('compra') || String(category).toLowerCase().includes('supermercado')) return 'supermarket';
+  return 'other';
+};
+
+const FilterChip: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
+  <button type="button" onClick={onClick} aria-pressed={active} className={`shrink-0 rounded-full border px-3 py-2 text-[11px] font-bold transition ${active ? 'border-[var(--labora-primary)] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]' : 'border-[var(--labora-border)] bg-[var(--labora-surface)] text-[var(--labora-muted)]'}`}>
+    {children}
+  </button>
+);
 
 const Field = ({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) => (
   <div className="block space-y-1.5">

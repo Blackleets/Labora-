@@ -11,6 +11,7 @@ import {
   normalizeGestoriaEmail,
   validateRiderLinkByEmail
 } from './gestoriaLinking';
+import { canAccessClientRecord } from './gestoriaLinking';
 
 const rider = (overrides: Partial<User> = {}): User => ({
   id: 'rider-1',
@@ -55,6 +56,16 @@ describe('gestoriaLinking helpers', () => {
     expect(findManagerCandidateByEmail(users, 'GESTORIA@firm.es')?.id).toBe('mgr-1');
     expect(findManagerCandidateByEmail(users, 'missing@x.com')).toBeUndefined();
     expect(listLinkedClients(users, 'mgr-1').map((u) => u.id)).toEqual(['r1']);
+  });
+
+  it('keeps client records scoped to the linked gestoría', () => {
+    const linked = rider({ id: 'linked', managerId: 'mgr-1' });
+    const foreign = rider({ id: 'foreign', managerId: 'mgr-2' });
+
+    expect(canAccessClientRecord(manager(), linked)).toBe(true);
+    expect(canAccessClientRecord(manager(), foreign)).toBe(false);
+    expect(canAccessClientRecord(rider(), linked)).toBe(false);
+    expect(canAccessClientRecord(manager({ role: UserRole.ADMIN }), foreign)).toBe(true);
   });
 
   it('rejects empty / invalid / self / rider emails', () => {

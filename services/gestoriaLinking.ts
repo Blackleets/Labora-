@@ -82,6 +82,16 @@ export const listLinkedClients = (users: User[], managerId: string): User[] => {
   );
 };
 
+/** Fail-closed client access check for gestoría-facing records. */
+export const canAccessClientRecord = (
+  actor: Pick<User, 'id' | 'role'> | undefined,
+  client: Pick<User, 'id' | 'role' | 'managerId'> | undefined
+): boolean => {
+  if (!actor || !client || client.role !== UserRole.RIDER) return false;
+  if (actor.role === UserRole.ADMIN) return true;
+  return actor.role === UserRole.MANAGER && client.managerId === actor.id;
+};
+
 /**
  * Validate a rider's attempt to link by gestoría email.
  * When the candidate is not in `users`, ok=true still — the RPC must resolve it.

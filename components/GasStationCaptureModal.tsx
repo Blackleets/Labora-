@@ -15,6 +15,8 @@ import { useCountry } from '../contexts/CountryContext';
 import { ExpenseCategory } from '../types';
 import { GAS_STATION_PRESETS } from '../data/gasStations';
 import { analyzeReceipt, ReceiptAnalysis } from '../services/geminiService';
+import MerchantLogo from './MerchantLogo';
+import { resolveMerchantBrand } from '../data/merchantBrands';
 
 interface GasStationCaptureModalProps {
   isOpen: boolean;
@@ -114,8 +116,10 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
         if (analysis.amount > 0) setTotalAmount(analysis.amount.toFixed(2));
         if (analysis.date) setDate(analysis.date);
         if (analysis.merchantName) {
-          const upper = analysis.merchantName.toUpperCase();
-          const known = GAS_STATION_PRESETS.find((preset) => upper.includes(preset.name.toUpperCase()));
+          const resolved = resolveMerchantBrand(analysis.merchantName);
+          const known = resolved.brand?.category === 'fuel'
+            ? GAS_STATION_PRESETS.find((preset) => resolveMerchantBrand(preset.name).brand?.id === resolved.brand?.id)
+            : undefined;
           if (known) {
             setSelectedStation(known.name);
             setCustomStation('');
@@ -295,6 +299,7 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
                   {GAS_STATION_PRESETS.map((preset) => <option key={preset.name} value={preset.name}>{preset.name}</option>)}
                   <option value="Otro">Otra</option>
                 </select>
+                {selectedStation && selectedStation !== 'Otro' && <div className="mt-2 flex items-center gap-2.5 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-2.5"><MerchantLogo merchantName={selectedStation} category="fuel" size="sm" /><div><p className="text-xs font-extrabold text-[var(--labora-ink)]">{resolveMerchantBrand(selectedStation).brand?.name || selectedStation}</p><p className="text-[10px] text-[var(--labora-muted)]">Comercio asociado al ticket</p></div></div>}
                 {selectedStation === 'Otro' && <input value={customStation} onChange={(event) => setCustomStation(event.target.value)} placeholder="Nombre que aparece en el ticket" className="field-input mt-2" />}
               </div>
 
