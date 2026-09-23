@@ -9,7 +9,16 @@ import {
   UserRole
 } from '../types';
 import { supabase } from './supabaseClient';
-import { purgeLegacyOperationalCache, writeOperationalCache } from './operationalCache';
+import {
+  hasLocalOnlyOperationalRows,
+  hasOperationalCacheRows,
+  hasUnsubmittedOperationalChanges,
+  markOperationalCacheSubmitted,
+  operationalCacheFingerprint,
+  OperationalCacheConflictError,
+  purgeLegacyOperationalCache,
+  writeOperationalCache
+} from './operationalCache';
 
 const numberValue = (value: any) => Number(value ?? 0);
 
@@ -39,7 +48,11 @@ export const uploadOperationalFile = async (userId: string, dataUrl: string, pre
   return path;
 };
 
-export const loadRemoteOperationalData = async (users: User[], expectedUserId?: string) => {
+export const loadRemoteOperationalData = async (
+  users: User[],
+  expectedUserId?: string,
+  expectedCacheFingerprint?: string
+) => {
   const profileName = new Map(users.map((user) => [user.id, user.companyName || user.name]));
 
   const [incomesResult, expensesResult, requirementsResult, documentsResult, declarationsResult, paymentsResult] = await Promise.all([
@@ -174,14 +187,25 @@ export const loadRemoteOperationalData = async (users: User[], expectedUserId?: 
   }
   let cachePersisted = false;
   if (sessionUserId) {
-    cachePersisted = writeOperationalCache(sessionUserId, {
+    const remoteCache = {
       incomes,
       expenses,
       requirements,
       documents,
       declarations,
       payments
-    });
+    };
+    if (expectedUserId && (
+      hasUnsubmittedOperationalChanges(sessionUserId)
+      || (expectedCacheFingerprint !== undefined
+        && operationalCacheFingerprint(sessionUserId) !== expectedCacheFingerprint
+        && hasOperationalCacheRows(sessionUserId))
+      || hasLocalOnlyOperationalRows(sessionUserId, remoteCache)
+    )) {
+      throw new OperationalCacheConflictError();
+    }
+    cachePersisted = writeOperationalCache(sessionUserId, remoteCache);
+    if (cachePersisted) cachePersisted = markOperationalCacheSubmitted(sessionUserId);
   } else {
     purgeLegacyOperationalCache();
   }

@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { StorageLike } from './safeStorage';
 import {
   canResumeHydratedCache,
+  clearOperationalCacheSubmission,
+  hasUnsubmittedOperationalChanges,
+  markOperationalCacheSubmitted,
   operationalCacheFingerprint,
   scopedOperationalKey,
   writeOperationalCache
@@ -70,5 +73,19 @@ describe('operationalCache', () => {
 
     expect(writeOperationalCache('rider-1', emptyPayload(), blocked)).toBe(false);
     expect(canResumeHydratedCache('rider-1', operationalCacheFingerprint('rider-1', blocked), blocked)).toBe(false);
+  });
+
+  it('tracks submitted snapshots per account and clears the receipt on logout', () => {
+    const storage = memoryStorage();
+    writeOperationalCache('rider-1', emptyPayload(), storage);
+    expect(markOperationalCacheSubmitted('rider-1', operationalCacheFingerprint('rider-1', storage), storage)).toBe(true);
+    expect(hasUnsubmittedOperationalChanges('rider-1', storage)).toBe(false);
+
+    writeOperationalCache('rider-1', { ...emptyPayload(), incomes: [{ id: 'offline-income' }] }, storage);
+    expect(hasUnsubmittedOperationalChanges('rider-1', storage)).toBe(true);
+    expect(hasUnsubmittedOperationalChanges('manager-1', storage)).toBe(false);
+
+    clearOperationalCacheSubmission('rider-1', storage);
+    expect(hasUnsubmittedOperationalChanges('rider-1', storage)).toBe(false);
   });
 });

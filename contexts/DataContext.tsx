@@ -20,6 +20,7 @@ import {
 } from '../services/remoteOperational';
 import { supabase } from '../services/supabaseClient';
 import { canOwnerDeleteRow } from '../services/deleteEligibility';
+import { clearOperationalCacheSubmission } from '../services/operationalCache';
 import {
   safeStorageGet,
   safeStorageReadJson,
@@ -137,6 +138,7 @@ const clearScopedOperationalKeys = (userId: string) => {
   for (const key of LEGACY_OPERATIONAL_KEYS) {
     safeStorageRemove(scopedKey(key, userId));
   }
+  clearOperationalCacheSubmission(userId);
 };
 
 const createId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
