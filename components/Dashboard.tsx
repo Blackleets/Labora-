@@ -23,6 +23,8 @@ import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
 import AtmosphericPanel from './AtmosphericPanel';
+import SeasonalEffects from './SeasonalEffects';
+import { GhibliLightingControl } from './GhibliLightingControl';
 import Logo from './Logo';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
@@ -303,7 +305,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   return (
     <div id="rider-dashboard" className="mx-auto max-w-6xl pb-12">
       <div className="md:hidden">
-        <section className="relative overflow-hidden bg-[#F8F4EC] px-6 pb-7 pt-7">
+        <section className="relative z-30 bg-[#F8F4EC] px-6 pb-7 pt-7">
           <div className="flex items-start justify-between gap-4">
             <Logo size="lg" />
             <button
@@ -321,9 +323,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             </button>
           </div>
 
-          <p className="mt-12 text-[10px] font-extrabold uppercase tracking-[0.30em] text-[#587064]">{dateLabel}</p>
+          <div className="relative z-30 mt-9 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-[#587064]">{dateLabel}</p>
+            <GhibliLightingControl />
+          </div>
 
           <div className="relative min-h-[345px] pt-12">
+            <SeasonalEffects variant="mobile" className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.72]" />
             <div className="relative z-10 max-w-[74%]">
               <h1
                 className="font-semibold leading-[0.96] tracking-[-0.065em] text-[#0B412F]"

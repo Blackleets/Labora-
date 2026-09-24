@@ -517,17 +517,42 @@ body.dark .labora-app-shell {
     var(--labora-shadow-soft);
 }
 
-@keyframes labora-season-fall {
-  from { transform: translateY(-60px) rotate(-12deg); }
-  to { transform: translateY(160px) rotate(28deg); }
+@keyframes labora-snow-fall {
+  from { transform: translateY(-45px); }
+  to { transform: translateY(185px); }
+}
+
+@keyframes labora-leaf-fall {
+  from { transform: translate(-14px, -50px) rotate(-20deg); }
+  to { transform: translate(24px, 180px) rotate(65deg); }
+}
+
+@keyframes labora-petal-drift {
+  from { transform: translate(12px, -45px) rotate(12deg); }
+  to { transform: translate(-18px, 150px) rotate(-45deg); }
+}
+
+@keyframes labora-summer-light {
+  50% { opacity: 0.72; transform: scale(1.08); }
 }
 
 .labora-season-particle {
-  animation: labora-season-fall 8s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: labora-snow-fall 9s linear infinite;
+}
+
+.labora-season-autumn { animation-name: labora-leaf-fall; }
+.labora-season-spring { animation-name: labora-petal-drift; }
+
+.labora-summer-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: labora-summer-light 8s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .labora-season-particle { animation: none; }
+  .labora-season-particle, .labora-summer-glow { animation: none; }
   .labora-app-shell { transition: none; }
 }
 

@@ -122,7 +122,7 @@ export const GhibliLightingControl: React.FC = () => {
       {isOpen && (
         <div 
           id="ghibli-lighting-panel"
-          className="absolute right-0 mt-2 w-[340px] sm:w-[410px] bg-[#FCFAF7] rounded-3xl border border-[#E4D7BE] shadow-[0_12px_40px_-10px_rgba(70,50,30,0.18)] p-5 z-50 text-stone-800 animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 mt-2 w-[min(340px,calc(100vw-3rem))] sm:w-[410px] bg-[#FCFAF7] rounded-3xl border border-[#E4D7BE] shadow-[0_12px_40px_-10px_rgba(70,50,30,0.18)] p-5 z-50 text-stone-800 animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Panel Header */}
           <div className="flex items-center justify-between pb-3.5 border-b border-[#EAE0CD]">
