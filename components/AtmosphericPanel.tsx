@@ -39,6 +39,12 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
   const orbCx = variant === 'hero' ? 760 : 640;
   const orbCy = variant === 'strip' ? 42 : variant === 'hero' ? 38 : 72;
   const orbR = variant === 'strip' ? 48 : variant === 'hero' ? 56 : 78;
+  const celestialX = variant === 'hero' ? 550 : variant === 'strip' ? 640 : 620;
+  const celestialY = variant === 'panel' ? 88 : 42;
+  const particles = [
+    [48, 12], [142, 72], [235, 25], [318, 102], [410, 43],
+    [505, 90], [602, 18], [685, 118], [772, 48], [842, 96]
+  ];
 
   const skyTop = isNight
     ? '#D4E2EA'
@@ -135,6 +141,39 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
         opacity={isNight ? 0.35 : 0.28}
         filter={`url(#${gid('blur-soft')})`}
       />
+
+      {/* The time and season are visible without covering the content. */}
+      <g transform={`translate(${celestialX} ${celestialY})`} opacity="0.76">
+        {isNight ? (
+          <path d="M9 -24A26 26 0 1 0 25 9 22 22 0 0 1 9 -24Z" fill="#E9F4F5" stroke="#B5D5DD" strokeWidth="1.5" />
+        ) : (
+          <>
+            <circle r={isGolden ? 24 : 21} fill={isGolden ? '#E6A05B' : palette.sunFill} />
+            <circle r="31" fill="none" stroke={palette.sunGlow} strokeWidth="2" opacity="0.6" />
+          </>
+        )}
+      </g>
+
+      {(atmosphere.season === 'winter' || atmosphere.season === 'autumn' || atmosphere.season === 'spring') && (
+        <g opacity={atmosphere.season === 'winter' ? 0.8 : 0.55}>
+          {particles.map(([x, y], index) => (
+            <g
+              key={index}
+              className="labora-season-particle"
+              style={{ animationDelay: `${-index * 0.85}s`, animationDuration: `${7 + index % 4}s` }}
+            >
+              {atmosphere.season === 'winter' ? (
+                <circle cx={x} cy={y} r={index % 3 === 0 ? 3 : 2} fill="#FFFFFF" stroke="#BDD5DC" strokeWidth="0.7" />
+              ) : (
+                <path
+                  d={`M${x} ${y - 7} Q${x + 9} ${y - 2} ${x} ${y + 7} Q${x - 8} ${y + 1} ${x} ${y - 7}Z`}
+                  fill={atmosphere.season === 'autumn' ? (index % 2 ? '#BD7850' : '#D9A359') : '#F1C1BB'}
+                />
+              )}
+            </g>
+          ))}
+        </g>
+      )}
 
       {/* Soft color-field orbs */}
       <ellipse

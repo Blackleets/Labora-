@@ -164,7 +164,11 @@ export const GhibliLightingControl: React.FC = () => {
             </div>
 
             <button
+              type="button"
               onClick={() => setIsAuto(!isAuto)}
+              role="switch"
+              aria-checked={isAuto}
+              aria-label="Sincronización solar automática"
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                 isAuto ? 'bg-[#2E5A44]' : 'bg-stone-300'
               }`}
@@ -315,7 +319,7 @@ export const GhibliLightingControl: React.FC = () => {
 
           {/* Artistic Philosophy Quote */}
           <div className="mt-3 text-[10px] text-stone-400 text-center px-2">
-            La luz ambiental adapta tonos según la hora — sin cambiar tu lógica de trabajo.
+            La luz ambiental cambia el fondo y muestra detalles de cada estación en las portadas.
           </div>
         </div>
       )}

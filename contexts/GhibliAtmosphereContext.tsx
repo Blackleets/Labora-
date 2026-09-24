@@ -232,22 +232,29 @@ function applySeasonalAdjustment(palette: GhibliPalette, season: GhibliSeason, i
     result.softgreen = '#EBF6EF';
     result.bordergreen = '#D4E9DC';
     result.warmearth = '#FAF4EE';
+    result.canvas = '#F2F8F2';
   } else if (season === 'summer') {
     // Verano: Follaje denso y terracota horneada al sol
     result.forest = '#24523B';
     result.terracotta = '#DB7654';
     result.clay = '#CA6540';
+    result.canvas = '#FBF5E9';
+    result.parchment = '#FAF0DB';
   } else if (season === 'autumn') {
     // Otoño: Hojas doradas, ocre, musgo cálido y madera de arce
     result.moss = '#4F6F41';
     result.amber = '#DF8E28';
     result.border = '#E5D6BD';
     result.borderSubtle = '#E9DCC7';
+    result.canvas = '#F9F1E7';
+    result.parchment = '#F7EAD9';
   } else if (season === 'winter') {
     // Invierno: Pino sereno, quietud cristalina y hogar acogedor
     result.deepforest = '#193327';
     result.softgreen = '#E7EFEA';
     result.bordergreen = '#CADAD0';
+    result.canvas = '#F0F5F7';
+    result.parchment = '#EAF1F4';
   }
 
   return result;
@@ -266,10 +273,9 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
     return (localStorage.getItem('labora_ghibli_intensity') as GhibliIntensity) || 'standard';
   });
 
-  // Calculate current date/time
-  const now = new Date();
-  const detectedTime = detectTimeOfDay(now.getHours());
-  const detectedSeason = detectSeason(now.getMonth());
+  const [clock, setClock] = useState(() => new Date());
+  const detectedTime = detectTimeOfDay(clock.getHours());
+  const detectedSeason = detectSeason(clock.getMonth());
 
   const [manualTimeOfDay, setManualTimeOfDay] = useState<GhibliTimeOfDay>(() => {
     return (localStorage.getItem('labora_ghibli_time') as GhibliTimeOfDay) || detectedTime;
@@ -283,18 +289,13 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
   const timeOfDay = isAuto ? detectedTime : manualTimeOfDay;
   const season = isAuto ? detectedSeason : manualSeason;
 
-  // Periodically check time in auto mode (every 1 minute)
+  // Keep both the hour and the season current while the page stays open.
   useEffect(() => {
     if (!isAuto) return;
-    const interval = setInterval(() => {
-      const currentH = new Date().getHours();
-      const newTime = detectTimeOfDay(currentH);
-      if (newTime !== manualTimeOfDay) {
-        setManualTimeOfDay(newTime);
-      }
-    }, 60000);
+    setClock(new Date());
+    const interval = setInterval(() => setClock(new Date()), 60000);
     return () => clearInterval(interval);
-  }, [isAuto, manualTimeOfDay]);
+  }, [isAuto]);
 
   const setTimeOfDay = (t: GhibliTimeOfDay) => {
     setIsAutoState(false);
@@ -363,6 +364,7 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
     root.style.setProperty('--ghibli-sun-fill', palette.sunFill);
     root.style.setProperty('--ghibli-sun-glow', palette.sunGlow);
     root.style.setProperty('--ghibli-ambient-gradient', palette.ambientGradient);
+    root.style.setProperty('--labora-atmosphere-canvas', palette.canvas);
   }, [palette]);
 
   const value: GhibliAtmosphereState = {

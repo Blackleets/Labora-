@@ -172,7 +172,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-[color:var(--labora-canvas,#F7F3EA)] font-sans text-[color:var(--labora-ink,#1E2A24)] selection:bg-[color:var(--labora-gold,#B87A24)]/25 selection:text-[color:var(--labora-ink,#1E2A24)]">
+    <div className="labora-app-shell safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden font-sans text-[color:var(--labora-ink,#1E2A24)] selection:bg-[color:var(--labora-gold,#B87A24)]/25 selection:text-[color:var(--labora-ink,#1E2A24)]">
       <Toast />
       <Sidebar
         currentView={currentView}
