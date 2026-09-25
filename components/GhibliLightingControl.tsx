@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Sun, Sunrise, Sunset, Moon, Sparkles, Clock, 
   Leaf, Trees, CloudRain, Snowflake, Check, X, 
@@ -30,19 +31,60 @@ export const GhibliLightingControl: React.FC = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const [panelPosition, setPanelPosition] = useState({ top: 0, right: 16 });
 
-  // Close on outside click
+  // The dialog lives at document level so the dashboard scroll container cannot crop it.
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const positionPanel = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) setPanelPosition({
+        top: rect.bottom + 8,
+        right: Math.max(16, window.innerWidth - rect.right)
+      });
+    };
+    positionPanel();
+    window.addEventListener('resize', positionPanel);
+    window.addEventListener('scroll', positionPanel, true);
+    return () => {
+      window.removeEventListener('resize', positionPanel);
+      window.removeEventListener('scroll', positionPanel, true);
+    };
+  }, [isOpen]);
+
   useEffect(() => {
+    if (isOpen) closeRef.current?.focus();
     const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+      if (!popoverRef.current?.contains(event.target as Node) && !panelRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      } else if (event.key === 'Tab') {
+        const buttons = Array.from(panelRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+        if (!buttons.length) return;
+        if (event.shiftKey && document.activeElement === buttons[0]) {
+          event.preventDefault();
+          buttons[buttons.length - 1].focus();
+        } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
+          event.preventDefault();
+          buttons[0].focus();
+        }
       }
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
 
@@ -90,7 +132,9 @@ export const GhibliLightingControl: React.FC = () => {
     <div className="relative" ref={popoverRef}>
       {/* Header Trigger Pill */}
       <button
+        ref={triggerRef}
         id="ghibli-lighting-btn"
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`labora-icon-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-serif font-semibold flex items-center space-x-2 border transition-all duration-300 shadow-sm active:scale-95 ${
           isOpen
@@ -99,6 +143,7 @@ export const GhibliLightingControl: React.FC = () => {
         }`}
         title="Ajustar luz ambiental"
         aria-expanded={isOpen}
+        aria-controls="ghibli-lighting-panel"
       >
         <span className="relative flex items-center justify-center">
           {getTimeIcon(timeOfDay, 14)}
@@ -121,10 +166,23 @@ export const GhibliLightingControl: React.FC = () => {
       </button>
 
       {/* Atmospheric Settings Popover Panel */}
-      {isOpen && (
+      {isOpen && createPortal(
+        <>
+        <button
+          type="button"
+          aria-hidden="true"
+          tabIndex={-1}
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 z-[80] bg-[#17251D]/35 md:hidden"
+        />
         <div 
+          ref={panelRef}
           id="ghibli-lighting-panel"
-          className="absolute right-0 mt-2 w-[min(340px,calc(100vw-3rem))] sm:w-[410px] bg-[#FCFAF7] rounded-3xl border border-[#E4D7BE] shadow-[0_12px_40px_-10px_rgba(70,50,30,0.18)] p-5 z-50 text-stone-800 animate-in fade-in zoom-in-95 duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Luz ambiental"
+          style={{ '--lighting-panel-top': `${panelPosition.top}px`, '--lighting-panel-right': `${panelPosition.right}px` } as React.CSSProperties}
+          className="fixed inset-x-4 top-[max(1rem,env(safe-area-inset-top))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-[90] mx-auto w-auto max-w-[430px] overflow-y-auto overscroll-contain rounded-3xl border border-[#E4D7BE] bg-[#FCFAF7] p-5 text-stone-800 shadow-[0_12px_40px_-10px_rgba(70,50,30,0.18)] md:inset-x-auto md:bottom-auto md:right-[var(--lighting-panel-right)] md:top-[var(--lighting-panel-top)] md:mx-0 md:max-h-[min(85dvh,720px)] md:w-[410px]"
         >
           {/* Panel Header */}
           <div className="flex items-center justify-between pb-3.5 border-b border-[#EAE0CD]">
@@ -143,6 +201,7 @@ export const GhibliLightingControl: React.FC = () => {
             </div>
 
             <button
+              ref={closeRef}
               onClick={() => setIsOpen(false)}
               className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-[#F2EDE4] rounded-xl transition-colors"
               aria-label="Cerrar panel de iluminación"
@@ -334,6 +393,8 @@ export const GhibliLightingControl: React.FC = () => {
             La luz ambiental cambia el fondo y muestra detalles de cada estación en las portadas.
           </div>
         </div>
+        </>,
+        document.body
       )}
     </div>
   );
