@@ -47,6 +47,7 @@ export interface GhibliAtmosphereState {
   timeOfDay: GhibliTimeOfDay;
   season: GhibliSeason;
   isAuto: boolean;
+  isSeasonAuto: boolean;
   intensity: GhibliIntensity;
   palette: GhibliPalette;
   title: string;
@@ -56,6 +57,7 @@ export interface GhibliAtmosphereState {
   setTimeOfDay: (time: GhibliTimeOfDay) => void;
   setSeason: (season: GhibliSeason) => void;
   setIsAuto: (auto: boolean) => void;
+  resetToCurrentSeason: () => void;
   setIntensity: (intensity: GhibliIntensity) => void;
   resetToCurrentTime: () => void;
 }
@@ -289,17 +291,24 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
     return saved === 'spring' || saved === 'summer' || saved === 'autumn' || saved === 'winter' ? saved : detectedSeason;
   });
 
+  const [isSeasonAuto, setIsSeasonAuto] = useState<boolean>(() => {
+    const saved = safeStorageGet('labora_ghibli_season_auto');
+    if (saved !== null) return saved !== 'false';
+    // Preserve a season explicitly selected in older versions of the app.
+    return safeStorageGet('labora_ghibli_auto') !== 'false' || safeStorageGet('labora_ghibli_season') === null;
+  });
+
   // Effective time of day & season
   const timeOfDay = isAuto ? detectedTime : manualTimeOfDay;
-  const season = isAuto ? detectedSeason : manualSeason;
+  const season = isSeasonAuto ? detectedSeason : manualSeason;
 
-  // Keep both the hour and the season current while the page stays open.
+  // Keep automatic selections current while the page stays open.
   useEffect(() => {
-    if (!isAuto) return;
+    if (!isAuto && !isSeasonAuto) return;
     setClock(new Date());
     const interval = setInterval(() => setClock(new Date()), 60000);
     return () => clearInterval(interval);
-  }, [isAuto]);
+  }, [isAuto, isSeasonAuto]);
 
   const setTimeOfDay = (t: GhibliTimeOfDay) => {
     setIsAutoState(false);
@@ -309,9 +318,9 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
   };
 
   const setSeason = (s: GhibliSeason) => {
-    setIsAutoState(false);
+    setIsSeasonAuto(false);
     setManualSeason(s);
-    safeStorageSet('labora_ghibli_auto', 'false');
+    safeStorageSet('labora_ghibli_season_auto', 'false');
     safeStorageSet('labora_ghibli_season', s);
   };
 
@@ -320,9 +329,15 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
     safeStorageSet('labora_ghibli_auto', String(auto));
     if (auto) {
       const current = new Date();
+      setClock(current);
       setManualTimeOfDay(detectTimeOfDay(current.getHours()));
-      setManualSeason(detectSeason(current.getMonth()));
     }
+  };
+
+  const resetToCurrentSeason = () => {
+    setClock(new Date());
+    setIsSeasonAuto(true);
+    safeStorageSet('labora_ghibli_season_auto', 'true');
   };
 
   const setIntensity = (int: GhibliIntensity) => {
@@ -375,6 +390,7 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
     timeOfDay,
     season,
     isAuto,
+    isSeasonAuto,
     intensity,
     palette,
     title: activeConfig.title,
@@ -384,6 +400,7 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
     setTimeOfDay,
     setSeason,
     setIsAuto,
+    resetToCurrentSeason,
     setIntensity,
     resetToCurrentTime,
   };
