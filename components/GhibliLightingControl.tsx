@@ -15,6 +15,7 @@ export const GhibliLightingControl: React.FC = () => {
     timeOfDay,
     season,
     isAuto,
+    isSeasonAuto,
     palette,
     title,
     subtitle,
@@ -23,7 +24,8 @@ export const GhibliLightingControl: React.FC = () => {
     setTimeOfDay,
     setSeason,
     setIsAuto,
-    resetToCurrentTime
+    resetToCurrentTime,
+    resetToCurrentSeason
   } = useGhibliAtmosphere();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -155,10 +157,10 @@ export const GhibliLightingControl: React.FC = () => {
               <Clock size={16} className={isAuto ? 'text-[#2E5A44]' : 'text-stone-400'} />
               <div>
                 <span className="text-xs font-serif font-bold text-stone-800 block">
-                  Sincronización Solar Automática
+                  Hora local automática
                 </span>
                 <span className="text-[10px] text-stone-500 block leading-tight">
-                  Adapta los tonos según la hora local y estación del año
+                  Sigue la hora local aunque elijas otra estación
                 </span>
               </div>
             </div>
@@ -240,8 +242,18 @@ export const GhibliLightingControl: React.FC = () => {
           {/* Seasons Row */}
           <div className="mt-4">
             <span className="text-xs font-serif font-bold text-stone-800 block mb-2">
-              Matiz Estacional
+              Estación
             </span>
+            {!isSeasonAuto && (
+              <button
+                type="button"
+                onClick={resetToCurrentSeason}
+                className="mb-2 inline-flex min-h-9 items-center gap-1 text-[11px] font-medium text-[#2E5A44] hover:underline"
+              >
+                <RotateCcw size={12} aria-hidden="true" />
+                Volver a estación actual
+              </button>
+            )}
             <div className="grid grid-cols-4 gap-1.5">
               {seasonOptions.map((s) => {
                 const isSelected = season === s.id;
