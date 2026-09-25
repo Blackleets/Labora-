@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import { safeStorageGet, safeStorageSet } from '../services/safeStorage';
 
 export type GhibliTimeOfDay = 'dawn' | 'midday' | 'golden_hour' | 'night';
 export type GhibliSeason = 'spring' | 'summer' | 'autumn' | 'winter';
@@ -46,6 +47,7 @@ export interface GhibliAtmosphereState {
   timeOfDay: GhibliTimeOfDay;
   season: GhibliSeason;
   isAuto: boolean;
+  isSeasonAuto: boolean;
   intensity: GhibliIntensity;
   palette: GhibliPalette;
   title: string;
@@ -55,6 +57,7 @@ export interface GhibliAtmosphereState {
   setTimeOfDay: (time: GhibliTimeOfDay) => void;
   setSeason: (season: GhibliSeason) => void;
   setIsAuto: (auto: boolean) => void;
+  resetToCurrentSeason: () => void;
   setIntensity: (intensity: GhibliIntensity) => void;
   resetToCurrentTime: () => void;
 }
@@ -232,22 +235,29 @@ function applySeasonalAdjustment(palette: GhibliPalette, season: GhibliSeason, i
     result.softgreen = '#EBF6EF';
     result.bordergreen = '#D4E9DC';
     result.warmearth = '#FAF4EE';
+    result.canvas = '#F2F8F2';
   } else if (season === 'summer') {
     // Verano: Follaje denso y terracota horneada al sol
     result.forest = '#24523B';
     result.terracotta = '#DB7654';
     result.clay = '#CA6540';
+    result.canvas = '#FBF5E9';
+    result.parchment = '#FAF0DB';
   } else if (season === 'autumn') {
     // Otoño: Hojas doradas, ocre, musgo cálido y madera de arce
     result.moss = '#4F6F41';
     result.amber = '#DF8E28';
     result.border = '#E5D6BD';
     result.borderSubtle = '#E9DCC7';
+    result.canvas = '#F9F1E7';
+    result.parchment = '#F7EAD9';
   } else if (season === 'winter') {
     // Invierno: Pino sereno, quietud cristalina y hogar acogedor
     result.deepforest = '#193327';
     result.softgreen = '#E7EFEA';
     result.bordergreen = '#CADAD0';
+    result.canvas = '#F0F5F7';
+    result.parchment = '#EAF1F4';
   }
 
   return result;
@@ -258,71 +268,81 @@ const GhibliAtmosphereContext = createContext<GhibliAtmosphereState | undefined>
 export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Default to automatic tracking
   const [isAuto, setIsAutoState] = useState<boolean>(() => {
-    const saved = localStorage.getItem('labora_ghibli_auto');
+    const saved = safeStorageGet('labora_ghibli_auto');
     return saved !== null ? saved === 'true' : true;
   });
 
   const [intensity, setIntensityState] = useState<GhibliIntensity>(() => {
-    return (localStorage.getItem('labora_ghibli_intensity') as GhibliIntensity) || 'standard';
+    const saved = safeStorageGet('labora_ghibli_intensity');
+    return saved === 'subtle' || saved === 'vivid' ? saved : 'standard';
   });
 
-  // Calculate current date/time
-  const now = new Date();
-  const detectedTime = detectTimeOfDay(now.getHours());
-  const detectedSeason = detectSeason(now.getMonth());
+  const [clock, setClock] = useState(() => new Date());
+  const detectedTime = detectTimeOfDay(clock.getHours());
+  const detectedSeason = detectSeason(clock.getMonth());
 
   const [manualTimeOfDay, setManualTimeOfDay] = useState<GhibliTimeOfDay>(() => {
-    return (localStorage.getItem('labora_ghibli_time') as GhibliTimeOfDay) || detectedTime;
+    const saved = safeStorageGet('labora_ghibli_time');
+    return saved === 'dawn' || saved === 'midday' || saved === 'golden_hour' || saved === 'night' ? saved : detectedTime;
   });
 
   const [manualSeason, setManualSeason] = useState<GhibliSeason>(() => {
-    return (localStorage.getItem('labora_ghibli_season') as GhibliSeason) || detectedSeason;
+    const saved = safeStorageGet('labora_ghibli_season');
+    return saved === 'spring' || saved === 'summer' || saved === 'autumn' || saved === 'winter' ? saved : detectedSeason;
+  });
+
+  const [isSeasonAuto, setIsSeasonAuto] = useState<boolean>(() => {
+    const saved = safeStorageGet('labora_ghibli_season_auto');
+    if (saved !== null) return saved !== 'false';
+    // Preserve a season explicitly selected in older versions of the app.
+    return safeStorageGet('labora_ghibli_auto') !== 'false' || safeStorageGet('labora_ghibli_season') === null;
   });
 
   // Effective time of day & season
   const timeOfDay = isAuto ? detectedTime : manualTimeOfDay;
-  const season = isAuto ? detectedSeason : manualSeason;
+  const season = isSeasonAuto ? detectedSeason : manualSeason;
 
-  // Periodically check time in auto mode (every 1 minute)
+  // Keep automatic selections current while the page stays open.
   useEffect(() => {
-    if (!isAuto) return;
-    const interval = setInterval(() => {
-      const currentH = new Date().getHours();
-      const newTime = detectTimeOfDay(currentH);
-      if (newTime !== manualTimeOfDay) {
-        setManualTimeOfDay(newTime);
-      }
-    }, 60000);
+    if (!isAuto && !isSeasonAuto) return;
+    setClock(new Date());
+    const interval = setInterval(() => setClock(new Date()), 60000);
     return () => clearInterval(interval);
-  }, [isAuto, manualTimeOfDay]);
+  }, [isAuto, isSeasonAuto]);
 
   const setTimeOfDay = (t: GhibliTimeOfDay) => {
     setIsAutoState(false);
     setManualTimeOfDay(t);
-    localStorage.setItem('labora_ghibli_auto', 'false');
-    localStorage.setItem('labora_ghibli_time', t);
+    safeStorageSet('labora_ghibli_auto', 'false');
+    safeStorageSet('labora_ghibli_time', t);
   };
 
   const setSeason = (s: GhibliSeason) => {
-    setIsAutoState(false);
+    setIsSeasonAuto(false);
     setManualSeason(s);
-    localStorage.setItem('labora_ghibli_auto', 'false');
-    localStorage.setItem('labora_ghibli_season', s);
+    safeStorageSet('labora_ghibli_season_auto', 'false');
+    safeStorageSet('labora_ghibli_season', s);
   };
 
   const setIsAuto = (auto: boolean) => {
     setIsAutoState(auto);
-    localStorage.setItem('labora_ghibli_auto', String(auto));
+    safeStorageSet('labora_ghibli_auto', String(auto));
     if (auto) {
       const current = new Date();
+      setClock(current);
       setManualTimeOfDay(detectTimeOfDay(current.getHours()));
-      setManualSeason(detectSeason(current.getMonth()));
     }
+  };
+
+  const resetToCurrentSeason = () => {
+    setClock(new Date());
+    setIsSeasonAuto(true);
+    safeStorageSet('labora_ghibli_season_auto', 'true');
   };
 
   const setIntensity = (int: GhibliIntensity) => {
     setIntensityState(int);
-    localStorage.setItem('labora_ghibli_intensity', int);
+    safeStorageSet('labora_ghibli_intensity', int);
   };
 
   const resetToCurrentTime = () => {
@@ -363,12 +383,14 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
     root.style.setProperty('--ghibli-sun-fill', palette.sunFill);
     root.style.setProperty('--ghibli-sun-glow', palette.sunGlow);
     root.style.setProperty('--ghibli-ambient-gradient', palette.ambientGradient);
+    root.style.setProperty('--labora-atmosphere-canvas', palette.canvas);
   }, [palette]);
 
   const value: GhibliAtmosphereState = {
     timeOfDay,
     season,
     isAuto,
+    isSeasonAuto,
     intensity,
     palette,
     title: activeConfig.title,
@@ -378,6 +400,7 @@ export const GhibliAtmosphereProvider: React.FC<{ children: ReactNode }> = ({ ch
     setTimeOfDay,
     setSeason,
     setIsAuto,
+    resetToCurrentSeason,
     setIntensity,
     resetToCurrentTime,
   };

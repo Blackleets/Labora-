@@ -7,6 +7,7 @@ on:
       - feat/labora-functional-closeout
       - feat/labora-completion-close
       - feat/labora-release-gates
+      - feat/labora-approved-reference-ui
   pull_request:
     branches:
       - main
@@ -23,12 +24,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Unit tests
         run: npm test

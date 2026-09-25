@@ -491,6 +491,16 @@ textarea:focus-visible {
 }
 
 /* Editorial hero — soft Mediterranean atmosphere, not cartoon meadow */
+.labora-app-shell {
+  background: var(--labora-atmosphere-canvas, var(--labora-canvas));
+  transition: background-color 700ms ease;
+}
+
+html.dark .labora-app-shell,
+body.dark .labora-app-shell {
+  background: var(--labora-canvas);
+}
+
 .labora-hero {
   position: relative;
   overflow: hidden;
@@ -500,11 +510,64 @@ textarea:focus-visible {
     radial-gradient(ellipse at 88% 10%, color-mix(in srgb, var(--ghibli-sun-glow, #FAD082) 55%, transparent), transparent 42%),
     radial-gradient(ellipse at 12% 0%, rgba(180, 200, 215, 0.28), transparent 48%),
     radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--ghibli-moss, #3B7258) 8%, transparent), transparent 55%),
-    linear-gradient(165deg, var(--labora-parchment) 0%, #F3F0E6 40%, var(--labora-canvas) 100%);
+    linear-gradient(165deg, var(--ghibli-parchment, var(--labora-parchment)) 0%, var(--ghibli-canvas, var(--labora-canvas)) 100%);
   color: var(--labora-ink);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.9) inset,
     var(--labora-shadow-soft);
+}
+
+@keyframes labora-snow-fall {
+  from { transform: translate(0, -55px); opacity: 0; }
+  12% { opacity: 1; }
+  84% { opacity: 1; }
+  to { transform: translate(var(--season-sway, 16px), var(--season-travel, 335px)); opacity: 0; }
+}
+
+@keyframes labora-leaf-fall {
+  from { transform: translate(0, -45px) rotate(-18deg); opacity: 0; }
+  12% { opacity: 1; }
+  48% { transform: translate(calc(var(--season-sway, 20px) * -1), calc(var(--season-travel, 335px) * 0.45)) rotate(55deg); }
+  84% { opacity: 1; }
+  to { transform: translate(var(--season-sway, 20px), var(--season-travel, 335px)) rotate(145deg); opacity: 0; }
+}
+
+@keyframes labora-petal-drift {
+  from { transform: translate(0, -45px) rotate(12deg); opacity: 0; }
+  12% { opacity: 1; }
+  50% { transform: translate(var(--season-sway, 20px), calc(var(--season-travel, 335px) * 0.46)) rotate(-30deg); }
+  84% { opacity: 1; }
+  to { transform: translate(calc(var(--season-sway, 20px) * -0.5), var(--season-travel, 335px)) rotate(48deg); opacity: 0; }
+}
+
+@keyframes labora-summer-light {
+  50% { opacity: 0.64; transform: scale(1.07); }
+}
+
+@keyframes labora-sun-rays-sway {
+  50% { opacity: 0.42; }
+}
+
+.labora-season-particle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: labora-snow-fall 9s linear infinite;
+}
+
+.labora-season-autumn { animation-name: labora-leaf-fall; animation-timing-function: ease-in-out; }
+.labora-season-spring { animation-name: labora-petal-drift; animation-timing-function: ease-in-out; }
+
+.labora-summer-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: labora-summer-light 8s ease-in-out infinite;
+}
+
+.labora-sun-rays { animation: labora-sun-rays-sway 8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .labora-season-particle, .labora-summer-glow, .labora-sun-rays { animation: none; }
+  .labora-app-shell { transition: none; }
 }
 
 .labora-hero::before {

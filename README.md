@@ -11,7 +11,7 @@ Requisitos: Node.js 22+.
 
 ```bash
 cp .env.example .env.local
-# Rellena VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY
+# Opcional: rellena VITE_SUPABASE_* solo si usas otro proyecto Supabase
 npm ci
 npm run dev
 ```

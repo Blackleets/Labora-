@@ -9,57 +9,16 @@ import {
   UserRole
 } from '../types';
 import { supabase } from './supabaseClient';
-
-const LEGACY_KEYS = [
-  'labora_incomes',
-  'labora_expenses',
-  'labora_docs',
-  'labora_payments',
-  'labora_requirements',
-  'labora_declarations'
-] as const;
-
-const KEY_BASE = {
-  incomes: 'labora_incomes',
-  expenses: 'labora_expenses',
-  documents: 'labora_docs',
-  payments: 'labora_payments',
-  requirements: 'labora_requirements',
-  declarations: 'labora_declarations'
-} as const;
-
-const scopedOperationalKey = (base: string, userId: string) => `${base}:${userId}`;
-
-const purgeLegacyOperationalCache = () => {
-  for (const key of LEGACY_KEYS) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* ignore */
-    }
-  }
-};
-
-const writeOperationalCache = (userId: string, payload: {
-  incomes: unknown;
-  expenses: unknown;
-  requirements: unknown;
-  documents: unknown;
-  declarations: unknown;
-  payments: unknown;
-}) => {
-  purgeLegacyOperationalCache();
-  try {
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.incomes, userId), JSON.stringify(payload.incomes));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.expenses, userId), JSON.stringify(payload.expenses));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.requirements, userId), JSON.stringify(payload.requirements));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.documents, userId), JSON.stringify(payload.documents));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.declarations, userId), JSON.stringify(payload.declarations));
-    localStorage.setItem(scopedOperationalKey(KEY_BASE.payments, userId), JSON.stringify(payload.payments));
-  } catch {
-    /* cache is optional */
-  }
-};
+import {
+  hasLocalOnlyOperationalRows,
+  hasOperationalCacheRows,
+  hasUnsubmittedOperationalChanges,
+  markOperationalCacheSubmitted,
+  operationalCacheFingerprint,
+  OperationalCacheConflictError,
+  purgeLegacyOperationalCache,
+  writeOperationalCache
+} from './operationalCache';
 
 const numberValue = (value: any) => Number(value ?? 0);
 
@@ -89,7 +48,11 @@ export const uploadOperationalFile = async (userId: string, dataUrl: string, pre
   return path;
 };
 
-export const loadRemoteOperationalData = async (users: User[]) => {
+export const loadRemoteOperationalData = async (
+  users: User[],
+  expectedUserId?: string,
+  expectedCacheFingerprint?: string
+) => {
   const profileName = new Map(users.map((user) => [user.id, user.companyName || user.name]));
 
   const [incomesResult, expensesResult, requirementsResult, documentsResult, declarationsResult, paymentsResult] = await Promise.all([
@@ -219,20 +182,35 @@ export const loadRemoteOperationalData = async (users: User[]) => {
 
   const { data: authData } = await supabase.auth.getUser();
   const sessionUserId = authData.user?.id;
+  if (expectedUserId && sessionUserId !== expectedUserId) {
+    throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
+  }
+  let cachePersisted = false;
   if (sessionUserId) {
-    writeOperationalCache(sessionUserId, {
+    const remoteCache = {
       incomes,
       expenses,
       requirements,
       documents,
       declarations,
       payments
-    });
+    };
+    if (expectedUserId && (
+      hasUnsubmittedOperationalChanges(sessionUserId)
+      || (expectedCacheFingerprint !== undefined
+        && operationalCacheFingerprint(sessionUserId) !== expectedCacheFingerprint
+        && hasOperationalCacheRows(sessionUserId))
+      || hasLocalOnlyOperationalRows(sessionUserId, remoteCache)
+    )) {
+      throw new OperationalCacheConflictError();
+    }
+    cachePersisted = writeOperationalCache(sessionUserId, remoteCache);
+    if (cachePersisted) cachePersisted = markOperationalCacheSubmitted(sessionUserId);
   } else {
     purgeLegacyOperationalCache();
   }
 
-  return { incomes, expenses, requirements, documents, declarations, payments };
+  return { incomes, expenses, requirements, documents, declarations, payments, cachePersisted };
 };
 
 type OperationalSnapshot = {
@@ -372,8 +350,11 @@ export const deleteRemoteExpense = async (expenseId: string) => {
     .maybeSingle();
   if (readError) throw readError;
 
-  const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+  const { data: deleted, error } = await supabase.from('expenses').delete().eq('id', expenseId).select('id');
   if (error) throw error;
+  if (data && !deleted?.some((row) => row.id === expenseId)) {
+    throw new Error('No se pudo confirmar el borrado del gasto.');
+  }
 
   const path = data?.receipt_url as string | undefined;
   if (path && !path.startsWith('http')) {
@@ -383,8 +364,18 @@ export const deleteRemoteExpense = async (expenseId: string) => {
 };
 
 export const deleteRemoteIncome = async (incomeId: string) => {
-  const { error } = await supabase.from('incomes').delete().eq('id', incomeId);
+  const { data, error: readError } = await supabase
+    .from('incomes')
+    .select('id')
+    .eq('id', incomeId)
+    .maybeSingle();
+  if (readError) throw readError;
+
+  const { data: deleted, error } = await supabase.from('incomes').delete().eq('id', incomeId).select('id');
   if (error) throw error;
+  if (data && !deleted?.some((row) => row.id === incomeId)) {
+    throw new Error('No se pudo confirmar el borrado del ingreso.');
+  }
 };
 
 export const deleteRemoteDocument = async (documentId: string) => {
@@ -395,8 +386,11 @@ export const deleteRemoteDocument = async (documentId: string) => {
     .maybeSingle();
   if (readError) throw readError;
 
-  const { error } = await supabase.from('documents').delete().eq('id', documentId);
+  const { data: deleted, error } = await supabase.from('documents').delete().eq('id', documentId).select('id');
   if (error) throw error;
+  if (data && !deleted?.some((row) => row.id === documentId)) {
+    throw new Error('No se pudo confirmar el borrado del documento.');
+  }
 
   const path = data?.content as string | undefined;
   if (path && !path.startsWith('http')) {
@@ -415,29 +409,11 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
     const ownDocumentItems = documents.filter((document) => document.userId === currentUser.id);
     const ownIncomeItems = incomes.filter((income) => income.userId === currentUser.id);
 
-    const [remoteExpenseIds, remoteDocumentIds, remoteIncomeIds] = await Promise.all([
-      supabase.from('expenses').select('id').eq('user_id', currentUser.id),
-      supabase.from('documents').select('id').eq('user_id', currentUser.id),
-      supabase.from('incomes').select('id').eq('user_id', currentUser.id)
-    ]);
+    const remoteExpenseIds = await supabase.from('expenses').select('id').eq('user_id', currentUser.id);
     if (remoteExpenseIds.error) throw remoteExpenseIds.error;
-    if (remoteDocumentIds.error) throw remoteDocumentIds.error;
-    if (remoteIncomeIds.error) throw remoteIncomeIds.error;
-
-    const localExpenseIds = new Set(ownExpenseItems.map((item) => item.id));
     const remoteExpenseIdSet = new Set((remoteExpenseIds.data || []).map((item) => item.id));
-    const localDocumentIds = new Set(ownDocumentItems.map((item) => item.id));
-    const localIncomeIds = new Set(ownIncomeItems.map((item) => item.id));
-
-    for (const row of remoteExpenseIds.data || []) {
-      if (!localExpenseIds.has(row.id)) await deleteRemoteExpense(row.id);
-    }
-    for (const row of remoteDocumentIds.data || []) {
-      if (!localDocumentIds.has(row.id)) await deleteRemoteDocument(row.id);
-    }
-    for (const row of remoteIncomeIds.data || []) {
-      if (!localIncomeIds.has(row.id)) await deleteRemoteIncome(row.id);
-    }
+    // Missing local rows are not deletion requests. Owner actions above call the
+    // explicit remote delete functions; a blocked or stale cache must not erase data.
 
     for (const item of ownExpenseItems) {
       let receiptPath: string | undefined;
@@ -537,7 +513,10 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       estimated: item.estimated,
       domain: item.domain || null
     }));
-    if (ownPayments.length) await supabase.from('payments').upsert(ownPayments);
+    if (ownPayments.length) {
+      const { error } = await supabase.from('payments').upsert(ownPayments);
+      if (error) throw error;
+    }
   } else {
     for (const expense of expenses.filter((item) => linkedIds.has(item.userId))) {
       await reviewRemoteExpense(

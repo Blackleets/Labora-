@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
 import { useGhibliAtmosphere, type GhibliPalette } from '../contexts/GhibliAtmosphereContext';
+import SeasonalEffects from './SeasonalEffects';
 
 export type AtmosphericPanelVariant = 'panel' | 'strip' | 'hero';
 
@@ -112,7 +113,6 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
           <feComponentTransfer in="g" result="g2">
             <feFuncA type="linear" slope="0.045" />
           </feComponentTransfer>
-          <feBlend in="SourceGraphic" in2="g2" mode="overlay" />
         </filter>
       </defs>
 
@@ -136,6 +136,8 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
         opacity={isNight ? 0.35 : 0.28}
         filter={`url(#${gid('blur-soft')})`}
       />
+
+      <SeasonalEffects variant={variant} className="pointer-events-none" />
 
       {/* Soft color-field orbs */}
       <ellipse
@@ -207,6 +209,7 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
         y="0"
         width="100%"
         height="100%"
+        fill="#FFFFFF"
         filter={`url(#${gid('grain')})`}
         opacity="0.55"
         style={{ mixBlendMode: 'multiply' as any }}

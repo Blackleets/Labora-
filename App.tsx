@@ -1,31 +1,62 @@
-import React, { useState } from 'react';
-import { Bell, Eye, EyeOff, LayoutDashboard, Menu, Scale, User, Wallet } from 'lucide-react';
+import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { Bell, Eye, EyeOff, FileText, Home, LayoutDashboard, Menu, MessageSquare, Scale, User, Wallet } from 'lucide-react';
 import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { GhibliAtmosphereProvider } from './contexts/GhibliAtmosphereContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
 import { identityImageStore } from './services/identityImage';
+import { AppView, canOpenView, hashForView, resolveAppView, viewStorageKey } from './services/appNavigation';
 import { UserRole } from './types';
 
-import Dashboard from './components/Dashboard';
-import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
 import Login from './components/Login';
-import { GhibliLightingControl } from './components/GhibliLightingControl';
 import Logo from './components/Logo';
-import { ManagerDashboard } from './components/ManagerDashboard';
-import Onboarding from './components/Onboarding';
-import Profile from './components/Profile';
 import RemoteSyncBridge from './components/RemoteSyncBridge';
 import Sidebar from './components/Sidebar';
-import { TaxOverview } from './components/TaxOverview';
 import Toast from './components/Toast';
-import { AutomationHub } from './modules/core/hubs/AutomationHub';
-import { MoneyHub } from './modules/core/hubs/MoneyHub';
-import { OperationsHub } from './modules/core/hubs/OperationsHub';
-import { PeopleHub } from './modules/core/hubs/PeopleHub';
-import { SettingsHub } from './modules/core/hubs/SettingsHub';
-import { IntegrationCatalog } from './modules/integrations/components/IntegrationCatalog';
-import { MessagesHub } from './modules/messages/components/MessagesHub';
+
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const GestorRequirementsWidget = lazy(() => import('./components/GestorRequirementsWidget').then((module) => ({ default: module.GestorRequirementsWidget })));
+const GhibliLightingControl = lazy(() => import('./components/GhibliLightingControl').then((module) => ({ default: module.GhibliLightingControl })));
+const ManagerDashboard = lazy(() => import('./components/ManagerDashboard').then((module) => ({ default: module.ManagerDashboard })));
+const Onboarding = lazy(() => import('./components/Onboarding'));
+const Profile = lazy(() => import('./components/Profile'));
+const TaxOverview = lazy(() => import('./components/TaxOverview').then((module) => ({ default: module.TaxOverview })));
+const AutomationHub = lazy(() => import('./modules/core/hubs/AutomationHub').then((module) => ({ default: module.AutomationHub })));
+const MoneyHub = lazy(() => import('./modules/core/hubs/MoneyHub').then((module) => ({ default: module.MoneyHub })));
+const OperationsHub = lazy(() => import('./modules/core/hubs/OperationsHub').then((module) => ({ default: module.OperationsHub })));
+const PeopleHub = lazy(() => import('./modules/core/hubs/PeopleHub').then((module) => ({ default: module.PeopleHub })));
+const SettingsHub = lazy(() => import('./modules/core/hubs/SettingsHub').then((module) => ({ default: module.SettingsHub })));
+const IntegrationCatalog = lazy(() => import('./modules/integrations/components/IntegrationCatalog').then((module) => ({ default: module.IntegrationCatalog })));
+const MessagesHub = lazy(() => import('./modules/messages/components/MessagesHub').then((module) => ({ default: module.MessagesHub })));
+
+const ViewLoading = () => (
+  <div className="mx-auto flex min-h-[45vh] max-w-3xl items-center justify-center px-6" role="status" aria-live="polite">
+    <div className="w-full rounded-[24px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-6 shadow-sm">
+      <div className="h-3 w-24 animate-pulse rounded-full bg-[var(--labora-moss-soft)]" />
+      <div className="mt-5 h-8 w-2/3 animate-pulse rounded-xl bg-[var(--labora-surface-2)]" />
+      <div className="mt-3 h-4 w-full animate-pulse rounded-lg bg-[var(--labora-surface-2)]" />
+      <div className="mt-2 h-4 w-4/5 animate-pulse rounded-lg bg-[var(--labora-surface-2)]" />
+      <span className="sr-only">Cargando pantalla</span>
+    </div>
+  </div>
+);
+
+const readStoredView = (userId: string) => {
+  try {
+    return sessionStorage.getItem(viewStorageKey(userId));
+  } catch {
+    return null;
+  }
+};
+
+const rememberView = (userId: string, view: AppView) => {
+  try {
+    sessionStorage.setItem(viewStorageKey(userId), view);
+  } catch {
+    // Private browsing or a full storage quota must not break navigation.
+  }
+};
 
 const MainLayout: React.FC = () => {
   const {
@@ -36,12 +67,38 @@ const MainLayout: React.FC = () => {
     privacyMode,
     togglePrivacyMode
   } = useData();
-  const [currentView, setView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    const stored = currentUser?.id ? readStoredView(currentUser.id) : null;
+    return resolveAppView(window.location.hash, stored, currentUser?.role);
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const setView = useCallback((nextView: string) => {
+    if (!currentUser || !canOpenView(nextView, currentUser.role)) return;
+    setCurrentView(nextView);
+    rememberView(currentUser.id, nextView);
+    const nextHash = hashForView(nextView);
+    if (window.location.hash !== nextHash) window.location.hash = nextHash;
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const restoreFromLocation = () => {
+      const stored = readStoredView(currentUser.id);
+      const resolved = resolveAppView(window.location.hash, stored, currentUser.role);
+      setCurrentView(resolved);
+      rememberView(currentUser.id, resolved);
+    };
+
+    restoreFromLocation();
+    window.addEventListener('hashchange', restoreFromLocation);
+    return () => window.removeEventListener('hashchange', restoreFromLocation);
+  }, [currentUser]);
 
   if (!currentUser) return <Login />;
   if (currentUser.role === UserRole.RIDER && !hasOnboarded) {
-    return <Onboarding onFinish={completeOnboarding} />;
+    return <Suspense fallback={<ViewLoading />}><Onboarding onFinish={completeOnboarding} /></Suspense>;
   }
 
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
@@ -97,10 +154,10 @@ const MainLayout: React.FC = () => {
     { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount },
     { id: 'settings', label: 'Ajustes', icon: User }
   ] : [
-    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Inicio', icon: Home },
+    { id: 'docs', label: 'Documentos', icon: FileText },
     { id: 'money', label: 'Dinero', icon: Wallet },
-    { id: 'tax-declarations', label: 'Modelos', icon: Scale },
-    { id: 'gestor-requirements', label: 'Avisos', icon: Bell, badge: pendingReqCount },
+    { id: 'messages', label: 'Mensajes', icon: MessageSquare },
     { id: 'settings', label: 'Perfil', icon: User }
   ];
 
@@ -115,7 +172,7 @@ const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden bg-[color:var(--labora-canvas,#F7F3EA)] font-sans text-[color:var(--labora-ink,#1E2A24)] selection:bg-[color:var(--labora-gold,#B87A24)]/25 selection:text-[color:var(--labora-ink,#1E2A24)]">
+    <div className="labora-app-shell safe-area-x flex h-[100dvh] max-h-[100dvh] overflow-hidden font-sans text-[color:var(--labora-ink,#1E2A24)] selection:bg-[color:var(--labora-gold,#B87A24)]/25 selection:text-[color:var(--labora-ink,#1E2A24)]">
       <Toast />
       <Sidebar
         currentView={currentView}
@@ -125,7 +182,7 @@ const MainLayout: React.FC = () => {
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="safe-area-top z-20 flex h-[80px] shrink-0 items-center justify-between border-b border-[color:var(--labora-border,#E8DFC8)]/70 bg-[color:var(--labora-ivory,#FFFEFB)]/82 px-3 backdrop-blur-2xl sm:px-5 md:px-8">
+        <header className={`${!isManager && currentView === 'dashboard' ? 'hidden lg:flex' : 'flex'} safe-area-top z-20 h-[80px] shrink-0 items-center justify-between border-b border-[color:var(--labora-border,#E8DFC8)]/70 bg-[color:var(--labora-ivory,#FFFEFB)]/92 px-3 backdrop-blur-2xl sm:px-5 md:px-8`}>
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -182,11 +239,15 @@ const MainLayout: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-7 md:px-8 md:py-10">
-          <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
+        <div className={`flex-1 overflow-x-hidden overflow-y-auto ${!isManager && currentView === 'dashboard' ? 'px-0 py-0 md:px-8 md:py-10' : 'px-4 py-6 md:px-8 md:py-10'}`}>
+          <div className="mx-auto min-h-full max-w-7xl min-w-0">
+            <AppErrorBoundary resetKey={currentView}>
+              <Suspense fallback={<ViewLoading />}>{renderView()}</Suspense>
+            </AppErrorBoundary>
+          </div>
         </div>
 
-        <nav className="safe-area-bottom shrink-0 border-t border-[color:var(--labora-border-hairline,rgba(0,0,0,0.05))] bg-[color:var(--labora-ivory,#FFFEFB)]/95 px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
+        <nav className="safe-area-bottom shrink-0 border-t border-[#E6DED1] bg-[#FFFCF7]/96 px-2 pb-1.5 pt-2 backdrop-blur-xl lg:hidden">
           <div className="grid grid-cols-5 gap-0.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -196,9 +257,10 @@ const MainLayout: React.FC = () => {
                 <button
                   key={item.id}
                   onClick={() => setView(item.id)}
-                  className={`flex min-w-0 flex-col items-center gap-0.5 rounded-[14px] px-1 py-1.5 transition ${active ? 'text-[color:var(--labora-primary,#2F5D4A)]' : 'text-[color:var(--labora-muted,#A39B90)]'}`}
+                  aria-current={active ? 'page' : undefined}
+                  className={`relative flex min-w-0 flex-col items-center gap-0.5 px-1 py-1.5 transition ${active ? 'text-[#145039]' : 'text-[#758078]'}`}
                 >
-                  <div className={`relative flex h-8 min-w-10 items-center justify-center rounded-[14px] px-2 transition ${active ? 'bg-[color:var(--labora-moss-soft,#EBF3ED)] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.10),0_1px_0_rgba(255,255,255,0.8)_inset]' : ''}`}>
+                  <div className="relative flex h-8 min-w-10 items-center justify-center px-2">
                     {item.id === 'settings' && identityImage ? (
                       <Identity small />
                     ) : (
@@ -213,6 +275,7 @@ const MainLayout: React.FC = () => {
                   <span className={`w-full truncate text-center text-[9px] ${active ? 'font-extrabold' : 'font-semibold'}`}>
                     {item.label}
                   </span>
+                  {active && <span className="absolute -bottom-1 h-[3px] w-8 rounded-full bg-[#145039]" />}
                 </button>
               );
             })}

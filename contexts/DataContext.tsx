@@ -20,6 +20,14 @@ import {
 } from '../services/remoteOperational';
 import { supabase } from '../services/supabaseClient';
 import { canOwnerDeleteRow } from '../services/deleteEligibility';
+import { clearOperationalCacheSubmission } from '../services/operationalCache';
+import {
+  safeStorageGet,
+  safeStorageReadJson,
+  safeStorageRemove,
+  safeStorageSet,
+  safeStorageSetJson
+} from '../services/safeStorage';
 
 type DeleteOptions = { quiet?: boolean };
 
@@ -118,33 +126,19 @@ const LEGACY_OPERATIONAL_KEYS = [
 
 const scopedKey = (base: string, userId: string) => `${base}:${userId}`;
 
-const parseStored = <T,>(key: string, fallback: T): T => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) as T : fallback;
-  } catch {
-    return fallback;
-  }
-};
+const parseStored = <T,>(key: string, fallback: T): T => safeStorageReadJson(key, fallback);
 
 const purgeLegacyOperationalKeys = () => {
   for (const key of LEGACY_OPERATIONAL_KEYS) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* ignore */
-    }
+    safeStorageRemove(key);
   }
 };
 
 const clearScopedOperationalKeys = (userId: string) => {
   for (const key of LEGACY_OPERATIONAL_KEYS) {
-    try {
-      localStorage.removeItem(scopedKey(key, userId));
-    } catch {
-      /* ignore */
-    }
+    safeStorageRemove(scopedKey(key, userId));
   }
+  clearOperationalCacheSubmission(userId);
 };
 
 const createId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -202,31 +196,31 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     return user ? parseStored<TaxDeclaration[]>(scopedKey(STORAGE.declarations, user.id), []) : [];
   });
   const [vehicle, setVehicle] = useState<Vehicle | null>(() => parseStored<Vehicle | null>(STORAGE.vehicle, null));
-  const [hasOnboarded, setHasOnboarded] = useState(() => localStorage.getItem(STORAGE.onboarded) === 'true');
-  const [privacyMode, setPrivacyMode] = useState(() => localStorage.getItem(STORAGE.privacy) === 'true');
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem(STORAGE.darkMode) === 'true');
+  const [hasOnboarded, setHasOnboarded] = useState(() => safeStorageGet(STORAGE.onboarded) === 'true');
+  const [privacyMode, setPrivacyMode] = useState(() => safeStorageGet(STORAGE.privacy) === 'true');
+  const [darkMode, setDarkMode] = useState(() => safeStorageGet(STORAGE.darkMode) === 'true');
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     purgeLegacyOperationalKeys();
-    localStorage.setItem(STORAGE.users, JSON.stringify(users));
-    localStorage.setItem(STORAGE.onboarded, String(hasOnboarded));
-    localStorage.setItem(STORAGE.privacy, String(privacyMode));
-    localStorage.setItem(STORAGE.darkMode, String(darkMode));
+    safeStorageSetJson(STORAGE.users, users);
+    safeStorageSet(STORAGE.onboarded, String(hasOnboarded));
+    safeStorageSet(STORAGE.privacy, String(privacyMode));
+    safeStorageSet(STORAGE.darkMode, String(darkMode));
 
-    if (vehicle) localStorage.setItem(STORAGE.vehicle, JSON.stringify(vehicle));
-    else localStorage.removeItem(STORAGE.vehicle);
+    if (vehicle) safeStorageSetJson(STORAGE.vehicle, vehicle);
+    else safeStorageRemove(STORAGE.vehicle);
 
     if (currentUser) {
-      localStorage.setItem(STORAGE.currentUser, JSON.stringify(currentUser));
-      localStorage.setItem(scopedKey(STORAGE.incomes, currentUser.id), JSON.stringify(incomes));
-      localStorage.setItem(scopedKey(STORAGE.expenses, currentUser.id), JSON.stringify(expenses));
-      localStorage.setItem(scopedKey(STORAGE.documents, currentUser.id), JSON.stringify(documents));
-      localStorage.setItem(scopedKey(STORAGE.payments, currentUser.id), JSON.stringify(payments));
-      localStorage.setItem(scopedKey(STORAGE.requirements, currentUser.id), JSON.stringify(requirements));
-      localStorage.setItem(scopedKey(STORAGE.declarations, currentUser.id), JSON.stringify(declarations));
+      safeStorageSetJson(STORAGE.currentUser, currentUser);
+      safeStorageSetJson(scopedKey(STORAGE.incomes, currentUser.id), incomes);
+      safeStorageSetJson(scopedKey(STORAGE.expenses, currentUser.id), expenses);
+      safeStorageSetJson(scopedKey(STORAGE.documents, currentUser.id), documents);
+      safeStorageSetJson(scopedKey(STORAGE.payments, currentUser.id), payments);
+      safeStorageSetJson(scopedKey(STORAGE.requirements, currentUser.id), requirements);
+      safeStorageSetJson(scopedKey(STORAGE.declarations, currentUser.id), declarations);
     } else {
-      localStorage.removeItem(STORAGE.currentUser);
+      safeStorageRemove(STORAGE.currentUser);
     }
   }, [users, incomes, expenses, documents, payments, requirements, declarations, vehicle, currentUser, hasOnboarded, privacyMode, darkMode]);
 
@@ -236,11 +230,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     document.body.classList.toggle('dark', darkMode);
     root.style.colorScheme = darkMode ? 'dark' : 'light';
     document.body.style.colorScheme = darkMode ? 'dark' : 'light';
-    try {
-      localStorage.setItem(STORAGE.darkMode, String(darkMode));
-    } catch {
-      /* ignore quota / private mode */
-    }
+    safeStorageSet(STORAGE.darkMode, String(darkMode));
   }, [darkMode]);
 
   const showNotification = (type: 'success' | 'error' | 'info', message: string) => {
