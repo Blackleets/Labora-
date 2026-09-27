@@ -38,6 +38,8 @@ import { FieldLabel, formControlFocusClass } from '../formA11y';
 import { OrderBars } from './OrderBars';
 import { OrderForm } from './OrderForm';
 import { useOrderModule } from './useOrderModule';
+import { BubbleControlCard } from './BubbleControlCard';
+import { ORDERS_SYNCED_EVENT, bubbleOnShiftChange } from '../../services/laboraBubble';
 
 const LAST_PLATFORM_KEY = (userId: string) => `labora_orders_last_platform_${userId}`;
 
@@ -117,6 +119,14 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
       .then(([session, recent]) => { if (active) { setActiveSession(session); setSessions(recent); } })
       .catch(() => undefined);
     return () => { active = false; };
+  }, [enabled]);
+
+  // Pedidos guardados desde la burbuja (Android): recargar la lista cuando se suben.
+  useEffect(() => {
+    if (!enabled) return;
+    const onSynced = () => setLoadedSince(null);
+    window.addEventListener(ORDERS_SYNCED_EVENT, onSynced);
+    return () => window.removeEventListener(ORDERS_SYNCED_EVENT, onSynced);
   }, [enabled]);
 
   useEffect(() => {
@@ -200,11 +210,14 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
         setActiveSession(null);
         setSessions((previous) => [finished, ...previous.filter((session) => session.id !== finished.id)]);
         showNotification('success', 'Jornada terminada.');
+        void bubbleOnShiftChange(userId, false, platformOptions);
       } else {
         const started = await startWorkSession();
         setActiveSession(started);
         setSessions((previous) => [started, ...previous]);
         showNotification('success', 'Jornada iniciada.');
+        const bubbleWarning = await bubbleOnShiftChange(userId, true, platformOptions);
+        if (bubbleWarning) showNotification('info', bubbleWarning);
       }
     } catch (error) {
       showNotification('error', error instanceof Error ? error.message : 'No se pudo actualizar la jornada.');
@@ -292,6 +305,8 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
           <OrderForm idPrefix="labora-order-new" platforms={platformOptions} lastPlatform={lastPlatform} submitLabel="Guardar pedido" onSubmit={handleCreate} currencySymbol={currencySymbol} />
         </div>
       </section>
+
+      <BubbleControlCard platforms={platformOptions} />
 
       <section className="labora-card p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">

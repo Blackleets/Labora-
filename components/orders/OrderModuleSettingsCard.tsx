@@ -3,6 +3,7 @@ import { ClipboardList, Loader2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { formControlFocusClass } from '../formA11y';
 import { useOrderModule } from './useOrderModule';
+import { LaboraBubble, isBubbleSupported } from '../../services/laboraBubble';
 
 /** Ajustes → Módulos. Activa/desactiva el registro de pedidos (preferencia owner-only en Supabase). */
 export const OrderModuleSettingsCard: React.FC = () => {
@@ -16,6 +17,8 @@ export const OrderModuleSettingsCard: React.FC = () => {
     setBusy(true);
     try {
       await save({ ordersEnabled: !enabled, dailyGoal });
+      // Módulo apagado = oculto en todas partes, también la burbuja de Android.
+      if (enabled && isBubbleSupported()) await LaboraBubble.stop().catch(() => undefined);
       showNotification('success', enabled ? 'Registro de pedidos desactivado. Tus datos se conservan.' : 'Registro de pedidos activado.');
     } catch (saveError) {
       showNotification('error', saveError instanceof Error ? saveError.message : 'No se pudo guardar el ajuste.');

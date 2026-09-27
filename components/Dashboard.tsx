@@ -24,6 +24,8 @@ import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startW
 import { WorkSession } from '../types';
 import { FiscalDeadlineCard } from './FiscalDeadlineCard';
 import { OrderModuleShortcut } from './orders/OrderModuleSettingsCard';
+import { useOrderModule } from './orders/useOrderModule';
+import { bubbleOnShiftChange } from '../services/laboraBubble';
 
 
 interface DashboardProps { setView?: (view: string) => void; }
@@ -49,6 +51,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   const [sessionBusy, setSessionBusy] = useState(false);
   const [odometerInput, setOdometerInput] = useState('');
   const [clockNow, setClockNow] = useState(Date.now());
+  const { enabled: ordersModuleEnabled } = useOrderModule();
 
   useEffect(() => {
     let active = true;
@@ -165,6 +168,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         setOdometerInput('');
         setClockNow(Date.now());
         showNotification('success', 'Jornada finalizada.');
+        if (ordersModuleEnabled && currentUser) void bubbleOnShiftChange(currentUser.id, false, []);
       } else {
         const session = await startWorkSession(parsedOdometer);
         setActiveSession(session);
@@ -172,6 +176,10 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         setOdometerInput('');
         setClockNow(Date.now());
         showNotification('success', 'Jornada iniciada.');
+        if (ordersModuleEnabled && currentUser) {
+          const bubbleWarning = await bubbleOnShiftChange(currentUser.id, true, []);
+          if (bubbleWarning) showNotification('info', bubbleWarning);
+        }
       }
     } catch (error: any) {
       console.error('No se pudo actualizar la jornada.', error);
