@@ -9,9 +9,13 @@ export interface BubbleStatus {
   overlayGranted: boolean;
   running: boolean;
   notificationsGranted: boolean;
+  /** true solo en el flavour «labs» (fuera de Play). En «play» no existe el lector de notificaciones. */
+  notificationAssistSupported: boolean;
   notificationAssistEnabled: boolean;
+  glovoAssistEnabled: boolean;
   notificationAccessGranted: boolean;
   queued: number;
+  inactivityMinutes: number;
 }
 
 export interface BubbleSyncResult {
@@ -39,6 +43,7 @@ interface LaboraBubblePlugin {
   start(options: { platforms: string[] }): Promise<void>;
   stop(): Promise<void>;
   setNotificationAssist(options: { enabled: boolean }): Promise<void>;
+  setGlovoAssist(options: { enabled: boolean }): Promise<void>;
   addListener(event: 'ordersSynced', handler: (result: BubbleSyncResult) => void): Promise<PluginListenerHandle>;
 }
 
@@ -74,11 +79,15 @@ export const setBubbleAutoStart = (userId: string, value: boolean) => {
   try { localStorage.setItem(autoStartKey(userId), value ? 'true' : 'false'); } catch { /* sin almacenamiento */ }
 };
 
-/** «Iniciar jornada» → abre la burbuja si el rider lo pidió y hay permiso. Devuelve un aviso o null. */
+/**
+ * La burbuja va atada a la jornada: «Terminar jornada» SIEMPRE la para; «Iniciar jornada» la abre si el rider
+ * lo pidió y hay permiso. Devuelve un aviso o null.
+ */
 export const bubbleOnShiftChange = async (userId: string, started: boolean, platforms: string[]): Promise<string | null> => {
-  if (!userId || !isBubbleSupported() || !getBubbleAutoStart(userId)) return null;
+  if (!userId || !isBubbleSupported()) return null;
   try {
     if (!started) { await LaboraBubble.stop(); return null; }
+    if (!getBubbleAutoStart(userId)) return null;
     const status = await LaboraBubble.getStatus();
     if (!status.overlayGranted) return 'Para abrir la burbuja con la jornada, activa «Mostrar sobre otras apps» en Pedidos → Burbuja flotante.';
     await LaboraBubble.start({ platforms });
@@ -88,11 +97,11 @@ export const bubbleOnShiftChange = async (userId: string, started: boolean, plat
   }
 };
 
-/** Paquetes de la lista blanca (deben coincidir con PlatformAllowlist.java). */
-export const NOTIFICATION_ALLOWLIST: { packageName: string; label: string }[] = [
-  { packageName: 'com.ubercab.driver', label: 'Uber Driver (Uber Eats repartidores)' },
-  { packageName: 'com.logistics.rider.glovo', label: 'Glovo Rider for Couriers' },
-  { packageName: 'com.glovoapp.courier', label: 'Glovo Couriers (app anterior)' }
+/** Lista blanca (debe coincidir con android/app/src/labs/.../PlatformAllowlist.java). Nombres solo descriptivos. */
+export const NOTIFICATION_ALLOWLIST: { packageName: string; label: string; group: 'uber' | 'glovo' }[] = [
+  { packageName: 'com.ubercab.driver', label: 'Uber Driver (app de repartidores de Uber Eats)', group: 'uber' },
+  { packageName: 'com.logistics.rider.glovo', label: 'Glovo Rider for Couriers', group: 'glovo' },
+  { packageName: 'com.glovoapp.courier', label: 'Glovo Couriers (app anterior)', group: 'glovo' }
 ];
 
 const consentKey = (userId: string) => `labora_notif_assist_consent_at:${userId}`;

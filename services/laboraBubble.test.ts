@@ -41,5 +41,6 @@ describe('laboraBubble (web)', () => {
 
   it('lista blanca solo con apps de repartidores', () => {
     expect(NOTIFICATION_ALLOWLIST.map((item) => item.packageName)).toEqual(['com.ubercab.driver', 'com.logistics.rider.glovo', 'com.glovoapp.courier']);
+    expect(NOTIFICATION_ALLOWLIST.filter((item) => item.group === 'uber').map((item) => item.packageName)).toEqual(['com.ubercab.driver']);
   });
 });

@@ -81,13 +81,25 @@ jobs:
           npm run build
           npx cap sync android
 
-      - name: Unit tests, lint and debug APK
+      - name: Unit tests, lint and debug APKs (play + labs)
         working-directory: android
-        run: ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug
+        run: ./gradlew --no-daemon testPlayDebugUnitTest testLabsDebugUnitTest lintPlayDebug lintLabsDebug assemblePlayDebug assembleLabsDebug
 
-      - name: Upload debug APK
+      - name: Play APK must not contain the notification listener
+        run: |
+          AAPT2=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)aapt2
+          PLAY=android/app/build/outputs/apk/play/debug/app-play-debug.apk
+          LABS=android/app/build/outputs/apk/labs/debug/app-labs-debug.apk
+          if $AAPT2 dump xmltree --file AndroidManifest.xml $PLAY | grep -Eq 'NotificationListener|BIND_NOTIFICATION_LISTENER_SERVICE'; then echo "play manifest declares a notification listener"; exit 1; fi
+          if unzip -p $PLAY 'classes*.dex' | grep -aq 'OrderNotificationListener\|OfferParser'; then echo "play dex contains listener/parser code"; exit 1; fi
+          $AAPT2 dump xmltree --file AndroidManifest.xml $LABS | grep -q 'OrderNotificationListener'
+          echo "OK: listener only in labs"
+
+      - name: Upload debug APKs
         uses: actions/upload-artifact@v4
         with:
-          name: labora-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: labora-debug-apks
+          path: |
+            android/app/build/outputs/apk/play/debug/app-play-debug.apk
+            android/app/build/outputs/apk/labs/debug/app-labs-debug.apk
           retention-days: 14

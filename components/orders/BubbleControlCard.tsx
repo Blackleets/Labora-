@@ -31,6 +31,8 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
   const [busy, setBusy] = useState(false);
   const [autoStart, setAutoStart] = useState(() => getBubbleAutoStart(userId));
   const [consentOpen, setConsentOpen] = useState(false);
+  const [glovoOpen, setGlovoOpen] = useState(false);
+  const [overlayInfoOpen, setOverlayInfoOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!supported) return;
@@ -62,7 +64,7 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
   const notReading = (
     <p className="mt-2 inline-flex items-start gap-1.5 rounded-[13px] bg-[var(--labora-surface-2)] px-3 py-2.5 text-[11px] leading-relaxed text-[var(--labora-muted)]">
       <ShieldCheck size={13} className="mt-0.5 shrink-0" aria-hidden />
-      La burbuja solo dibuja su propio botón y panel. Labora+ no lee la pantalla, no usa Accesibilidad, no hace capturas y no pulsa nada en Uber, Glovo ni otras apps. Tú apuntas cada pedido.
+      La burbuja solo dibuja su propio botón y panel. Labora+ no lee la pantalla, no usa Accesibilidad, no hace capturas y no pulsa nada en las apps de reparto. Tú apuntas cada pedido.
     </p>
   );
 
@@ -78,7 +80,9 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
     );
   }
 
+  const assistSupported = Boolean(status?.notificationAssistSupported);
   const assistOn = Boolean(status?.notificationAssistEnabled);
+  const glovoOn = Boolean(status?.glovoAssistEnabled);
   const consentAt = getNotificationConsent(userId);
 
   return (
@@ -88,7 +92,7 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
         {status && <StatusPill ok={status.running} yes="Activa" no="Parada" />}
       </div>
       <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">
-        Un botón redondo que flota encima de Uber, Glovo o el mapa. Tócalo para apuntar un pedido sin salir de la app de reparto; muestra tus pedidos y € de hoy. La notificación fija trae «+ Aceptado» y «+ Rechazado».
+        Un botón redondo que flota encima de tu app de reparto o del mapa mientras tu jornada está activa. Tócalo para apuntar un pedido sin salir; muestra tus pedidos y € de hoy. La notificación fija trae «+ Aceptado» (escribes el importe ahí mismo), «+ Rechazado» y «Parar»: funcionan aunque la burbuja quede oculta. Se para sola al terminar la jornada o tras {status?.inactivityMinutes ?? 30} min sin uso.
       </p>
       {notReading}
 
@@ -97,9 +101,20 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
           <span className="font-bold text-[var(--labora-ink-soft)]">1. Permiso «Mostrar sobre otras apps»</span>
           <span className="flex items-center gap-2">
             {status && <StatusPill ok={status.overlayGranted} yes="Concedido" no="Falta" />}
-            <button type="button" className={btnGhost} onClick={() => void LaboraBubble.openOverlaySettings()}>Abrir ajustes</button>
+            <button type="button" className={btnGhost} onClick={() => setOverlayInfoOpen(true)}>Abrir ajustes</button>
           </span>
         </li>
+        {overlayInfoOpen && (
+          <li className="rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] p-3" role="dialog" aria-label="Burbuja flotante">
+            <p className="text-[11px] leading-relaxed text-[var(--labora-ink-soft)]">
+              <strong>Burbuja flotante.</strong> Para apuntar pedidos sin salir de la app de reparto, Labora+ muestra una pequeña burbuja encima de otras apps mientras tu jornada está activa. No lee tu pantalla ni pulsa nada por ti. Se para al terminar la jornada o al pulsar «Parar».
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button type="button" className={btnPrimary} onClick={() => { setOverlayInfoOpen(false); void LaboraBubble.openOverlaySettings(); }}>Continuar a Ajustes</button>
+              <button type="button" className={btnGhost} onClick={() => setOverlayInfoOpen(false)}>Ahora no</button>
+            </div>
+          </li>
+        )}
         <li className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-bold text-[var(--labora-ink-soft)]">2. Burbuja</span>
           {status?.running ? (
@@ -115,7 +130,7 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
         <li>
           <label className="flex min-h-11 items-center gap-2 font-bold text-[var(--labora-ink-soft)]">
             <input type="checkbox" className="h-5 w-5 accent-[var(--labora-primary)]" checked={autoStart} onChange={(event) => { setAutoStart(event.target.checked); setBubbleAutoStart(userId, event.target.checked); }} />
-            Abrir la burbuja al «Iniciar jornada» (y cerrarla al terminar)
+            Abrir la burbuja al «Iniciar jornada» («Terminar jornada» siempre la cierra)
           </label>
         </li>
       </ol>
@@ -129,13 +144,14 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
         <p className="mt-2 text-[11px] text-[var(--labora-muted)]">Las notificaciones de Labora+ están desactivadas: la burbuja funciona, pero no verás los botones «+ Aceptado / + Rechazado».</p>
       )}
 
+      {assistSupported && (
       <div className="mt-4 border-t border-[var(--labora-border)] pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[var(--labora-ink)]"><BellRing size={14} aria-hidden /> Borrador desde notificaciones (opcional)</h4>
+          <h4 className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[var(--labora-ink)]"><BellRing size={14} aria-hidden /> Asistente de notificaciones (opcional · Labs)</h4>
           <StatusPill ok={assistOn} yes="Activado" no="Desactivado" />
         </div>
         <p className="mt-1 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-          Si lo activas, Labora+ lee el título y el texto de las notificaciones de Uber Driver y Glovo Rider para rellenar importe y km en la burbuja. Tú sigues eligiendo Aceptado o Rechazado y pulsando Guardar. Desactivado por defecto.
+          Solo en Labora+ Labs. Rellena importe y km en la burbuja a partir de las notificaciones de la app de repartidor de Uber. Tú sigues eligiendo Aceptado o Rechazado y pulsando Guardar. Desactivado por defecto.
         </p>
         {assistOn ? (
           <div className="mt-2 space-y-2">
@@ -143,18 +159,37 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
               Acceso a notificaciones en Android: <StatusPill ok={Boolean(status?.notificationAccessGranted)} yes="Concedido" no="Pendiente" />
               {consentAt && <span className="ml-1 text-[var(--labora-muted)]">· consentimiento {new Date(consentAt).toLocaleString('es-ES')}</span>}
             </p>
+            <label className="flex min-h-11 items-center gap-2 text-[11px] font-bold text-[var(--labora-ink-soft)]">
+              <input type="checkbox" className="h-5 w-5 accent-[var(--labora-primary)]" checked={glovoOn} onChange={(event) => {
+                if (event.target.checked) setGlovoOpen(true);
+                else void run(() => LaboraBubble.setGlovoAssist({ enabled: false }), 'Glovo desactivado en el asistente.');
+              }} />
+              Incluir también notificaciones de Glovo (desactivado por defecto)
+            </label>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={btnGhost} onClick={() => void LaboraBubble.openNotificationAccessSettings()}>Abrir acceso a notificaciones</button>
               <button type="button" disabled={busy} className={btnGhost} onClick={() => void run(async () => {
                 await LaboraBubble.setNotificationAssist({ enabled: false });
                 recordNotificationConsent(userId, null);
-              }, 'Lectura de notificaciones desactivada. Puedes quitar también el acceso en Ajustes de Android.')}>Desactivar</button>
+              }, 'Asistente desactivado y borradores borrados. Puedes quitar también el acceso en Ajustes de Android.')}>Desactivar</button>
             </div>
           </div>
         ) : (
           <button type="button" className={`${btnGhost} mt-2`} onClick={() => setConsentOpen(true)}>Activar…</button>
         )}
       </div>
+      )}
+
+      {glovoOpen && (
+        <GlovoWarningDialog
+          busy={busy}
+          onCancel={() => setGlovoOpen(false)}
+          onAccept={() => void run(async () => {
+            await LaboraBubble.setGlovoAssist({ enabled: true });
+            setGlovoOpen(false);
+          }, 'Glovo incluido en el asistente.')}
+        />
+      )}
 
       {consentOpen && (
         <NotificationConsentDialog
@@ -173,6 +208,42 @@ export const BubbleControlCard: React.FC<{ platforms: string[] }> = ({ platforms
 };
 
 const NotificationConsentDialog: React.FC<{ busy: boolean; onCancel: () => void; onAccept: () => void }> = ({ busy, onCancel, onAccept }) => {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+  // Divulgación destacada (docs/LEGAL_PLAY_ORDER_BUBBLE.md §5.1). Atrás / fuera / Escape = «No, gracias».
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[var(--labora-ink-soft)]/40 p-0 sm:items-center sm:p-4" role="presentation" onClick={onCancel}>
+      <div role="dialog" aria-modal="true" aria-labelledby="labora-consent-title" onClick={(event) => event.stopPropagation()} className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-[26px] bg-[var(--labora-ivory)] p-5 shadow-xl sm:rounded-[26px]">
+        <h3 id="labora-consent-title" className="text-base font-extrabold text-[var(--labora-ink)]">Asistente de notificaciones (opcional)</h3>
+        <div className="mt-3 space-y-3 text-xs leading-relaxed text-[var(--labora-ink-soft)]">
+          <p>Labora+ <strong>lee el título y el texto de las notificaciones de la app de repartidor de Uber</strong> ({NOTIFICATION_ALLOWLIST.filter((item) => item.group === 'uber').map((item) => item.packageName).join(', ')}) y de ninguna otra app, para <strong>rellenar el importe y los km</strong> del pedido en tu registro, <strong>también cuando Labora+ está cerrada o en segundo plano</strong>.</p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>El texto se analiza <strong>solo en tu móvil</strong> y se <strong>descarta al momento</strong>. No guardamos ni enviamos el texto de la notificación.</li>
+            <li>Solo se guarda en tu cuenta de Labora+ lo que <strong>tú confirmas</strong>: plataforma, importe, km, hora y tu decisión.</li>
+            <li>Nunca aceptamos ni rechazamos pedidos por ti ni tocamos la app de la plataforma.</li>
+            <li>Android avisará de que el acceso a notificaciones permite leerlas todas: es el permiso del sistema. Nuestro código ignora cualquier otra app.</li>
+          </ul>
+          <p className="flex items-start gap-2 rounded-[13px] bg-[var(--labora-soft-clay)] p-3 text-[var(--labora-clay-deep)]">
+            <AlertTriangle size={15} className="mt-0.5 shrink-0" aria-hidden />
+            <span><strong>Aviso:</strong> Uber podría considerar que el uso de herramientas de terceros incumple sus condiciones y hay riders a los que se ha amenazado con desactivar la cuenta por usar apps de este tipo. Úsalo bajo tu criterio. Siempre puedes apuntar los pedidos a mano.</span>
+          </p>
+          <p className="flex items-start gap-2 text-[var(--labora-muted)]"><MessageCircle size={14} className="mt-0.5 shrink-0" aria-hidden /> Puedes desactivarlo cuando quieras aquí (Pedidos → Burbuja flotante) o en Ajustes de Android → Acceso a notificaciones.</p>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button type="button" className={`${btnGhost} flex-1`} onClick={onCancel}>No, gracias</button>
+          <button type="button" disabled={busy} className={`${btnPrimary} flex-[2]`} onClick={onAccept}>
+            {busy && <Loader2 size={14} className="animate-spin" aria-hidden />} Acepto, abrir ajustes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const GlovoWarningDialog: React.FC<{ busy: boolean; onCancel: () => void; onAccept: () => void }> = ({ busy, onCancel, onAccept }) => {
   const [understood, setUnderstood] = useState(false);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onCancel(); };
@@ -180,32 +251,23 @@ const NotificationConsentDialog: React.FC<{ busy: boolean; onCancel: () => void;
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel]);
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[var(--labora-ink-soft)]/40 p-0 sm:items-center sm:p-4" role="presentation">
-      <div role="dialog" aria-modal="true" aria-labelledby="labora-consent-title" className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-[26px] bg-[var(--labora-ivory)] p-5 shadow-xl sm:rounded-[26px]">
-        <h3 id="labora-consent-title" className="text-base font-extrabold text-[var(--labora-ink)]">Leer notificaciones de Uber y Glovo</h3>
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[var(--labora-ink-soft)]/40 p-0 sm:items-center sm:p-4" role="presentation" onClick={onCancel}>
+      <div role="dialog" aria-modal="true" aria-labelledby="labora-glovo-title" onClick={(event) => event.stopPropagation()} className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-[26px] bg-[var(--labora-ivory)] p-5 shadow-xl sm:rounded-[26px]">
+        <h3 id="labora-glovo-title" className="text-base font-extrabold text-[var(--labora-ink)]">Incluir notificaciones de Glovo</h3>
         <div className="mt-3 space-y-3 text-xs leading-relaxed text-[var(--labora-ink-soft)]">
-          <p><strong>Qué lee:</strong> solo el título y el texto de las notificaciones de estas apps:</p>
-          <ul className="list-disc pl-5">
-            {NOTIFICATION_ALLOWLIST.map((item) => <li key={item.packageName}>{item.label} <span className="text-[var(--labora-muted)]">({item.packageName})</span></li>)}
-          </ul>
-          <p>Las demás notificaciones (WhatsApp, banco, etc.) se ignoran en el código. Aun así, Android te avisará de que el acceso a notificaciones permite leerlas todas: es el permiso del sistema, no se puede limitar a una app.</p>
-          <p><strong>Qué hace:</strong> saca el importe (€) y los km si aparecen claros y los pone como borrador en la burbuja. Si no está claro, deja el campo vacío. Nunca acepta ni rechaza por ti, no toca la app de la plataforma, no usa Accesibilidad ni capturas de pantalla.</p>
-          <p><strong>Tus datos:</strong> el texto de la notificación se queda en la memoria del móvil unos minutos y no se guarda ni se sube. Solo se guarda lo que tú confirmas con «Guardar» (plataforma, importe, km, resultado, motivo), en tu cuenta y solo visible para ti.</p>
+          <p>Se leerían también el título y el texto de las notificaciones de {NOTIFICATION_ALLOWLIST.filter((item) => item.group === 'glovo').map((item) => `${item.label} (${item.packageName})`).join(' y ')}, con las mismas reglas: solo en tu móvil, se descarta al momento y solo se guarda lo que confirmas.</p>
           <p className="flex items-start gap-2 rounded-[13px] bg-[var(--labora-soft-clay)] p-3 text-[var(--labora-clay-deep)]">
             <AlertTriangle size={15} className="mt-0.5 shrink-0" aria-hidden />
-            <span><strong>Riesgo:</strong> los términos de Uber y Glovo pueden prohibir herramientas de terceros que accedan a la información de su app. Uber ha demandado a apps de este tipo (p. ej. GigU en Brasil) y las plataformas pueden desactivar cuentas. Labora+ no puede garantizar que no afecte a tu cuenta. Lo activas bajo tu responsabilidad y puedes desactivarlo cuando quieras.</span>
+            <span><strong>Riesgo laboral:</strong> en España, desde julio de 2025 los riders de Glovo son <strong>trabajadores por cuenta ajena</strong>. Las normas de uso de Glovo para personas trabajadoras califican como <strong>falta laboral muy grave</strong> usar su información o propiedad intelectual para fines distintos a tu trabajo, lo que puede llevar a sanciones o al <strong>despido disciplinario</strong>. Si trabajas como asalariado de Glovo, no lo actives. Si eres autónomo con otra relación, consulta antes tus condiciones.</span>
           </p>
-          <p className="flex items-start gap-2 text-[var(--labora-muted)]"><MessageCircle size={14} className="mt-0.5 shrink-0" aria-hidden /> Puedes quitar el permiso en Ajustes de Android → Acceso a notificaciones, o con «Desactivar» en esta pantalla.</p>
         </div>
         <label className="mt-4 flex min-h-11 items-start gap-2 text-xs font-bold text-[var(--labora-ink)]">
           <input type="checkbox" className="mt-0.5 h-5 w-5 accent-[var(--labora-primary)]" checked={understood} onChange={(event) => setUnderstood(event.target.checked)} />
-          Entiendo el riesgo con los términos de Uber y Glovo y quiero activarlo.
+          He leído el aviso y asumo el riesgo.
         </label>
         <div className="mt-4 flex gap-2">
-          <button type="button" className={`${btnGhost} flex-1`} onClick={onCancel}>Cancelar</button>
-          <button type="button" disabled={!understood || busy} className={`${btnPrimary} flex-[2]`} onClick={onAccept}>
-            {busy && <Loader2 size={14} className="animate-spin" aria-hidden />} Activar y abrir ajustes
-          </button>
+          <button type="button" className={`${btnGhost} flex-1`} onClick={onCancel}>No, gracias</button>
+          <button type="button" disabled={!understood || busy} className={`${btnPrimary} flex-[2]`} onClick={onAccept}>Incluir Glovo</button>
         </div>
       </div>
     </div>
