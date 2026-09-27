@@ -38,6 +38,8 @@ requireFile('docs/GLOBAL_EXPANSION.md', 'global expansion policy');
 requireContains('components/Settings.tsx', 'AccountDeletionCard', 'real account deletion UI');
 requireContains('modules/core/i18n/index.ts', "export type Language = 'es' | 'en' | 'pt'", 'ES/EN/PT i18n base');
 requireContains('modules/country-config/catalog.ts', 'VERIFIED_AUTOMATIC_CALCULATION_CODES = new Set<string>()', 'tax automation fail-closed');
+requireContains('modules/country-config/catalog.ts', 'runtimeSafeCountryConfig', 'runtime-safe country sanitizer');
+requireContains('modules/country-config/hooks/useCountryConfig.ts', 'runtimeSafeCountryConfig(context.selectedCountry)', 'legacy modules consume sanitized country config');
 requireContains('contexts/CountryContext.tsx', 'GLOBAL_COUNTRIES', 'active country catalog is global-safe');
 requireContains('.github/workflows/ci.yml', 'supabase/functions/delete-account/index.ts', 'delete-account Deno CI coverage');
 requireContains('services/geminiService.ts', 'isAutomaticCountryCalculationEnabled', 'client fiscal AI jurisdiction gate');
