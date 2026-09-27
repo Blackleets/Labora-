@@ -4,7 +4,8 @@ import {
   LOCALIZATION_ONLY_COUNTRIES,
   countryCapability,
   countryFlagForCode,
-  isAutomaticCountryCalculationEnabled
+  isAutomaticCountryCalculationEnabled,
+  runtimeSafeCountryConfig
 } from './catalog';
 
 describe('global country catalog', () => {
@@ -34,6 +35,28 @@ describe('global country catalog', () => {
     expect(isAutomaticCountryCalculationEnabled('MX')).toBe(false);
     expect(isAutomaticCountryCalculationEnabled('US')).toBe(false);
     expect(isAutomaticCountryCalculationEnabled('CO')).toBe(false);
+  });
+
+  it('strips legacy ES/MX/US economics before legacy modules can consume them', () => {
+    for (const code of ['ES', 'MX', 'US']) {
+      const raw = GLOBAL_COUNTRIES.find((country) => country.country_code === code);
+      expect(raw).toBeDefined();
+      const safe = runtimeSafeCountryConfig(raw!);
+      expect(safe.country_code).toBe(code);
+      expect(safe.currency).toBe(raw!.currency);
+      expect(safe.min_fare).toBe(0);
+      expect(safe.per_km_rate).toBe(0);
+      expect(safe.per_min_rate).toBe(0);
+      expect(safe.default_commission_pct).toBe(0);
+      expect(safe.vat_pct).toBe(0);
+      expect(safe.income_tax_brackets).toEqual([]);
+      expect(safe.social_security_pct).toBe(0);
+      expect(safe.avg_fuel_price).toBe(0);
+      expect(safe.platforms).toEqual([]);
+      expect(safe.banking_metadata.compatible_banks).toEqual([]);
+      expect(safe.labor_advisor.registration_steps).toEqual([]);
+      expect(safe.labor_advisor.recommended_retention_pct).toBe(0);
+    }
   });
 
   it('generates flags from ISO country codes without a manual switch list', () => {
