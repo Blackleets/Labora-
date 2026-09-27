@@ -35,7 +35,9 @@ export const rowToOrder = (row: any): OrderLogEntry => ({
   rejectReason: (row.reject_reason || undefined) as RejectReason | undefined,
   note: row.note || undefined,
   convertedIncomeId: row.converted_income_id || undefined,
-  convertedAt: row.converted_at || undefined
+  convertedAt: row.converted_at || undefined,
+  source: row.source === 'import' ? 'import' : 'manual',
+  importRef: row.import_ref || undefined
 });
 
 const inputToRow = (input: OrderInput) => ({
@@ -127,6 +129,30 @@ export const insertOrder = async (input: OrderInput): Promise<OrderLogEntry> => 
     .single();
   if (error) throw error;
   return rowToOrder(data);
+};
+
+/**
+ * Inserta pedidos importados. La huella (`import_ref`) es única por usuario: si una fila
+ * ya existe se ignora. Devuelve cuántos se insertaron de verdad.
+ */
+export const insertImportedOrders = async (rows: Array<{ input: OrderInput; importRef: string }>): Promise<number> => {
+  const userId = await requireUserId();
+  let inserted = 0;
+  for (let index = 0; index < rows.length; index += 500) {
+    const chunk = rows.slice(index, index + 500).map(({ input, importRef }) => ({
+      ...inputToRow(input),
+      user_id: userId,
+      source: 'import',
+      import_ref: importRef
+    }));
+    const { data, error } = await supabase
+      .from('delivery_orders')
+      .upsert(chunk, { onConflict: 'user_id,import_ref', ignoreDuplicates: true })
+      .select('id');
+    if (error) throw error;
+    inserted += (data || []).length;
+  }
+  return inserted;
 };
 
 export const updateOrder = async (id: string, input: OrderInput): Promise<OrderLogEntry> => {

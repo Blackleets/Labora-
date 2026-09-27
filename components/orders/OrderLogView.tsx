@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRightLeft, CalendarDays, Clock3, Download, Loader2, Lock, Pencil, Play, Plus, Square, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, CalendarDays, Clock3, Download, FileUp, Loader2, Lock, Pencil, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useCountry } from '../../contexts/CountryContext';
 import { GLOBAL_INTEGRATION_CATALOG } from '../../modules/integrations/data/catalog';
@@ -42,6 +42,7 @@ import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { ANALYTICS_MAX_WEEKS, OrderAnalyticsPanel } from './OrderAnalyticsPanel';
 import { Dialog } from './OrderDialog';
 import { ShiftsMileagePanel } from './ShiftsMileagePanel';
+import { OrderImportWizard } from './OrderImportWizard';
 import { OrderBars } from './OrderBars';
 import { OrderForm } from './OrderForm';
 import { useOrderModule } from './useOrderModule';
@@ -74,6 +75,7 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
   const { selectedCountry } = useCountry();
   const { enabled, ready, dailyGoal, weeklyGoal, vehicleCostPerKm, save } = useOrderModule();
   const [odometerDraft, setOdometerDraft] = useState('');
+  const [importOpen, setImportOpen] = useState(false);
   const [tab, setTab] = useState<OrdersTab>('today');
   const [orders, setOrders] = useState<OrderLogEntry[]>([]);
   const [loadedSince, setLoadedSince] = useState<string | null>(null);
@@ -471,6 +473,9 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setImportOpen(true)} className={`inline-flex min-h-11 items-center gap-1.5 rounded-[13px] border border-[var(--labora-border)] px-3.5 text-xs font-extrabold text-[var(--labora-primary)] ${formControlFocusClass}`}>
+              <FileUp size={14} aria-hidden /> Importar CSV
+            </button>
             <button type="button" onClick={exportMonth} disabled={!monthOrders.length} className={`inline-flex min-h-11 items-center gap-1.5 rounded-[13px] border border-[var(--labora-border)] px-3.5 text-xs font-extrabold text-[var(--labora-primary)] disabled:opacity-40 ${formControlFocusClass}`}>
               <Download size={14} aria-hidden /> Exportar mes (CSV)
             </button>
@@ -556,6 +561,7 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
                           <p className="truncate text-xs font-extrabold text-[var(--labora-ink)]">
                             {new Date(order.occurredAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} · {order.platform}
                             <span className={`ml-2 rounded-full px-2 py-0.5 text-[9px] ${order.status === 'accepted' ? 'labora-status-ok' : 'labora-status-danger'}`}>{order.status === 'accepted' ? 'Aceptado' : 'Rechazado'}</span>
+                            {order.source === 'import' && <span className="ml-1 rounded-full bg-[var(--labora-surface)] px-2 py-0.5 text-[9px] text-[var(--labora-muted)]">Importado</span>}
                             {isConverted(order, liveIncomeIds) && <span className="labora-status-pending ml-1 rounded-full px-2 py-0.5 text-[9px]">En ingresos</span>}
                           </p>
                           <p className="truncate text-[11px] text-[var(--labora-muted)]">
@@ -576,6 +582,18 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
         </div>
       </section>
       </div>
+      )}
+
+      {importOpen && (
+        <OrderImportWizard
+          platforms={platformOptions}
+          formatMoney={formatMoney}
+          onClose={() => setImportOpen(false)}
+          onImported={(count) => {
+            if (count > 0) setLoadedSince(null);
+            showNotification('success', count ? `${count} pedidos importados.` : 'No había pedidos nuevos que importar.');
+          }}
+        />
       )}
 
       {editing && (
