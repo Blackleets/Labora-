@@ -26,6 +26,19 @@ const emptyLaborAdvisor = (countryName: string): LaborAdvisor => ({
   freelancer_threshold_note: `Labora+ todavía no tiene un pack fiscal verificado para ${countryName}. Consulta una fuente oficial o tu gestoría antes de tomar decisiones fiscales.`
 });
 
+const emptyBankingMetadata = () => ({
+  instant_payment_options: [],
+  platform_payouts: {},
+  deposit_time_standard: 'No configurado',
+  avg_transfer_fee: 0,
+  compatible_banks: []
+});
+
+const emptyVehicleBenchmarks = () => ({
+  avg_insurance_cost_yr: { bicycle: 0, motorcycle: 0, car: 0 },
+  avg_maintenance_yr: { bicycle: 0, motorcycle: 0, car: 0 }
+});
+
 export const createLocalizationOnlyCountry = ({ code, name, currency, symbol }: CountrySeed): CountryConfig => ({
   country_code: code,
   display_name: name,
@@ -45,17 +58,8 @@ export const createLocalizationOnlyCountry = ({ code, name, currency, symbol }: 
   decimals: 2,
   avg_fuel_price: 0,
   peak_hours: { lunch_start: 0, lunch_end: 0, dinner_start: 0, dinner_end: 0 },
-  banking_metadata: {
-    instant_payment_options: [],
-    platform_payouts: {},
-    deposit_time_standard: 'No configurado',
-    avg_transfer_fee: 0,
-    compatible_banks: []
-  },
-  vehicle_benchmarks: {
-    avg_insurance_cost_yr: { bicycle: 0, motorcycle: 0, car: 0 },
-    avg_maintenance_yr: { bicycle: 0, motorcycle: 0, car: 0 }
-  },
+  banking_metadata: emptyBankingMetadata(),
+  vehicle_benchmarks: emptyVehicleBenchmarks(),
   labor_advisor: emptyLaborAdvisor(name),
   events: [],
   cities: [],
@@ -106,8 +110,8 @@ const LOCALIZATION_SEEDS: CountrySeed[] = [
 export const LOCALIZATION_ONLY_COUNTRIES: CountryConfig[] = LOCALIZATION_SEEDS.map(createLocalizationOnlyCountry);
 
 /**
- * ES/MX/US se conservan por compatibilidad con funcionalidades ya existentes.
- * Sus datos legacy NO habilitan por sí solos el motor automático de tarifas/impuestos.
+ * ES/MX/US se conservan como fuentes legacy únicamente para migración gradual.
+ * Sus datos económicos NO deben consumirse directamente en runtime.
  */
 export const GLOBAL_COUNTRIES: CountryConfig[] = [
   DEFAULT_SPAIN_CONFIG,
@@ -129,6 +133,37 @@ const VERIFIED_AUTOMATIC_CALCULATION_CODES = new Set<string>();
 
 export const isAutomaticCountryCalculationEnabled = (code: string) =>
   VERIFIED_AUTOMATIC_CALCULATION_CODES.has(code.toUpperCase());
+
+/**
+ * Runtime boundary for older modules that still read CountryConfig directly.
+ * Until a pack is verified, economic/legal/platform/banking values are stripped
+ * even for the ES/MX/US legacy objects. Identity, currency, timezone and map
+ * positioning remain available for localization/UI only.
+ */
+export const runtimeSafeCountryConfig = (country: CountryConfig): CountryConfig => {
+  if (isAutomaticCountryCalculationEnabled(country.country_code)) return country;
+
+  return {
+    ...country,
+    min_fare: 0,
+    per_km_rate: 0,
+    per_min_rate: 0,
+    default_commission_pct: 0,
+    vat_pct: 0,
+    income_tax_brackets: [],
+    legal_notes: `Fiscalidad, tarifas, retenciones y costes automáticos no disponibles todavía para ${country.display_name}. Labora+ no inventa estos datos.`,
+    platforms: [],
+    service_fee_flat: 0,
+    social_security_pct: 0,
+    avg_fuel_price: 0,
+    peak_hours: { lunch_start: 0, lunch_end: 0, dinner_start: 0, dinner_end: 0 },
+    banking_metadata: emptyBankingMetadata(),
+    vehicle_benchmarks: emptyVehicleBenchmarks(),
+    labor_advisor: emptyLaborAdvisor(country.display_name),
+    events: [],
+    cities: []
+  };
+};
 
 export const countryFlagForCode = (code: string): string => {
   const normalized = code.trim().toUpperCase();
