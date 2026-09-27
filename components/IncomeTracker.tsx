@@ -16,6 +16,8 @@ import { extractIncomeFromDocument, extractIncomeFromText, getRetentionExplanati
 import { parseIncomeTextLocally } from '../services/incomeTextParser';
 import { reviewRemoteIncome } from '../services/remoteOperational';
 import { canOwnerDeleteRow, incomeDeleteConfirmMessage } from '../services/deleteEligibility';
+import { INCOME_REVIEW_FILTER_OPTIONS, IncomeReviewFilter, hasActiveIncomeFilters, incomeMatches, sortByDateDesc, uniqueSorted } from '../services/moneyFilters';
+import { MoneyFilterBar } from './MoneyFilterBar';
 import { Income, UserRole } from '../types';
 
 interface IncomeTrackerProps {
@@ -62,6 +64,10 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   const [loadingExplanation, setLoadingExplanation] = useState<Record<string, boolean>>({});
   const [reviewingIncome, setReviewingIncome] = useState<Record<string, boolean>>({});
   const [deletingIncomeId, setDeletingIncomeId] = useState<string | null>(null);
+  const [filterQuery, setFilterQuery] = useState('');
+  const [filterPlatform, setFilterPlatform] = useState('');
+  const [filterReview, setFilterReview] = useState<IncomeReviewFilter>('all');
+  const [filterClient, setFilterClient] = useState('');
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const linkedIds = useMemo(() => new Set(
@@ -71,7 +77,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
   ), [users, currentUser?.id]);
   const ownerNames = useMemo(() => new Map(users.map((user) => [user.id, user.name])), [users]);
 
-  const filteredIncomes = useMemo(() => incomes.filter((income) => {
+  const scopedIncomes = useMemo(() => incomes.filter((income) => {
     if (!currentUser) return false;
     if (isManager) {
       if (!linkedIds.has(income.userId)) return false;
@@ -83,8 +89,24 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     return true;
   }), [incomes, startDate, endDate, currentUser, isManager, linkedIds]);
 
-  const totalIncome = filteredIncomes.reduce((sum, income) => sum + income.amount, 0);
-  const totalRetention = filteredIncomes.reduce((sum, income) => sum + income.retention, 0);
+  const totalIncome = scopedIncomes.reduce((sum, income) => sum + income.amount, 0);
+  const totalRetention = scopedIncomes.reduce((sum, income) => sum + income.retention, 0);
+  const filtersActive = hasActiveIncomeFilters({ query: filterQuery, platform: filterPlatform, review: filterReview, userId: filterClient });
+  const filteredIncomes = useMemo(
+    () => sortByDateDesc(scopedIncomes.filter((income) => incomeMatches(income, { query: filterQuery, platform: filterPlatform, review: filterReview, userId: filterClient }))),
+    [scopedIncomes, filterQuery, filterPlatform, filterReview, filterClient]
+  );
+  const platformOptions = useMemo(() => uniqueSorted(scopedIncomes.map((income) => income.platform)), [scopedIncomes]);
+  const clientOptions = useMemo(
+    () => (isManager ? uniqueSorted(scopedIncomes.map((income) => income.userId)).map((id) => ({ value: id, label: ownerNames.get(id) || 'Cliente' })) : []),
+    [isManager, scopedIncomes, ownerNames]
+  );
+  const clearIncomeFilters = () => {
+    setFilterQuery('');
+    setFilterPlatform('');
+    setFilterReview('all');
+    setFilterClient('');
+  };
 
   const formatMoney = (value: number) => privacyMode
     ? '••••'
@@ -398,11 +420,29 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
       <section className="labora-card overflow-hidden">
         <div className="flex items-center justify-between gap-3 border-b border-[var(--labora-border)] px-4 py-3.5">
-          <div className="flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-[11px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]"><TrendingUp size={15} /></div><div><h3 className="text-sm font-extrabold text-[var(--labora-ink)]">Historial</h3><p className="text-[10px] text-[var(--labora-muted)]">{filteredIncomes.length} registros</p></div></div>
+          <div className="flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-[11px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]"><TrendingUp size={15} /></div><div><h3 className="text-sm font-extrabold text-[var(--labora-ink)]">Historial</h3><p className="text-[10px] text-[var(--labora-muted)]" aria-live="polite">{filtersActive ? `${filteredIncomes.length} de ${scopedIncomes.length} registros` : `${filteredIncomes.length} registros`}</p></div></div>
         </div>
 
+        {scopedIncomes.length > 0 && (
+          <MoneyFilterBar
+            idPrefix="labora-income-filter"
+            query={filterQuery}
+            onQueryChange={setFilterQuery}
+            placeholder="Buscar plataforma, nota o importe"
+            active={filtersActive}
+            onClear={clearIncomeFilters}
+            selects={[
+              ...(isManager && clientOptions.length > 1
+                ? [{ id: 'client', label: 'Cliente', value: filterClient, onChange: setFilterClient, options: [{ value: '', label: 'Todos los clientes' }, ...clientOptions] }]
+                : []),
+              { id: 'platform', label: 'Plataforma', value: filterPlatform, onChange: setFilterPlatform, options: [{ value: '', label: 'Todas las plataformas' }, ...platformOptions.map((platform) => ({ value: platform, label: platform }))] },
+              { id: 'review', label: 'Revisión', value: filterReview, onChange: (value: string) => setFilterReview(value as IncomeReviewFilter), options: INCOME_REVIEW_FILTER_OPTIONS }
+            ]}
+          />
+        )}
+
         {filteredIncomes.length === 0 ? (
-          <div className="px-4 py-12 text-center" role="status" aria-live="polite"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden><TrendingUp size={23} /></div><p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">No hay ingresos en este periodo.</p><p className="mt-1 text-xs text-[var(--labora-muted)]">Añade un ingreso manual o importa una liquidación/CSV. Nada se inventa automáticamente.</p></div>
+          <div className="px-4 py-12 text-center" role="status" aria-live="polite"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden><TrendingUp size={23} /></div><p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">{scopedIncomes.length > 0 ? 'Ningún ingreso coincide con los filtros.' : 'No hay ingresos en este periodo.'}</p><p className="mt-1 text-xs text-[var(--labora-muted)]">{scopedIncomes.length > 0 ? 'Cambia la búsqueda o pulsa «Quitar filtros».' : 'Añade un ingreso manual o importa una liquidación/CSV. Nada se inventa automáticamente.'}</p></div>
         ) : (
           <div className="divide-y divide-[var(--labora-border)]">
             {filteredIncomes.map((income) => (
