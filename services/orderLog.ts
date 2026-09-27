@@ -22,6 +22,10 @@ export interface OrderLogEntry {
   note?: string;
   convertedIncomeId?: string;
   convertedAt?: string;
+  /** 'import' si viene de un CSV importado por el rider; por defecto manual. */
+  source?: 'manual' | 'import';
+  /** Huella SHA-256 de la fila importada. */
+  importRef?: string;
 }
 
 export interface OrderInput {

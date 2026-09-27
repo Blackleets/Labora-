@@ -24,6 +24,10 @@ automatiza cuentas de Uber/Glovo/Just Eat. La lectura de notificaciones existe *
   - Aproximación declarada en la UI: cada pedido cuenta en la hora en que se apuntó; las horas salen de `work_sessions` cortadas por hora local.
   - €/km solo con pedidos que tienen km. Sin €/h por plataforma (la jornada no va ligada a una plataforma).
 - Gráficos: últimos 7 días / últimas 6 semanas.
+- **Importar CSV** (Mes → «Importar CSV», `services/orderImport.ts`):
+  - Para exportaciones del propio rider (Uber «Descargar tus datos», respuesta RGPD de Glovo…). Uber describe públicamente *qué* contiene su descarga (viajes con horas, distancia y tarifa; pagos) pero **no publica los nombres de columna**; Glovo no publica formato. Por eso no hay parser «de Uber/Glovo»: hay un **asistente de mapeo de columnas** (fecha, hora, importe, distancia km/millas, estado, plataforma) con sugerencias por nombre de cabecera, formato de fecha detectado (avisa si es ambiguo), mapeo de cada valor de estado (cancelados → ignorar por defecto) y vista previa.
+  - Conciliación: compara con los pedidos del rango; omite filas ya importadas (huella SHA-256 `import_ref`, índice único por usuario) y marca como posible duplicado lo que coincide con un apunte manual (misma plataforma, estado e importe, ±10 min). Por defecto no se importan.
+  - Columnas `source` (`manual`/`import`) e `import_ref`; etiqueta «Importado» en Mes. El archivo se lee en el dispositivo.
 - **Jornadas y km** (`services/shiftLog.ts`):
   - Historial de jornadas (12 semanas): duración, pedidos apuntados durante la jornada, €, €/h (solo si dura ≥15 min), km del cuentakilómetros o de pedidos.
   - Cuentakilómetros opcional al iniciar/terminar la jornada y corrección posterior con la RPC owner-only `set_work_session_odometer` (misma pauta private/SECURITY DEFINER que start/finish).
