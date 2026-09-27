@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, PropsWithChildren } from 'react';
-import { CountryConfig, DEFAULT_SPAIN_CONFIG, DEFAULT_MEXICO_CONFIG, DEFAULT_USA_CONFIG, OTHER_COUNTRIES } from '../modules/country-config/types';
+import type { CountryConfig } from '../modules/country-config/types';
+import { DEFAULT_SPAIN_CONFIG } from '../modules/country-config/types';
+import { GLOBAL_COUNTRIES } from '../modules/country-config/catalog';
 import { useData } from './DataContext';
 
 interface CountryContextType {
@@ -11,19 +13,15 @@ interface CountryContextType {
 
 export const CountryContext = createContext<CountryContextType | undefined>(undefined);
 
-const ALL_COUNTRIES: CountryConfig[] = [
-  DEFAULT_SPAIN_CONFIG,
-  DEFAULT_MEXICO_CONFIG,
-  DEFAULT_USA_CONFIG,
-  ...OTHER_COUNTRIES
-];
-
 const resolveCountry = (code: string | undefined | null): CountryConfig =>
-  ALL_COUNTRIES.find((country) => country.country_code === code) || DEFAULT_SPAIN_CONFIG;
+  GLOBAL_COUNTRIES.find((country) => country.country_code === code) || DEFAULT_SPAIN_CONFIG;
 
 /**
  * Must sit under DataProvider so it can hydrate from the logged-in profile.
  * Guest / pre-login: localStorage only. Logged-in: profile.countryCode wins.
+ *
+ * GLOBAL_COUNTRIES separates country/localization availability from fiscal support:
+ * selecting a country never implies that tax, platform pricing or banking data is verified.
  */
 export const CountryProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
   const { currentUser } = useData();
@@ -51,7 +49,7 @@ export const CountryProvider: React.FC<PropsWithChildren<{}>> = ({ children }) =
   }, [currentUser?.id, currentUser?.countryCode]);
 
   const selectCountry = (code: string) => {
-    const found = ALL_COUNTRIES.find((country) => country.country_code === code);
+    const found = GLOBAL_COUNTRIES.find((country) => country.country_code === code);
     if (!found) return;
     localStorage.setItem('labora_country', found.country_code);
     setSelectedCountry(found);
@@ -60,7 +58,7 @@ export const CountryProvider: React.FC<PropsWithChildren<{}>> = ({ children }) =
   const refreshCountries = async () => Promise.resolve();
 
   return (
-    <CountryContext.Provider value={{ selectedCountry, selectCountry, countries: ALL_COUNTRIES, refreshCountries }}>
+    <CountryContext.Provider value={{ selectedCountry, selectCountry, countries: GLOBAL_COUNTRIES, refreshCountries }}>
       {children}
     </CountryContext.Provider>
   );
