@@ -1,4 +1,4 @@
-import { User, UserRole } from '../types';
+import { User, UserRole, WorkMode } from '../types';
 import { GLOBAL_COUNTRIES } from '../modules/country-config/catalog';
 import { assertManagerSignupFields } from './registrationValidation';
 import {
@@ -36,6 +36,9 @@ type ProfileRow = {
   country_code?: string | null;
   platforms?: string[] | null;
   banks?: string[] | null;
+  work_modes?: WorkMode[] | null;
+  workplaces?: string[] | null;
+  wants_manager?: boolean | null;
   onboarding_completed?: boolean | null;
   identity_image_path?: string | null;
   identity_image_kind?: string | null;
@@ -52,6 +55,12 @@ const roleToDb = (role: UserRole) => {
   if (role === UserRole.ADMIN) return 'admin';
   return 'rider';
 };
+
+const VALID_WORK_MODES = new Set<WorkMode>(['employee', 'rider', 'self_employed', 'freelancer']);
+const normalizeWorkModes = (values?: WorkMode[] | null): WorkMode[] =>
+  Array.from(new Set((values || []).filter((value): value is WorkMode => VALID_WORK_MODES.has(value))));
+const normalizeWorkplaces = (values?: string[] | null): string[] =>
+  Array.from(new Set((values || []).map((value) => value.trim()).filter(Boolean))).slice(0, 30);
 
 const normalizedCountryCode = (code?: string | null) => String(code || 'ES').trim().toUpperCase();
 const currencyForCountry = (code?: string | null) => {
@@ -99,14 +108,17 @@ const rowToUser = async (row: ProfileRow): Promise<User> => {
     vehicleFuel: row.vehicle_fuel || undefined,
     companyName: row.company_name || undefined,
     collegiateNumber: row.collegiate_number || undefined,
-    countryCode
+    countryCode,
+    workModes: normalizeWorkModes(row.work_modes),
+    workplaces: normalizeWorkplaces(row.workplaces),
+    wantsManager: Boolean(row.wants_manager)
   };
 };
 
 export const loadRemoteWorkspace = async (currentUserId: string) => {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id,role,name,email,phone,nif,company_name,collegiate_number,manager_id,fiscal_regime,iae_code,social_security_type,vehicle_type,vehicle_plate,vehicle_fuel,country_code,platforms,banks,onboarding_completed,identity_image_path,identity_image_kind');
+    .select('id,role,name,email,phone,nif,company_name,collegiate_number,manager_id,fiscal_regime,iae_code,social_security_type,vehicle_type,vehicle_plate,vehicle_fuel,country_code,platforms,banks,work_modes,workplaces,wants_manager,onboarding_completed,identity_image_path,identity_image_kind');
 
   if (error) throw error;
 
@@ -183,13 +195,12 @@ export const signUpRemote = async (
   const email = userData.email?.trim().toLowerCase();
   if (!email) throw new Error('El correo es obligatorio.');
 
-  // Professional/manager accounts remain guarded. Spain uses NIF + collegiate
-  // format validation; other countries require a local tax/business registration
-  // identifier without pretending that Labora+ queried a government registry.
   let nif = userData.nif?.trim().toUpperCase() || '';
   let companyName = userData.companyName?.trim() || '';
   let collegiateNumber = userData.collegiateNumber?.trim() || '';
   const countryCode = normalizedCountryCode(userData.countryCode);
+  const workModes = normalizeWorkModes(userData.workModes);
+  const workplaces = normalizeWorkplaces(userData.workplaces);
 
   if (role === UserRole.MANAGER) {
     const secured = assertManagerSignupFields({
@@ -216,7 +227,10 @@ export const signUpRemote = async (
     vehicle_type: userData.vehicleType || '',
     vehicle_plate: userData.vehiclePlate || '',
     vehicle_fuel: userData.vehicleFuel || '',
-    country_code: countryCode
+    country_code: countryCode,
+    work_modes: workModes,
+    workplaces,
+    wants_manager: Boolean(userData.wantsManager)
   };
 
   const { data, error } = await supabase.auth.signUp({
@@ -258,15 +272,6 @@ export const recoverRemoteSession = async () => {
   return true;
 };
 
-/**
- * Link the signed-in rider to a gestoría by email.
- *
- * Honesty note: `profiles.manager_id` is NOT in the authenticated column UPDATE
- * grant (migration 20260918160500). Direct `.update({ manager_id })` is blocked.
- * Linking goes through RPC `link_manager_by_email` (SECURITY DEFINER). Apply
- * migration `20260920141000_labora_gestoria_link_rpcs.sql` on the live project
- * if the RPC is missing.
- */
 export const linkManagerByEmail = async (
   managerEmail: string,
   directory: User[] = []
@@ -278,28 +283,20 @@ export const linkManagerByEmail = async (
     throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
   }
   if (current.role !== UserRole.RIDER) {
-    throw new Error('Solo los autónomos pueden vincular una gestoría desde este formulario.');
+    throw new Error('Solo las cuentas de trabajador pueden vincular una cuenta profesional desde este formulario.');
   }
 
   const validation = validateRiderLinkByEmail(current, managerEmail, directory);
-  if (validation.ok === false) {
-    throw new Error(validation.message);
-  }
+  if (validation.ok === false) throw new Error(validation.message);
 
   const { error } = await supabase.rpc('link_manager_by_email', {
     manager_email: validation.email
   });
-  if (error) {
-    throw new Error(friendlyLinkError(error));
-  }
+  if (error) throw new Error(friendlyLinkError(error));
 
   return loadRemoteWorkspace(authenticatedUser.id);
 };
 
-/**
- * Clear manager_id for the signed-in rider via RPC `unlink_own_manager`.
- * Same column-grant constraint as link — no direct client UPDATE.
- */
 export const unlinkOwnManager = async () => {
   const authenticatedUser = await requireAuthenticatedUser();
   const currentRaw = localStorage.getItem(LOCAL.currentUser);
@@ -308,13 +305,11 @@ export const unlinkOwnManager = async () => {
     throw new Error('La sesión activa no coincide con el perfil local. Cierra sesión y vuelve a entrar.');
   }
   if (current.role !== UserRole.RIDER) {
-    throw new Error('Solo los autónomos pueden desvincular una gestoría.');
+    throw new Error('Solo las cuentas de trabajador pueden desvincular una cuenta profesional.');
   }
 
   const { error } = await supabase.rpc('unlink_own_manager');
-  if (error) {
-    throw new Error(friendlyUnlinkError(error));
-  }
+  if (error) throw new Error(friendlyUnlinkError(error));
 
   return loadRemoteWorkspace(authenticatedUser.id);
 };
@@ -357,6 +352,9 @@ export const updateRemoteProfile = async (userId: string, patch: Partial<User>) 
   if (patch.collegiateNumber !== undefined) payload.collegiate_number = patch.collegiateNumber || null;
   if (patch.vehiclePlate !== undefined) payload.vehicle_plate = patch.vehiclePlate || null;
   if (patch.countryCode !== undefined) payload.country_code = normalizedCountryCode(patch.countryCode);
+  if (patch.workModes !== undefined) payload.work_modes = normalizeWorkModes(patch.workModes);
+  if (patch.workplaces !== undefined) payload.workplaces = normalizeWorkplaces(patch.workplaces);
+  if (patch.wantsManager !== undefined) payload.wants_manager = Boolean(patch.wantsManager);
 
   if (Object.keys(payload).length === 0) return;
   const { error } = await supabase
