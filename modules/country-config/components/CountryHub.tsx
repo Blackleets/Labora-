@@ -1,200 +1,114 @@
-
-import React, { useState, useEffect } from 'react';
-import { Globe, Plus, Edit2, Trash2, Save, X, Check, Code, Percent, DollarSign } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Check, Globe2, Search, ShieldCheck } from 'lucide-react';
 import { useCountry } from '../../../contexts/CountryContext';
-import { CountryConfig } from '../types';
-import { countryApi } from '../services/countryApi';
+import {
+  countryCapability,
+  countryFlagForCode,
+  isAutomaticCountryCalculationEnabled
+} from '../catalog';
 
 export const CountryHub: React.FC = () => {
-  const { countries, selectedCountry, selectCountry, refreshCountries } = useCountry();
-  const [isAdminMode, setIsAdminMode] = useState(false);
-  const [editingConfig, setEditingConfig] = useState<CountryConfig | null>(null);
-  const [jsonError, setJsonError] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
+  const { countries, selectedCountry, selectCountry } = useCountry();
+  const [query, setQuery] = useState('');
 
-  const handleEdit = (config: CountryConfig) => {
-    setEditingConfig(config);
-    setEditText(JSON.stringify(config, null, 2));
-    setJsonError(null);
-  };
-
-  const handleCreate = () => {
-    const template: CountryConfig = {
-      ...selectedCountry, 
-      country_code: "NEW", 
-      display_name: "New Country"
-    };
-    setEditingConfig(template);
-    setEditText(JSON.stringify(template, null, 2));
-    setJsonError(null);
-  };
-
-  const handleSave = async () => {
-    try {
-      const parsed = JSON.parse(editText) as CountryConfig;
-      if (!parsed.country_code) throw new Error("Missing country_code");
-      
-      if (countries.some(c => c.country_code === parsed.country_code && editingConfig?.country_code !== parsed.country_code)) {
-         await countryApi.create(parsed);
-      } else {
-         await countryApi.update(parsed.country_code, parsed);
-      }
-      
-      await refreshCountries();
-      setEditingConfig(null);
-    } catch (e: any) {
-      setJsonError(e.message);
-    }
-  };
-
-  const handleDelete = async (code: string) => {
-    if (confirm(`¿Eliminar configuración de ${code}?`)) {
-      await countryApi.delete(code);
-      await refreshCountries();
-    }
-  };
-
-  const updateField = (field: keyof CountryConfig, value: any) => {
-    try {
-      const current = JSON.parse(editText);
-      const updated = { ...current, [field]: value };
-      setEditText(JSON.stringify(updated, null, 2));
-      setJsonError(null);
-    } catch (e) {
-      setJsonError("Corrige el JSON antes de usar los controles rápidos.");
-    }
-  };
-
-  let parsedConfig: CountryConfig | null = null;
-  try {
-    parsedConfig = JSON.parse(editText);
-  } catch (e) {}
-
-  if (editingConfig) {
-    return (
-      <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 animate-in fade-in">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <Code size={20} className="text-[#2D6CDF]" />
-            Editor Configuración País
-          </h3>
-          <button onClick={() => setEditingConfig(null)} className="p-2 hover:bg-gray-100 rounded-full"><X size={20} /></button>
-        </div>
-        
-        {/* Quick Edit Controls */}
-        {parsedConfig && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div>
-                <label className="block text-xs font-bold text-blue-800 mb-1 flex items-center gap-1">
-                  <DollarSign size={12}/> Tasa de Servicio Fija
-                </label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  value={parsedConfig.service_fee_flat}
-                  onChange={(e) => updateField('service_fee_flat', parseFloat(e.target.value))}
-                  className="w-full p-2 rounded-lg border border-blue-200 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
-                />
-                <p className="text-[10px] text-blue-600 mt-1">Cobro fijo por pedido (Service Fee)</p>
-             </div>
-             <div>
-                <label className="block text-xs font-bold text-blue-800 mb-1 flex items-center gap-1">
-                  <Percent size={12}/> IVA Aplicable
-                </label>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    value={parsedConfig.vat_pct}
-                    onChange={(e) => updateField('vat_pct', parseFloat(e.target.value))}
-                    className="w-full p-2 rounded-lg border border-blue-200 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
-                  />
-                  <span className="text-sm font-bold text-blue-800">{(parsedConfig.vat_pct * 100).toFixed(0)}%</span>
-                </div>
-                <p className="text-[10px] text-blue-600 mt-1">Impuesto sobre servicio (ej. 0.21 para 21%)</p>
-             </div>
-          </div>
-        )}
-
-        <p className="text-xs text-gray-400 mb-2">Edita el JSON completo para ajustes avanzados.</p>
-        
-        <textarea
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          className="w-full h-96 font-mono text-xs bg-gray-50 border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-[#2D6CDF] outline-none"
-        />
-        
-        {jsonError && (
-          <div className="mt-2 p-2 bg-red-50 text-red-600 text-xs rounded-lg flex items-center gap-2">
-            <X size={12} /> {jsonError}
-          </div>
-        )}
-
-        <div className="flex justify-end gap-3 mt-4">
-          <button onClick={() => setEditingConfig(null)} className="px-4 py-2 text-gray-500 font-bold text-sm">Cancelar</button>
-          <button onClick={handleSave} className="px-4 py-2 bg-[#2D6CDF] text-white rounded-xl font-bold text-sm flex items-center gap-2">
-            <Save size={16} /> Guardar Configuración
-          </button>
-        </div>
-      </div>
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return countries;
+    return countries.filter((country) =>
+      country.country_code.toLowerCase().includes(normalized) ||
+      country.display_name.toLowerCase().includes(normalized) ||
+      country.currency.toLowerCase().includes(normalized)
     );
-  }
+  }, [countries, query]);
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-[#1A1A1A]">Country Hub</h2>
-          <p className="text-gray-500 text-sm">Gestiona la localización fiscal y bancaria.</p>
+          <p className="labora-kicker">Cobertura internacional</p>
+          <h2 className="mt-2 text-2xl font-bold text-[var(--labora-ink)]">País y jurisdicción</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--labora-muted)]">
+            El país controla identidad, moneda y contexto local. La fiscalidad automática solo se activa cuando existe un pack versionado con fuentes oficiales y tests.
+          </p>
         </div>
-        <button 
-          onClick={() => setIsAdminMode(!isAdminMode)}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${isAdminMode ? 'bg-[#1A1A1A] text-white border-[#1A1A1A]' : 'text-gray-500 border-gray-200'}`}
-        >
-          {isAdminMode ? 'Modo Admin ON' : 'Administrar'}
-        </button>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" size={15} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="País, código o moneda"
+            className="w-full rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[var(--labora-primary)]/40"
+          />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {countries.map(country => (
-          <div 
-            key={country.country_code}
-            className={`relative p-4 rounded-2xl border transition-all ${selectedCountry.country_code === country.country_code ? 'bg-blue-50 border-[#2D6CDF] shadow-sm' : 'bg-white border-gray-100 hover:border-blue-200'}`}
-          >
-             <div onClick={() => selectCountry(country.country_code)} className="cursor-pointer flex items-center gap-3">
-               <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg shadow-sm">
-                 {country.country_code === 'ES' ? '🇪🇸' : country.country_code === 'MX' ? '🇲🇽' : '🌍'}
-               </div>
-               <div>
-                 <h4 className="font-bold text-gray-800">{country.display_name}</h4>
-                 <p className="text-xs text-gray-500">{country.currency} • {country.vat_pct * 100}% VAT</p>
-               </div>
-               {selectedCountry.country_code === country.country_code && (
-                 <div className="absolute top-4 right-4 text-[#2D6CDF]"><Check size={18} /></div>
-               )}
-             </div>
-
-             {isAdminMode && (
-               <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end gap-2">
-                 <button onClick={() => handleEdit(country)} className="p-1.5 text-gray-400 hover:text-[#2D6CDF] hover:bg-blue-50 rounded-lg"><Edit2 size={14} /></button>
-                 <button onClick={() => handleDelete(country.country_code)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
-               </div>
-             )}
+      <div className="rounded-2xl border border-[var(--labora-border)] bg-[var(--labora-moss-soft)] p-4">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="mt-0.5 shrink-0 text-[var(--labora-primary)]" size={19} />
+          <div>
+            <p className="text-sm font-semibold text-[var(--labora-ink)]">Global sin inventar datos</p>
+            <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">
+              Una bandera o una moneda no significan que Labora+ conozca impuestos, retenciones, deducciones, bancos o tarifas locales. Cuando un dato no está verificado, se mantiene desactivado.
+            </p>
           </div>
-        ))}
-        
-        {isAdminMode && (
-          <button onClick={handleCreate} className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 hover:border-[#2D6CDF] hover:text-[#2D6CDF] hover:bg-blue-50 transition-all">
-            <Plus size={24} />
-            <span className="text-xs font-bold">Nuevo País</span>
-          </button>
-        )}
+        </div>
       </div>
 
-      <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs text-gray-500 font-mono">
-        <p>Active Config: {selectedCountry.country_code} ({selectedCountry.timezone})</p>
-        <p>API Endpoint: /api/v1/countries/{selectedCountry.country_code}</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((country) => {
+          const selected = selectedCountry.country_code === country.country_code;
+          const automatic = isAutomaticCountryCalculationEnabled(country.country_code);
+          const capability = countryCapability(country.country_code);
+          return (
+            <button
+              type="button"
+              key={country.country_code}
+              onClick={() => selectCountry(country.country_code)}
+              className={`relative rounded-2xl border p-4 text-left transition ${
+                selected
+                  ? 'border-[var(--labora-primary)]/40 bg-[var(--labora-moss-soft)] shadow-sm'
+                  : 'border-[var(--labora-border)] bg-[var(--labora-surface)] hover:border-[var(--labora-primary)]/25'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--labora-canvas)] text-2xl" aria-hidden="true">
+                  {countryFlagForCode(country.country_code)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-bold text-[var(--labora-ink)]">{country.display_name}</h3>
+                      <p className="mt-0.5 text-xs text-[var(--labora-muted)]">{country.country_code} · {country.currency}</p>
+                    </div>
+                    {selected && <Check size={17} className="shrink-0 text-[var(--labora-primary)]" />}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-[var(--labora-canvas)] px-2 py-1 text-[10px] font-semibold text-[var(--labora-muted)]">
+                      {capability === 'localization_only' ? 'Localización' : 'Compatibilidad legacy'}
+                    </span>
+                    <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
+                      automatic
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}>
+                      {automatic ? 'Fiscalidad verificada' : 'Fiscalidad automática OFF'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
+
+      {filtered.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-[var(--labora-border)] bg-[var(--labora-surface)] p-8 text-center">
+          <Globe2 className="mx-auto text-[var(--labora-muted)]" size={24} />
+          <p className="mt-2 text-sm font-semibold text-[var(--labora-ink)]">Sin resultados</p>
+          <p className="mt-1 text-xs text-[var(--labora-muted)]">Prueba con el nombre, código ISO o moneda.</p>
+        </div>
+      )}
     </div>
   );
 };
