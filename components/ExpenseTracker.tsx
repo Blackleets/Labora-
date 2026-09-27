@@ -8,6 +8,7 @@ import {
   Eye,
   Fuel,
   HelpCircle,
+  Images,
   Image as ImageIcon,
   Loader2,
   Monitor,
@@ -31,6 +32,7 @@ import { GasStationCaptureModal } from './GasStationCaptureModal';
 import { canOwnerDeleteRow, expenseDeleteConfirmMessage } from '../services/deleteEligibility';
 import { EXPENSE_STATUS_FILTER_OPTIONS, ExpenseStatusFilter, expenseMatches, hasActiveExpenseFilters, sortByDateDesc, uniqueSorted } from '../services/moneyFilters';
 import { MoneyFilterBar } from './MoneyFilterBar';
+import { ReceiptBatchModal } from './ReceiptBatchModal';
 
 interface ExpenseTrackerProps {
   startDate: string;
@@ -54,9 +56,11 @@ const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) 
 });
 
 const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) => {
-  const { expenses, addExpense, updateExpense, deleteExpense, updateExpenseAudit, showNotification, privacyMode, currentUser, users } = useData();
+  const { expenses, addExpense, addExpenses, updateExpense, deleteExpense, updateExpenseAudit, showNotification, privacyMode, currentUser, users } = useData();
   const { selectedCountry } = useCountry();
   const [isScanning, setIsScanning] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<File[] | null>(null);
+  const batchInputRef = useRef<HTMLInputElement>(null);
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [formError, setFormError] = useState('');
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
@@ -375,13 +379,37 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
       {!isManager && (
         <>
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => void handleFileSelect(event)} />
+          <input
+            ref={batchInputRef}
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            aria-label="Elegir varios tickets"
+            onChange={(event) => {
+              const picked = Array.from(event.target.files || []);
+              event.target.value = '';
+              if (picked.length) setBatchFiles(picked);
+            }}
+          />
 
-          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <ActionCard icon={Fuel} title="Repostaje" text="Ticket de combustible" tone="clay" onClick={() => setIsGasModalOpen(true)} />
             <ActionCard icon={Camera} title={isScanning ? 'Leyendo…' : 'Escanear'} text="Foto + anti-duplicado" tone="green" onClick={() => fileInputRef.current?.click()} loading={isScanning} />
-            <ActionCard icon={Plus} title="Añadir manual" text="Sin suposiciones fiscales" tone="stone" onClick={openManualEntry} wide />
+            <ActionCard icon={Images} title="Varios tickets" text="Hasta 20 a la vez · anti-duplicado" tone="green" onClick={() => batchInputRef.current?.click()} />
+            <ActionCard icon={Plus} title="Añadir manual" text="Sin suposiciones fiscales" tone="stone" onClick={openManualEntry} />
           </section>
         </>
+      )}
+
+      {batchFiles && currentUser && (
+        <ReceiptBatchModal
+          files={batchFiles}
+          existingHashes={new Set(expenses.filter((expense) => expense.userId === currentUser.id && expense.receiptHash).map((expense) => expense.receiptHash as string))}
+          onClose={() => setBatchFiles(null)}
+          onSave={(items) => addExpenses(items)}
+          notify={showNotification}
+        />
       )}
 
       <section className="labora-card min-w-0 overflow-hidden">
