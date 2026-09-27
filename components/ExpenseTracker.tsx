@@ -29,6 +29,8 @@ import { analyzeReceipt } from '../services/geminiService';
 import { Expense, ExpenseCategory, UserRole } from '../types';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
 import { canOwnerDeleteRow, expenseDeleteConfirmMessage } from '../services/deleteEligibility';
+import { EXPENSE_STATUS_FILTER_OPTIONS, ExpenseStatusFilter, expenseMatches, hasActiveExpenseFilters, sortByDateDesc, uniqueSorted } from '../services/moneyFilters';
+import { MoneyFilterBar } from './MoneyFilterBar';
 
 interface ExpenseTrackerProps {
   startDate: string;
@@ -65,10 +67,14 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   const [reviewNote, setReviewNote] = useState('');
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [filterQuery, setFilterQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterStatus, setFilterStatus] = useState<ExpenseStatusFilter>('all');
+  const [filterClient, setFilterClient] = useState('');
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
 
-  const filteredExpenses = useMemo(() => expenses.filter((expense) => {
+  const scopedExpenses = useMemo(() => expenses.filter((expense) => {
     if (!currentUser) return false;
     if (!isManager && expense.userId !== currentUser.id) return false;
     if (isManager) {
@@ -79,6 +85,29 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
     if (endDate && expense.date > endDate) return false;
     return true;
   }), [expenses, startDate, endDate, currentUser, isManager]);
+
+  const expenseFilters = { query: filterQuery, category: filterCategory, status: filterStatus, userId: filterClient };
+  const filtersActive = hasActiveExpenseFilters(expenseFilters);
+  const filteredExpenses = useMemo(
+    () => sortByDateDesc(scopedExpenses.filter((expense) => expenseMatches(expense, { query: filterQuery, category: filterCategory, status: filterStatus, userId: filterClient }))),
+    [scopedExpenses, filterQuery, filterCategory, filterStatus, filterClient]
+  );
+  const categoryOptions = useMemo(
+    () => uniqueSorted([...Object.values(ExpenseCategory), ...scopedExpenses.map((expense) => String(expense.category))]),
+    [scopedExpenses]
+  );
+  const clientOptions = useMemo(
+    () => (isManager
+      ? uniqueSorted(scopedExpenses.map((expense) => expense.userId)).map((id) => ({ value: id, label: users.find((user) => user.id === id)?.name || 'Cliente' }))
+      : []),
+    [isManager, scopedExpenses, users]
+  );
+  const clearExpenseFilters = () => {
+    setFilterQuery('');
+    setFilterCategory('');
+    setFilterStatus('all');
+    setFilterClient('');
+  };
 
   const formatCurrency = (amount: number) => {
     if (privacyMode) return '••••';
@@ -361,8 +390,26 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
             <p className="labora-kicker text-[var(--labora-muted)]">{isManager ? 'Cartera vinculada' : 'Registro'}</p>
             <h3 className="mt-0.5 text-base font-extrabold text-[var(--labora-ink)]">{isManager ? 'Gastos de clientes' : 'Gastos'}</h3>
           </div>
-          <span className="rounded-full bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-extrabold text-[var(--labora-muted)]">{filteredExpenses.length}</span>
+          <span className="rounded-full bg-[var(--labora-surface-2)] px-2.5 py-1 text-[10px] font-extrabold text-[var(--labora-muted)]" aria-live="polite">{filtersActive ? `${filteredExpenses.length} de ${scopedExpenses.length}` : filteredExpenses.length}</span>
         </header>
+
+        {scopedExpenses.length > 0 && (
+          <MoneyFilterBar
+            idPrefix="labora-expense-filter"
+            query={filterQuery}
+            onQueryChange={setFilterQuery}
+            placeholder="Buscar proveedor, nota, nº factura o importe"
+            active={filtersActive}
+            onClear={clearExpenseFilters}
+            selects={[
+              ...(isManager && clientOptions.length > 1
+                ? [{ id: 'client', label: 'Cliente', value: filterClient, onChange: setFilterClient, options: [{ value: '', label: 'Todos los clientes' }, ...clientOptions] }]
+                : []),
+              { id: 'category', label: 'Categoría', value: filterCategory, onChange: setFilterCategory, options: [{ value: '', label: 'Todas las categorías' }, ...categoryOptions.map((category) => ({ value: category, label: category }))] },
+              { id: 'status', label: 'Estado', value: filterStatus, onChange: (value: string) => setFilterStatus(value as ExpenseStatusFilter), options: EXPENSE_STATUS_FILTER_OPTIONS }
+            ]}
+          />
+        )}
 
         <div className="divide-y divide-[var(--labora-border)]">
           {filteredExpenses.map((expense) => {
@@ -440,8 +487,8 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
           {filteredExpenses.length === 0 && (
             <div className="px-4 py-12 text-center" role="status" aria-live="polite">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-[16px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden><Receipt size={23} /></div>
-              <p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">{isManager ? 'Sin gastos de clientes vinculados' : 'No hay gastos registrados'}</p>
-              <p className="mt-1 text-xs text-[var(--labora-muted)]">{isManager ? 'Cuando un autónomo vinculado registre un ticket o gasto, aparecerá aquí para aprobar, rechazar o fijar el % deducible.' : 'Escanea un ticket o añade uno manualmente.'}</p>
+              <p className="mt-3 text-sm font-extrabold text-[var(--labora-ink-soft)]">{scopedExpenses.length > 0 ? 'Ningún gasto coincide con los filtros' : isManager ? 'Sin gastos de clientes vinculados' : 'No hay gastos registrados'}</p>
+              <p className="mt-1 text-xs text-[var(--labora-muted)]">{scopedExpenses.length > 0 ? 'Cambia la búsqueda o pulsa «Quitar filtros».' : isManager ? 'Cuando un autónomo vinculado registre un ticket o gasto, aparecerá aquí para aprobar, rechazar o fijar el % deducible.' : 'Escanea un ticket o añade uno manualmente.'}</p>
             </div>
           )}
         </div>
