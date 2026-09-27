@@ -1,4 +1,5 @@
 import { User, UserRole } from '../types';
+import { GLOBAL_COUNTRIES } from '../modules/country-config/catalog';
 import { assertManagerSignupFields } from './registrationValidation';
 import {
   friendlyLinkError,
@@ -52,6 +53,12 @@ const roleToDb = (role: UserRole) => {
   return 'rider';
 };
 
+const normalizedCountryCode = (code?: string | null) => String(code || 'ES').trim().toUpperCase();
+const currencyForCountry = (code?: string | null) => {
+  const normalized = normalizedCountryCode(code);
+  return GLOBAL_COUNTRIES.find((country) => country.country_code === normalized)?.currency || 'EUR';
+};
+
 const requireAuthenticatedUser = async (expectedUserId?: string) => {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
@@ -70,28 +77,31 @@ const identityUrl = async (path?: string | null) => {
   return error ? undefined : data.signedUrl;
 };
 
-const rowToUser = async (row: ProfileRow): Promise<User> => ({
-  id: row.id,
-  name: row.name,
-  email: row.email,
-  phone: row.phone || undefined,
-  photoUrl: await identityUrl(row.identity_image_path),
-  role: roleFromDb(row.role),
-  platforms: Array.isArray(row.platforms) ? row.platforms : [],
-  banks: Array.isArray(row.banks) ? row.banks : [],
-  managerId: row.manager_id || undefined,
-  currencyPreference: 'EUR',
-  nif: row.nif || undefined,
-  fiscalRegime: row.fiscal_regime || undefined,
-  iaeCode: row.iae_code || undefined,
-  socialSecurityType: row.social_security_type || undefined,
-  vehicleType: row.vehicle_type || undefined,
-  vehiclePlate: row.vehicle_plate || undefined,
-  vehicleFuel: row.vehicle_fuel || undefined,
-  companyName: row.company_name || undefined,
-  collegiateNumber: row.collegiate_number || undefined,
-  countryCode: row.country_code || 'ES'
-});
+const rowToUser = async (row: ProfileRow): Promise<User> => {
+  const countryCode = normalizedCountryCode(row.country_code);
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone || undefined,
+    photoUrl: await identityUrl(row.identity_image_path),
+    role: roleFromDb(row.role),
+    platforms: Array.isArray(row.platforms) ? row.platforms : [],
+    banks: Array.isArray(row.banks) ? row.banks : [],
+    managerId: row.manager_id || undefined,
+    currencyPreference: currencyForCountry(countryCode),
+    nif: row.nif || undefined,
+    fiscalRegime: row.fiscal_regime || undefined,
+    iaeCode: row.iae_code || undefined,
+    socialSecurityType: row.social_security_type || undefined,
+    vehicleType: row.vehicle_type || undefined,
+    vehiclePlate: row.vehicle_plate || undefined,
+    vehicleFuel: row.vehicle_fuel || undefined,
+    companyName: row.company_name || undefined,
+    collegiateNumber: row.collegiate_number || undefined,
+    countryCode
+  };
+};
 
 export const loadRemoteWorkspace = async (currentUserId: string) => {
   const { data, error } = await supabase
@@ -173,17 +183,20 @@ export const signUpRemote = async (
   const email = userData.email?.trim().toLowerCase();
   if (!email) throw new Error('El correo es obligatorio.');
 
-  // Gestorías: never allow role=manager without valid company NIF + collegiate number.
-  // Autónomos (riders) stay open — no invite wall / pending queue.
+  // Professional/manager accounts remain guarded. Spain uses NIF + collegiate
+  // format validation; other countries require a local tax/business registration
+  // identifier without pretending that Labora+ queried a government registry.
   let nif = userData.nif?.trim().toUpperCase() || '';
   let companyName = userData.companyName?.trim() || '';
   let collegiateNumber = userData.collegiateNumber?.trim() || '';
+  const countryCode = normalizedCountryCode(userData.countryCode);
 
   if (role === UserRole.MANAGER) {
     const secured = assertManagerSignupFields({
       companyName: companyName || userData.name,
       nif,
-      collegiateNumber
+      collegiateNumber,
+      countryCode
     });
     companyName = secured.companyName;
     nif = secured.nif;
@@ -203,7 +216,7 @@ export const signUpRemote = async (
     vehicle_type: userData.vehicleType || '',
     vehicle_plate: userData.vehiclePlate || '',
     vehicle_fuel: userData.vehicleFuel || '',
-    country_code: userData.countryCode || 'ES'
+    country_code: countryCode
   };
 
   const { data, error } = await supabase.auth.signUp({
@@ -268,7 +281,7 @@ export const linkManagerByEmail = async (
     throw new Error('Solo los autónomos pueden vincular una gestoría desde este formulario.');
   }
 
-    const validation = validateRiderLinkByEmail(current, managerEmail, directory);
+  const validation = validateRiderLinkByEmail(current, managerEmail, directory);
   if (validation.ok === false) {
     throw new Error(validation.message);
   }
@@ -343,7 +356,7 @@ export const updateRemoteProfile = async (userId: string, patch: Partial<User>) 
   if (patch.companyName !== undefined) payload.company_name = patch.companyName || null;
   if (patch.collegiateNumber !== undefined) payload.collegiate_number = patch.collegiateNumber || null;
   if (patch.vehiclePlate !== undefined) payload.vehicle_plate = patch.vehiclePlate || null;
-  if (patch.countryCode !== undefined) payload.country_code = patch.countryCode || 'ES';
+  if (patch.countryCode !== undefined) payload.country_code = normalizedCountryCode(patch.countryCode);
 
   if (Object.keys(payload).length === 0) return;
   const { error } = await supabase
