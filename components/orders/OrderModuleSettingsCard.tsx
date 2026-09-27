@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { ClipboardList, Loader2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
-import WorkProfileCard from '../WorkProfileCard';
 import { formControlFocusClass } from '../formA11y';
 import { useOrderModule } from './useOrderModule';
 import { LaboraBubble, isBubbleSupported } from '../../services/laboraBubble';
 
 /**
- * Ajustes de trabajador. El perfil laboral universal siempre está disponible;
- * el módulo de pedidos solo aparece cuando la persona declara modo rider.
+ * Ajustes del módulo de pedidos. El perfil laboral universal se renderiza
+ * por separado en Settings para que nunca desaparezca al cambiar de modo.
  */
 export const OrderModuleSettingsCard: React.FC = () => {
-  const { currentUser, showNotification, updateUserFiscalProfile } = useData();
+  const { currentUser, showNotification } = useData();
   const { isRider, ready, enabled, dailyGoal, error, save } = useOrderModule();
   const [busy, setBusy] = useState(false);
 
@@ -32,18 +31,7 @@ export const OrderModuleSettingsCard: React.FC = () => {
     }
   };
 
-  return (
-    <>
-      <WorkProfileCard
-        user={currentUser}
-        onSaved={(patch) => {
-          updateUserFiscalProfile(patch);
-          showNotification('success', 'Perfil laboral sincronizado.');
-        }}
-        onError={(message) => showNotification('error', message)}
-      />
-
-      {declaredRiderMode && (
+  return declaredRiderMode ? (
         <section className="labora-card p-4 sm:p-5">
           <p className="labora-kicker text-[var(--labora-muted)]">Módulos</p>
           <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Módulos opcionales</h2>
@@ -74,9 +62,7 @@ export const OrderModuleSettingsCard: React.FC = () => {
             Al desactivarlo se oculta en toda la app; tus pedidos no se borran. Labora+ no comparte ni analiza estos datos con terceros.
           </p>
         </section>
-      )}
-    </>
-  );
+  ) : null;
 };
 
 /** Acceso rápido en Inicio (solo si el módulo está activo). */
