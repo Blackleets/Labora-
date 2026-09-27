@@ -27,6 +27,7 @@ import { SettingsHub } from './modules/core/hubs/SettingsHub';
 import { IntegrationCatalog } from './modules/integrations/components/IntegrationCatalog';
 import { MessagesHub } from './modules/messages/components/MessagesHub';
 import { OrderLogView } from './components/orders/OrderLogView';
+import { BubbleSessionBridge } from './components/orders/BubbleSessionBridge';
 
 const MainLayout: React.FC = () => {
   const {
@@ -232,6 +233,7 @@ const App: React.FC = () => (
       <CountryProvider>
         <GhibliAtmosphereProvider>
           <RemoteSyncBridge />
+          <BubbleSessionBridge />
           <MainLayout />
         </GhibliAtmosphereProvider>
       </CountryProvider>
