@@ -13,7 +13,11 @@ import {
 } from 'lucide-react';
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
 import { recoverRemoteSession, signInRemote, signUpRemote } from '../services/authWorkspace';
-import { managerSignupError, normalizeSpanishTaxId } from '../services/registrationValidation';
+import {
+  managerSignupError,
+  normalizeLocalRegistrationId,
+  normalizeSpanishTaxId
+} from '../services/registrationValidation';
 import { UserRole } from '../types';
 import { useCountry } from '../contexts/CountryContext';
 import AtmosphericPanel from './AtmosphericPanel';
@@ -49,6 +53,12 @@ const Login: React.FC = () => {
       return false;
     }
   });
+
+  const isSpain = selectedCountry.country_code === 'ES';
+  const professionalAccountLabel = isSpain ? 'Gestoría' : 'Firma / asesoría';
+  const professionalCompanyLabel = isSpain ? 'Nombre de la gestoría' : 'Nombre de la firma o asesoría';
+  const taxIdLabel = isSpain ? 'NIF de la empresa' : 'ID fiscal o registral local';
+  const professionalIdLabel = isSpain ? 'Número de colegiado' : 'ID profesional o registro (opcional)';
 
   useEffect(() => {
     let active = true;
@@ -125,7 +135,8 @@ const Login: React.FC = () => {
       const managerError = managerSignupError({
         companyName: companyName.trim() || name.trim(),
         nif,
-        collegiateNumber
+        collegiateNumber,
+        countryCode: selectedCountry.country_code
       });
       if (managerError) {
         setError(managerError);
@@ -136,12 +147,15 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
+      const managerTaxId = isSpain
+        ? normalizeSpanishTaxId(nif)
+        : normalizeLocalRegistrationId(nif);
       const result = await signUpRemote({
         name: name.trim(),
         email: normalizeEmail(email),
         phone: phone.trim() || undefined,
         nif: role === UserRole.MANAGER
-          ? normalizeSpanishTaxId(nif)
+          ? managerTaxId
           : (nif.trim().toUpperCase() || undefined),
         role,
         platforms: [],
@@ -208,7 +222,6 @@ const Login: React.FC = () => {
 
   return (
     <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[var(--labora-canvas)] text-[var(--labora-ink)] lg:flex-row">
-      {/* Mobile atmospheric strip */}
       <div
         className="labora-film-grain relative h-36 w-full shrink-0 overflow-hidden border-b lg:hidden"
         style={{
@@ -238,7 +251,6 @@ const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop left — editorial atmospheric narrative */}
       <section className="labora-film-grain relative hidden overflow-hidden lg:flex lg:flex-1 lg:flex-col">
         <div
           className="absolute inset-0"
@@ -272,10 +284,7 @@ const Login: React.FC = () => {
           </div>
 
           <div className="mt-auto max-w-lg pb-12 xl:max-w-xl">
-            <p
-              className="labora-kicker"
-              style={{ color: palette.gold }}
-            >
+            <p className="labora-kicker" style={{ color: palette.gold }}>
               Claridad fiscal
             </p>
             <div className="labora-gold-line mt-4" />
@@ -283,7 +292,7 @@ const Login: React.FC = () => {
               Evidencia.<br />Confianza.<br />Sin ruido.
             </h1>
             <p className="labora-body mt-6 max-w-md text-[15px] leading-[1.7] text-[var(--labora-muted)] xl:text-base">
-              Espacio de trabajo para autónomos y gestorías: claridad fiscal,
+              Espacio de trabajo para autónomos y profesionales: claridad fiscal,
               archivo privado y estados claros con evidencia.
             </p>
 
@@ -298,9 +307,7 @@ const Login: React.FC = () => {
                   className="rounded-2xl border bg-[var(--labora-surface)]/75 px-4 py-4 shadow-[0_8px_28px_rgba(30,42,36,0.05)] backdrop-blur-md"
                   style={{ borderColor: 'rgba(30,42,36,0.08)' }}
                 >
-                  <p className="labora-label" style={{ color: palette.clay }}>
-                    {item.k}
-                  </p>
+                  <p className="labora-label" style={{ color: palette.clay }}>{item.k}</p>
                   <p className="mt-2 text-[13px] font-semibold leading-snug text-[var(--labora-ink-soft)]">{item.v}</p>
                 </div>
               ))}
@@ -309,13 +316,10 @@ const Login: React.FC = () => {
         </div>
       </section>
 
-      {/* Auth column — elevated paper card */}
       <section className="relative z-20 flex flex-1 shrink-0 flex-col items-center justify-center px-5 py-10 pb-[40px] sm:px-10 lg:max-w-[540px] lg:bg-[var(--labora-canvas)] lg:pb-0 lg:py-14 xl:max-w-[620px] xl:px-14">
         <div
           className="pointer-events-none absolute inset-0 hidden lg:block"
-          style={{
-            background: `radial-gradient(ellipse at 50% 0%, ${palette.softgreen}88, transparent 58%)`
-          }}
+          style={{ background: `radial-gradient(ellipse at 50% 0%, ${palette.softgreen}88, transparent 58%)` }}
         />
         <div className="relative w-full max-w-[420px]">
           <div className="labora-card-auth overflow-hidden">
@@ -349,11 +353,9 @@ const Login: React.FC = () => {
             <div className="p-8 sm:p-10">
               {mode === 'login' ? (
                 <>
-                  <h2 className="labora-title text-[var(--labora-ink)]">
-                    Bienvenido de nuevo
-                  </h2>
+                  <h2 className="labora-title text-[var(--labora-ink)]">Bienvenido de nuevo</h2>
                   <p className="labora-body mt-3 text-[15px] leading-[1.65]">
-                    Accede a tu espacio — autónomo o gestoría.
+                    Accede a tu espacio — trabajador o profesional.
                   </p>
 
                   <form onSubmit={handleLogin} className="mt-9 space-y-5" noValidate>
@@ -416,9 +418,7 @@ const Login: React.FC = () => {
                 <>
                   <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
-                      <h2 className="labora-title text-[var(--labora-ink)]">
-                        Crea tu espacio
-                      </h2>
+                      <h2 className="labora-title text-[var(--labora-ink)]">Crea tu espacio</h2>
                       <p className="labora-body mt-3 text-[15px]">Paso {registerStep} de 2</p>
                     </div>
                     <div className="flex gap-1.5">
@@ -442,7 +442,7 @@ const Login: React.FC = () => {
                             }`}
                           >
                             <Bike size={18} className={role === UserRole.RIDER ? 'text-[var(--labora-primary)]' : ''} />
-                            <p className="mt-2 text-sm font-semibold">Autónomo</p>
+                            <p className="mt-2 text-sm font-semibold">Trabajador</p>
                             <p className="mt-0.5 text-[10px] opacity-70">Mi actividad</p>
                           </button>
                           <button
@@ -455,12 +455,14 @@ const Login: React.FC = () => {
                             }`}
                           >
                             <BriefcaseBusiness size={18} className={role === UserRole.MANAGER ? 'text-[var(--labora-primary)]' : ''} />
-                            <p className="mt-2 text-sm font-semibold">Gestoría</p>
+                            <p className="mt-2 text-sm font-semibold">{professionalAccountLabel}</p>
                             <p className="mt-0.5 text-[10px] opacity-70">Mis clientes</p>
                           </button>
                         </div>
                         <p className="mt-3 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-                          Las gestorías deben identificar NIF y colegiado. Los autónomos se registran libremente.
+                          {isSpain
+                            ? 'En España, las gestorías deben identificar NIF y colegiado. Los trabajadores se registran libremente.'
+                            : `En ${selectedCountry.display_name}, la firma debe aportar una identificación fiscal o registral local. Labora+ no afirma validarla contra una autoridad sin integración oficial.`}
                         </p>
                       </div>
                       <div>
@@ -513,15 +515,15 @@ const Login: React.FC = () => {
                         mode={role === UserRole.MANAGER ? 'logo' : 'avatar'}
                         value={identityImage}
                         onChange={setIdentityImage}
-                        title={role === UserRole.MANAGER ? 'Logo o imagen de la gestoría' : 'Foto de perfil'}
-                        helper={role === UserRole.MANAGER ? 'Tus clientes la verán en mensajes y peticiones.' : 'Tu gestoría la verá al revisar tu actividad.'}
+                        title={role === UserRole.MANAGER ? `Logo o imagen de ${professionalAccountLabel.toLowerCase()}` : 'Foto de perfil'}
+                        helper={role === UserRole.MANAGER ? 'Tus clientes la verán en mensajes y peticiones.' : 'Tu profesional vinculado la verá al revisar tu actividad.'}
                       />
 
                       <div>
                         <label className={labelClass}>País de operación</label>
                         <CountrySelector variant="cards" />
                         <p className="mt-2 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-                          Se guarda en tu perfil ({selectedCountry.display_name}). Moneda y modelos fiscales seguirán esta elección.
+                          Se guarda en tu perfil ({selectedCountry.display_name}). La moneda sigue esta elección; fiscalidad automática solo se activa con un pack verificado.
                         </p>
                       </div>
 
@@ -531,31 +533,33 @@ const Login: React.FC = () => {
                         </label>
                         <div className="relative">
                           <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" />
-                          <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-11`} placeholder="+34 600 000 000" />
+                          <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={`${inputClass} pl-11`} placeholder="+ código de país" />
                         </div>
                       </div>
                       {role === UserRole.RIDER ? (
                         <>
                           <div>
                             <label className={labelClass}>
-                              NIF / NIE <span className="font-normal text-[var(--labora-muted)]">(opcional)</span>
+                              {isSpain ? 'NIF / NIE' : 'Identificación fiscal o registral'} <span className="font-normal text-[var(--labora-muted)]">(opcional)</span>
                             </label>
-                            <input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder="12345678Z" />
+                            <input value={nif} onChange={(e) => setNif(e.target.value.toUpperCase())} className={inputClass} placeholder={isSpain ? '12345678Z' : 'Tu identificador local'} />
                           </div>
                           <div>
                             <label className={labelClass}>
                               Matrícula <span className="font-normal text-[var(--labora-muted)]">(opcional)</span>
                             </label>
-                            <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="1234 ABC" />
+                            <input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} className={inputClass} placeholder="Matrícula del vehículo" />
                           </div>
                         </>
                       ) : (
                         <div className="space-y-5">
                           <p className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-canvas)] px-3.5 py-3 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-                            Las gestorías deben identificar NIF y colegiado. Los autónomos se registran libremente.
+                            {isSpain
+                              ? 'Validamos el formato de NIF/CIF/NIE y colegiado. No consultamos AEAT ni un colegio profesional en tiempo real.'
+                              : 'Guardamos la identificación local como dato declarado por la firma. No la presentamos como verificada por una autoridad sin integración oficial.'}
                           </p>
                           <div>
-                            <label htmlFor="labora-register-company" className={labelClass}>Nombre de la gestoría</label>
+                            <label htmlFor="labora-register-company" className={labelClass}>{professionalCompanyLabel}</label>
                             <input
                               id="labora-register-company"
                               value={companyName}
@@ -567,28 +571,32 @@ const Login: React.FC = () => {
                             />
                           </div>
                           <div>
-                            <label htmlFor="labora-register-nif-company" className={labelClass}>NIF de la empresa</label>
+                            <label htmlFor="labora-register-nif-company" className={labelClass}>{taxIdLabel}</label>
                             <input
                               id="labora-register-nif-company"
                               value={nif}
                               onChange={(e) => { setNif(e.target.value.toUpperCase()); resetFeedback(); }}
                               className={inputClass}
-                              placeholder="B12345674"
+                              placeholder={isSpain ? 'B12345674' : 'Identificador local'}
                               required
                               autoComplete="off"
                               aria-describedby={error ? 'labora-register2-error' : 'labora-register-nif-hint'}
                             />
-                            <p id="labora-register-nif-hint" className="mt-1.5 text-[10px] text-[var(--labora-muted)]">NIF, CIF o NIE válido (formato). No consultamos AEAT en tiempo real.</p>
+                            <p id="labora-register-nif-hint" className="mt-1.5 text-[10px] text-[var(--labora-muted)]">
+                              {isSpain
+                                ? 'NIF, CIF o NIE válido (formato). No consultamos AEAT en tiempo real.'
+                                : 'Formato básico únicamente; no equivale a verificación oficial.'}
+                            </p>
                           </div>
                           <div>
-                            <label htmlFor="labora-register-colegiado" className={labelClass}>Número de colegiado</label>
+                            <label htmlFor="labora-register-colegiado" className={labelClass}>{professionalIdLabel}</label>
                             <input
                               id="labora-register-colegiado"
                               value={collegiateNumber}
                               onChange={(e) => { setCollegiateNumber(e.target.value); resetFeedback(); }}
                               className={inputClass}
-                              placeholder="Ej. COL-9988"
-                              required
+                              placeholder={isSpain ? 'Ej. COL-9988' : 'Si aplica en tu jurisdicción'}
+                              required={isSpain}
                               autoComplete="off"
                               aria-describedby={error ? 'labora-register2-error' : undefined}
                             />
