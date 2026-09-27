@@ -12,7 +12,8 @@
     "build:web": "vite build",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android",
-    "uat:dual": "node scripts/print-uat-dual.mjs"
+    "uat:dual": "node scripts/print-uat-dual.mjs",
+    "release:check": "node scripts/release-readiness.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.9",
