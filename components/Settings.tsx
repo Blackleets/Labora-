@@ -34,6 +34,7 @@ import AccountDeletionCard from './AccountDeletionCard';
 import BillingCard from './BillingCard';
 import CountrySelector from './CountrySelector';
 import IdentityImagePicker from './IdentityImagePicker';
+import WorkProfileCard from './WorkProfileCard';
 import { withBaseUrl } from './brandMarks';
 import { OrderModuleSettingsCard } from './orders/OrderModuleSettingsCard';
 
@@ -428,6 +429,17 @@ const Settings: React.FC = () => {
           </button>
         </div>
       </section>
+
+      {!isManager && (
+        <WorkProfileCard
+          user={currentUser}
+          onSaved={(patch) => {
+            updateUserFiscalProfile(patch);
+            showNotification('success', 'Perfil laboral sincronizado.');
+          }}
+          onError={(message) => showNotification('error', message)}
+        />
+      )}
 
       <section className="labora-card p-4 sm:p-5">
         <div className="flex items-start gap-3">
