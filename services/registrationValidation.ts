@@ -1,13 +1,16 @@
 /**
- * Format-level registration validators (ES).
- * Intentional: no AEAT / government live verification.
+ * Registration validators.
+ *
+ * Spain keeps format-level NIF/NIE/CIF validation. Other jurisdictions stay
+ * intentionally fail-honest: Labora+ requires a local tax/business identifier,
+ * but never claims government verification without a real integration.
  */
 
 const DNI_CONTROL = 'TRWAGMYFPDXBNJZSQVHLCKE';
 const CIF_LETTERS = 'ABCDEFGHJKLMNPQRSUVW';
 const CIF_CONTROL_LETTER = 'JABCDEFGHI';
 
-/** Strip spaces/hyphens and uppercase. */
+/** Strip Spanish formatting separators and uppercase. */
 export function normalizeSpanishTaxId(raw: string | undefined | null): string {
   return String(raw ?? '')
     .trim()
@@ -15,7 +18,15 @@ export function normalizeSpanishTaxId(raw: string | undefined | null): string {
     .replace(/[\s.\-_/]/g, '');
 }
 
-/** Collegiate numbers: trim, uppercase, drop internal spaces. */
+/** Generic local registration/tax ID. Keeps meaningful punctuation. */
+export function normalizeLocalRegistrationId(raw: string | undefined | null): string {
+  return String(raw ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, ' ');
+}
+
+/** Collegiate / professional registration numbers: trim, uppercase, drop spaces. */
 export function normalizeCollegiateNumber(raw: string | undefined | null): string {
   return String(raw ?? '')
     .trim()
@@ -24,14 +35,12 @@ export function normalizeCollegiateNumber(raw: string | undefined | null): strin
 }
 
 function isValidDniOrNie(id: string): boolean {
-  // DNI: 8 digits + letter
   const dni = /^(\d{8})([A-Z])$/.exec(id);
   if (dni) {
     const num = Number(dni[1]);
     return DNI_CONTROL[num % 23] === dni[2];
   }
 
-  // NIE: X|Y|Z + 7 digits + letter
   const nie = /^([XYZ])(\d{7})([A-Z])$/.exec(id);
   if (nie) {
     const prefix = { X: '0', Y: '1', Z: '2' }[nie[1] as 'X' | 'Y' | 'Z'];
@@ -43,18 +52,16 @@ function isValidDniOrNie(id: string): boolean {
 }
 
 function isValidCif(id: string): boolean {
-  // Letter (org type) + 7 digits + control (digit or letter)
-  const m = /^([ABCDEFGHJKLMNPQRSUVW])(\d{7})([0-9A-J])$/.exec(id);
-  if (!m) return false;
-  if (!CIF_LETTERS.includes(m[1])) return false;
+  const match = /^([ABCDEFGHJKLMNPQRSUVW])(\d{7})([0-9A-J])$/.exec(id);
+  if (!match) return false;
+  if (!CIF_LETTERS.includes(match[1])) return false;
 
-  const digits = m[2];
+  const digits = match[2];
   let evenSum = 0;
   let oddSum = 0;
   for (let i = 0; i < 7; i += 1) {
     const n = Number(digits[i]);
     if (i % 2 === 0) {
-      // Positions 1,3,5,7 (1-based) → index 0,2,4,6
       const doubled = n * 2;
       oddSum += Math.floor(doubled / 10) + (doubled % 10);
     } else {
@@ -63,41 +70,43 @@ function isValidCif(id: string): boolean {
   }
   const total = evenSum + oddSum;
   const unit = (10 - (total % 10)) % 10;
-  const control = m[3];
-
-  // Some CIF types prefer digit, some letter, many accept either matching value
-  const digitOk = control === String(unit);
-  const letterOk = control === CIF_CONTROL_LETTER[unit];
-  return digitOk || letterOk;
+  const control = match[3];
+  return control === String(unit) || control === CIF_CONTROL_LETTER[unit];
 }
 
-/**
- * Accepts Spanish NIF (DNI), NIE, or CIF with control character.
- * Returns false for empty / malformed — never calls external APIs.
- */
+/** Spanish NIF (DNI), NIE, or CIF with control character. No external lookup. */
 export function isValidSpanishTaxId(raw: string | undefined | null): boolean {
   const id = normalizeSpanishTaxId(raw);
   if (!id) return false;
-  if (isValidDniOrNie(id)) return true;
-  if (isValidCif(id)) return true;
-  return false;
+  return isValidDniOrNie(id) || isValidCif(id);
 }
 
 export const COLLEGIATE_MIN_LENGTH = 4;
+export const LOCAL_REGISTRATION_ID_MIN_LENGTH = 3;
+export const LOCAL_REGISTRATION_ID_MAX_LENGTH = 64;
 
-/**
- * Non-empty, min length, alphanumeric (optional hyphens/slashes stripped by normalize).
- */
 export function isValidCollegiateNumber(raw: string | undefined | null): boolean {
   const value = normalizeCollegiateNumber(raw);
   if (value.length < COLLEGIATE_MIN_LENGTH) return false;
   return /^[A-Z0-9][A-Z0-9\-/]*$/.test(value);
 }
 
+/**
+ * Generic format guard only. It deliberately does NOT imply that a tax authority
+ * or professional registry has validated the identifier.
+ */
+export function isValidLocalRegistrationId(raw: string | undefined | null): boolean {
+  const value = normalizeLocalRegistrationId(raw);
+  if (value.length < LOCAL_REGISTRATION_ID_MIN_LENGTH || value.length > LOCAL_REGISTRATION_ID_MAX_LENGTH) return false;
+  if (/[\u0000-\u001F\u007F]/.test(value)) return false;
+  return /[\p{L}\p{N}]/u.test(value);
+}
+
 export type ManagerSignupInput = {
   companyName?: string | null;
   nif?: string | null;
   collegiateNumber?: string | null;
+  countryCode?: string | null;
 };
 
 export type ManagerSignupNormalized = {
@@ -106,57 +115,66 @@ export type ManagerSignupNormalized = {
   collegiateNumber: string;
 };
 
-/** Spanish UI / thrown Error messages for gestoría signup. */
 export const MANAGER_SIGNUP_ERRORS = {
-  companyName: 'Indica el nombre de la gestoría.',
-  nifRequired: 'El NIF de la empresa es obligatorio para registrar una gestoría.',
+  companyName: 'Indica el nombre de la gestoría o firma profesional.',
+  nifRequired: 'El NIF de la empresa es obligatorio para registrar una gestoría en España.',
   nifInvalid:
     'El NIF/CIF/NIE de la empresa no es válido. Revisa el formato (p. ej. B12345674 o 12345678Z).',
-  collegiateRequired: 'El número de colegiado es obligatorio para registrar una gestoría.',
+  collegiateRequired: 'El número de colegiado es obligatorio para registrar una gestoría en España.',
   collegiateInvalid:
-    'El número de colegiado no es válido. Usa al menos 4 caracteres alfanuméricos.'
+    'El número de colegiado no es válido. Usa al menos 4 caracteres alfanuméricos.',
+  localRegistrationRequired: 'Indica el identificador fiscal o registral de la firma en tu país.',
+  localRegistrationInvalid: 'El identificador fiscal o registral local no tiene un formato válido.',
+  professionalRegistrationInvalid: 'El identificador profesional o registral indicado no tiene un formato válido.'
 } as const;
 
 /**
- * Pure guard: managers must provide company name + valid tax id + collegiate number.
- * Riders are not validated here (registration stays open).
- * Throws Error with a clear Spanish message — never allows role=manager without both ids.
+ * Pure signup guard.
+ * - ES: company + valid Spanish tax id + collegiate number.
+ * - Other countries: company + local tax/business registration id; professional
+ *   registration is optional because requirements differ by jurisdiction.
+ *
+ * This is format validation only. No government registry lookup is claimed.
  */
 export function assertManagerSignupFields(input: ManagerSignupInput): ManagerSignupNormalized {
   const companyName = String(input.companyName ?? '').trim();
-  if (!companyName) {
-    throw new Error(MANAGER_SIGNUP_ERRORS.companyName);
-  }
+  if (!companyName) throw new Error(MANAGER_SIGNUP_ERRORS.companyName);
 
+  const countryCode = String(input.countryCode || 'ES').trim().toUpperCase();
   const nifRaw = String(input.nif ?? '').trim();
-  if (!nifRaw) {
-    throw new Error(MANAGER_SIGNUP_ERRORS.nifRequired);
-  }
-  if (!isValidSpanishTaxId(nifRaw)) {
-    throw new Error(MANAGER_SIGNUP_ERRORS.nifInvalid);
+  const collegiateRaw = String(input.collegiateNumber ?? '').trim();
+
+  if (countryCode === 'ES') {
+    if (!nifRaw) throw new Error(MANAGER_SIGNUP_ERRORS.nifRequired);
+    if (!isValidSpanishTaxId(nifRaw)) throw new Error(MANAGER_SIGNUP_ERRORS.nifInvalid);
+    if (!collegiateRaw) throw new Error(MANAGER_SIGNUP_ERRORS.collegiateRequired);
+    if (!isValidCollegiateNumber(collegiateRaw)) throw new Error(MANAGER_SIGNUP_ERRORS.collegiateInvalid);
+
+    return {
+      companyName,
+      nif: normalizeSpanishTaxId(nifRaw),
+      collegiateNumber: normalizeCollegiateNumber(collegiateRaw)
+    };
   }
 
-  const collegiateRaw = String(input.collegiateNumber ?? '').trim();
-  if (!collegiateRaw) {
-    throw new Error(MANAGER_SIGNUP_ERRORS.collegiateRequired);
-  }
-  if (!isValidCollegiateNumber(collegiateRaw)) {
-    throw new Error(MANAGER_SIGNUP_ERRORS.collegiateInvalid);
+  if (!nifRaw) throw new Error(MANAGER_SIGNUP_ERRORS.localRegistrationRequired);
+  if (!isValidLocalRegistrationId(nifRaw)) throw new Error(MANAGER_SIGNUP_ERRORS.localRegistrationInvalid);
+  if (collegiateRaw && !isValidLocalRegistrationId(collegiateRaw)) {
+    throw new Error(MANAGER_SIGNUP_ERRORS.professionalRegistrationInvalid);
   }
 
   return {
     companyName,
-    nif: normalizeSpanishTaxId(nifRaw),
-    collegiateNumber: normalizeCollegiateNumber(collegiateRaw)
+    nif: normalizeLocalRegistrationId(nifRaw),
+    collegiateNumber: collegiateRaw ? normalizeLocalRegistrationId(collegiateRaw) : ''
   };
 }
 
-/** Client-friendly non-throwing check (first error message or null). */
 export function managerSignupError(input: ManagerSignupInput): string | null {
   try {
     assertManagerSignupFields(input);
     return null;
   } catch (err) {
-    return err instanceof Error ? err.message : MANAGER_SIGNUP_ERRORS.nifRequired;
+    return err instanceof Error ? err.message : MANAGER_SIGNUP_ERRORS.localRegistrationRequired;
   }
 }
