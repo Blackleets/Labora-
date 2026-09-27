@@ -26,6 +26,13 @@ const expenseCategories = [
   'Otros'
 ] as const;
 
+/**
+ * Server-side fiscal-advice allowlist.
+ * Keep this empty until a jurisdiction has a versioned pack with official sources,
+ * effective dates and regression tests. Client flags are never trusted here.
+ */
+const verifiedFiscalCountryCodes = new Set<string>();
+
 const approxDecodedBytes = (base64: string) =>
   Math.floor((base64.length * 3) / 4);
 
@@ -168,6 +175,14 @@ Reglas estrictas:
     }
 
     if (body.action === 'fiscal_advice') {
+      const countryCode = String(body.countryCode || '').trim().toUpperCase().slice(0, 2);
+      if (!verifiedFiscalCountryCodes.has(countryCode)) {
+        return json({
+          error: 'Fiscal pack is not verified for this jurisdiction',
+          code: 'FISCAL_PACK_UNVERIFIED'
+        }, 409);
+      }
+
       const history = Array.isArray(body.history)
         ? body.history.slice(-12).map((item: any) => ({
             role: item?.role === 'model' ? 'model' : 'user',
@@ -175,15 +190,16 @@ Reglas estrictas:
           }))
         : [];
       const message = String(body.message || '').trim().slice(0, 6000);
-      const countryName = String(body.countryName || 'España').slice(0, 120);
-      const taxEntity = String(body.taxEntity || 'Hacienda (AEAT)').slice(0, 160);
+      const countryName = String(body.countryName || countryCode).slice(0, 120);
+      const taxEntity = String(body.taxEntity || '').trim().slice(0, 160);
 
       if (!message) return json({ error: 'Message is required', code: 'INVALID_REQUEST' }, 400);
+      if (!taxEntity) return json({ error: 'Verified tax entity is required', code: 'INVALID_REQUEST' }, 400);
 
       const chat = ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
-          systemInstruction: `Eres el asistente informativo de Labora+ para autónomos y gestorías en ${countryName}. Ayuda a explicar conceptos fiscales relacionados con ${taxEntity}, pero no inventes normas, porcentajes, artículos legales ni hechos del usuario. Distingue claramente cálculos estimativos de presentaciones oficiales. Si una regla depende del caso concreto o no estás seguro, indícalo y pide que la gestoría la confirme. Sé conciso y profesional.`
+          systemInstruction: `Eres el asistente informativo de Labora+ para una jurisdicción cuyo pack fiscal ha sido verificado: ${countryName} (${countryCode}). La autoridad de referencia declarada por el pack es ${taxEntity}. No inventes normas, porcentajes, artículos legales ni hechos del usuario. Distingue claramente información del pack de cálculos estimativos y de presentaciones oficiales. Si una regla depende del caso concreto o no está contenida en el contexto verificado, indícalo y pide confirmación profesional. Sé conciso y profesional.`
         },
         history
       });
