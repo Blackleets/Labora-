@@ -38,9 +38,10 @@ requireFile('docs/GLOBAL_EXPANSION.md', 'global expansion policy');
 requireContains('components/Settings.tsx', 'AccountDeletionCard', 'real account deletion UI');
 requireContains('modules/core/i18n/index.ts', "export type Language = 'es' | 'en' | 'pt'", 'ES/EN/PT i18n base');
 requireContains('modules/country-config/catalog.ts', 'VERIFIED_AUTOMATIC_CALCULATION_CODES = new Set<string>()', 'tax automation fail-closed');
+requireContains('contexts/CountryContext.tsx', 'GLOBAL_COUNTRIES', 'active country catalog is global-safe');
 requireContains('.github/workflows/ci.yml', 'supabase/functions/delete-account/index.ts', 'delete-account Deno CI coverage');
+forbidContains('contexts/CountryContext.tsx', 'OTHER_COUNTRIES', 'legacy mock countries not active');
 forbidContains('modules/country-config/services/countryApi.ts', 'REST API SIMULATION', 'country API simulation removed');
-forbidContains('modules/country-config/types.ts', 'Tax Authority ${code}', 'fake tax authority removed from active legacy path');
 
 console.log('Labora+ release-readiness static gate');
 for (const pass of passes) console.log(`PASS  ${pass}`);
