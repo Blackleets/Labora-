@@ -18,6 +18,7 @@ Solo producto real. Fácil para autónomo y gestoría. Fail-closed: sin Open Ban
 - Mensajería + offline fail-closed; a11y forms; Pages desde `main` (`/Labora-/`)
 - Docs: `GAPS.md`, `HOW_TO_TEST_AUTONOMO_GESTORIA.md`, `IMPLEMENTATION_CHECKLIST.md`, `RLS_ADVISORS.md`, `AUTH_HIBP.md`, `UAT_DUAL_ACCOUNT.md`
 - **2026-09-27:** export CSV trimestral por cliente (gestoría), tarjeta plazos AEAT 130/303 (tabla oficial 2026, 4T 2026 pendiente), filtros en Gastos/Ingresos, trimestre + estado en Auditoría del gestor, fix hooks Dashboard
+- **Registro de pedidos** (módulo opcional, owner-only, gestoría sin acceso): `docs/ORDER_LOG.md`, migración `20260927095323_labora_delivery_orders_module`
 - CI: GitHub Actions build + edge-functions
 - Billing: `VITE_BILLING_ENABLED=false`
 

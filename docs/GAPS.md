@@ -38,6 +38,7 @@ Updated: 2026-09-27 (Europe/Paris). Branch: gestoría export + AEAT deadlines + 
 | Agent-safe loop 9 (shared form a11y; tax/calendar forms) | `components/formA11y.tsx` (`FieldLabel`, `FormError` `role=alert`, `fieldErrorA11y`, focus class); applied to TaxOverview / TaxDeclarationsViewer / Calendar primary forms only; **no** MoneyHub/Documents offline chip — `RemoteSyncBridge` does not expose online/offline (fail-closed, no fake sync); **pause agent-safe UX polish for Lewis UAT**; HIBP still Lewis; billing OFF |
 | Owner delete (gastos / ingresos / docs) | Rider/owner only: Trash + confirm; `deleteExpense`/`deleteIncome`/`deleteDocument` call remote when session; liquidación cascade deletes linked incomes then doc; managers stay read-only; fail-closed Spanish toasts; vitest on `deleteEligibility` |
 | Gestoría export + AEAT plazos + filtros (2026-09-27) | `services/quarterExport.ts`: CSV `;`+BOM, anti formula-injection, estados en español, **pack trimestral por cliente** (resumen + gastos + ingresos) desde ManagerDashboard; mock `ExportService.ts` (datos `Math.random`) **eliminado**. `services/fiscalDeadlines.ts`: tabla literal AEAT 2026 (130/303: 4T25 27/30 ene, 1T 15/20 abr, 2T 15/20 jul, 3T 15/20 oct) → `FiscalDeadlineCard` en ambos dashboards; **4T 2026 = pendiente** hasta calendario AEAT 2027; MX pendiente SAT. `services/moneyFilters.ts`: búsqueda/categoría/estado/cliente en Gastos e Ingresos; gestor: selector de trimestre + filtro estado en Auditoría, totales del trimestre elegido. Fix orden de hooks en `Dashboard`. vitest puros |
+| Registro de pedidos — módulo opcional (2026-09-27) | Ajustes → Módulos (off por defecto). Alta manual rápida, jornada (€/h), Hoy (aceptación, €/km, gastos, neto estimado antes de impuestos), objetivo diario, gráficos 7 días / 6 semanas, mes por plataforma/día, editar/borrar, CSV, «Pasar a ingresos» con anti doble conteo y comparación con liquidación. Tablas `delivery_orders` + `user_module_settings` **owner-only RLS** (gestoría sin acceso). Sin API de plataformas, sin lectura de notificaciones, sin telemetría. Ver `docs/ORDER_LOG.md` |
 
 ## Linking — what works / what needs Lewis
 
@@ -66,6 +67,8 @@ Updated: 2026-09-27 (Europe/Paris). Branch: gestoría export + AEAT deadlines + 
 | **Auth leaked-password protection** | **Deferred** — dashboard login blocked (hCaptcha / GitHub SSO 500); MCP cannot toggle Auth HIBP; enable later in Auth → Password |
 | **Offline chip on MoneyHub / Documents** | Skipped loop 9 — RemoteSync has no online/offline API; do not invent sync status. Revisit only if sync surface exposes real connectivity |
 | **AEAT 4T 2026 / 2027 dates** | Add rows to `AEAT_130_303_DEADLINES` only when AEAT publishes the 2027 calendar (copy literally, cite URL) |
+| **Insights agregados opt-in** | Solo documentado (`docs/ORDER_LOG.md`); requiere consentimiento RGPD, DPIA y umbrales de anonimato. **No construido** |
+| **Live migration `labora_universal_worker_profile` (20260922212049)** | Aplicada en Supabase pero no está en `supabase/migrations` de `main` (¿viene de PR #35?). Revisar antes de fusionar #35 |
 | **Manager delete of client rows** | Intentionally blocked (RLS + UI). Owners delete own data only |
 | **Agent-safe UX polish (further loops)** | **Pause for Lewis UAT** — dual-account checklist + signature before more chrome/a11y sweeps |
 
