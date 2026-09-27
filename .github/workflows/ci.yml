@@ -23,15 +23,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Unit tests
         run: npm test
+
+      - name: Release readiness static gate
+        run: npm run release:check
 
       - name: Build
         run: npm run build
@@ -54,6 +58,7 @@ jobs:
           deno check --node-modules-dir=auto supabase/functions/create-billing-portal-session/index.ts
           deno check --node-modules-dir=auto supabase/functions/stripe-webhook/index.ts
           deno check --node-modules-dir=auto supabase/functions/labora-ai/index.ts
+          deno check --node-modules-dir=auto supabase/functions/delete-account/index.ts
 
   android:
     runs-on: ubuntu-latest
@@ -66,6 +71,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -74,7 +80,7 @@ jobs:
           java-version: 21
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Build web + sync Capacitor
         run: |
