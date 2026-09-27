@@ -25,7 +25,7 @@ public final class OfferParser {
 
     // 4,50 € · 4.50€ · 12 € · € 4,50 · 4,50 EUR · EUR 4.50
     private static final Pattern EURO_AFTER = Pattern.compile("(?<![\\d.,])(\\d{1,4}(?:[.,]\\d{1,2})?)\\s?(?:€|eur\\b|euros?\\b)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern EURO_BEFORE = Pattern.compile("(?:€|\\beur\\b)\\s?(\\d{1,4}(?:[.,]\\d{1,2})?)(?![\\d])", Pattern.CASE_INSENSITIVE);
+    private static final Pattern EURO_BEFORE = Pattern.compile("(?<!\\d)(?<!\\d\\s)(?:€|\\beur\\b)\\s?(\\d{1,4}(?:[.,]\\d{1,2})?)(?![\\d])", Pattern.CASE_INSENSITIVE);
     // 3,2 km · 3.2km · 12 kms · 800 m
     private static final Pattern KM = Pattern.compile("(?<![\\d.,])(\\d{1,3}(?:[.,]\\d{1,2})?)\\s?(?:km|kms|kilómetros|kilometros)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern METERS = Pattern.compile("(?<![\\d.,])(\\d{2,4})\\s?(?:m|metros)\\b(?!\\s?in)", Pattern.CASE_INSENSITIVE);

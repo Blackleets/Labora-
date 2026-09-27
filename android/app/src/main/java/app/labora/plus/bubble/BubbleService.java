@@ -533,6 +533,7 @@ public class BubbleService extends Service {
     }
 
     private void registerNetwork() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return; // API 23: se sincroniza al guardar y al abrir Labora+
         try {
             ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
             netCallback = new ConnectivityManager.NetworkCallback() {
