@@ -1,75 +1,34 @@
+import type { CountryConfig } from '../types';
+import { GLOBAL_COUNTRIES } from '../catalog';
 
-import { CountryConfig, DEFAULT_SPAIN_CONFIG, DEFAULT_MEXICO_CONFIG } from '../types';
-
-const STORAGE_KEY = 'labora_country_configs';
-
-// Inicializar datos si no existen
-const initData = () => {
-  const existing = localStorage.getItem(STORAGE_KEY);
-  if (!existing) {
-    const defaults = [DEFAULT_SPAIN_CONFIG, DEFAULT_MEXICO_CONFIG];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
-    return defaults;
-  }
-  return JSON.parse(existing) as CountryConfig[];
-};
-
-// --- REST API SIMULATION ---
+/**
+ * Read-only country catalog adapter.
+ *
+ * This is intentionally NOT presented as a REST API and does not simulate network
+ * latency or persist fiscal configuration in localStorage. Country packs that may
+ * affect tax/pricing must be versioned in code and reviewed before activation.
+ */
+const readonlyError = () => new Error(
+  'La configuración global de países es de solo lectura. Publica un pack versionado y revisado en el repositorio para cambiar datos fiscales o tarifarios.'
+);
 
 export const countryApi = {
-  // GET /countries
-  getAll: async (): Promise<CountryConfig[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(initData()), 300); // Simulate network latency
-    });
-  },
+  getAll: async (): Promise<CountryConfig[]> => GLOBAL_COUNTRIES.map((country) => ({ ...country })),
 
-  // GET /countries/{code}
   getOne: async (code: string): Promise<CountryConfig | undefined> => {
-    return new Promise((resolve) => {
-      const data = initData();
-      const country = data.find(c => c.country_code === code);
-      setTimeout(() => resolve(country), 200);
-    });
+    const normalized = code.trim().toUpperCase();
+    return GLOBAL_COUNTRIES.find((country) => country.country_code === normalized);
   },
 
-  // POST /countries
-  create: async (config: CountryConfig): Promise<CountryConfig> => {
-    return new Promise((resolve, reject) => {
-      const data = initData();
-      if (data.find(c => c.country_code === config.country_code)) {
-        reject(new Error("Country code already exists"));
-        return;
-      }
-      const newData = [...data, config];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-      setTimeout(() => resolve(config), 400);
-    });
+  create: async (_config: CountryConfig): Promise<CountryConfig> => {
+    throw readonlyError();
   },
 
-  // PUT /countries/{code}
-  update: async (code: string, config: CountryConfig): Promise<CountryConfig> => {
-    return new Promise((resolve, reject) => {
-      const data = initData();
-      const index = data.findIndex(c => c.country_code === code);
-      if (index === -1) {
-        reject(new Error("Country not found"));
-        return;
-      }
-      const newData = [...data];
-      newData[index] = config;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-      setTimeout(() => resolve(config), 400);
-    });
+  update: async (_code: string, _config: CountryConfig): Promise<CountryConfig> => {
+    throw readonlyError();
   },
 
-  // DELETE /countries/{code}
-  delete: async (code: string): Promise<void> => {
-    return new Promise((resolve) => {
-      const data = initData();
-      const newData = data.filter(c => c.country_code !== code);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-      setTimeout(() => resolve(), 300);
-    });
+  delete: async (_code: string): Promise<void> => {
+    throw readonlyError();
   }
 };

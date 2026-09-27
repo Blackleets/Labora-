@@ -14,6 +14,7 @@ import {
   UserRound
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { useCountry } from '../contexts/CountryContext';
 import {
   linkManagerByEmail,
   signOutRemote,
@@ -23,8 +24,14 @@ import {
 } from '../services/authWorkspace';
 import { displayGestoriaName, listLinkedClients } from '../services/gestoriaLinking';
 import { identityImageStore } from '../services/identityImage';
+import {
+  managerSignupError,
+  normalizeLocalRegistrationId,
+  normalizeSpanishTaxId
+} from '../services/registrationValidation';
 import { UserRole } from '../types';
 import BillingCard from './BillingCard';
+import CountrySelector from './CountrySelector';
 import IdentityImagePicker from './IdentityImagePicker';
 import { withBaseUrl } from './brandMarks';
 import { OrderModuleSettingsCard } from './orders/OrderModuleSettingsCard';
@@ -41,6 +48,7 @@ const Settings: React.FC = () => {
     updateUserFiscalProfile,
     showNotification
   } = useData();
+  const { selectedCountry } = useCountry();
 
   const [name, setName] = useState(currentUser?.name || '');
   const [phone, setPhone] = useState(currentUser?.phone || '');
@@ -82,6 +90,9 @@ const Settings: React.FC = () => {
 
   if (!currentUser) return null;
 
+  const isSpain = selectedCountry.country_code === 'ES';
+  const professionalLabel = isSpain ? 'gestoría' : 'firma / asesoría';
+  const professionalTitle = isSpain ? 'Gestoría' : 'Firma / asesoría';
   const inputClass =
     'w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 py-3 text-sm text-[var(--labora-ink)] outline-none transition focus:border-[var(--labora-primary-2)] focus:ring-2 focus:ring-[var(--labora-moss-soft)]';
   const labelClass = 'mb-1.5 block text-[11px] font-extrabold text-[var(--labora-muted)]';
@@ -92,10 +103,29 @@ const Settings: React.FC = () => {
       return;
     }
 
+    if (isManager) {
+      const managerError = managerSignupError({
+        companyName: companyName.trim() || name.trim(),
+        nif,
+        collegiateNumber,
+        countryCode: selectedCountry.country_code
+      });
+      if (managerError) {
+        showNotification('error', managerError);
+        return;
+      }
+    }
+
+    const normalizedNif = isManager
+      ? (isSpain ? normalizeSpanishTaxId(nif) : normalizeLocalRegistrationId(nif))
+      : (nif.trim().toUpperCase() || undefined);
+
     const patch = {
       name: name.trim(),
       phone: phone.trim() || undefined,
-      nif: nif.trim().toUpperCase() || undefined,
+      nif: normalizedNif,
+      countryCode: selectedCountry.country_code,
+      currencyPreference: selectedCountry.currency,
       companyName: isManager ? companyName.trim() || name.trim() : currentUser.companyName,
       collegiateNumber: isManager
         ? collegiateNumber.trim() || undefined
@@ -132,18 +162,18 @@ const Settings: React.FC = () => {
 
   const handleLinkManager = async () => {
     if (!managerEmail.trim()) {
-      showNotification('error', 'Escribe el correo de tu gestoría.');
+      showNotification('error', `Escribe el correo de tu ${professionalLabel}.`);
       return;
     }
 
     setLinking(true);
     try {
       await linkManagerByEmail(managerEmail, users);
-      showNotification('success', 'Gestoría vinculada correctamente.');
+      showNotification('success', `${professionalTitle} vinculada correctamente.`);
       window.setTimeout(() => window.location.reload(), 500);
     } catch (error: unknown) {
       const raw = String(
-        (error as { message?: string })?.message || 'No se pudo vincular la gestoría.'
+        (error as { message?: string })?.message || `No se pudo vincular la ${professionalLabel}.`
       );
       showNotification('error', raw);
     } finally {
@@ -154,18 +184,18 @@ const Settings: React.FC = () => {
   const handleUnlinkManager = async () => {
     const label = displayGestoriaName(linkedManager);
     const confirmed = window.confirm(
-      `¿Desvincular ${label}? Dejarás de ver mensajes y peticiones de esa gestoría hasta que vuelvas a vincularte.`
+      `¿Desvincular ${label}? Dejarás de ver mensajes y peticiones de esa cuenta profesional hasta que vuelvas a vincularte.`
     );
     if (!confirmed) return;
 
     setUnlinking(true);
     try {
       await unlinkOwnManager();
-      showNotification('success', 'Gestoría desvinculada.');
+      showNotification('success', 'Cuenta profesional desvinculada.');
       window.setTimeout(() => window.location.reload(), 500);
     } catch (error: unknown) {
       const raw = String(
-        (error as { message?: string })?.message || 'No se pudo desvincular la gestoría.'
+        (error as { message?: string })?.message || 'No se pudo desvincular la cuenta profesional.'
       );
       showNotification('error', raw);
     } finally {
@@ -197,35 +227,35 @@ const Settings: React.FC = () => {
   }) => {
     const switchId = `labora-toggle-${title.toLowerCase().replace(/\s+/g, '-')}`;
     return (
-    <button
-      type="button"
-      id={switchId}
-      role="switch"
-      aria-checked={checked}
-      aria-label={title}
-      onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[14px] px-1 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
-    >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden>
-        <Icon size={17} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-extrabold text-[var(--labora-ink)]">{title}</p>
-        <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--labora-muted)]">{text}</p>
-      </div>
-      <span
-        aria-hidden
-        className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-          checked ? 'bg-[var(--labora-primary)]' : 'bg-[var(--labora-surface-2)]'
-        }`}
+      <button
+        type="button"
+        id={switchId}
+        role="switch"
+        aria-checked={checked}
+        aria-label={title}
+        onClick={onClick}
+        className="flex w-full items-center gap-3 rounded-[14px] px-1 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]"
       >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden>
+          <Icon size={17} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-extrabold text-[var(--labora-ink)]">{title}</p>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--labora-muted)]">{text}</p>
+        </div>
         <span
-          className={`absolute top-1 h-4 w-4 rounded-full bg-[var(--labora-surface)] shadow-sm transition ${
-            checked ? 'translate-x-6' : 'translate-x-1'
+          aria-hidden
+          className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+            checked ? 'bg-[var(--labora-primary)]' : 'bg-[var(--labora-surface-2)]'
           }`}
-        />
-      </span>
-    </button>
+        >
+          <span
+            className={`absolute top-1 h-4 w-4 rounded-full bg-[var(--labora-surface)] shadow-sm transition ${
+              checked ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+        </span>
+      </button>
     );
   };
 
@@ -257,7 +287,7 @@ const Settings: React.FC = () => {
             </div>
             <div className="min-w-0">
               <p className="labora-kicker text-[var(--labora-primary-2)]">
-                {isManager ? 'Cuenta de gestoría' : 'Cuenta de autónomo'}
+                {isManager ? `Cuenta de ${professionalLabel}` : 'Cuenta de trabajador'}
               </p>
               <h1 className="labora-display mt-1.5 truncate text-2xl font-semibold tracking-[-0.03em] text-[var(--labora-ink)] sm:text-[2.05rem]">
                 {displayName}
@@ -274,10 +304,10 @@ const Settings: React.FC = () => {
             }`}
           >
             {isManager
-              ? 'Gestoría activa'
+              ? `${professionalTitle} activa`
               : linkedManager
-                ? 'Gestoría vinculada'
-                : 'Sin gestoría vinculada'}
+                ? 'Cuenta profesional vinculada'
+                : 'Sin cuenta profesional vinculada'}
           </div>
         </div>
       </section>
@@ -297,13 +327,23 @@ const Settings: React.FC = () => {
           mode={isManager ? 'logo' : 'avatar'}
           value={identityImage}
           onChange={setIdentityImage}
-          title={isManager ? 'Logo o imagen de la gestoría' : 'Foto de perfil'}
+          title={isManager ? `Logo o imagen de la ${professionalLabel}` : 'Foto de perfil'}
           helper={
             isManager
               ? 'Tus clientes la verán en mensajes, peticiones y cartera.'
-              : 'Tu gestoría la verá al revisar tu actividad y comunicarse contigo.'
+              : 'La cuenta profesional vinculada la verá al revisar tu actividad y comunicarse contigo.'
           }
         />
+
+        <div className="mt-5 flex flex-col gap-3 rounded-[14px] border border-[var(--labora-border)] bg-[var(--labora-canvas)] p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-extrabold text-[var(--labora-ink)]">País de operación</p>
+            <p className="mt-1 text-[10px] leading-relaxed text-[var(--labora-muted)]">
+              {selectedCountry.display_name} · {selectedCountry.currency}. Cambiar país no activa fiscalidad no verificada.
+            </p>
+          </div>
+          <CountrySelector />
+        </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
@@ -326,7 +366,9 @@ const Settings: React.FC = () => {
             <input id="labora-settings-phone" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label htmlFor="labora-settings-nif" className={labelClass}>NIF / NIE</label>
+            <label htmlFor="labora-settings-nif" className={labelClass}>
+              {isSpain ? 'NIF / NIE' : 'Identificación fiscal o registral local'}
+            </label>
             <input
               id="labora-settings-nif"
               value={nif}
@@ -337,7 +379,9 @@ const Settings: React.FC = () => {
           {isManager ? (
             <>
               <div>
-                <label htmlFor="labora-settings-company" className={labelClass}>Nombre de la gestoría</label>
+                <label htmlFor="labora-settings-company" className={labelClass}>
+                  {isSpain ? 'Nombre de la gestoría' : 'Nombre de la firma o asesoría'}
+                </label>
                 <input
                   id="labora-settings-company"
                   value={companyName}
@@ -346,7 +390,9 @@ const Settings: React.FC = () => {
                 />
               </div>
               <div>
-                <label className={labelClass}>N.º colegiado</label>
+                <label className={labelClass}>
+                  {isSpain ? 'N.º colegiado' : 'ID profesional o registro (opcional)'}
+                </label>
                 <input
                   value={collegiateNumber}
                   onChange={(e) => setCollegiateNumber(e.target.value)}
@@ -377,8 +423,7 @@ const Settings: React.FC = () => {
             disabled={saving}
             className="inline-flex items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-primary)] px-4 py-2.5 text-xs font-extrabold text-white hover:opacity-90 disabled:opacity-60"
           >
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Guardar
-            cambios
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Guardar cambios
           </button>
         </div>
       </section>
@@ -391,14 +436,14 @@ const Settings: React.FC = () => {
           <div className="min-w-0 flex-1">
             <p className="labora-kicker text-[var(--labora-primary-2)]">Relación de trabajo</p>
             <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">
-              {isManager ? 'Tus clientes' : 'Tu gestoría'}
+              {isManager ? 'Tus clientes' : 'Tu cuenta profesional'}
             </h2>
 
             {isManager ? (
               <>
                 <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">
-                  Comparte este correo con tus autónomos. Ellos se vinculan desde{' '}
-                  <span className="font-semibold text-[var(--labora-muted)]">Perfil → Tu gestoría</span>. No hay
+                  Comparte este correo con tus clientes. Ellos se vinculan desde{' '}
+                  <span className="font-semibold text-[var(--labora-muted)]">Perfil → Tu cuenta profesional</span>. No hay
                   invitaciones OAuth ni códigos inventados.
                 </p>
                 <div className="mt-3 flex items-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-3 py-2.5 text-xs font-bold text-[var(--labora-ink-soft)]">
@@ -408,7 +453,7 @@ const Settings: React.FC = () => {
 
                 {linkedClients.length === 0 ? (
                   <p className="mt-3 rounded-[13px] border border-dashed border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3 py-3 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-                    Todavía no tienes clientes vinculados. Cuando un autónomo introduzca tu correo,
+                    Todavía no tienes clientes vinculados. Cuando un trabajador introduzca tu correo,
                     aparecerá aquí y en Mensajes.
                   </p>
                 ) : (
@@ -430,9 +475,7 @@ const Settings: React.FC = () => {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-extrabold text-[var(--labora-ink)]">
-                            {client.name}
-                          </p>
+                          <p className="truncate text-xs font-extrabold text-[var(--labora-ink)]">{client.name}</p>
                           <p className="mt-0.5 truncate text-[11px] text-[var(--labora-muted)]">{client.email}</p>
                         </div>
                       </li>
@@ -447,7 +490,7 @@ const Settings: React.FC = () => {
                     {identityImageStore.getForUser(linkedManager) ? (
                       <img
                         src={identityImageStore.getForUser(linkedManager)}
-                        alt="Gestoría"
+                        alt="Cuenta profesional"
                         className="h-full w-full object-contain p-1"
                       />
                     ) : (
@@ -458,9 +501,7 @@ const Settings: React.FC = () => {
                     <p className="truncate text-xs font-extrabold text-[var(--labora-primary)]">
                       {displayGestoriaName(linkedManager)}
                     </p>
-                    <p className="mt-0.5 truncate text-[11px] text-[var(--labora-muted)]">
-                      {linkedManager.email}
-                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-[var(--labora-muted)]">{linkedManager.email}</p>
                   </div>
                 </div>
                 <button
@@ -469,31 +510,22 @@ const Settings: React.FC = () => {
                   disabled={unlinking}
                   className="inline-flex items-center justify-center gap-2 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-soft-clay)] px-4 py-2.5 text-xs font-extrabold text-[var(--labora-clay-deep)] hover:bg-[var(--labora-soft-clay)] disabled:opacity-60"
                 >
-                  {unlinking ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Unlink size={14} />
-                  )}{' '}
-                  Desvincular gestoría
+                  {unlinking ? <Loader2 size={14} className="animate-spin" /> : <Unlink size={14} />} Desvincular
                 </button>
               </div>
             ) : (
               <div className="mt-3 space-y-2">
                 <p id="labora-gestoria-link-help" className="text-xs leading-relaxed text-[var(--labora-muted)]">
-                  Introduce el correo de tu gestoría (el mismo que ellos ven en{' '}
-                  <span className="font-semibold text-[var(--labora-muted)]">Tus clientes</span>). Solo se
-                  aceptan cuentas con rol gestoría o administración.
+                  Introduce el correo de tu gestoría, asesoría o firma profesional. Solo se aceptan cuentas con rol profesional o administración.
                 </p>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <label htmlFor="labora-gestoria-email" className="sr-only">
-                    Correo de tu gestoría
-                  </label>
+                  <label htmlFor="labora-gestoria-email" className="sr-only">Correo de la cuenta profesional</label>
                   <input
                     id="labora-gestoria-email"
                     type="email"
                     value={managerEmail}
                     onChange={(e) => setManagerEmail(e.target.value)}
-                    placeholder="correo@gestoria.com"
+                    placeholder="correo@firma.com"
                     className={`${inputClass} min-w-0 flex-1`}
                     aria-describedby="labora-gestoria-link-help"
                     autoComplete="email"
@@ -504,12 +536,7 @@ const Settings: React.FC = () => {
                     disabled={linking}
                     className="inline-flex items-center justify-center gap-2 rounded-[13px] bg-[var(--labora-clay)] px-4 py-3 text-xs font-extrabold text-white hover:bg-[var(--labora-clay-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-60"
                   >
-                    {linking ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <Link2 size={14} />
-                    )}{' '}
-                    Vincular
+                    {linking ? <Loader2 size={14} className="animate-spin" /> : <Link2 size={14} />} Vincular
                   </button>
                 </div>
               </div>
