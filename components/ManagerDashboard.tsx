@@ -18,6 +18,7 @@ import AtmosphericPanel from './AtmosphericPanel';
 import { useCountry } from '../contexts/CountryContext';
 import { Expense, UserRole } from '../types';
 import { FiscalDeadlineCard } from './FiscalDeadlineCard';
+import { buildQuarterPdfModel, downloadQuarterPdf, quarterPdfFilename } from '../services/quarterPdf';
 import { buildQuarterPackRows, dateInQuarter, downloadCsv, quarterExportFilename, quarterOptionsFor } from '../services/quarterExport';
 import { EXPENSE_STATUS_FILTER_OPTIONS, ExpenseStatusFilter, expenseMatches, sortByDateDesc } from '../services/moneyFilters';
 import { formControlFocusClass } from './formA11y';
@@ -104,6 +105,20 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
     );
     downloadCsv(quarterExportFilename('trimestre', selectedQuarter, selectedClient.name), rows);
     showNotification('success', `Exportación ${selectedQuarter} de ${selectedClient.name} descargada.`);
+  };
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const exportClientQuarterPdf = async () => {
+    if (!selectedClient) return;
+    setPdfBusy(true);
+    try {
+      const model = buildQuarterPdfModel({ name: selectedClient.name, nif: selectedClient.nif, email: selectedClient.email }, selectedQuarter, clientAllExpenses, clientAllIncomes, new Date());
+      await downloadQuarterPdf(model, quarterPdfFilename(selectedQuarter, selectedClient.name));
+      showNotification('success', `PDF ${selectedQuarter} de ${selectedClient.name} descargado.`);
+    } catch (error) {
+      showNotification('error', error instanceof Error ? `No se pudo generar el PDF: ${error.message}` : 'No se pudo generar el PDF.');
+    } finally {
+      setPdfBusy(false);
+    }
   };
   const clientRequirements = linkedRequirements.filter(
     (requirement) => requirement.riderId === selectedClient?.id
@@ -385,6 +400,14 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                       className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-[12px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 text-xs font-extrabold text-[var(--labora-primary)] hover:bg-[var(--labora-moss-soft)] ${formControlFocusClass}`}
                     >
                       <Download size={14} aria-hidden /> Exportar trimestre (CSV)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void exportClientQuarterPdf()}
+                      disabled={pdfBusy}
+                      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-[12px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 text-xs font-extrabold text-[var(--labora-primary)] hover:bg-[var(--labora-moss-soft)] disabled:opacity-50 ${formControlFocusClass}`}
+                    >
+                      <FileText size={14} aria-hidden /> {pdfBusy ? 'Generando…' : 'Trimestre (PDF)'}
                     </button>
                   </div>
 
