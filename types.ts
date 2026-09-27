@@ -5,6 +5,8 @@ export enum UserRole {
   ADMIN = 'ADMIN'
 }
 
+export type WorkMode = 'employee' | 'rider' | 'self_employed' | 'freelancer';
+
 export interface NotificationSettings {
   email: boolean;
   push: boolean;
@@ -45,6 +47,9 @@ export interface User {
   companyName?: string;
   collegiateNumber?: string;
   countryCode?: string;
+  workModes?: WorkMode[];
+  workplaces?: string[];
+  wantsManager?: boolean;
 }
 
 export type IntegrationCategory = 'delivery' | 'mobility' | 'banking' | 'payments' | 'accounting' | 'hr';
