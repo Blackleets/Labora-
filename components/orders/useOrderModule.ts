@@ -3,11 +3,21 @@ import { useData } from '../../contexts/DataContext';
 import { useOrderModuleStore } from '../../services/orderModuleStore';
 import { UserRole } from '../../types';
 
-/** Estado del módulo para el usuario actual. Solo autónomos; oculto si está apagado o no se pudo leer. */
+/**
+ * Estado del módulo para el usuario actual.
+ *
+ * Compatibilidad: perfiles legacy con work_modes vacío conservan el comportamiento
+ * anterior. En cuanto una persona configura su perfil universal, Pedidos solo está
+ * disponible si declara explícitamente el modo rider.
+ */
 export const useOrderModule = () => {
   const { currentUser } = useData();
   const store = useOrderModuleStore();
-  const isRider = currentUser?.role === UserRole.RIDER;
+  const workModes = currentUser?.workModes || [];
+  const isRider = Boolean(
+    currentUser?.role === UserRole.RIDER
+    && (workModes.length === 0 || workModes.includes('rider'))
+  );
 
   useEffect(() => {
     if (currentUser?.id && isRider) void store.load(currentUser.id);

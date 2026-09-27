@@ -30,6 +30,7 @@ import {
   normalizeSpanishTaxId
 } from '../services/registrationValidation';
 import { UserRole } from '../types';
+import AccountDeletionCard from './AccountDeletionCard';
 import BillingCard from './BillingCard';
 import CountrySelector from './CountrySelector';
 import IdentityImagePicker from './IdentityImagePicker';
@@ -600,18 +601,13 @@ const Settings: React.FC = () => {
         </div>
       </section>
 
-      <section className="labora-card p-4 sm:p-5">
-        <p className="labora-kicker text-[var(--labora-muted)]">Cuenta</p>
-        <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Eliminar cuenta</h2>
-        <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">
-          La eliminación completa de datos en Supabase todavía no está automatizada.
-          Si necesitas borrar tu cuenta y datos asociados, contacta soporte — no ofrecemos
-          un botón falso que no limpie el backend.
-        </p>
-        <p className="mt-3 rounded-[13px] border border-dashed border-[var(--labora-border)] bg-[var(--labora-parchment)] px-3 py-2.5 text-[11px] font-bold text-[var(--labora-muted)]">
-          Próximamente · contacta soporte para solicitudes de borrado (Play User Data policy).
-        </p>
-      </section>
+      <AccountDeletionCard
+        onDeleted={() => {
+          logout();
+          window.location.reload();
+        }}
+        onError={(message) => showNotification('error', message)}
+      />
 
       <button
         type="button"
