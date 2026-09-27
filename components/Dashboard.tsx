@@ -22,6 +22,7 @@ import { GasStationCaptureModal } from './GasStationCaptureModal';
 import AtmosphericPanel from './AtmosphericPanel';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
+import { FiscalDeadlineCard } from './FiscalDeadlineCard';
 
 
 interface DashboardProps { setView?: (view: string) => void; }
@@ -71,9 +72,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     return () => window.clearInterval(timer);
   }, [activeSession?.id]);
 
-  if (!currentUser) return null;
+  // Hooks antes de cualquier return condicional (reglas de hooks de React).
+  const summary = useMemo(
+    () => (currentUser ? getFiscalSummary(currentUser.id) : null),
+    [currentUser?.id, getFiscalSummary]
+  );
 
-  const summary = useMemo(() => getFiscalSummary(currentUser.id), [currentUser.id, getFiscalSummary]);
+  if (!currentUser || !summary) return null;
   const pendingRequirements = requirements.filter(
     (requirement) => requirement.riderId === currentUser.id && requirement.status === 'pending'
   );
@@ -259,6 +264,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
           </button>
         </div>
       </section>
+
+      <FiscalDeadlineCard audience="rider" />
 
       <section className="labora-card p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
