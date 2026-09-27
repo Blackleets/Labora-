@@ -19,7 +19,7 @@ export const FiscalDeadlineCard: React.FC<FiscalDeadlineCardProps> = ({ audience
   const { selectedCountry } = useCountry();
   const result = getNextAeatDeadline(now || new Date(), selectedCountry.country_code);
 
-  if (!result.verified && result.reason === 'country_pending') {
+  if ('reason' in result && result.reason === 'country_pending') {
     return (
       <section className="labora-card p-4 sm:p-5" aria-label="Plazos fiscales">
         <div className="flex items-start gap-3">
@@ -33,7 +33,7 @@ export const FiscalDeadlineCard: React.FC<FiscalDeadlineCardProps> = ({ audience
     );
   }
 
-  const urgent = result.verified && result.daysToFilingEnd <= 7;
+  const urgent = 'deadline' in result && result.daysToFilingEnd <= 7;
 
   return (
     <section
@@ -46,7 +46,7 @@ export const FiscalDeadlineCard: React.FC<FiscalDeadlineCardProps> = ({ audience
         </div>
         <div className="min-w-0 flex-1">
           <p className="labora-kicker text-[var(--labora-muted)]">Próximo plazo AEAT · Modelos 130 y 303</p>
-          {result.verified ? (
+          {'deadline' in result ? (
             <>
               <p className="mt-1 text-sm font-extrabold text-[var(--labora-ink)]">
                 {result.deadline.quarter}: hasta el {formatDateEs(result.deadline.filingUntil)} ({daysLabel(result.daysToFilingEnd)})
