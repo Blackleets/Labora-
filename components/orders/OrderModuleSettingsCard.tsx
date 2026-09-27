@@ -1,23 +1,28 @@
 import React, { useState } from 'react';
 import { ClipboardList, Loader2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
+import WorkProfileCard from '../WorkProfileCard';
 import { formControlFocusClass } from '../formA11y';
 import { useOrderModule } from './useOrderModule';
 import { LaboraBubble, isBubbleSupported } from '../../services/laboraBubble';
 
-/** Ajustes → Módulos. Activa/desactiva el registro de pedidos (preferencia owner-only en Supabase). */
+/**
+ * Ajustes de trabajador. El perfil laboral universal siempre está disponible;
+ * el módulo de pedidos solo aparece cuando la persona declara modo rider.
+ */
 export const OrderModuleSettingsCard: React.FC = () => {
-  const { showNotification } = useData();
+  const { currentUser, showNotification, updateUserFiscalProfile } = useData();
   const { isRider, ready, enabled, dailyGoal, error, save } = useOrderModule();
   const [busy, setBusy] = useState(false);
 
-  if (!isRider) return null;
+  if (!isRider || !currentUser) return null;
+
+  const declaredRiderMode = currentUser.workModes?.includes('rider') ?? false;
 
   const toggle = async () => {
     setBusy(true);
     try {
       await save({ ordersEnabled: !enabled, dailyGoal });
-      // Módulo apagado = oculto en todas partes, también la burbuja de Android.
       if (enabled && isBubbleSupported()) await LaboraBubble.stop().catch(() => undefined);
       showNotification('success', enabled ? 'Registro de pedidos desactivado. Tus datos se conservan.' : 'Registro de pedidos activado.');
     } catch (saveError) {
@@ -28,36 +33,49 @@ export const OrderModuleSettingsCard: React.FC = () => {
   };
 
   return (
-    <section className="labora-card p-4 sm:p-5">
-      <p className="labora-kicker text-[var(--labora-muted)]">Módulos</p>
-      <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Módulos opcionales</h2>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={enabled}
-        aria-label="Registro de pedidos"
-        disabled={!ready || busy}
-        onClick={() => void toggle()}
-        className={`mt-2 flex min-h-14 w-full items-center gap-3 rounded-[14px] px-1 py-3 text-left disabled:opacity-60 ${formControlFocusClass}`}
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden>
-          {busy ? <Loader2 size={17} className="animate-spin" /> : <ClipboardList size={17} />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-extrabold text-[var(--labora-ink)]">Registro de pedidos</p>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--labora-muted)]">
-            Apunta a mano pedidos aceptados y rechazados, tu jornada y un objetivo diario. Sin conexión con Uber, Glovo ni otras plataformas. Solo tú lo ves: tu gestoría no tiene acceso.
+    <>
+      <WorkProfileCard
+        user={currentUser}
+        onSaved={(patch) => {
+          updateUserFiscalProfile(patch);
+          showNotification('success', 'Perfil laboral sincronizado.');
+        }}
+        onError={(message) => showNotification('error', message)}
+      />
+
+      {declaredRiderMode && (
+        <section className="labora-card p-4 sm:p-5">
+          <p className="labora-kicker text-[var(--labora-muted)]">Módulos</p>
+          <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Módulos opcionales</h2>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            aria-label="Registro de pedidos"
+            disabled={!ready || busy}
+            onClick={() => void toggle()}
+            className={`mt-2 flex min-h-14 w-full items-center gap-3 rounded-[14px] px-1 py-3 text-left disabled:opacity-60 ${formControlFocusClass}`}
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]" aria-hidden>
+              {busy ? <Loader2 size={17} className="animate-spin" /> : <ClipboardList size={17} />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-extrabold text-[var(--labora-ink)]">Registro de pedidos</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--labora-muted)]">
+                Apunta pedidos aceptados y rechazados, tu jornada y objetivos. Sin conexión con Uber, Glovo ni otras plataformas. Solo tú ves estos datos.
+              </p>
+            </div>
+            <span aria-hidden className={`relative h-6 w-11 shrink-0 rounded-full transition ${enabled ? 'bg-[var(--labora-primary)]' : 'bg-[var(--labora-surface-2)]'}`}>
+              <span className={`absolute top-1 h-4 w-4 rounded-full bg-[var(--labora-surface)] shadow-sm transition ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </span>
+          </button>
+          {error && <p role="alert" className="mt-2 text-[11px] font-bold text-[var(--labora-clay-deep)]">No se pudo leer el ajuste ({error}). El módulo queda oculto.</p>}
+          <p className="mt-2 rounded-[13px] bg-[var(--labora-surface-2)] px-3 py-2.5 text-[10px] leading-relaxed text-[var(--labora-muted)]">
+            Al desactivarlo se oculta en toda la app; tus pedidos no se borran. Labora+ no comparte ni analiza estos datos con terceros.
           </p>
-        </div>
-        <span aria-hidden className={`relative h-6 w-11 shrink-0 rounded-full transition ${enabled ? 'bg-[var(--labora-primary)]' : 'bg-[var(--labora-surface-2)]'}`}>
-          <span className={`absolute top-1 h-4 w-4 rounded-full bg-[var(--labora-surface)] shadow-sm transition ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-        </span>
-      </button>
-      {error && <p role="alert" className="mt-2 text-[11px] font-bold text-[var(--labora-clay-deep)]">No se pudo leer el ajuste ({error}). El módulo queda oculto.</p>}
-      <p className="mt-2 rounded-[13px] bg-[var(--labora-surface-2)] px-3 py-2.5 text-[10px] leading-relaxed text-[var(--labora-muted)]">
-        Al desactivarlo se oculta en toda la app; tus pedidos no se borran. Labora+ no comparte ni analiza estos datos con terceros.
-      </p>
-    </section>
+        </section>
+      )}
+    </>
   );
 };
 
