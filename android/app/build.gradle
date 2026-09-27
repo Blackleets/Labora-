@@ -16,6 +16,19 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // «play»: sin lectura de notificaciones (ni en manifiesto ni en código).
+    // «labs»: añade el NotificationListenerService opcional; applicationId distinto, distribución fuera de Play.
+    flavorDimensions = ["dist"]
+    productFlavors {
+        play {
+            dimension "dist"
+        }
+        labs {
+            dimension "dist"
+            applicationIdSuffix ".labs"
+            versionNameSuffix "-labs"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false

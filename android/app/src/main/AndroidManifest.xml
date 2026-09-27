@@ -26,25 +26,14 @@
 
         <!-- Burbuja de pedidos: foreground service specialUse que solo dibuja su propia burbuja (SYSTEM_ALERT_WINDOW). -->
         <service
-            android:name=".bubble.BubbleService"
+            android:name="app.labora.plus.bubble.BubbleService"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="User-started floating bubble to manually log the rider's own delivery orders (platform, amount, accepted/rejected) while working in other apps. Stops when the user taps Stop. Does not read the screen or interact with other apps." />
+                android:value="User-started floating bubble that lets a delivery rider manually log each of their own orders (amount, km, accepted/rejected) while working in another app during a shift they started; stopped by the user via the notification Stop action or when the shift ends. It does not read the screen, capture content, or interact with other apps." />
         </service>
 
-        <!-- OPT-IN, deshabilitado por defecto: se habilita solo tras el consentimiento del rider (setNotificationAssist). -->
-        <service
-            android:name=".bubble.OrderNotificationListener"
-            android:enabled="false"
-            android:exported="true"
-            android:label="Labora+ · borrador de pedidos"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"

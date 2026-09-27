@@ -39,17 +39,7 @@ public final class OfferParser {
         return new Result(pickAmount(joined), pickKm(joined));
     }
 
-    static Double toNumber(String raw) {
-        if (raw == null) return null;
-        String value = raw.trim().replace(',', '.');
-        try {
-            double parsed = Double.parseDouble(value);
-            if (Double.isNaN(parsed) || Double.isInfinite(parsed) || parsed < 0) return null;
-            return Math.round(parsed * 100.0) / 100.0;
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
+    static Double toNumber(String raw) { return Decimals.parse(raw); }
 
     private static final class Hit {
         final double value; final int start;

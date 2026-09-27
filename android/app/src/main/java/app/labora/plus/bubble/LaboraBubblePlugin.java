@@ -1,10 +1,8 @@
 package app.labora.plus.bubble;
 
 import android.Manifest;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -50,11 +48,6 @@ public class LaboraBubblePlugin extends Plugin {
 
     private Context ctx() { return getContext().getApplicationContext(); }
 
-    private boolean listenerAccessGranted() {
-        return NotificationManagerCompat.getEnabledListenerPackages(ctx()).contains(ctx().getPackageName());
-    }
-
-    private ComponentName listenerComponent() { return new ComponentName(ctx(), OrderNotificationListener.class); }
 
     @PluginMethod
     public void getStatus(PluginCall call) {
@@ -63,11 +56,18 @@ public class LaboraBubblePlugin extends Plugin {
         r.put("overlayGranted", Settings.canDrawOverlays(ctx()));
         r.put("running", BubbleService.isRunning());
         r.put("notificationsGranted", NotificationManagerCompat.from(ctx()).areNotificationsEnabled());
-        boolean assist = false;
+        boolean supported = NotificationAssistBridge.isSupported();
+        boolean assist = false, glovo = false;
         int queued = 0;
-        try { assist = SecureStore.notificationAssist(ctx()); queued = SecureStore.queue(ctx()).size(); } catch (Exception ignored) {}
+        try {
+            queued = SecureStore.queue(ctx()).size();
+            if (supported) { assist = SecureStore.notificationAssist(ctx()); glovo = SecureStore.glovoAssist(ctx()); }
+        } catch (Exception ignored) {}
+        r.put("notificationAssistSupported", supported);
         r.put("notificationAssistEnabled", assist);
-        r.put("notificationAccessGranted", listenerAccessGranted());
+        r.put("glovoAssistEnabled", glovo);
+        r.put("notificationAccessGranted", supported && NotificationAssistBridge.isAccessGranted(ctx()));
+        r.put("inactivityMinutes", BubbleService.INACTIVITY_MS / 60000);
         r.put("queued", queued);
         call.resolve(r);
     }
@@ -82,18 +82,12 @@ public class LaboraBubblePlugin extends Plugin {
 
     @PluginMethod
     public void openNotificationAccessSettings(PluginCall call) {
-        Intent i;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            i = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS);
-            i.putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, listenerComponent().flattenToString());
-        } else {
-            i = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
-        }
+        Intent i = NotificationAssistBridge.settingsIntent(ctx());
+        if (i == null) { call.reject("not_supported"); return; }
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try { getContext().startActivity(i); }
         catch (Exception e) {
-            Intent fallback = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(fallback);
+            getContext().startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         }
         call.resolve();
     }
@@ -185,15 +179,29 @@ public class LaboraBubblePlugin extends Plugin {
         call.resolve();
     }
 
-    /** Consentimiento de lectura de notificaciones (opt-in). Activa/desactiva además el componente del listener. */
+    /** Consentimiento de lectura de notificaciones (solo flavour labs). Activa/desactiva además el componente del listener. */
     @PluginMethod
     public void setNotificationAssist(PluginCall call) {
+        if (!NotificationAssistBridge.isSupported()) { call.reject("not_supported"); return; }
         boolean enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
-        try { SecureStore.setNotificationAssist(ctx(), enabled); }
-        catch (Exception e) { call.reject("Almacén cifrado no disponible"); return; }
-        ctx().getPackageManager().setComponentEnabledSetting(listenerComponent(),
-            enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            PackageManager.DONT_KILL_APP);
+        try {
+            SecureStore.setNotificationAssist(ctx(), enabled);
+            if (!enabled) SecureStore.setGlovoAssist(ctx(), false);
+        } catch (Exception e) { call.reject("Almacén cifrado no disponible"); return; }
+        NotificationAssistBridge.setComponentEnabled(ctx(), enabled);
+        if (!enabled) DraftStore.clear(); // borrar borradores pendientes al revocar
+        call.resolve();
+    }
+
+    /** Glovo: apagado salvo activación explícita aparte (riesgo laboral para riders asalariados en España). */
+    @PluginMethod
+    public void setGlovoAssist(PluginCall call) {
+        if (!NotificationAssistBridge.isSupported()) { call.reject("not_supported"); return; }
+        boolean enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
+        try {
+            if (enabled && !SecureStore.notificationAssist(ctx())) { call.reject("assist_disabled"); return; }
+            SecureStore.setGlovoAssist(ctx(), enabled);
+        } catch (Exception e) { call.reject("Almacén cifrado no disponible"); return; }
         if (!enabled) DraftStore.clear();
         call.resolve();
     }

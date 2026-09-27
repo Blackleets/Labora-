@@ -94,6 +94,8 @@ public final class SecureStore {
     public static String lastPlatform(Context c) { return prefs(c).getString("last_platform", null); }
     public static void setNotificationAssist(Context c, boolean on) { prefs(c).edit().putBoolean("notif_assist", on).apply(); }
     public static boolean notificationAssist(Context c) { return prefs(c).getBoolean("notif_assist", false); }
+    public static void setGlovoAssist(Context c, boolean on) { prefs(c).edit().putBoolean("glovo_assist", on).apply(); }
+    public static boolean glovoAssist(Context c) { return prefs(c).getBoolean("glovo_assist", false); }
     public static void setBubbleX(Context c, int side, int y) { prefs(c).edit().putInt("bubble_side", side).putInt("bubble_y", y).apply(); }
     public static int bubbleSide(Context c) { return prefs(c).getInt("bubble_side", 1); }
     public static int bubbleY(Context c) { return prefs(c).getInt("bubble_y", 400); }

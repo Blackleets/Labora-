@@ -37,6 +37,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.RemoteInput;
 import androidx.core.app.ServiceCompat;
 
 import java.text.NumberFormat;
@@ -59,7 +60,10 @@ import app.labora.plus.MainActivity;
 public class BubbleService extends Service {
     public static final String ACTION_START = "app.labora.plus.bubble.START";
     public static final String ACTION_STOP = "app.labora.plus.bubble.STOP";
-    public static final String ACTION_OPEN_ACCEPTED = "app.labora.plus.bubble.OPEN_ACCEPTED";
+    public static final String ACTION_REPLY_ACCEPTED = "app.labora.plus.bubble.REPLY_ACCEPTED";
+    public static final String KEY_AMOUNT = "labora_amount";
+    /** Auto-parada tras este tiempo sin interacción (burbuja, panel o acciones de la notificación). */
+    public static final long INACTIVITY_MS = 30 * 60 * 1000L;
     public static final String ACTION_QUICK_REJECTED = "app.labora.plus.bubble.QUICK_REJECTED";
     public static final String ACTION_REFRESH = "app.labora.plus.bubble.REFRESH";
 
@@ -100,37 +104,59 @@ public class BubbleService extends Service {
         createChannel();
     }
 
+    private final Runnable idleStop = () -> {
+        toast("Burbuja parada tras 30 min sin uso. Vuelve a iniciarla desde Labora+.");
+        stopSelf();
+    };
+
+    /** Reinicia el temporizador de inactividad. */
+    private void touch() {
+        main.removeCallbacks(idleStop);
+        main.postDelayed(idleStop, INACTIVITY_MS);
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String action = intent == null ? ACTION_START : intent.getAction();
+        String action = intent == null ? null : intent.getAction();
         if (ACTION_STOP.equals(action)) {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-        startAsForeground();
-        if (!Settings.canDrawOverlays(this)) {
-            toast("Activa «Mostrar sobre otras apps» para Labora+ y vuelve a iniciar la burbuja.");
+            if (!running) safeStartForeground(); // cumplir el contrato de startForegroundService antes de parar
             stopSelf();
             return START_NOT_STICKY;
         }
         if (!running) {
-            running = true;
+            if (intent == null) { stopSelf(); return START_NOT_STICKY; } // nunca rearrancar solo en segundo plano
+            if (!Settings.canDrawOverlays(this)) {
+                safeStartForeground();
+                toast("Activa «Mostrar sobre otras apps» para Labora+ y vuelve a iniciar la burbuja.");
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+            // Android 15: con SYSTEM_ALERT_WINDOW solo se puede iniciar un FGS desde segundo plano si hay
+            // una ventana superpuesta VISIBLE. Primero la burbuja, después startForeground.
             showBubble();
+            if (!safeStartForeground()) {
+                removeBubble();
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+            running = true;
             registerNetwork();
             DraftStore.setListener(draft -> main.post(() -> { hasDraft = draft != null; renderBubble(); updateNotification(); }));
         }
-        if (ACTION_OPEN_ACCEPTED.equals(action)) main.post(() -> openPanel("accepted"));
+        if (ACTION_REPLY_ACCEPTED.equals(action)) handleReplyAccepted(intent);
         else if (ACTION_QUICK_REJECTED.equals(action)) quickRejected();
+        if (!ACTION_REFRESH.equals(action)) touch();
         refreshToday();
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     @Override
     public void onDestroy() {
         running = false;
+        main.removeCallbacks(idleStop);
         DraftStore.setListener(null);
         closePanel();
-        if (bubble != null) { try { wm.removeView(bubble); } catch (Exception ignored) {} bubble = null; }
+        removeBubble();
         if (netCallback != null) {
             try { ((ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE)).unregisterNetworkCallback(netCallback); } catch (Exception ignored) {}
         }
@@ -158,24 +184,63 @@ public class BubbleService extends Service {
         PendingIntent openPI = PendingIntent.getActivity(this, 1, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         String text = "Hoy: " + todayAccepted + " aceptados · " + money(todayEuros) + " · " + todayRejected + " rechazados";
         DraftStore.Draft d = DraftStore.get(System.currentTimeMillis());
-        if (d != null) text = "Borrador " + (d.platform == null ? "" : d.platform + ": ") + draftLabel(d) + " · toca «+ Aceptado» para revisarlo";
+        if (d != null) text = "Borrador " + (d.platform == null ? "" : d.platform + ": ") + draftLabel(d) + " · revísalo en la burbuja o con «+ Aceptado»";
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_input_add)
-            .setContentTitle("Labora+ · burbuja de pedidos activa")
+            .setContentTitle("Jornada activa · burbuja de pedidos")
             .setContentText(text)
             .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setContentIntent(openPI)
-            .addAction(0, "+ Aceptado", servicePI(ACTION_OPEN_ACCEPTED, 2))
+            .addAction(acceptedReplyAction(d))
             .addAction(0, "+ Rechazado", servicePI(ACTION_QUICK_REJECTED, 3))
-            .addAction(0, "Detener", servicePI(ACTION_STOP, 4))
+            .addAction(0, "Parar", servicePI(ACTION_STOP, 4))
             .build();
     }
 
-    private void startAsForeground() {
-        int type = Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0;
-        ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(), type);
+    // foregroundServiceType="specialUse" está en src/main/AndroidManifest.xml (verificado en el manifiesto fusionado de
+    // ambos flavours con aapt2). Lint da un falso positivo solo en «labs» porque ese flavour tiene su propio manifiesto.
+    @SuppressLint("ForegroundServiceType")
+    private boolean safeStartForeground() {
+        try {
+            int type = Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE : 0;
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(), type);
+            return true;
+        } catch (Exception e) {
+            // p. ej. ForegroundServiceStartNotAllowedException: no forzar nada; el rider la reinicia desde la app.
+            return false;
+        }
+    }
+
+    private void removeBubble() {
+        if (bubble != null) { try { wm.removeView(bubble); } catch (Exception ignored) {} bubble = null; }
+    }
+
+    /**
+     * «+ Aceptado» con respuesta en línea (importe) desde la propia notificación: funciona aunque la burbuja
+     * esté oculta (p. ej. si otra app usa HIDE_OVERLAY_WINDOWS). Si hay borrador, se ofrece su importe como sugerencia.
+     */
+    private NotificationCompat.Action acceptedReplyAction(DraftStore.Draft d) {
+        RemoteInput.Builder input = new RemoteInput.Builder(KEY_AMOUNT).setLabel("Importe (€), p. ej. 4,50");
+        if (d != null && d.amount != null) input.setChoices(new CharSequence[]{fmt(d.amount)});
+        Intent i = new Intent(this, BubbleService.class).setAction(ACTION_REPLY_ACCEPTED);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
+        PendingIntent pi = PendingIntent.getService(this, 2, i, flags);
+        return new NotificationCompat.Action.Builder(0, "+ Aceptado", pi).addRemoteInput(input.build()).setAllowGeneratedReplies(false).build();
+    }
+
+    private void handleReplyAccepted(Intent intent) {
+        android.os.Bundle results = RemoteInput.getResultsFromIntent(intent);
+        CharSequence typed = results == null ? null : results.getCharSequence(KEY_AMOUNT);
+        Double amount = Decimals.parse(typed == null ? null : typed.toString());
+        SecureStore.Session s = SecureStore.session(this);
+        String platform = SecureStore.lastPlatform(this);
+        if (platform == null) { String[] all = SecureStore.platforms(this).split("\\|"); platform = all.length > 0 ? all[0] : null; }
+        if (amount == null || amount <= 0) { toast("Importe no válido. Escribe, por ejemplo, 4,50."); updateNotification(); return; }
+        if (s == null || s.userId == null || platform == null) { toast("Abre Labora+ e inicia sesión para usar la burbuja."); updateNotification(); return; }
+        saveOrder(PendingOrder.create(s.userId, platform, nowIso(), "accepted", amount, null, null));
+        DraftStore.clear();
     }
 
     private void updateNotification() {
@@ -213,6 +278,7 @@ public class BubbleService extends Service {
             @Override public boolean onTouch(View v, MotionEvent e) {
                 switch (e.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
+                        touch();
                         downX = e.getRawX(); downY = e.getRawY(); startX = bubbleParams.x; startY = bubbleParams.y; moved = false; return true;
                     case MotionEvent.ACTION_MOVE:
                         int dx = (int) (e.getRawX() - downX), dy = (int) (e.getRawY() - downY);
@@ -308,6 +374,7 @@ public class BubbleService extends Service {
 
     private void openPanel(String presetStatus) {
         if (panel != null) return;
+        touch();
         final String[] platform = {SecureStore.lastPlatform(this)};
         final String[] status = {presetStatus == null ? "accepted" : presetStatus};
         final String[] reason = {null};
@@ -439,8 +506,8 @@ public class BubbleService extends Service {
         root.addView(privacy);
 
         save.setOnClickListener(v -> {
-            Double amt = OfferParser.toNumber(amount.getText().toString());
-            Double kms = OfferParser.toNumber(km.getText().toString());
+            Double amt = Decimals.parse(amount.getText().toString());
+            Double kms = Decimals.parse(km.getText().toString());
             if (amount.getText().toString().trim().length() > 0 && amt == null) { showError(error, "Importe no válido."); return; }
             if (km.getText().toString().trim().length() > 0 && kms == null) { showError(error, "Km no válidos."); return; }
             SecureStore.Session s = SecureStore.session(this);
@@ -495,6 +562,7 @@ public class BubbleService extends Service {
     }
 
     private void saveOrder(PendingOrder order) {
+        touch();
         SecureStore.setLastPlatform(this, order.platform);
         if ("accepted".equals(order.status)) { todayAccepted++; todayEuros += order.amount == null ? 0 : order.amount; } else todayRejected++;
         renderBubble();
