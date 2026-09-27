@@ -72,7 +72,7 @@ export const listRecentWorkSessions = async (limit = 14): Promise<WorkSession[]>
 };
 
 /** Jornadas que empezaron desde `sinceIso` (incluido), más recientes primero. */
-export const listWorkSessionsSince = async (sinceIso: string, limit = 1000): Promise<WorkSession[]> => {
+export const listWorkSessionsSince = async (sinceIso: string, limit = 2000): Promise<WorkSession[]> => {
   const user = await requireUser();
   const { data, error } = await supabase
     .from('work_sessions')
@@ -84,4 +84,18 @@ export const listWorkSessionsSince = async (sinceIso: string, limit = 1000): Pro
 
   if (error) throw error;
   return (data || []).map(rowToWorkSession);
+};
+
+/** Corrige el cuentakilómetros (inicio/fin) de una jornada propia. Null = sin dato. */
+export const setWorkSessionOdometer = async (sessionId: string, startOdometerKm: number | null, endOdometerKm: number | null): Promise<WorkSession> => {
+  await requireUser();
+  const { data, error } = await supabase.rpc('set_work_session_odometer', {
+    p_session_id: sessionId,
+    p_start_odometer_km: startOdometerKm,
+    p_end_odometer_km: endOdometerKm
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('No se pudo guardar el cuentakilómetros.');
+  return rowToWorkSession(row);
 };

@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRightLeft, CalendarDays, Clock3, Download, Loader2, Lock, Pencil, Play, Plus, Square, Trash2, X } from 'lucide-react';
+import { ArrowRightLeft, CalendarDays, Clock3, Download, Loader2, Lock, Pencil, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useCountry } from '../../contexts/CountryContext';
 import { GLOBAL_INTEGRATION_CATALOG } from '../../modules/integrations/data/catalog';
 import { finishWorkSession, getActiveWorkSession, listWorkSessionsSince, startWorkSession } from '../../services/workSessionService';
 import { addDaysKey, dayStartMs, weekSummary } from '../../services/orderAnalytics';
 import { downloadCsv } from '../../services/quarterExport';
+import { validateOdometer } from '../../services/shiftLog';
 import {
   ConversionGroup,
   DEFAULT_ORDER_PLATFORMS,
@@ -24,6 +25,7 @@ import {
   orderCsvRows,
   ordersInMonth,
   ordersOnDay,
+  parseDecimalInput,
   planIncomeConversion,
   rejectReasonCounts,
   settlementOverlaps,
@@ -38,6 +40,8 @@ import { FieldLabel, formControlFocusClass } from '../formA11y';
 import { GoalEditor } from './GoalEditor';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { ANALYTICS_MAX_WEEKS, OrderAnalyticsPanel } from './OrderAnalyticsPanel';
+import { Dialog } from './OrderDialog';
+import { ShiftsMileagePanel } from './ShiftsMileagePanel';
 import { OrderBars } from './OrderBars';
 import { OrderForm } from './OrderForm';
 import { useOrderModule } from './useOrderModule';
@@ -51,11 +55,12 @@ const monthStartIso = (monthKey: string) => {
   return new Date(year, month - 1, 1).toISOString();
 };
 
-type OrdersTab = 'today' | 'analytics' | 'month';
+type OrdersTab = 'today' | 'analytics' | 'month' | 'shifts';
 const TABS: Array<{ id: OrdersTab; label: string }> = [
   { id: 'today', label: 'Hoy' },
   { id: 'analytics', label: 'Análisis' },
-  { id: 'month', label: 'Mes' }
+  { id: 'month', label: 'Mes' },
+  { id: 'shifts', label: 'Jornadas y km' }
 ];
 
 /** Inicio del periodo de análisis más largo (lunes de hace 11 semanas). */
@@ -67,7 +72,8 @@ const pctLabel = (value: number | null) => (value === null ? '—' : `${Math.rou
 export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ setView }) => {
   const { currentUser, expenses, incomes, addIncomes, privacyMode, showNotification } = useData();
   const { selectedCountry } = useCountry();
-  const { enabled, ready, dailyGoal, weeklyGoal, save } = useOrderModule();
+  const { enabled, ready, dailyGoal, weeklyGoal, vehicleCostPerKm, save } = useOrderModule();
+  const [odometerDraft, setOdometerDraft] = useState('');
   const [tab, setTab] = useState<OrdersTab>('today');
   const [orders, setOrders] = useState<OrderLogEntry[]>([]);
   const [loadedSince, setLoadedSince] = useState<string | null>(null);
@@ -218,18 +224,28 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
   };
 
   const toggleShift = async () => {
+    const odometer = parseDecimalInput(odometerDraft);
+    const odometerError = activeSession
+      ? validateOdometer(activeSession.startOdometerKm, odometer, false)
+      : validateOdometer(odometer, undefined, false);
+    if (odometerError) {
+      showNotification('error', odometerError);
+      return;
+    }
     setShiftBusy(true);
     try {
       if (activeSession) {
-        const finished = await finishWorkSession(activeSession.id);
+        const finished = await finishWorkSession(activeSession.id, odometer);
         setActiveSession(null);
         setSessions((previous) => [finished, ...previous.filter((session) => session.id !== finished.id)]);
+        setOdometerDraft('');
         showNotification('success', 'Jornada terminada.');
         void bubbleOnShiftChange(userId, false, platformOptions);
       } else {
-        const started = await startWorkSession();
+        const started = await startWorkSession(odometer);
         setActiveSession(started);
         setSessions((previous) => [started, ...previous]);
+        setOdometerDraft('');
         showNotification('success', 'Jornada iniciada.');
         const bubbleWarning = await bubbleOnShiftChange(userId, true, platformOptions);
         if (bubbleWarning) showNotification('info', bubbleWarning);
@@ -306,7 +322,7 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
             aria-selected={tab === item.id}
             aria-controls={`labora-orders-panel-${item.id}`}
             onClick={() => setTab(item.id)}
-            className={`min-h-11 flex-1 rounded-[12px] px-3 text-sm font-extrabold ${tab === item.id ? 'bg-[var(--labora-primary)] text-white' : 'text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]'} ${formControlFocusClass}`}
+            className={`min-h-11 flex-1 rounded-[12px] px-1.5 text-xs font-extrabold leading-tight sm:px-3 sm:text-sm ${tab === item.id ? 'bg-[var(--labora-primary)] text-white' : 'text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]'} ${formControlFocusClass}`}
           >
             {item.label}
           </button>
@@ -352,6 +368,11 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
             {shiftBusy ? <Loader2 size={16} className="animate-spin" aria-hidden /> : activeSession ? <Square size={15} aria-hidden /> : <Play size={16} aria-hidden />}
             {activeSession ? 'Terminar jornada' : 'Iniciar jornada'}
           </button>
+        </div>
+        <div className="mt-3 max-w-xs">
+          <FieldLabel htmlFor="labora-shift-odometer">{activeSession ? 'Cuentakilómetros al terminar (opcional)' : 'Cuentakilómetros al empezar (opcional)'}</FieldLabel>
+          <input id="labora-shift-odometer" inputMode="decimal" placeholder="km" value={odometerDraft} onChange={(event) => setOdometerDraft(event.target.value)} className={`min-h-11 w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 text-sm font-bold text-[var(--labora-ink)] ${formControlFocusClass}`} />
+          {activeSession?.startOdometerKm !== undefined && <p className="mt-1 text-[10px] text-[var(--labora-muted)]">Al empezar: {activeSession.startOdometerKm.toLocaleString('es-ES')} km</p>}
         </div>
       </section>
 
@@ -415,6 +436,25 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
           {loading && !orders.length
             ? <p className="labora-card p-6 text-center text-xs text-[var(--labora-muted)]" role="status">Cargando pedidos…</p>
             : <OrderAnalyticsPanel orders={orders} sessions={allSessions} todayKey={todayKey} nowMs={nowMs} formatMoney={formatMoney} currencySymbol={currencySymbol} />}
+        </div>
+      )}
+
+      {tab === 'shifts' && (
+        <div id="labora-orders-panel-shifts" role="tabpanel" aria-labelledby="labora-orders-tab-shifts">
+          <ShiftsMileagePanel
+            sessions={allSessions}
+            orders={orders}
+            nowMs={nowMs}
+            formatMoney={formatMoney}
+            currencySymbol={currencySymbol}
+            vehicleCostPerKm={vehicleCostPerKm}
+            onSaveCost={(value) => save({ ordersEnabled: true, vehicleCostPerKm: value })}
+            onSessionUpdated={(updated) => {
+              setSessions((previous) => previous.map((session) => (session.id === updated.id ? updated : session)));
+              setActiveSession((previous) => (previous && previous.id === updated.id ? updated : previous));
+            }}
+            notify={showNotification}
+          />
         </div>
       )}
 
@@ -579,22 +619,3 @@ const Metric = ({ label, value, emphasis = false }: { label: string; value: stri
     <p className={`mt-1 truncate text-sm font-extrabold ${emphasis ? 'text-[var(--labora-primary)]' : 'text-[var(--labora-ink)]'}`}>{value}</p>
   </div>
 );
-
-const Dialog: React.FC<{ title: string; onClose: () => void; children: React.ReactNode }> = ({ title, onClose, children }) => {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={onClose}>
-      <div role="dialog" aria-modal="true" aria-label={title} className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-[22px] bg-[var(--labora-surface)] p-5 shadow-xl sm:rounded-[22px]" onClick={(event) => event.stopPropagation()}>
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-extrabold text-[var(--labora-ink)]">{title}</h3>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className={`flex h-11 w-11 items-center justify-center rounded-[12px] text-[var(--labora-muted)] ${formControlFocusClass}`}><X size={18} aria-hidden /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-};

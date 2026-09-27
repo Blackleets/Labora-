@@ -16,7 +16,7 @@ automatiza cuentas de Uber/Glovo/Just Eat. La lectura de notificaciones existe *
 - Alta rápida: chips grandes de plataforma (tu actividad + Uber Eats / Glovo / Just Eat + «Otra…»), «Repetir última», Aceptado/Rechazado, importe, motivo de rechazo (Muy lejos · Paga poco · Zona · Otro), km/nota/hora opcionales (hora = ahora, editable).
 - **Jornada** (reutiliza `work_sessions`): Iniciar/Terminar → €/hora. Sin GPS.
 - **Hoy**: aceptados, rechazados, % aceptación, € ganado (solo aceptados), km, €/km, €/hora, gastos de hoy (de Gastos) y **neto estimado antes de impuestos**.
-- Pestañas **Hoy · Análisis · Mes**.
+- Pestañas **Hoy · Análisis · Mes · Jornadas y km**.
 - **Objetivo diario** y **objetivo semanal** (lunes-domingo, columna `orders_weekly_goal`) opcionales con barra de progreso.
 - **Esta semana**: ganado, pedidos, horas de jornada, €/h, €/km y % aceptación, comparados con la semana pasada *hasta el mismo día y hora*; total de la semana pasada completa.
 - **Análisis** (4/8/12 semanas, `services/orderAnalytics.ts`): mejores horas y días por €/h y €/km, barras por hora del día y día de la semana (€/h · €/km · pedidos), % de aceptación por semana, motivos de rechazo y comparativa de plataformas (% aceptación, €/pedido, €/km, peso en lo ganado).
@@ -24,6 +24,11 @@ automatiza cuentas de Uber/Glovo/Just Eat. La lectura de notificaciones existe *
   - Aproximación declarada en la UI: cada pedido cuenta en la hora en que se apuntó; las horas salen de `work_sessions` cortadas por hora local.
   - €/km solo con pedidos que tienen km. Sin €/h por plataforma (la jornada no va ligada a una plataforma).
 - Gráficos: últimos 7 días / últimas 6 semanas.
+- **Jornadas y km** (`services/shiftLog.ts`):
+  - Historial de jornadas (12 semanas): duración, pedidos apuntados durante la jornada, €, €/h (solo si dura ≥15 min), km del cuentakilómetros o de pedidos.
+  - Cuentakilómetros opcional al iniciar/terminar la jornada y corrección posterior con la RPC owner-only `set_work_session_odometer` (misma pauta private/SECURITY DEFINER que start/finish).
+  - Registro de km por mes y año: cuentakilómetros si hay lecturas ese mes; si no, km de pedidos (marcado con *). CSV anual de km y CSV de jornadas.
+  - **Coste por km = estimación del propio rider** (`vehicle_cost_per_km`, 0–10). Labora+ no propone cifra ni tarifa oficial, ni dice si es deducible.
 - **Mes**: totales, por plataforma, por día (con rechazados y motivos), editar/borrar (solo propietario), **CSV** (helpers anti-fórmulas de #36).
 - **Pasar a ingresos** (día o mes): un ingreso por día+plataforma (`sourceType=manual`, `needsReview=true`), pedidos marcados con `converted_income_id` para no contar dos veces. Aviso si ya hay liquidación importada ese mes; comparación «apuntado vs. liquidado» por plataforma.
 
