@@ -26,6 +26,7 @@ import { PeopleHub } from './modules/core/hubs/PeopleHub';
 import { SettingsHub } from './modules/core/hubs/SettingsHub';
 import { IntegrationCatalog } from './modules/integrations/components/IntegrationCatalog';
 import { MessagesHub } from './modules/messages/components/MessagesHub';
+import { OrderLogView } from './components/orders/OrderLogView';
 
 const MainLayout: React.FC = () => {
   const {
@@ -66,7 +67,8 @@ const MainLayout: React.FC = () => {
       messages: 'Mensajes',
       settings: 'Perfil y ajustes',
       profile: 'Mi perfil',
-      docs: 'Documentos'
+      docs: 'Documentos',
+      orders: 'Registro de pedidos'
     };
     return titles[currentView] || 'Labora+';
   };
@@ -86,6 +88,7 @@ const MainLayout: React.FC = () => {
       case 'settings': return <SettingsHub />;
       case 'profile': return <Profile />;
       case 'docs': return <MoneyHub initialTab="docs" setView={setView} />;
+      case 'orders': return isManager ? <ManagerDashboard setView={setView} /> : <OrderLogView setView={setView} />;
       default: return isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
     }
   };

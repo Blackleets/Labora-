@@ -47,7 +47,7 @@ interface DataContextType {
   updateUserConfig: (platforms: string[], banks: string[]) => void;
   updateUserFiscalProfile: (profileData: Partial<User>) => void;
   addIncome: (income: Omit<Income, 'id' | 'userId'>) => void;
-  addIncomes: (incomes: Omit<Income, 'id' | 'userId'>[]) => void;
+  addIncomes: (incomes: Omit<Income, 'id' | 'userId'>[]) => Income[];
   addExpense: (expense: Omit<Expense, 'id' | 'userId'>) => void;
   addExpenses: (expenses: Omit<Expense, 'id' | 'userId'>[]) => void;
   updateExpense: (expense: Expense) => void;
@@ -360,8 +360,8 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     showNotification('success', 'Ingreso registrado.');
   };
 
-  const addIncomes = (items: Omit<Income, 'id' | 'userId'>[]) => {
-    if (!currentUser) return;
+  const addIncomes = (items: Omit<Income, 'id' | 'userId'>[]): Income[] => {
+    if (!currentUser) return [];
     const newItems = items.map((income) => ({
       ...income,
       id: createId('income'),
@@ -371,6 +371,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }));
     setIncomes((previous) => [...newItems, ...previous]);
     showNotification('success', `${newItems.length} ingresos importados.`);
+    return newItems;
   };
 
   const addExpense = (expense: Omit<Expense, 'id' | 'userId'>) => {
