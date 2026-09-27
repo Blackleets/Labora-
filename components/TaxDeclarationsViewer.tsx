@@ -9,6 +9,7 @@ import {
 import { useData } from '../contexts/DataContext';
 import { TaxDeclaration, UserRole } from '../types';
 import { FieldLabel, FormError, fieldErrorA11y, formControlFocusClass } from './formA11y';
+import { buildExpenseRows, buildIncomeRows, downloadCsv, quarterExportFilename } from '../services/quarterExport';
 
 interface TaxDeclarationsViewerProps {
   setView?: (view: string) => void;
@@ -18,19 +19,6 @@ interface TaxDeclarationsViewerProps {
 const currentQuarterLabel = () => {
   const now = new Date();
   return `${Math.floor(now.getMonth() / 3) + 1}T ${now.getFullYear()}`;
-};
-
-const dateInQuarter = (date: string, quarter: string) => {
-  const match = quarter.match(/^([1-4])T\s+(\d{4})$/i);
-  if (!match) return false;
-
-  const parsed = new Date(`${date}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return false;
-
-  const expectedQuarter = Number(match[1]);
-  const expectedYear = Number(match[2]);
-  const actualQuarter = Math.floor(parsed.getMonth() / 3) + 1;
-  return parsed.getFullYear() === expectedYear && actualQuarter === expectedQuarter;
 };
 
 export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ userId }) => {
@@ -153,47 +141,13 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
     setFilingError('');
   };
 
-  const downloadCsv = (filename: string, rows: Array<Array<string | number>>) => {
-    const content = rows
-      .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(';'))
-      .join('\n');
-    const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  };
-
   const exportExpenses = () => {
-    const rows: Array<Array<string | number>> = [
-      ['Fecha', 'Categoría', 'Proveedor', 'Importe', 'IVA', 'Deducibilidad', 'Estado'],
-      ...userExpenses.filter((expense) => dateInQuarter(expense.date, selectedQuarter)).map((expense) => [
-        expense.date,
-        String(expense.category),
-        expense.merchant || '',
-        expense.amount.toFixed(2),
-        (expense.vatAmount || 0).toFixed(2),
-        `${expense.deductiblePercentage ?? 0}%`,
-        expense.status || 'pending_review'
-      ])
-    ];
-    downloadCsv(`labora_gastos_${selectedQuarter.replace(/\s/g, '_')}.csv`, rows);
+    downloadCsv(quarterExportFilename('gastos', selectedQuarter, effectiveUser?.name), buildExpenseRows(userExpenses, selectedQuarter));
     showNotification('success', 'Archivo de gastos descargado.');
   };
 
   const exportIncomes = () => {
-    const rows: Array<Array<string | number>> = [
-      ['Fecha', 'Plataforma', 'Importe', 'Retención'],
-      ...userIncomes.filter((income) => dateInQuarter(income.date, selectedQuarter)).map((income) => [
-        income.date,
-        income.platform,
-        income.amount.toFixed(2),
-        income.retention.toFixed(2)
-      ])
-    ];
-    downloadCsv(`labora_ingresos_${selectedQuarter.replace(/\s/g, '_')}.csv`, rows);
+    downloadCsv(quarterExportFilename('ingresos', selectedQuarter, effectiveUser?.name), buildIncomeRows(userIncomes, selectedQuarter));
     showNotification('success', 'Archivo de ingresos descargado.');
   };
 

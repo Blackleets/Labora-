@@ -1,6 +1,6 @@
 # Labora+ — handoff para el siguiente agente
 
-**Fecha:** 2026-09-20 (Europe/Paris)  
+**Fecha:** 2026-09-27 (Europe/Paris) · anterior 2026-09-20  
 **Repo:** `Blackleets/Labora-` · tip `main` (verificar `git log -1`)  
 **Producto live:** https://blackleets.github.io/Labora-/  
 **Supabase:** `gggtriyvbusbpqohoukv`  
@@ -17,6 +17,7 @@ Solo producto real. Fácil para autónomo y gestoría. Fail-closed: sin Open Ban
 - Dark mode tokens, logos Simple Icons embebidos, legales con `BASE_URL`
 - Mensajería + offline fail-closed; a11y forms; Pages desde `main` (`/Labora-/`)
 - Docs: `GAPS.md`, `HOW_TO_TEST_AUTONOMO_GESTORIA.md`, `IMPLEMENTATION_CHECKLIST.md`, `RLS_ADVISORS.md`, `AUTH_HIBP.md`, `UAT_DUAL_ACCOUNT.md`
+- **2026-09-27:** export CSV trimestral por cliente (gestoría), tarjeta plazos AEAT 130/303 (tabla oficial 2026, 4T 2026 pendiente), filtros en Gastos/Ingresos, trimestre + estado en Auditoría del gestor, fix hooks Dashboard
 - CI: GitHub Actions build + edge-functions
 - Billing: `VITE_BILLING_ENABLED=false`
 
@@ -27,6 +28,14 @@ Solo producto real. Fácil para autónomo y gestoría. Fail-closed: sin Open Ban
 4. Stripe secrets + Price IDs
 5. Auth HIBP (dashboard; advisors solo WARN leaked passwords)
 6. Open Banking PSD2 + OAuth Uber (contratos) — Glovo sin API pública equivalente
+
+## PR #35 (draft, Blackleets)
+Rediseño móvil + migraciones tombstones. **No tocar ni fusionar** hasta UAT dual real; tocará `Dashboard.tsx` (conflicto trivial: una línea `<FiscalDeadlineCard />` + fix de hooks).
+
+## Próximas ideas (agent-safe)
+- Subida múltiple de tickets (dedupe por hash ya existe)
+- Versión PDF del pack trimestral
+- Añadir 4T 2026 cuando la AEAT publique el calendario 2027
 
 ## Cómo seguir
 1. `git pull` main; leer `docs/GAPS.md` + este handoff

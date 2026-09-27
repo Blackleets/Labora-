@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Bell,
+  Download,
   ChevronRight,
   Eye,
   FileText,
@@ -16,6 +17,10 @@ import { useData } from '../contexts/DataContext';
 import AtmosphericPanel from './AtmosphericPanel';
 import { useCountry } from '../contexts/CountryContext';
 import { Expense, UserRole } from '../types';
+import { FiscalDeadlineCard } from './FiscalDeadlineCard';
+import { buildQuarterPackRows, dateInQuarter, downloadCsv, quarterExportFilename, quarterOptionsFor } from '../services/quarterExport';
+import { EXPENSE_STATUS_FILTER_OPTIONS, ExpenseStatusFilter, expenseMatches, sortByDateDesc } from '../services/moneyFilters';
+import { formControlFocusClass } from './formA11y';
 
 interface ManagerDashboardProps {
   setView?: (view: string) => void;
@@ -52,6 +57,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   const [selectedClientId, setSelectedClientId] = useState('');
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<Tab>('audit');
+  const [selectedQuarter, setSelectedQuarter] = useState(quarter);
+  const [auditStatus, setAuditStatus] = useState<ExpenseStatusFilter>('to_review');
   const [reviewingExpense, setReviewingExpense] = useState<Expense | null>(null);
   const [reviewPct, setReviewPct] = useState('100');
   const [reviewNote, setReviewNote] = useState('');
@@ -76,10 +83,28 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   const linkedRequirements = requirements.filter(
     (requirement) => requirement.managerId === currentUser?.id && clientIds.has(requirement.riderId)
   );
-  const clientExpenses = linkedExpenses.filter((expense) => expense.userId === selectedClient?.id);
-  const clientIncomes = incomes.filter(
+  // Todo lo del cliente activo (para exportar) y lo del trimestre seleccionado (totales y auditoría).
+  const clientAllExpenses = linkedExpenses.filter((expense) => expense.userId === selectedClient?.id);
+  const clientAllIncomes = incomes.filter(
     (income) => income.userId === selectedClient?.id && clientIds.has(income.userId)
   );
+  const clientExpenses = clientAllExpenses.filter((expense) => dateInQuarter(expense.date, selectedQuarter));
+  const clientIncomes = clientAllIncomes.filter((income) => dateInQuarter(income.date, selectedQuarter));
+  const auditExpenses = sortByDateDesc<Expense>(clientExpenses.filter((expense) => expenseMatches(expense, { status: auditStatus })));
+  const quarterOptions = quarterOptionsFor([...clientAllExpenses, ...clientAllIncomes].map((row) => row.date));
+
+  const exportClientQuarter = () => {
+    if (!selectedClient) return;
+    const rows = buildQuarterPackRows(
+      { name: selectedClient.name, nif: selectedClient.nif, email: selectedClient.email },
+      selectedQuarter,
+      clientAllExpenses,
+      clientAllIncomes,
+      new Date()
+    );
+    downloadCsv(quarterExportFilename('trimestre', selectedQuarter, selectedClient.name), rows);
+    showNotification('success', `Exportación ${selectedQuarter} de ${selectedClient.name} descargada.`);
+  };
   const clientRequirements = linkedRequirements.filter(
     (requirement) => requirement.riderId === selectedClient?.id
   );
@@ -169,7 +194,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
     setReviewingExpense(null);
   };
 
-  const taxModels = selectedClient ? calculateQuarterlyTaxes(selectedClient.id, quarter) : null;
+  const taxModels = selectedClient ? calculateQuarterlyTaxes(selectedClient.id, selectedQuarter) : null;
   const managerName = currentUser?.companyName || currentUser?.name || 'Gestoría';
 
   return (
@@ -215,6 +240,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
           </div>
         </div>
       </section>
+
+      <FiscalDeadlineCard audience="manager" />
 
       {clients.length === 0 ? (
         <section className="labora-card border-dashed px-6 py-14 text-center">
@@ -340,9 +367,30 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
                     </div>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-3 gap-2.5">
-                    <SummaryBox label="Ingresos" value={formatMoney(totalIncome)} />
-                    <SummaryBox label="Gastos reales" value={formatMoney(cashExpenses)} />
+                  <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="labora-manager-quarter" className="text-[11px] font-extrabold text-[var(--labora-muted)]">Trimestre</label>
+                      <select
+                        id="labora-manager-quarter"
+                        value={selectedQuarter}
+                        onChange={(event) => setSelectedQuarter(event.target.value)}
+                        className={`min-h-10 rounded-[12px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-3 text-xs font-bold text-[var(--labora-ink-soft)] outline-none ${formControlFocusClass}`}
+                      >
+                        {quarterOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={exportClientQuarter}
+                      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-[12px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3.5 text-xs font-extrabold text-[var(--labora-primary)] hover:bg-[var(--labora-moss-soft)] ${formControlFocusClass}`}
+                    >
+                      <Download size={14} aria-hidden /> Exportar trimestre (CSV)
+                    </button>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-3 gap-2.5">
+                    <SummaryBox label={`Ingresos ${selectedQuarter}`} value={formatMoney(totalIncome)} />
+                    <SummaryBox label={`Gastos ${selectedQuarter}`} value={formatMoney(cashExpenses)} />
                     <SummaryBox label="Neto operativo" value={formatMoney(netOperating)} emphasis />
                   </div>
                 </section>
@@ -356,9 +404,21 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 
                   {tab === 'audit' && (
                     <div className="divide-y divide-[var(--labora-border)]">
-                      {clientExpenses.length === 0 ? (
-                        <EmptyState text="No hay gastos registrados para este cliente." />
-                      ) : clientExpenses.map((expense) => {
+                      <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-5">
+                        <label htmlFor="labora-manager-audit-status" className="text-[11px] font-extrabold text-[var(--labora-muted)]">Estado</label>
+                        <select
+                          id="labora-manager-audit-status"
+                          value={auditStatus}
+                          onChange={(event) => setAuditStatus(event.target.value as ExpenseStatusFilter)}
+                          className={`min-h-10 rounded-[12px] border border-[var(--labora-border)] bg-[var(--labora-surface-2)] px-3 text-xs font-bold text-[var(--labora-ink-soft)] outline-none ${formControlFocusClass}`}
+                        >
+                          {EXPENSE_STATUS_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                        <span className="text-[11px] font-medium text-[var(--labora-muted)]" aria-live="polite">{auditExpenses.length} de {clientExpenses.length} gastos en {selectedQuarter}</span>
+                      </div>
+                      {auditExpenses.length === 0 ? (
+                        <EmptyState text={clientExpenses.length === 0 ? `No hay gastos registrados en ${selectedQuarter} para este cliente.` : 'Ningún gasto de este trimestre coincide con el estado elegido.'} />
+                      ) : auditExpenses.map((expense) => {
                         const status = getExpenseStatus(expense);
                         return (
                           <div key={expense.id} className="p-4 sm:p-5">
