@@ -21,8 +21,9 @@ export const useOrderModule = () => {
     enabled: Boolean(isRider && ready && store.ordersEnabled),
     dailyGoal: store.dailyGoal,
     weeklyGoal: store.weeklyGoal,
+    vehicleCostPerKm: store.vehicleCostPerKm,
     error: store.error,
-    save: (next: Partial<{ ordersEnabled: boolean; dailyGoal: number | null; weeklyGoal: number | null }>) =>
+    save: (next: Partial<{ ordersEnabled: boolean; dailyGoal: number | null; weeklyGoal: number | null; vehicleCostPerKm: number | null }>) =>
       currentUser ? store.save(currentUser.id, next) : Promise.resolve()
   };
 };

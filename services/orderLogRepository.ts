@@ -10,13 +10,16 @@ export interface OrderModuleSettings {
   dailyGoal: number | null;
   /** Objetivo semanal (lunes-domingo) que fija el propio rider. */
   weeklyGoal: number | null;
+  /** Coste por km del vehículo que estima el propio rider. No es una tarifa oficial. */
+  vehicleCostPerKm: number | null;
 }
 
-const SETTINGS_COLUMNS = 'orders_enabled, orders_daily_goal, orders_weekly_goal';
+const SETTINGS_COLUMNS = 'orders_enabled, orders_daily_goal, orders_weekly_goal, vehicle_cost_per_km';
 const rowToSettings = (data: any): OrderModuleSettings => ({
   ordersEnabled: Boolean(data?.orders_enabled),
   dailyGoal: data?.orders_daily_goal == null ? null : Number(data.orders_daily_goal),
-  weeklyGoal: data?.orders_weekly_goal == null ? null : Number(data.orders_weekly_goal)
+  weeklyGoal: data?.orders_weekly_goal == null ? null : Number(data.orders_weekly_goal),
+  vehicleCostPerKm: data?.vehicle_cost_per_km == null ? null : Number(data.vehicle_cost_per_km)
 });
 
 const num = (value: unknown) => (value === null || value === undefined ? undefined : Number(value));
@@ -71,7 +74,8 @@ export const saveOrderModuleSettings = async (settings: OrderModuleSettings): Pr
       user_id: userId,
       orders_enabled: settings.ordersEnabled,
       orders_daily_goal: settings.dailyGoal,
-      orders_weekly_goal: settings.weeklyGoal
+      orders_weekly_goal: settings.weeklyGoal,
+      vehicle_cost_per_km: settings.vehicleCostPerKm
     }, { onConflict: 'user_id' })
     .select(SETTINGS_COLUMNS)
     .single();
@@ -91,6 +95,27 @@ export const listOrders = async (sinceIso: string): Promise<OrderLogEntry[]> => 
     .limit(5000);
   if (error) throw error;
   return (data || []).map(rowToOrder);
+};
+
+/** Pedidos en [fromIso, toIso) paginados (sin límite de 5000), para el registro anual de km. */
+export const listOrdersBetween = async (fromIso: string, toIso: string): Promise<OrderLogEntry[]> => {
+  const userId = await requireUserId();
+  const pageSize = 1000;
+  const rows: OrderLogEntry[] = [];
+  for (let page = 0; page < 50; page += 1) {
+    const { data, error } = await supabase
+      .from('delivery_orders')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('occurred_at', fromIso)
+      .lt('occurred_at', toIso)
+      .order('occurred_at', { ascending: true })
+      .range(page * pageSize, page * pageSize + pageSize - 1);
+    if (error) throw error;
+    rows.push(...(data || []).map(rowToOrder));
+    if (!data || data.length < pageSize) break;
+  }
+  return rows;
 };
 
 export const insertOrder = async (input: OrderInput): Promise<OrderLogEntry> => {

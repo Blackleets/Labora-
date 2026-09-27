@@ -16,6 +16,7 @@ export const useOrderModuleStore = create<OrderModuleState>((set, get) => ({
   ordersEnabled: false,
   dailyGoal: null,
   weeklyGoal: null,
+  vehicleCostPerKm: null,
   loadedFor: null,
   loading: false,
   error: null,
@@ -27,7 +28,7 @@ export const useOrderModuleStore = create<OrderModuleState>((set, get) => ({
       set({ ...settings, loadedFor: userId, loading: false });
     } catch (error) {
       // Fail-closed: si no se puede leer, el módulo queda oculto.
-      set({ ordersEnabled: false, dailyGoal: null, weeklyGoal: null, loadedFor: userId, loading: false, error: error instanceof Error ? error.message : 'No se pudo leer la configuración.' });
+      set({ ordersEnabled: false, dailyGoal: null, weeklyGoal: null, vehicleCostPerKm: null, loadedFor: userId, loading: false, error: error instanceof Error ? error.message : 'No se pudo leer la configuración.' });
     }
   },
   save: async (userId, next) => {
@@ -35,9 +36,10 @@ export const useOrderModuleStore = create<OrderModuleState>((set, get) => ({
     const saved = await saveOrderModuleSettings({
       ordersEnabled: next.ordersEnabled ?? current.ordersEnabled,
       dailyGoal: next.dailyGoal !== undefined ? next.dailyGoal : current.dailyGoal,
-      weeklyGoal: next.weeklyGoal !== undefined ? next.weeklyGoal : current.weeklyGoal
+      weeklyGoal: next.weeklyGoal !== undefined ? next.weeklyGoal : current.weeklyGoal,
+      vehicleCostPerKm: next.vehicleCostPerKm !== undefined ? next.vehicleCostPerKm : current.vehicleCostPerKm
     });
     set({ ...saved, loadedFor: userId, error: null });
   },
-  reset: () => set({ ordersEnabled: false, dailyGoal: null, weeklyGoal: null, loadedFor: null, loading: false, error: null })
+  reset: () => set({ ordersEnabled: false, dailyGoal: null, weeklyGoal: null, vehicleCostPerKm: null, loadedFor: null, loading: false, error: null })
 }));
