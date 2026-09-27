@@ -1,6 +1,6 @@
 # Labora+ — remaining gaps (honest)
 
-Updated: 2026-09-20 (Europe/Paris). Branch: owner-delete (expenses/incomes/docs). **Cream-token sweeps stopped.** Dual-account UAT still Lewis. Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
+Updated: 2026-09-27 (Europe/Paris). Branch: gestoría export + AEAT deadlines + list filters. **Cream-token sweeps stopped.** Dual-account UAT still Lewis. Linking RPCs **live** on Supabase `gggtriyvbusbpqohoukv`. Security advisors: see `docs/RLS_ADVISORS.md` (HIBP WARN still Lewis — dashboard login blocked).
 
 ## Merged on main (no longer blocked)
 
@@ -37,6 +37,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: owner-delete (expenses/incomes/docs)
 | Agent-safe loop 8 (Messages offline UI + a11y; Documents/Money forms a11y) | Offline banner + Spanish fail-closed send errors (no sync claim); labels / `aria-invalid` / `aria-describedby` / focus-visible / empty `role=status` on Messages, Documents, Expense, Income primary forms; **cream sweeps stopped**; HIBP still Lewis; billing OFF |
 | Agent-safe loop 9 (shared form a11y; tax/calendar forms) | `components/formA11y.tsx` (`FieldLabel`, `FormError` `role=alert`, `fieldErrorA11y`, focus class); applied to TaxOverview / TaxDeclarationsViewer / Calendar primary forms only; **no** MoneyHub/Documents offline chip — `RemoteSyncBridge` does not expose online/offline (fail-closed, no fake sync); **pause agent-safe UX polish for Lewis UAT**; HIBP still Lewis; billing OFF |
 | Owner delete (gastos / ingresos / docs) | Rider/owner only: Trash + confirm; `deleteExpense`/`deleteIncome`/`deleteDocument` call remote when session; liquidación cascade deletes linked incomes then doc; managers stay read-only; fail-closed Spanish toasts; vitest on `deleteEligibility` |
+| Gestoría export + AEAT plazos + filtros (2026-09-27) | `services/quarterExport.ts`: CSV `;`+BOM, anti formula-injection, estados en español, **pack trimestral por cliente** (resumen + gastos + ingresos) desde ManagerDashboard; mock `ExportService.ts` (datos `Math.random`) **eliminado**. `services/fiscalDeadlines.ts`: tabla literal AEAT 2026 (130/303: 4T25 27/30 ene, 1T 15/20 abr, 2T 15/20 jul, 3T 15/20 oct) → `FiscalDeadlineCard` en ambos dashboards; **4T 2026 = pendiente** hasta calendario AEAT 2027; MX pendiente SAT. `services/moneyFilters.ts`: búsqueda/categoría/estado/cliente en Gastos e Ingresos; gestor: selector de trimestre + filtro estado en Auditoría, totales del trimestre elegido. Fix orden de hooks en `Dashboard`. vitest puros |
 
 ## Linking — what works / what needs Lewis
 
@@ -64,6 +65,7 @@ Updated: 2026-09-20 (Europe/Paris). Branch: owner-delete (expenses/incomes/docs)
 | **Adversarial RLS on live Supabase** | Needs Lewis’s project + dual sessions |
 | **Auth leaked-password protection** | **Deferred** — dashboard login blocked (hCaptcha / GitHub SSO 500); MCP cannot toggle Auth HIBP; enable later in Auth → Password |
 | **Offline chip on MoneyHub / Documents** | Skipped loop 9 — RemoteSync has no online/offline API; do not invent sync status. Revisit only if sync surface exposes real connectivity |
+| **AEAT 4T 2026 / 2027 dates** | Add rows to `AEAT_130_303_DEADLINES` only when AEAT publishes the 2027 calendar (copy literally, cite URL) |
 | **Manager delete of client rows** | Intentionally blocked (RLS + UI). Owners delete own data only |
 | **Agent-safe UX polish (further loops)** | **Pause for Lewis UAT** — dual-account checklist + signature before more chrome/a11y sweeps |
 
