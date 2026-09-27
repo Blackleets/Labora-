@@ -1,4 +1,5 @@
 import { ExpenseCategory } from '../types';
+import { isAutomaticCountryCalculationEnabled } from '../modules/country-config/catalog';
 import { CountryConfig } from '../modules/country-config/types';
 import { supabase } from './supabaseClient';
 
@@ -93,20 +94,30 @@ export const getFiscalAdvice = async (
   newMessage: string,
   countryConfig?: CountryConfig
 ): Promise<string> => {
-  const countryName = countryConfig?.display_name || 'España';
-  const taxEntity = countryConfig?.labor_advisor?.tax_entity_name || 'Hacienda (AEAT)';
+  const countryName = countryConfig?.display_name || 'tu país';
+  const countryCode = countryConfig?.country_code || '';
+
+  if (!countryCode || !isAutomaticCountryCalculationEnabled(countryCode)) {
+    return `Labora+ todavía no tiene un pack fiscal verificado para ${countryName}. Puedo ayudarte a organizar documentos y preparar preguntas para una gestoría o asesoría, pero no generaré normativa, tipos impositivos, retenciones ni cálculos fiscales automáticos sin fuentes oficiales verificadas.`;
+  }
+
+  const taxEntity = countryConfig?.labor_advisor?.tax_entity_name || '';
 
   try {
     return await invokeAI<string>('fiscal_advice', {
       history,
       message: newMessage,
       countryName,
+      countryCode,
       taxEntity
     });
   } catch (error) {
     const code = error instanceof Error ? error.message : 'AI_REQUEST_FAILED';
     console.error('[LABORA_FISCAL_AI_FAILED]', code);
 
+    if (code === 'FISCAL_PACK_UNVERIFIED') {
+      return `El pack fiscal de ${countryName} no está verificado para asesoramiento automático. No generaré una respuesta fiscal específica hasta que exista evidencia oficial versionada.`;
+    }
     if (code === 'AI_NOT_CONFIGURED') {
       return `Puedo ayudarte a organizar la pregunta y los datos para tu gestoría en ${countryName}, pero el asistente fiscal IA no está configurado ahora mismo. No generaré una respuesta fiscal inventada.`;
     }
