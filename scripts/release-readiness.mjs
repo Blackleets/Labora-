@@ -40,8 +40,14 @@ requireContains('modules/core/i18n/index.ts', "export type Language = 'es' | 'en
 requireContains('modules/country-config/catalog.ts', 'VERIFIED_AUTOMATIC_CALCULATION_CODES = new Set<string>()', 'tax automation fail-closed');
 requireContains('contexts/CountryContext.tsx', 'GLOBAL_COUNTRIES', 'active country catalog is global-safe');
 requireContains('.github/workflows/ci.yml', 'supabase/functions/delete-account/index.ts', 'delete-account Deno CI coverage');
+requireContains('services/geminiService.ts', 'isAutomaticCountryCalculationEnabled', 'client fiscal AI jurisdiction gate');
+requireContains('supabase/functions/labora-ai/index.ts', 'FISCAL_PACK_UNVERIFIED', 'server fiscal AI jurisdiction gate');
+requireContains('supabase/functions/labora-ai/index.ts', 'verifiedFiscalCountryCodes = new Set<string>()', 'server fiscal allowlist defaults empty');
+requireContains('components/FiscalChat.tsx', 'fiscalVerified', 'fiscal chat disabled without verified pack');
+requireContains('modules/labor-advisor/components/LaborAdvisorView.tsx', 'isAutomaticCountryCalculationEnabled', 'labor advisor verified-pack gate');
 forbidContains('contexts/CountryContext.tsx', 'OTHER_COUNTRIES', 'legacy mock countries not active');
 forbidContains('modules/country-config/services/countryApi.ts', 'REST API SIMULATION', 'country API simulation removed');
+forbidContains('components/FiscalChat.tsx', 'Normativa activa:', 'legacy fiscal authority overclaim removed');
 
 console.log('Labora+ release-readiness static gate');
 for (const pass of passes) console.log(`PASS  ${pass}`);
