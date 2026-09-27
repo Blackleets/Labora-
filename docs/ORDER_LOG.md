@@ -16,7 +16,13 @@ automatiza cuentas de Uber/Glovo/Just Eat. La lectura de notificaciones existe *
 - Alta rápida: chips grandes de plataforma (tu actividad + Uber Eats / Glovo / Just Eat + «Otra…»), «Repetir última», Aceptado/Rechazado, importe, motivo de rechazo (Muy lejos · Paga poco · Zona · Otro), km/nota/hora opcionales (hora = ahora, editable).
 - **Jornada** (reutiliza `work_sessions`): Iniciar/Terminar → €/hora. Sin GPS.
 - **Hoy**: aceptados, rechazados, % aceptación, € ganado (solo aceptados), km, €/km, €/hora, gastos de hoy (de Gastos) y **neto estimado antes de impuestos**.
-- **Objetivo diario** opcional con barra de progreso.
+- Pestañas **Hoy · Análisis · Mes**.
+- **Objetivo diario** y **objetivo semanal** (lunes-domingo, columna `orders_weekly_goal`) opcionales con barra de progreso.
+- **Esta semana**: ganado, pedidos, horas de jornada, €/h, €/km y % aceptación, comparados con la semana pasada *hasta el mismo día y hora*; total de la semana pasada completa.
+- **Análisis** (4/8/12 semanas, `services/orderAnalytics.ts`): mejores horas y días por €/h y €/km, barras por hora del día y día de la semana (€/h · €/km · pedidos), % de aceptación por semana, motivos de rechazo y comparativa de plataformas (% aceptación, €/pedido, €/km, peso en lo ganado).
+  - Solo registros del rider. Una franja entra en «mejores» con ≥3 aceptados y ≥1 h de jornada; si no, «pocos datos» (barra atenuada).
+  - Aproximación declarada en la UI: cada pedido cuenta en la hora en que se apuntó; las horas salen de `work_sessions` cortadas por hora local.
+  - €/km solo con pedidos que tienen km. Sin €/h por plataforma (la jornada no va ligada a una plataforma).
 - Gráficos: últimos 7 días / últimas 6 semanas.
 - **Mes**: totales, por plataforma, por día (con rechazados y motivos), editar/borrar (solo propietario), **CSV** (helpers anti-fórmulas de #36).
 - **Pasar a ingresos** (día o mes): un ingreso por día+plataforma (`sourceType=manual`, `needsReview=true`), pedidos marcados con `converted_income_id` para no contar dos veces. Aviso si ya hay liquidación importada ese mes; comparación «apuntado vs. liquidado» por plataforma.

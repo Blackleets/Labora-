@@ -70,3 +70,18 @@ export const listRecentWorkSessions = async (limit = 14): Promise<WorkSession[]>
   if (error) throw error;
   return (data || []).map(rowToWorkSession);
 };
+
+/** Jornadas que empezaron desde `sinceIso` (incluido), más recientes primero. */
+export const listWorkSessionsSince = async (sinceIso: string, limit = 1000): Promise<WorkSession[]> => {
+  const user = await requireUser();
+  const { data, error } = await supabase
+    .from('work_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('started_at', sinceIso)
+    .order('started_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data || []).map(rowToWorkSession);
+};
