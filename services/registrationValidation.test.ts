@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   COLLEGIATE_MIN_LENGTH,
+  LOCAL_REGISTRATION_ID_MAX_LENGTH,
+  LOCAL_REGISTRATION_ID_MIN_LENGTH,
   MANAGER_SIGNUP_ERRORS,
   assertManagerSignupFields,
   isValidCollegiateNumber,
+  isValidLocalRegistrationId,
   isValidSpanishTaxId,
   managerSignupError,
   normalizeCollegiateNumber,
+  normalizeLocalRegistrationId,
   normalizeSpanishTaxId
 } from './registrationValidation';
 
@@ -59,14 +63,26 @@ describe('collegiate number', () => {
   });
 });
 
+describe('generic local registration id', () => {
+  it('preserves meaningful punctuation and only performs format-level checks', () => {
+    expect(normalizeLocalRegistrationId(' br-12.345/0001 ')).toBe('BR-12.345/0001');
+    expect(isValidLocalRegistrationId('BR-12.345/0001')).toBe(true);
+    expect(isValidLocalRegistrationId('A1')).toBe(false);
+    expect(isValidLocalRegistrationId('---')).toBe(false);
+    expect(LOCAL_REGISTRATION_ID_MIN_LENGTH).toBe(3);
+    expect(LOCAL_REGISTRATION_ID_MAX_LENGTH).toBe(64);
+  });
+});
+
 describe('assertManagerSignupFields (signup guard)', () => {
   const valid = {
     companyName: 'Gestoría Norte SL',
     nif: 'B12345674',
-    collegiateNumber: 'COL-9988'
+    collegiateNumber: 'COL-9988',
+    countryCode: 'ES'
   };
 
-  it('returns normalized fields when valid', () => {
+  it('keeps strict Spain validation and normalization', () => {
     expect(assertManagerSignupFields(valid)).toEqual({
       companyName: 'Gestoría Norte SL',
       nif: 'B12345674',
@@ -74,38 +90,64 @@ describe('assertManagerSignupFields (signup guard)', () => {
     });
   });
 
-  it('never allows manager without company name', () => {
+  it('never allows Spanish manager without company name', () => {
     expect(() => assertManagerSignupFields({ ...valid, companyName: '  ' })).toThrow(
       MANAGER_SIGNUP_ERRORS.companyName
     );
   });
 
-  it('never allows manager without NIF', () => {
+  it('never allows Spanish manager without NIF', () => {
     expect(() => assertManagerSignupFields({ ...valid, nif: '' })).toThrow(
       MANAGER_SIGNUP_ERRORS.nifRequired
     );
   });
 
-  it('never allows manager with invalid NIF', () => {
+  it('never allows Spanish manager with invalid NIF', () => {
     expect(() => assertManagerSignupFields({ ...valid, nif: 'B12345670' })).toThrow(
       MANAGER_SIGNUP_ERRORS.nifInvalid
     );
   });
 
-  it('never allows manager without collegiate number', () => {
+  it('never allows Spanish manager without collegiate number', () => {
     expect(() => assertManagerSignupFields({ ...valid, collegiateNumber: '' })).toThrow(
       MANAGER_SIGNUP_ERRORS.collegiateRequired
     );
   });
 
-  it('never allows manager with weak collegiate number', () => {
+  it('never allows Spanish manager with weak collegiate number', () => {
     expect(() => assertManagerSignupFields({ ...valid, collegiateNumber: 'ab' })).toThrow(
       MANAGER_SIGNUP_ERRORS.collegiateInvalid
     );
   });
 
-  it('managerSignupError returns first Spanish message or null', () => {
+  it('accepts a non-Spanish firm with a local registration id without pretending registry verification', () => {
+    expect(assertManagerSignupFields({
+      companyName: 'Contadores Global SAS',
+      nif: 'NIT 900.123.456-7',
+      collegiateNumber: '',
+      countryCode: 'CO'
+    })).toEqual({
+      companyName: 'Contadores Global SAS',
+      nif: 'NIT 900.123.456-7',
+      collegiateNumber: ''
+    });
+  });
+
+  it('requires a local registration id outside Spain', () => {
+    expect(() => assertManagerSignupFields({
+      companyName: 'Global Tax LLC',
+      nif: '',
+      collegiateNumber: '',
+      countryCode: 'US'
+    })).toThrow(MANAGER_SIGNUP_ERRORS.localRegistrationRequired);
+  });
+
+  it('managerSignupError is country-aware', () => {
     expect(managerSignupError(valid)).toBeNull();
     expect(managerSignupError({ ...valid, nif: '' })).toBe(MANAGER_SIGNUP_ERRORS.nifRequired);
+    expect(managerSignupError({ companyName: 'Firma', nif: 'REG-123', countryCode: 'MX' })).toBeNull();
+    expect(managerSignupError({ companyName: 'Firma', nif: '', countryCode: 'MX' })).toBe(
+      MANAGER_SIGNUP_ERRORS.localRegistrationRequired
+    );
   });
 });
