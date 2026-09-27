@@ -27,6 +27,7 @@ import { UserRole } from '../types';
 import BillingCard from './BillingCard';
 import IdentityImagePicker from './IdentityImagePicker';
 import { withBaseUrl } from './brandMarks';
+import { OrderModuleSettingsCard } from './orders/OrderModuleSettingsCard';
 
 const Settings: React.FC = () => {
   const {
@@ -516,6 +517,8 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {!isManager && <OrderModuleSettingsCard />}
 
       <section className="labora-card p-4 sm:p-5">
         <div className="mb-1">

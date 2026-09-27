@@ -3,6 +3,7 @@ import {
   Bell,
   BookOpen,
   Building2,
+  ClipboardList,
   FileText,
   Home,
   LogOut,
@@ -21,6 +22,7 @@ import { signOutRemote } from '../services/authWorkspace';
 import { identityImageStore } from '../services/identityImage';
 import { UserRole } from '../types';
 import Logo from './Logo';
+import { useOrderModule } from './orders/useOrderModule';
 
 interface SidebarProps {
   currentView: string;
@@ -40,6 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   const { currentUser, logout, requirements } = useData();
   const { palette } = useGhibliAtmosphere();
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+  const ordersModule = useOrderModule();
   const identityImage = identityImageStore.getForUser(currentUser);
 
   const pendingReqCount = requirements.filter((requirement) => {
@@ -64,6 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   ];
 
   const riderWorkspace: NavItem[] = [
+    ...(ordersModule.enabled ? [{ id: 'orders', label: 'Pedidos', icon: ClipboardList }] : []),
     { id: 'messages', label: 'Mensajes', icon: MessageSquare, badge: unreadMessages },
     { id: 'docs', label: 'Documentos', icon: BookOpen },
     { id: 'integrations', label: 'Plataformas', icon: Receipt }

@@ -23,6 +23,7 @@ import AtmosphericPanel from './AtmosphericPanel';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
 import { FiscalDeadlineCard } from './FiscalDeadlineCard';
+import { OrderModuleShortcut } from './orders/OrderModuleSettingsCard';
 
 
 interface DashboardProps { setView?: (view: string) => void; }
@@ -266,6 +267,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
       </section>
 
       <FiscalDeadlineCard audience="rider" />
+
+      <OrderModuleShortcut setView={setView} />
 
       <section className="labora-card p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
