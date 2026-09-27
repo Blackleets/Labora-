@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bike, BriefcaseBusiness, Building2, Loader2, Plus, Save, UserRound, X } from 'lucide-react';
+import { Bike, BriefcaseBusiness, Building2, Check, Loader2, Plus, Save, UserRound, X } from 'lucide-react';
 import { updateRemoteProfile } from '../services/authWorkspace';
 import { User, WorkMode } from '../types';
 
@@ -91,9 +91,9 @@ const WorkProfileCard: React.FC<Props> = ({ user, onSaved, onError }) => {
               key={id}
               onClick={() => toggleMode(id)}
               aria-pressed={active}
-              className={`flex items-start gap-3 rounded-[14px] border p-3 text-left transition ${
+              className={`relative flex min-h-[76px] items-start gap-3 rounded-[14px] border p-3 pr-9 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] ${
                 active
-                  ? 'border-[var(--labora-primary-2)] bg-[var(--labora-moss-soft)]'
+                  ? 'border-[var(--labora-primary)] bg-[var(--labora-moss-soft)] shadow-[inset_0_0_0_1px_rgba(47,93,74,0.08)]'
                   : 'border-[var(--labora-border)] bg-[var(--labora-surface)] hover:bg-[var(--labora-surface-2)]'
               }`}
             >
@@ -105,6 +105,16 @@ const WorkProfileCard: React.FC<Props> = ({ user, onSaved, onError }) => {
               <span>
                 <span className="block text-xs font-extrabold text-[var(--labora-ink)]">{label}</span>
                 <span className="mt-0.5 block text-[10px] leading-relaxed text-[var(--labora-muted)]">{helper}</span>
+              </span>
+              <span
+                aria-hidden
+                className={`absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full border transition ${
+                  active
+                    ? 'border-[var(--labora-primary)] bg-[var(--labora-primary)] text-white'
+                    : 'border-[var(--labora-border)] bg-[var(--labora-surface)] text-transparent'
+                }`}
+              >
+                <Check size={12} strokeWidth={3} />
               </span>
             </button>
           );
