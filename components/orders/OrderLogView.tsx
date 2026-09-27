@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRightLeft, CalendarDays, Clock3, Download, Loader2, Lock, Pencil, Play, Plus, Square, Target, Trash2, X } from 'lucide-react';
+import { ArrowRightLeft, CalendarDays, Clock3, Download, Loader2, Lock, Pencil, Play, Plus, Square, Trash2, X } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useCountry } from '../../contexts/CountryContext';
 import { GLOBAL_INTEGRATION_CATALOG } from '../../modules/integrations/data/catalog';
-import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../../services/workSessionService';
+import { finishWorkSession, getActiveWorkSession, listWorkSessionsSince, startWorkSession } from '../../services/workSessionService';
+import { addDaysKey, dayStartMs, weekSummary } from '../../services/orderAnalytics';
 import { downloadCsv } from '../../services/quarterExport';
 import {
   ConversionGroup,
@@ -15,7 +16,6 @@ import {
   breakdownByPlatform,
   compareWithSettlements,
   dailySeries,
-  goalProgress,
   isConverted,
   localDayKey,
   localMonthKey,
@@ -24,17 +24,20 @@ import {
   orderCsvRows,
   ordersInMonth,
   ordersOnDay,
-  parseDecimalInput,
   planIncomeConversion,
   rejectReasonCounts,
   settlementOverlaps,
   summarizeOrders,
+  weekStartKey,
   weeklySeries,
   workedMsOnDay
 } from '../../services/orderLog';
 import { deleteOrder, insertOrder, listOrders, markOrdersConverted, updateOrder } from '../../services/orderLogRepository';
 import type { WorkSession } from '../../types';
 import { FieldLabel, formControlFocusClass } from '../formA11y';
+import { GoalEditor } from './GoalEditor';
+import { WeeklySummaryCard } from './WeeklySummaryCard';
+import { ANALYTICS_MAX_WEEKS, OrderAnalyticsPanel } from './OrderAnalyticsPanel';
 import { OrderBars } from './OrderBars';
 import { OrderForm } from './OrderForm';
 import { useOrderModule } from './useOrderModule';
@@ -48,12 +51,24 @@ const monthStartIso = (monthKey: string) => {
   return new Date(year, month - 1, 1).toISOString();
 };
 
+type OrdersTab = 'today' | 'analytics' | 'month';
+const TABS: Array<{ id: OrdersTab; label: string }> = [
+  { id: 'today', label: 'Hoy' },
+  { id: 'analytics', label: 'Análisis' },
+  { id: 'month', label: 'Mes' }
+];
+
+/** Inicio del periodo de análisis más largo (lunes de hace 11 semanas). */
+const analyticsStartIso = (todayKey: string) =>
+  new Date(dayStartMs(addDaysKey(weekStartKey(todayKey), -7 * (ANALYTICS_MAX_WEEKS - 1)))).toISOString();
+
 const pctLabel = (value: number | null) => (value === null ? '—' : `${Math.round(value * 100)}%`);
 
 export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ setView }) => {
   const { currentUser, expenses, incomes, addIncomes, privacyMode, showNotification } = useData();
   const { selectedCountry } = useCountry();
-  const { enabled, ready, dailyGoal, save } = useOrderModule();
+  const { enabled, ready, dailyGoal, weeklyGoal, save } = useOrderModule();
+  const [tab, setTab] = useState<OrdersTab>('today');
   const [orders, setOrders] = useState<OrderLogEntry[]>([]);
   const [loadedSince, setLoadedSince] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,8 +83,6 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
   const [editing, setEditing] = useState<OrderLogEntry | null>(null);
   const [conversion, setConversion] = useState<{ scope: string; groups: ConversionGroup[] } | null>(null);
   const [converting, setConverting] = useState(false);
-  const [goalDraft, setGoalDraft] = useState('');
-  const [goalOpen, setGoalOpen] = useState(false);
 
   const userId = currentUser?.id || '';
   const todayKey = localDayKey(new Date(nowMs));
@@ -92,13 +105,12 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
     return Array.from(names.values());
   }, [currentUser?.platforms]);
 
-  // Carga: desde el inicio del mes elegido o 6 semanas atrás (gráfico semanal), lo que sea antes.
+  // Carga: desde el inicio del mes elegido o del periodo de análisis (12 semanas), lo que sea antes.
   const neededSince = useMemo(() => {
-    const sixWeeks = new Date(nowMs - 42 * 86_400_000);
-    const sixWeeksIso = new Date(sixWeeks.getFullYear(), sixWeeks.getMonth(), sixWeeks.getDate()).toISOString();
+    const analyticsIso = analyticsStartIso(todayKey);
     const monthIso = monthStartIso(month);
-    return monthIso < sixWeeksIso ? monthIso : sixWeeksIso;
-  }, [month, nowMs]);
+    return monthIso < analyticsIso ? monthIso : analyticsIso;
+  }, [month, todayKey]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -115,7 +127,9 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
   useEffect(() => {
     if (!enabled) return;
     let active = true;
-    void Promise.all([getActiveWorkSession(), listRecentWorkSessions(60)])
+    // Un día antes del periodo para incluir jornadas que empezaron la víspera.
+    const sessionsSince = new Date(new Date(analyticsStartIso(localDayKey(new Date()))).getTime() - 86_400_000).toISOString();
+    void Promise.all([getActiveWorkSession(), listWorkSessionsSince(sessionsSince)])
       .then(([session, recent]) => { if (active) { setActiveSession(session); setSessions(recent); } })
       .catch(() => undefined);
     return () => { active = false; };
@@ -154,13 +168,14 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
   }
 
   const todayOrders = ordersOnDay(orders, todayKey);
-  const workedToday = workedMsOnDay(activeSession && !sessions.some((s) => s.id === activeSession.id) ? [activeSession, ...sessions] : sessions, todayKey, nowMs);
+  const allSessions = activeSession && !sessions.some((s) => s.id === activeSession.id) ? [activeSession, ...sessions] : sessions;
+  const workedToday = workedMsOnDay(allSessions, todayKey, nowMs);
   const today = summarizeOrders(todayOrders, workedToday);
   const todayExpenses = expenses
     .filter((expense) => expense.userId === userId && expense.date === todayKey)
     .reduce((sum, expense) => sum + (expense.amount || 0), 0);
   const todayNet = netEstimate(today.earnings, todayExpenses);
-  const goal = goalProgress(today.earnings, dailyGoal);
+  const week = weekSummary(orders, allSessions, todayKey, nowMs, weeklyGoal);
 
   const monthOrders = ordersInMonth(orders, month);
   const monthSummary = summarizeOrders(monthOrders);
@@ -265,20 +280,10 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
     }
   };
 
-  const saveGoal = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const parsed = parseDecimalInput(goalDraft);
-    if (parsed !== undefined && (!Number.isFinite(parsed) || parsed <= 0 || parsed > 100000)) {
-      showNotification('error', 'El objetivo debe ser un importe positivo.');
-      return;
-    }
-    try {
-      await save({ ordersEnabled: true, dailyGoal: parsed ?? null });
-      setGoalOpen(false);
-      showNotification('success', parsed ? 'Objetivo diario guardado.' : 'Objetivo diario quitado.');
-    } catch (error) {
-      showNotification('error', error instanceof Error ? error.message : 'No se pudo guardar el objetivo.');
-    }
+  const saveGoal = (kind: 'daily' | 'weekly') => async (value: number | null) => {
+    await save(kind === 'daily' ? { ordersEnabled: true, dailyGoal: value } : { ordersEnabled: true, weeklyGoal: value });
+    const label = kind === 'daily' ? 'Objetivo diario' : 'Objetivo semanal';
+    showNotification('success', value ? `${label} guardado.` : `${label} quitado.`);
   };
 
   const exportMonth = () => {
@@ -291,6 +296,25 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
+      <div className="labora-card flex gap-1 p-1.5" role="tablist" aria-label="Secciones del registro de pedidos">
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            id={`labora-orders-tab-${item.id}`}
+            type="button"
+            role="tab"
+            aria-selected={tab === item.id}
+            aria-controls={`labora-orders-panel-${item.id}`}
+            onClick={() => setTab(item.id)}
+            className={`min-h-11 flex-1 rounded-[12px] px-3 text-sm font-extrabold ${tab === item.id ? 'bg-[var(--labora-primary)] text-white' : 'text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)]'} ${formControlFocusClass}`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'today' && (
+      <div id="labora-orders-panel-today" role="tabpanel" aria-labelledby="labora-orders-tab-today" className="space-y-5">
       <section className="labora-card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -359,35 +383,13 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
               <p className="mt-1 text-[10px] leading-relaxed text-[var(--labora-muted)]">Ganado en pedidos aceptados − gastos registrados hoy. No descuenta IRPF, IVA, cuota de autónomo ni costes no registrados.</p>
             </div>
             <div className="mt-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[var(--labora-ink)]"><Target size={14} aria-hidden /> Objetivo diario</p>
-                <button type="button" onClick={() => { setGoalDraft(dailyGoal ? String(dailyGoal).replace('.', ',') : ''); setGoalOpen((value) => !value); }} className={`min-h-10 rounded-[12px] px-3 text-xs font-extrabold text-[var(--labora-primary)] ${formControlFocusClass}`}>
-                  {dailyGoal ? 'Cambiar' : 'Fijar objetivo'}
-                </button>
-              </div>
-              {goal ? (
-                <div className="mt-1">
-                  <div className="h-3 overflow-hidden rounded-full bg-[var(--labora-surface-2)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={goal.pct} aria-label="Progreso del objetivo diario">
-                    <div className="h-full rounded-full bg-[var(--labora-primary)]" style={{ width: `${goal.pct}%` }} />
-                  </div>
-                  <p className="mt-1 text-[11px] text-[var(--labora-muted)]">{goal.reached ? '¡Objetivo cumplido!' : `${goal.pct}% · faltan ${formatMoney(goal.remaining)} de ${formatMoney(dailyGoal || 0)}`}</p>
-                </div>
-              ) : (
-                <p className="mt-1 text-[11px] text-[var(--labora-muted)]">Sin objetivo. Es tuyo y solo sirve para seguir tu progreso.</p>
-              )}
-              {goalOpen && (
-                <form onSubmit={saveGoal} className="mt-2 flex items-end gap-2">
-                  <div className="flex-1">
-                    <FieldLabel htmlFor="labora-orders-goal">Objetivo ({currencySymbol}/día) · vacío para quitar</FieldLabel>
-                    <input id="labora-orders-goal" inputMode="decimal" value={goalDraft} onChange={(event) => setGoalDraft(event.target.value)} className={`min-h-11 w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 text-sm font-bold text-[var(--labora-ink)] ${formControlFocusClass}`} />
-                  </div>
-                  <button type="submit" className={`min-h-11 rounded-[13px] bg-[var(--labora-primary)] px-4 text-xs font-extrabold text-white ${formControlFocusClass}`}>Guardar</button>
-                </form>
-              )}
+              <GoalEditor id="labora-orders-goal" title="Objetivo diario" unitLabel={`${currencySymbol}/día`} goal={dailyGoal} earnings={today.earnings} formatMoney={formatMoney} onSave={saveGoal('daily')} />
             </div>
           </>
         )}
       </section>
+
+      <WeeklySummaryCard summary={week} weeklyGoal={weeklyGoal} formatMoney={formatMoney} currencySymbol={currencySymbol} onSaveGoal={saveGoal('weekly')} />
 
       <section className="labora-card p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -404,6 +406,20 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
           <OrderBars points={series} formatMoney={formatMoney} caption={chartMode === 'days' ? 'Ganado por día' : 'Ganado por semana'} />
         </div>
       </section>
+      </div>
+      )}
+
+      {tab === 'analytics' && (
+        <div id="labora-orders-panel-analytics" role="tabpanel" aria-labelledby="labora-orders-tab-analytics">
+          {loadError && <p role="alert" className="mb-3 text-xs font-bold text-[var(--labora-clay-deep)]">{loadError}</p>}
+          {loading && !orders.length
+            ? <p className="labora-card p-6 text-center text-xs text-[var(--labora-muted)]" role="status">Cargando pedidos…</p>
+            : <OrderAnalyticsPanel orders={orders} sessions={allSessions} todayKey={todayKey} nowMs={nowMs} formatMoney={formatMoney} currencySymbol={currencySymbol} />}
+        </div>
+      )}
+
+      {tab === 'month' && (
+      <div id="labora-orders-panel-month" role="tabpanel" aria-labelledby="labora-orders-tab-month">
 
       <section className="labora-card p-4 sm:p-5" aria-labelledby="labora-orders-month">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -519,6 +535,8 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
           })}
         </div>
       </section>
+      </div>
+      )}
 
       {editing && (
         <Dialog title="Editar pedido" onClose={() => setEditing(null)}>

@@ -8,7 +8,16 @@ import type { OrderInput, OrderLogEntry, RejectReason } from './orderLog';
 export interface OrderModuleSettings {
   ordersEnabled: boolean;
   dailyGoal: number | null;
+  /** Objetivo semanal (lunes-domingo) que fija el propio rider. */
+  weeklyGoal: number | null;
 }
+
+const SETTINGS_COLUMNS = 'orders_enabled, orders_daily_goal, orders_weekly_goal';
+const rowToSettings = (data: any): OrderModuleSettings => ({
+  ordersEnabled: Boolean(data?.orders_enabled),
+  dailyGoal: data?.orders_daily_goal == null ? null : Number(data.orders_daily_goal),
+  weeklyGoal: data?.orders_weekly_goal == null ? null : Number(data.orders_weekly_goal)
+});
 
 const num = (value: unknown) => (value === null || value === undefined ? undefined : Number(value));
 
@@ -47,25 +56,27 @@ export const getOrderModuleSettings = async (): Promise<OrderModuleSettings> => 
   const userId = await requireUserId();
   const { data, error } = await supabase
     .from('user_module_settings')
-    .select('orders_enabled, orders_daily_goal')
+    .select(SETTINGS_COLUMNS)
     .eq('user_id', userId)
     .maybeSingle();
   if (error) throw error;
-  return {
-    ordersEnabled: Boolean(data?.orders_enabled),
-    dailyGoal: data?.orders_daily_goal == null ? null : Number(data.orders_daily_goal)
-  };
+  return rowToSettings(data);
 };
 
 export const saveOrderModuleSettings = async (settings: OrderModuleSettings): Promise<OrderModuleSettings> => {
   const userId = await requireUserId();
   const { data, error } = await supabase
     .from('user_module_settings')
-    .upsert({ user_id: userId, orders_enabled: settings.ordersEnabled, orders_daily_goal: settings.dailyGoal }, { onConflict: 'user_id' })
-    .select('orders_enabled, orders_daily_goal')
+    .upsert({
+      user_id: userId,
+      orders_enabled: settings.ordersEnabled,
+      orders_daily_goal: settings.dailyGoal,
+      orders_weekly_goal: settings.weeklyGoal
+    }, { onConflict: 'user_id' })
+    .select(SETTINGS_COLUMNS)
     .single();
   if (error) throw error;
-  return { ordersEnabled: Boolean(data.orders_enabled), dailyGoal: data.orders_daily_goal == null ? null : Number(data.orders_daily_goal) };
+  return rowToSettings(data);
 };
 
 /** Pedidos desde `sinceIso` (incluido), más recientes primero. */
