@@ -107,13 +107,17 @@ export const HourlyCalculator: React.FC = () => {
             {(Object.keys(simpleSpecs) as Array<keyof typeof simpleSpecs>).map((v) => (
               <button
                 key={v}
+                type="button"
                 onClick={() => { setSimpleVehicle(v); setRealProfile(null); }}
+                aria-pressed={!realProfile && simpleVehicle === v}
+                aria-label={`Usar cálculo básico para ${simpleSpecs[v].name}`}
                 className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all w-24 ${
                   !realProfile && simpleVehicle === v 
                     ? 'border-[#2D6CDF] bg-blue-50 text-[#2D6CDF] shadow-sm' 
-                    : 'border-gray-100 text-gray-300 hover:text-gray-500'
+                    : realProfile
+                      ? 'border-gray-200 bg-gray-50 text-gray-400 hover:border-[#2D6CDF] hover:bg-blue-50 hover:text-[#2D6CDF]'
+                      : 'border-gray-100 text-gray-300 hover:text-gray-500'
                 }`}
-                disabled={!!realProfile} // Visual disable if real profile active, though click resets it
               >
                 {React.createElement(simpleSpecs[v].icon, { size: 20, strokeWidth: 2.5 })}
                 <span className="text-[10px] font-bold">{simpleSpecs[v].name.split('/')[0]}</span>
@@ -122,17 +126,25 @@ export const HourlyCalculator: React.FC = () => {
           </div>
 
           {/* Real Mode Toggle */}
-          <button 
-            onClick={() => setIsWizardOpen(true)}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${
-              realProfile 
-                ? 'border-[#7B3FE4] bg-purple-50 text-[#7B3FE4] shadow-md' 
-                : 'border-dashed border-gray-300 text-gray-400 hover:border-[#7B3FE4] hover:text-[#7B3FE4]'
-            }`}
-          >
-            <Settings size={18} />
-            <span className="text-xs font-bold">{realProfile ? 'Configuración Real Activa' : 'Configurar Vehículo Real'}</span>
-          </button>
+          <div className="flex w-full flex-col items-center gap-1.5 sm:w-auto sm:items-end">
+            <button
+              type="button"
+              onClick={() => setIsWizardOpen(true)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${
+                realProfile
+                  ? 'border-[#7B3FE4] bg-purple-50 text-[#7B3FE4] shadow-md'
+                  : 'border-dashed border-gray-300 text-gray-400 hover:border-[#7B3FE4] hover:text-[#7B3FE4]'
+              }`}
+            >
+              <Settings size={18} />
+              <span className="text-xs font-bold">{realProfile ? 'Editar vehículo real' : 'Configurar vehículo real'}</span>
+            </button>
+            {realProfile && (
+              <p className="text-center text-[10px] font-medium text-gray-400 sm:text-right">
+                Pulsa bicicleta, moto o coche para volver al cálculo básico.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Sliders */}
