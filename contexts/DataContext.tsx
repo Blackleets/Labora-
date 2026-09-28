@@ -483,6 +483,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
 
     setDocuments((previous) => previous.filter((item) => item.id !== id));
+    setIncomes((previous) => previous.filter((item) => item.sourceDocumentId !== id));
     if (!options?.quiet) showNotification('success', 'Documento eliminado del expediente.');
     return true;
   };

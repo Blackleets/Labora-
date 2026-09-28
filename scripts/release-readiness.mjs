@@ -33,9 +33,17 @@ const forbidContains = (relative, snippet, label) => {
 
 requireFile('supabase/migrations/20260922212049_labora_universal_worker_profile.sql', 'universal worker migration');
 requireFile('supabase/migrations/20260927123351_labora_universal_worker_signup_sync.sql', 'universal signup migration');
+requireFile('supabase/migrations/20260921152726_labora_atomic_document_income_delete.sql', 'atomic document deletion migration');
+requireFile('supabase/migrations/20260921160724_labora_atomic_delete_followup.sql', 'atomic deletion follow-up migration');
+requireFile('supabase/migrations/20260921161218_labora_operational_delete_tombstones.sql', 'operational tombstones migration');
+requireFile('supabase/migrations/20260921161659_labora_tombstone_lock_followup.sql', 'tombstone locking migration');
+requireFile('supabase/migrations/20260921162006_labora_tombstone_trigger_order.sql', 'tombstone trigger-order migration');
+requireFile('supabase/migrations/20260921172304_labora_tombstone_access_hardening.sql', 'tombstone access-hardening migration');
 requireFile('supabase/functions/delete-account/index.ts', 'account deletion edge function');
 requireFile('docs/GLOBAL_EXPANSION.md', 'global expansion policy');
 requireContains('components/Settings.tsx', 'AccountDeletionCard', 'real account deletion UI');
+requireContains('supabase/migrations/20260921161218_labora_operational_delete_tombstones.sql', 'operational_deletion_tombstones', 'deleted rows cannot be resurrected');
+requireContains('services/remoteOperational.ts', "rpc('delete_own_document_with_linked_incomes'", 'atomic document and linked-income deletion');
 requireContains('modules/core/i18n/index.ts', "export type Language = 'es' | 'en' | 'pt'", 'ES/EN/PT i18n base');
 requireContains('modules/country-config/catalog.ts', 'VERIFIED_AUTOMATIC_CALCULATION_CODES = new Set<string>()', 'tax automation fail-closed');
 requireContains('modules/country-config/catalog.ts', 'runtimeSafeCountryConfig', 'runtime-safe country sanitizer');
