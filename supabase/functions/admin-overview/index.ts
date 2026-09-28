@@ -54,8 +54,9 @@ Deno.serve(async (req) => {
   if (actorError) return json({ error: 'Unable to verify administrator role.' }, 500);
   if (actor?.role !== 'admin') return json({ error: 'Administrator access required.' }, 403);
 
-  const [profiles, documents, incomes, expenses, requirements, declarations] = await Promise.all([
-    admin.from('profiles').select('role,country_code'),
+  const [profiles, authUsers, documents, incomes, expenses, requirements, declarations] = await Promise.all([
+    admin.from('profiles').select('id,name,email,role,country_code,manager_id'),
+    admin.auth.admin.listUsers({ page: 1, perPage: 200 }),
     admin.from('documents').select('*', { count: 'exact', head: true }),
     admin.from('incomes').select('*', { count: 'exact', head: true }),
     admin.from('expenses').select('*', { count: 'exact', head: true }),
@@ -63,7 +64,7 @@ Deno.serve(async (req) => {
     admin.from('tax_declarations').select('*', { count: 'exact', head: true }).neq('status', 'filed')
   ]);
 
-  const firstError = [profiles, documents, incomes, expenses, requirements, declarations]
+  const firstError = [profiles, authUsers, documents, incomes, expenses, requirements, declarations]
     .find((result) => result.error)?.error;
   if (firstError) return json({ error: 'Unable to load administrative metrics.' }, 500);
 
@@ -77,6 +78,22 @@ Deno.serve(async (req) => {
     countries[country] = (countries[country] || 0) + 1;
   }
 
+  const authById = new Map((authUsers.data?.users || []).map((user) => [user.id, user]));
+  const directory = (profiles.data || []).map((profile) => {
+    const authUser = authById.get(profile.id);
+    return {
+      id: profile.id,
+      name: profile.name || 'Sin nombre',
+      email: profile.email || authUser?.email || '',
+      role: profile.role,
+      countryCode: profile.country_code || 'UNSET',
+      managerId: profile.manager_id || null,
+      createdAt: authUser?.created_at || null,
+      lastSignInAt: authUser?.last_sign_in_at || null,
+      emailConfirmed: Boolean(authUser?.email_confirmed_at)
+    };
+  });
+
   return json({
     generatedAt: new Date().toISOString(),
     users: { total: profiles.data?.length || 0, ...roleCounts },
@@ -87,6 +104,8 @@ Deno.serve(async (req) => {
       pendingRequirements: requirements.count || 0,
       pendingDeclarations: declarations.count || 0
     },
-    countries
+    countries,
+    directory,
+    directoryTruncated: (authUsers.data?.users.length || 0) >= 200
   });
 });
