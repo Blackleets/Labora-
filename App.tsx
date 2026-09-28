@@ -8,27 +8,36 @@ import { useI18n } from './modules/core/i18n';
 import { identityImageStore } from './services/identityImage';
 import { UserRole } from './types';
 
-import Dashboard from './components/Dashboard';
-import { GestorRequirementsWidget } from './components/GestorRequirementsWidget';
 import Login from './components/Login';
 import { GhibliLightingControl } from './components/GhibliLightingControl';
 import Logo from './components/Logo';
-import { ManagerDashboard } from './components/ManagerDashboard';
 import Onboarding from './components/Onboarding';
-import Profile from './components/Profile';
 import RemoteSyncBridge from './components/RemoteSyncBridge';
 import Sidebar from './components/Sidebar';
-import { TaxOverview } from './components/TaxOverview';
 import Toast from './components/Toast';
-import { AutomationHub } from './modules/core/hubs/AutomationHub';
-import { MoneyHub } from './modules/core/hubs/MoneyHub';
-import { OperationsHub } from './modules/core/hubs/OperationsHub';
-import { PeopleHub } from './modules/core/hubs/PeopleHub';
-import { SettingsHub } from './modules/core/hubs/SettingsHub';
-import { IntegrationCatalog } from './modules/integrations/components/IntegrationCatalog';
-import { MessagesHub } from './modules/messages/components/MessagesHub';
-import { OrderLogView } from './components/orders/OrderLogView';
 import { BubbleSessionBridge } from './components/orders/BubbleSessionBridge';
+
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const GestorRequirementsWidget = React.lazy(() => import('./components/GestorRequirementsWidget').then(module => ({ default: module.GestorRequirementsWidget })));
+const ManagerDashboard = React.lazy(() => import('./components/ManagerDashboard').then(module => ({ default: module.ManagerDashboard })));
+const Profile = React.lazy(() => import('./components/Profile'));
+const TaxOverview = React.lazy(() => import('./components/TaxOverview').then(module => ({ default: module.TaxOverview })));
+const AutomationHub = React.lazy(() => import('./modules/core/hubs/AutomationHub').then(module => ({ default: module.AutomationHub })));
+const MoneyHub = React.lazy(() => import('./modules/core/hubs/MoneyHub').then(module => ({ default: module.MoneyHub })));
+const OperationsHub = React.lazy(() => import('./modules/core/hubs/OperationsHub').then(module => ({ default: module.OperationsHub })));
+const PeopleHub = React.lazy(() => import('./modules/core/hubs/PeopleHub').then(module => ({ default: module.PeopleHub })));
+const SettingsHub = React.lazy(() => import('./modules/core/hubs/SettingsHub').then(module => ({ default: module.SettingsHub })));
+const IntegrationCatalog = React.lazy(() => import('./modules/integrations/components/IntegrationCatalog').then(module => ({ default: module.IntegrationCatalog })));
+const MessagesHub = React.lazy(() => import('./modules/messages/components/MessagesHub').then(module => ({ default: module.MessagesHub })));
+const OrderLogView = React.lazy(() => import('./components/orders/OrderLogView').then(module => ({ default: module.OrderLogView })));
+
+const ViewLoading: React.FC = () => (
+  <div className="flex min-h-[45vh] items-center justify-center" role="status" aria-live="polite">
+    <div className="rounded-2xl border border-[color:var(--labora-border,#E8DFC8)] bg-[color:var(--labora-surface,#FFFEFB)] px-5 py-3 text-sm font-bold text-[color:var(--labora-muted,#5A7A68)] shadow-sm">
+      Cargando espacio…
+    </div>
+  </div>
+);
 
 const MainLayout: React.FC = () => {
   const {
@@ -191,7 +200,11 @@ const MainLayout: React.FC = () => {
         </header>
 
         <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-7 md:px-8 md:py-10">
-          <div className="mx-auto min-h-full max-w-7xl min-w-0">{renderView()}</div>
+          <div className="mx-auto min-h-full max-w-7xl min-w-0">
+            <React.Suspense fallback={<ViewLoading />}>
+              {renderView()}
+            </React.Suspense>
+          </div>
         </div>
 
         <nav className="safe-area-bottom shrink-0 border-t border-[color:var(--labora-border-hairline,rgba(0,0,0,0.05))] bg-[color:var(--labora-ivory,#FFFEFB)]/95 px-1.5 py-1.5 backdrop-blur-xl lg:hidden">
