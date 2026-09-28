@@ -4,12 +4,14 @@ import {
   FileCheck2,
   FileSpreadsheet,
   History,
-  Info
+  Info,
+  FileText
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { TaxDeclaration, UserRole } from '../types';
 import { FieldLabel, FormError, fieldErrorA11y, formControlFocusClass } from './formA11y';
 import { buildExpenseRows, buildIncomeRows, downloadCsv, quarterExportFilename } from '../services/quarterExport';
+import { buildQuarterPdfModel, downloadQuarterPdf, quarterPdfFilename } from '../services/quarterPdf';
 
 interface TaxDeclarationsViewerProps {
   setView?: (view: string) => void;
@@ -146,6 +148,21 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
     showNotification('success', 'Archivo de gastos descargado.');
   };
 
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const exportQuarterPdf = async () => {
+    if (!effectiveUser) return;
+    setPdfBusy(true);
+    try {
+      const model = buildQuarterPdfModel({ name: effectiveUser.name, nif: effectiveUser.nif, email: effectiveUser.email }, selectedQuarter, userExpenses, userIncomes, new Date());
+      await downloadQuarterPdf(model, quarterPdfFilename(selectedQuarter, effectiveUser.name));
+      showNotification('success', `PDF del ${selectedQuarter} descargado.`);
+    } catch (error) {
+      showNotification('error', error instanceof Error ? `No se pudo generar el PDF: ${error.message}` : 'No se pudo generar el PDF.');
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   const exportIncomes = () => {
     downloadCsv(quarterExportFilename('ingresos', selectedQuarter, effectiveUser?.name), buildIncomeRows(userIncomes, selectedQuarter));
     showNotification('success', 'Archivo de ingresos descargado.');
@@ -225,6 +242,14 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
             className={`inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-xs font-semibold text-[var(--labora-ink-soft)] hover:bg-[var(--labora-surface-2)] ${formControlFocusClass}`}
           >
             <Download size={14} /> Ingresos CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => void exportQuarterPdf()}
+            disabled={pdfBusy}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--labora-primary)] px-3 py-2.5 text-xs font-extrabold text-white disabled:opacity-50 sm:col-span-2 ${formControlFocusClass}`}
+          >
+            <FileText size={14} aria-hidden /> {pdfBusy ? 'Generando PDF…' : `Resumen ${selectedQuarter} en PDF (para tu gestoría)`}
           </button>
         </div>
       </section>
