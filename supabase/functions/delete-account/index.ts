@@ -37,8 +37,20 @@ const requireUser = async (req: Request) => {
   return data.user;
 };
 
+type StorageAdmin = {
+  storage: {
+    from: (bucket: string) => {
+      list: (
+        path: string,
+        options: { limit: number; offset: number; sortBy: { column: string; order: string } }
+      ) => Promise<{ data: Array<{ name?: string; id?: string }> | null; error: unknown }>;
+      remove: (paths: string[]) => Promise<{ error: unknown }>;
+    };
+  };
+};
+
 const removeUserFolder = async (
-  admin: ReturnType<typeof createClient>,
+  admin: StorageAdmin,
   bucket: string,
   userId: string
 ) => {
