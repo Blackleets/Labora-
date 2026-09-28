@@ -42,7 +42,7 @@ const greetSpanish = (hour: number) => {
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
-  const { currentUser, getFiscalSummary, privacyMode, requirements, incomes, expenses, showNotification } = useData();
+  const { currentUser, getFiscalSummary, privacyMode, requirements, incomes, expenses, documents, showNotification } = useData();
   const { selectedCountry } = useCountry();
   const [isGasModalOpen, setIsGasModalOpen] = useState(false);
   const [activeSession, setActiveSession] = useState<WorkSession | null>(null);
@@ -274,6 +274,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
       </section>
 
+      <section className="grid overflow-hidden rounded-[18px] border border-[var(--labora-border)] bg-[var(--labora-surface)] sm:grid-cols-4" aria-label="Estado de tu espacio" aria-live="polite">
+        <LiveItem label="Jornada" value={sessionLoading ? 'Comprobando…' : activeSession ? 'En curso' : 'Sin iniciar'} active={Boolean(activeSession)} />
+        <LiveItem label="Hoy" value={todayWorkedHours > 0 ? `${todayWorkedHours.toFixed(1)} h registradas` : 'Sin horas registradas'} />
+        <LiveItem label="Evidencias" value={`${documents.filter(document => document.userId === currentUser.id).length} documentos`} />
+        <LiveItem label="Gestoría" value={hasGestoria ? (pendingRequirements.length ? `${pendingRequirements.length} avisos` : 'Todo revisado') : 'Sin vincular'} attention={pendingRequirements.length > 0} />
+      </section>
+
       <FiscalDeadlineCard audience="rider" />
 
       <OrderModuleShortcut setView={setView} />
@@ -428,6 +435,13 @@ const MiniMetric = ({ label, value, emphasis = false }: { label: string; value: 
   <div className={`min-w-0 rounded-[12px] px-2 py-2.5 ${emphasis ? 'bg-[var(--labora-moss-soft)]' : 'bg-[var(--labora-surface-2)]'}`}>
     <p className="truncate text-[8px] font-extrabold uppercase tracking-[0.09em] text-[var(--labora-muted)]">{label}</p>
     <p className={`mt-1 truncate text-xs font-extrabold ${emphasis ? 'text-[var(--labora-primary)]' : 'text-[var(--labora-ink)]'}`}>{value}</p>
+  </div>
+);
+
+const LiveItem = ({ label, value, active = false, attention = false }: { label: string; value: string; active?: boolean; attention?: boolean }) => (
+  <div className="flex min-h-[72px] items-center gap-3 border-b border-[var(--labora-border)] px-4 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${attention ? 'bg-[var(--labora-clay)]' : active ? 'animate-pulse bg-emerald-500' : 'bg-[var(--labora-border)]'}`} />
+    <div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-[var(--labora-muted)]">{label}</p><p className="mt-1 truncate text-xs font-extrabold text-[var(--labora-ink)]">{value}</p></div>
   </div>
 );
 

@@ -256,6 +256,13 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
         </div>
       </section>
 
+      <section className="grid overflow-hidden rounded-[18px] border border-[var(--labora-border)] bg-[var(--labora-surface)] sm:grid-cols-4" aria-label="Pulso de la cartera" aria-live="polite">
+        <PortfolioPulse label="Cartera" value={`${clients.length} ${clients.length === 1 ? 'cliente' : 'clientes'}`} active={clients.length > 0} />
+        <PortfolioPulse label="Gastos" value={globalPendingAudit ? `${globalPendingAudit} por revisar` : 'Sin revisiones'} attention={globalPendingAudit > 0} />
+        <PortfolioPulse label="Peticiones" value={globalPendingRequirements ? `${globalPendingRequirements} abiertas` : 'Todo al día'} attention={globalPendingRequirements > 0} />
+        <PortfolioPulse label="Periodo" value={quarter} />
+      </section>
+
       <FiscalDeadlineCard audience="manager" />
 
       {clients.length === 0 ? (
@@ -625,6 +632,13 @@ const HeroStat = ({ label, value, accent = false }: { label: string; value: stri
   <div className={`rounded-[18px] border p-3.5 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset] backdrop-blur ${accent ? 'border-[var(--labora-gold-soft)] bg-[color-mix(in_srgb,var(--labora-gold)_12%,var(--labora-surface))]' : 'border-[var(--labora-border)] bg-[color-mix(in_srgb,var(--labora-surface)_82%,transparent)]'}`}>
     <p className="text-[9px] font-extrabold uppercase tracking-[0.13em] text-[var(--labora-muted)]">{label}</p>
     <p className={`mt-1 text-xl font-extrabold tracking-[-0.03em] ${accent ? 'text-[var(--labora-gold)]' : 'text-[var(--labora-ink)]'}`}>{value}</p>
+  </div>
+);
+
+const PortfolioPulse = ({ label, value, active = false, attention = false }: { label: string; value: string; active?: boolean; attention?: boolean }) => (
+  <div className="flex min-h-[72px] items-center gap-3 border-b border-[var(--labora-border)] px-4 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${attention ? 'bg-[var(--labora-clay)]' : active ? 'animate-pulse bg-emerald-500' : 'bg-[var(--labora-border)]'}`} />
+    <div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-[var(--labora-muted)]">{label}</p><p className="mt-1 truncate text-xs font-extrabold text-[var(--labora-ink)]">{value}</p></div>
   </div>
 );
 
