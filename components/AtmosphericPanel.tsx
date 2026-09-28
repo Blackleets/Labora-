@@ -33,8 +33,7 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
     variant === 'hero' ? '0 0 900 280' :
     '0 0 800 520';
 
-  const preserve =
-    variant === 'strip' || variant === 'hero' ? 'xMidYMid slice' : 'xMidYMax meet';
+  const preserve = 'xMidYMid slice';
 
   const orbCx = variant === 'hero' ? 760 : 640;
   const orbCy = variant === 'strip' ? 42 : variant === 'hero' ? 38 : 72;

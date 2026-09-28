@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Eye, EyeOff, LayoutDashboard, Menu, Scale, User, Wallet } from 'lucide-react';
+import { Bell, Eye, EyeOff, LayoutDashboard, Menu, Scale, ShieldCheck, User, Wallet } from 'lucide-react';
 import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { GhibliAtmosphereProvider } from './contexts/GhibliAtmosphereContext';
@@ -18,6 +18,7 @@ import Toast from './components/Toast';
 import { BubbleSessionBridge } from './components/orders/BubbleSessionBridge';
 
 const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const GestorRequirementsWidget = React.lazy(() => import('./components/GestorRequirementsWidget').then(module => ({ default: module.GestorRequirementsWidget })));
 const ManagerDashboard = React.lazy(() => import('./components/ManagerDashboard').then(module => ({ default: module.ManagerDashboard })));
 const Profile = React.lazy(() => import('./components/Profile'));
@@ -49,7 +50,7 @@ const MainLayout: React.FC = () => {
     togglePrivacyMode
   } = useData();
   const { t } = useI18n();
-  const [currentView, setView] = useState('dashboard');
+  const [currentView, setView] = useState(() => currentUser?.role === UserRole.ADMIN ? 'admin' : 'dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!currentUser) return <Login />;
@@ -57,11 +58,14 @@ const MainLayout: React.FC = () => {
     return <Onboarding onFinish={completeOnboarding} />;
   }
 
-  const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
+  const isAdmin = currentUser.role === UserRole.ADMIN;
+  const isManager = currentUser.role === UserRole.MANAGER || isAdmin;
   const identityImage = identityImageStore.getForUser(currentUser);
-  const roleLabel = isManager ? t('role.professional') : t('role.worker');
+  const roleLabel = isAdmin ? 'Administración' : isManager ? t('role.professional') : t('role.worker');
   const pendingReqCount = requirements.filter((requirement) =>
-    currentUser.role === UserRole.RIDER
+    isAdmin
+      ? requirement.status === 'pending'
+      : currentUser.role === UserRole.RIDER
       ? requirement.riderId === currentUser.id && requirement.status === 'pending'
       : requirement.managerId === currentUser.id && requirement.status === 'pending'
   ).length;
@@ -69,6 +73,7 @@ const MainLayout: React.FC = () => {
   const getViewTitle = () => {
     const titles: Record<string, string> = {
       dashboard: isManager ? t('nav.summary') : t('nav.home'),
+      admin: 'Administración',
       money: isManager ? t('nav.audit') : t('nav.money'),
       'money-incomes': isManager ? `${t('nav.audit')} · ${t('nav.income')}` : t('nav.income'),
       'tax-declarations': t('nav.tax'),
@@ -88,7 +93,8 @@ const MainLayout: React.FC = () => {
 
   const renderView = () => {
     switch (currentView) {
-      case 'dashboard': return isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
+      case 'dashboard': return isAdmin ? <AdminDashboard /> : isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
+      case 'admin': return isAdmin ? <AdminDashboard /> : isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
       case 'money': return <MoneyHub setView={setView} />;
       case 'money-incomes': return <MoneyHub initialTab="incomes" setView={setView} />;
       case 'tax-declarations': return <TaxOverview setView={setView} />;
@@ -102,11 +108,17 @@ const MainLayout: React.FC = () => {
       case 'profile': return <Profile />;
       case 'docs': return <MoneyHub initialTab="docs" setView={setView} />;
       case 'orders': return isManager ? <ManagerDashboard setView={setView} /> : <OrderLogView setView={setView} />;
-      default: return isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
+      default: return isAdmin ? <AdminDashboard /> : isManager ? <ManagerDashboard setView={setView} /> : <Dashboard setView={setView} />;
     }
   };
 
-  const navItems = isManager ? [
+  const navItems = isAdmin ? [
+    { id: 'admin', label: 'Admin', icon: ShieldCheck },
+    { id: 'people', label: t('nav.clients'), icon: User },
+    { id: 'money', label: t('nav.audit'), icon: Wallet },
+    { id: 'gestor-requirements', label: t('nav.requests'), icon: Bell, badge: pendingReqCount },
+    { id: 'settings', label: t('nav.settings_short'), icon: User }
+  ] : isManager ? [
     { id: 'dashboard', label: t('nav.summary'), icon: LayoutDashboard },
     { id: 'money', label: t('nav.audit'), icon: Wallet },
     { id: 'tax-declarations', label: t('nav.tax_short'), icon: Scale },
