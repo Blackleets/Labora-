@@ -221,7 +221,7 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[var(--labora-canvas)] text-[var(--labora-ink)] lg:flex-row">
+    <div className="relative flex min-h-[100dvh] w-full flex-col overflow-x-hidden bg-[var(--labora-canvas)] text-[var(--labora-ink)] lg:flex-row">
       <div
         className="labora-film-grain relative h-36 w-full shrink-0 overflow-hidden border-b lg:hidden"
         style={{
@@ -265,7 +265,7 @@ const Login: React.FC = () => {
         />
         <AtmosphericPanel
           variant="panel"
-          className="pointer-events-none absolute inset-0 h-full w-full opacity-90"
+          className="pointer-events-none absolute inset-0 h-full w-full opacity-45"
         />
 
         <div className="relative z-10 flex flex-1 flex-col justify-between p-12 xl:p-16 2xl:p-20">
@@ -328,6 +328,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
+                  aria-pressed={mode === 'login'}
                   className={`rounded-xl py-3 text-[13px] font-semibold tracking-[-0.01em] transition ${
                     mode === 'login'
                       ? 'bg-[var(--labora-primary)] text-[var(--labora-surface)] shadow-sm'
@@ -339,6 +340,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
+                  aria-pressed={mode === 'register'}
                   className={`rounded-xl py-3 text-[13px] font-semibold tracking-[-0.01em] transition ${
                     mode === 'register'
                       ? 'bg-[var(--labora-primary)] text-[var(--labora-surface)] shadow-sm'
@@ -435,6 +437,7 @@ const Login: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setRole(UserRole.RIDER)}
+                            aria-pressed={role === UserRole.RIDER}
                             className={`rounded-xl border p-3.5 text-left transition ${
                               role === UserRole.RIDER
                                 ? 'border-[var(--labora-primary)]/35 bg-[var(--labora-moss-soft)] text-[var(--labora-ink)]'
@@ -448,6 +451,7 @@ const Login: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setRole(UserRole.MANAGER)}
+                            aria-pressed={role === UserRole.MANAGER}
                             className={`rounded-xl border p-3.5 text-left transition ${
                               role === UserRole.MANAGER
                                 ? 'border-[var(--labora-primary)]/35 bg-[var(--labora-moss-soft)] text-[var(--labora-ink)]'

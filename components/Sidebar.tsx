@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Receipt,
   Settings,
+  ShieldCheck,
   Users,
   Wallet,
   X
@@ -44,12 +45,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   const { palette } = useGhibliAtmosphere();
   const { t } = useI18n();
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
   const ordersModule = useOrderModule();
   const identityImage = identityImageStore.getForUser(currentUser);
-  const roleLabel = isManager ? t('role.professional') : t('role.worker');
+  const roleLabel = isAdmin ? 'Administración' : isManager ? t('role.professional') : t('role.worker');
 
   const pendingReqCount = requirements.filter((requirement) => {
     if (!currentUser) return false;
+    if (currentUser.role === UserRole.ADMIN) {
+      return requirement.status === 'pending';
+    }
     if (currentUser.role === UserRole.RIDER) {
       return requirement.riderId === currentUser.id && requirement.status === 'pending';
     }
@@ -88,7 +93,15 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
     { id: 'docs', label: t('nav.documents'), icon: BookOpen }
   ];
 
-  const primaryItems = isManager ? managerPrimary : riderPrimary;
+  const adminPrimary: NavItem[] = [
+    { id: 'admin', label: 'Administración', icon: ShieldCheck },
+    { id: 'people', label: 'Usuarios visibles', icon: Users },
+    { id: 'money', label: t('nav.audit'), icon: Wallet },
+    { id: 'tax-declarations', label: t('nav.tax'), icon: FileText },
+    { id: 'gestor-requirements', label: t('nav.requests'), icon: Bell, badge: pendingReqCount }
+  ];
+
+  const primaryItems = isAdmin ? adminPrimary : isManager ? managerPrimary : riderPrimary;
   const workspaceItems = isManager ? managerWorkspace : riderWorkspace;
 
   const handleNavigate = (view: string) => {
