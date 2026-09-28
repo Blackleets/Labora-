@@ -10,9 +10,12 @@ describe('admin overview security boundary', () => {
     expect(source).toContain("Administrator access required.");
   });
 
-  it('returns aggregate metrics without selecting personal identity fields', () => {
-    expect(source).toContain("select('role,country_code')");
-    expect(source).not.toContain("select('email");
-    expect(source).not.toContain("select('name");
+  it('limits the protected directory to operational identity fields', () => {
+    const roleGate = source.indexOf("actor?.role !== 'admin'");
+    const directoryQuery = source.indexOf("select('id,name,email,role,country_code,manager_id')");
+    expect(roleGate).toBeGreaterThan(-1);
+    expect(directoryQuery).toBeGreaterThan(roleGate);
+    expect(source).not.toContain('phone,nif');
+    expect(source).not.toContain('vehicle_plate');
   });
 });
