@@ -9,13 +9,27 @@ const cors = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: cors });
 
+const namedKey = (envName: string) => {
+  const raw = Deno.env.get(envName);
+  if (!raw) return undefined;
+  try {
+    const keys = JSON.parse(raw) as Record<string, string>;
+    return keys.default || Object.values(keys)[0];
+  } catch {
+    return undefined;
+  }
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const publicKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
-  const serviceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const publicKey = namedKey('SUPABASE_PUBLISHABLE_KEYS')
+    || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
+    || Deno.env.get('SUPABASE_ANON_KEY');
+  const serviceRole = namedKey('SUPABASE_SECRET_KEYS')
+    || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!supabaseUrl || !publicKey || !serviceRole) {
     return json({ error: 'Admin overview is not configured on the server.' }, 503);
   }
