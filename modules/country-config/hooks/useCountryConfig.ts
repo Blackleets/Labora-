@@ -1,25 +1,25 @@
-
 import { useContext } from 'react';
 import { CountryContext } from '../../../contexts/CountryContext';
-import { DEFAULT_SPAIN_CONFIG, CountryConfig } from '../types';
+import { runtimeSafeCountryConfig } from '../catalog';
+import { createLocalizationOnlyCountry } from '../catalog';
+import type { CountryConfig } from '../types';
+
+const SAFE_FALLBACK = createLocalizationOnlyCountry({
+  code: 'ES',
+  name: 'España',
+  currency: 'EUR',
+  symbol: '€'
+});
 
 /**
- * Hook para que los módulos existentes (Simulator, Dashboard, etc.)
- * obtengan la configuración del país actual.
- * 
- * Implementa patrón de "Graceful Degradation":
- * Si la feature flag está apagada, devuelve hardcoded España.
+ * Single runtime boundary for modules that consume CountryConfig.
+ *
+ * Selecting a country exposes localization data, but economic/fiscal/banking
+ * values stay stripped until that jurisdiction has a verified pack. This protects
+ * legacy modules that have not yet migrated to a capability-specific API.
  */
 export const useCountryConfig = (): CountryConfig => {
   const context = useContext(CountryContext);
-  
-  // Check feature flag (mocked for now, assumes enabled if code is present)
-  // En producción real: const enabled = useFeatureFlag('country_expand_v1');
-  const featureEnabled = true; 
-
-  if (!featureEnabled || !context) {
-    return DEFAULT_SPAIN_CONFIG;
-  }
-
-  return context.selectedCountry;
+  if (!context) return SAFE_FALLBACK;
+  return runtimeSafeCountryConfig(context.selectedCountry);
 };

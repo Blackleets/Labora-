@@ -4,6 +4,7 @@ import { CountryProvider } from './contexts/CountryContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { GhibliAtmosphereProvider } from './contexts/GhibliAtmosphereContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
+import { useI18n } from './modules/core/i18n';
 import { identityImageStore } from './services/identityImage';
 import { UserRole } from './types';
 
@@ -38,6 +39,7 @@ const MainLayout: React.FC = () => {
     privacyMode,
     togglePrivacyMode
   } = useData();
+  const { t } = useI18n();
   const [currentView, setView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -48,6 +50,7 @@ const MainLayout: React.FC = () => {
 
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
   const identityImage = identityImageStore.getForUser(currentUser);
+  const roleLabel = isManager ? t('role.professional') : t('role.worker');
   const pendingReqCount = requirements.filter((requirement) =>
     currentUser.role === UserRole.RIDER
       ? requirement.riderId === currentUser.id && requirement.status === 'pending'
@@ -56,20 +59,20 @@ const MainLayout: React.FC = () => {
 
   const getViewTitle = () => {
     const titles: Record<string, string> = {
-      dashboard: isManager ? 'Resumen' : 'Inicio',
-      money: isManager ? 'Auditoría' : 'Dinero',
-      'money-incomes': isManager ? 'Auditoría · Ingresos' : 'Ingresos',
-      'tax-declarations': 'Modelos fiscales',
-      'gestor-requirements': isManager ? 'Peticiones' : 'Avisos',
-      operations: 'Operaciones',
-      integrations: 'Plataformas',
-      automation: 'Asistente fiscal',
-      people: 'Clientes',
-      messages: 'Mensajes',
-      settings: 'Perfil y ajustes',
-      profile: 'Mi perfil',
-      docs: 'Documentos',
-      orders: 'Registro de pedidos'
+      dashboard: isManager ? t('nav.summary') : t('nav.home'),
+      money: isManager ? t('nav.audit') : t('nav.money'),
+      'money-incomes': isManager ? `${t('nav.audit')} · ${t('nav.income')}` : t('nav.income'),
+      'tax-declarations': t('nav.tax'),
+      'gestor-requirements': isManager ? t('nav.requests') : t('nav.alerts'),
+      operations: t('nav.operations'),
+      integrations: t('nav.platforms'),
+      automation: t('nav.assistant'),
+      people: t('nav.clients'),
+      messages: t('nav.messages'),
+      settings: t('nav.settings'),
+      profile: t('nav.profile'),
+      docs: t('nav.documents'),
+      orders: t('nav.orders')
     };
     return titles[currentView] || 'Labora+';
   };
@@ -95,23 +98,23 @@ const MainLayout: React.FC = () => {
   };
 
   const navItems = isManager ? [
-    { id: 'dashboard', label: 'Resumen', icon: LayoutDashboard },
-    { id: 'money', label: 'Auditoría', icon: Wallet },
-    { id: 'tax-declarations', label: 'Modelos', icon: Scale },
-    { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount },
-    { id: 'settings', label: 'Ajustes', icon: User }
+    { id: 'dashboard', label: t('nav.summary'), icon: LayoutDashboard },
+    { id: 'money', label: t('nav.audit'), icon: Wallet },
+    { id: 'tax-declarations', label: t('nav.tax_short'), icon: Scale },
+    { id: 'gestor-requirements', label: t('nav.requests'), icon: Bell, badge: pendingReqCount },
+    { id: 'settings', label: t('nav.settings_manager_short'), icon: User }
   ] : [
-    { id: 'dashboard', label: 'Inicio', icon: LayoutDashboard },
-    { id: 'money', label: 'Dinero', icon: Wallet },
-    { id: 'tax-declarations', label: 'Modelos', icon: Scale },
-    { id: 'gestor-requirements', label: 'Avisos', icon: Bell, badge: pendingReqCount },
-    { id: 'settings', label: 'Perfil', icon: User }
+    { id: 'dashboard', label: t('nav.home'), icon: LayoutDashboard },
+    { id: 'money', label: t('nav.money'), icon: Wallet },
+    { id: 'tax-declarations', label: t('nav.tax_short'), icon: Scale },
+    { id: 'gestor-requirements', label: t('nav.alerts'), icon: Bell, badge: pendingReqCount },
+    { id: 'settings', label: t('nav.settings_short'), icon: User }
   ];
 
   const Identity = ({ small = false }: { small?: boolean }) => (
     <div className={`flex shrink-0 items-center justify-center overflow-hidden border border-[color:var(--labora-border,#E8DFC8)] bg-[color:var(--labora-surface,#FFFEFB)] text-[color:var(--labora-primary,#2F5D4A)] shadow-sm ${small ? 'h-7 w-7' : 'h-9 w-9'} ${isManager ? 'rounded-[11px]' : 'rounded-full'}`}>
       {identityImage ? (
-        <img src={identityImage} alt="Identidad" className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`} />
+        <img src={identityImage} alt={roleLabel} className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`} />
       ) : (
         <User size={small ? 14 : 16} />
       )}
@@ -134,7 +137,7 @@ const MainLayout: React.FC = () => {
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="labora-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--labora-border,#E8DFC8)] bg-[color:var(--labora-surface,#FFFEFB)] text-[color:var(--labora-ink,#1E2A24)] shadow-sm lg:hidden"
-              aria-label="Abrir menú"
+              aria-label={t('common.open_menu')}
             >
               <Menu size={20} />
             </button>
@@ -145,7 +148,7 @@ const MainLayout: React.FC = () => {
 
             <div className="min-w-0">
               <p className="labora-section-label hidden text-[color:var(--labora-muted,#5A7A68)] lg:block">
-                {isManager ? 'Gestoría' : 'Autónomo'}
+                {roleLabel}
               </p>
               <span className="labora-title mt-0.5 block truncate text-[1.3rem] text-[color:var(--labora-ink,#1E2A24)]">
                 {getViewTitle()}
@@ -164,7 +167,8 @@ const MainLayout: React.FC = () => {
                   ? 'border-[color:var(--labora-gold,#B87A24)]/35 bg-[color:var(--labora-soft-clay,#FEF7EB)] text-[color:var(--labora-gold,#B87A24)]'
                   : 'border-[color:var(--labora-border,#E8DFC8)] bg-[color:var(--labora-surface,#FFFEFB)] text-[color:var(--labora-muted,#78716c)] hover:text-[color:var(--labora-primary,#2F5D4A)]'
               }`}
-              title={privacyMode ? 'Mostrar importes' : 'Ocultar importes'}
+              title={privacyMode ? t('common.show_amounts') : t('common.hide_amounts')}
+              aria-label={privacyMode ? t('common.show_amounts') : t('common.hide_amounts')}
             >
               {privacyMode ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -179,7 +183,7 @@ const MainLayout: React.FC = () => {
                   {currentUser.companyName || currentUser.name}
                 </p>
                 <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-stone-400">
-                  {isManager ? 'Gestoría' : 'Autónomo'}
+                  {roleLabel}
                 </p>
               </div>
             </button>

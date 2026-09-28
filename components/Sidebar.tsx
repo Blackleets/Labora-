@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useGhibliAtmosphere } from '../contexts/GhibliAtmosphereContext';
+import { useI18n } from '../modules/core/i18n';
 import { unreadIncomingCount } from '../modules/messages/messagingRules';
 import { offlineFallbackFor } from '../modules/messages/repositories/messageCache';
 import { signOutRemote } from '../services/authWorkspace';
@@ -41,9 +42,11 @@ type NavItem = {
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currentUser, logout, requirements } = useData();
   const { palette } = useGhibliAtmosphere();
+  const { t } = useI18n();
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const ordersModule = useOrderModule();
   const identityImage = identityImageStore.getForUser(currentUser);
+  const roleLabel = isManager ? t('role.professional') : t('role.worker');
 
   const pendingReqCount = requirements.filter((requirement) => {
     if (!currentUser) return false;
@@ -53,37 +56,36 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
     return requirement.managerId === currentUser.id && requirement.status === 'pending';
   }).length;
 
-  // Cheap unread: per-user offline cache only (no extra network). Best-effort.
   const unreadMessages = useMemo(() => {
     if (!currentUser?.id) return 0;
     return unreadIncomingCount(offlineFallbackFor(currentUser.id), currentUser.id);
   }, [currentUser?.id, currentView]);
 
   const riderPrimary: NavItem[] = [
-    { id: 'dashboard', label: 'Inicio', icon: Home },
-    { id: 'money', label: 'Ingresos y gastos', icon: Wallet },
-    { id: 'tax-declarations', label: 'Modelos fiscales', icon: FileText },
-    { id: 'gestor-requirements', label: 'Avisos', icon: Bell, badge: pendingReqCount }
+    { id: 'dashboard', label: t('nav.home'), icon: Home },
+    { id: 'money', label: t('nav.money'), icon: Wallet },
+    { id: 'tax-declarations', label: t('nav.tax'), icon: FileText },
+    { id: 'gestor-requirements', label: t('nav.alerts'), icon: Bell, badge: pendingReqCount }
   ];
 
   const riderWorkspace: NavItem[] = [
-    ...(ordersModule.enabled ? [{ id: 'orders', label: 'Pedidos', icon: ClipboardList }] : []),
-    { id: 'messages', label: 'Mensajes', icon: MessageSquare, badge: unreadMessages },
-    { id: 'docs', label: 'Documentos', icon: BookOpen },
-    { id: 'integrations', label: 'Plataformas', icon: Receipt }
+    ...(ordersModule.enabled ? [{ id: 'orders', label: t('nav.orders_short'), icon: ClipboardList }] : []),
+    { id: 'messages', label: t('nav.messages'), icon: MessageSquare, badge: unreadMessages },
+    { id: 'docs', label: t('nav.documents'), icon: BookOpen },
+    { id: 'integrations', label: t('nav.platforms'), icon: Receipt }
   ];
 
   const managerPrimary: NavItem[] = [
-    { id: 'dashboard', label: 'Resumen', icon: Home },
-    { id: 'people', label: 'Clientes', icon: Users },
-    { id: 'money', label: 'Auditoría', icon: Wallet },
-    { id: 'tax-declarations', label: 'Modelos fiscales', icon: FileText },
-    { id: 'gestor-requirements', label: 'Peticiones', icon: Bell, badge: pendingReqCount }
+    { id: 'dashboard', label: t('nav.summary'), icon: Home },
+    { id: 'people', label: t('nav.clients'), icon: Users },
+    { id: 'money', label: t('nav.audit'), icon: Wallet },
+    { id: 'tax-declarations', label: t('nav.tax'), icon: FileText },
+    { id: 'gestor-requirements', label: t('nav.requests'), icon: Bell, badge: pendingReqCount }
   ];
 
   const managerWorkspace: NavItem[] = [
-    { id: 'messages', label: 'Mensajes', icon: MessageSquare, badge: unreadMessages },
-    { id: 'docs', label: 'Documentos', icon: BookOpen }
+    { id: 'messages', label: t('nav.messages'), icon: MessageSquare, badge: unreadMessages },
+    { id: 'docs', label: t('nav.documents'), icon: BookOpen }
   ];
 
   const primaryItems = isManager ? managerPrimary : riderPrimary;
@@ -165,13 +167,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
               className="labora-section-label ml-[48px] mt-1.5"
               style={{ color: palette.moss }}
             >
-              Claridad fiscal
+              Labora+
             </p>
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
             className="flex h-9 w-9 items-center justify-center rounded-xl text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] lg:hidden"
-            aria-label="Cerrar menú"
+            aria-label={t('common.close_menu')}
           >
             <X size={19} />
           </button>
@@ -180,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
         <nav className="flex-1 overflow-y-auto px-3.5 py-6">
           <div className="px-2.5 pb-3">
             <p className="labora-section-label">
-              {isManager ? 'Gestoría' : 'Tu espacio'}
+              {isManager ? roleLabel : t('nav.workspace')}
             </p>
           </div>
           <div className="space-y-1.5">{renderItems(primaryItems)}</div>
@@ -194,7 +196,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
 
           <div className="px-2.5 pb-3">
             <p className="labora-section-label">
-              Comunicación
+              {t('nav.communication')}
             </p>
           </div>
           <div className="space-y-1.5">{renderItems(workspaceItems)}</div>
@@ -220,7 +222,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
               {identityImage ? (
                 <img
                   src={identityImage}
-                  alt="Identidad"
+                  alt={roleLabel}
                   className={`h-full w-full ${isManager ? 'object-contain p-1' : 'object-cover'}`}
                 />
               ) : isManager ? (
@@ -231,10 +233,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-extrabold text-[var(--labora-ink)]">
-                {currentUser?.companyName || currentUser?.name || 'Usuario'}
+                {currentUser?.companyName || currentUser?.name || 'Labora+'}
               </p>
               <p className="mt-0.5 truncate text-[10px] font-medium text-[var(--labora-muted)]">
-                {isManager ? 'Gestoría' : 'Autónomo'} · {currentUser?.email}
+                {roleLabel} · {currentUser?.email}
               </p>
             </div>
             <Settings size={15} className="shrink-0 text-[var(--labora-muted)]" />
@@ -244,7 +246,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
             onClick={handleLogout}
             className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-[var(--labora-muted)] transition hover:bg-[var(--labora-soft-clay)] hover:text-[var(--labora-clay)]"
           >
-            <LogOut size={15} /> Cerrar sesión
+            <LogOut size={15} /> {t('common.sign_out')}
           </button>
         </div>
       </aside>

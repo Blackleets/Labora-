@@ -8,8 +8,24 @@ const OPTIONS: Array<{ code: Language; label: string; short: string }> = [
   { code: 'pt', label: 'Português', short: 'PT' }
 ];
 
+const COPY: Record<Language, { title: string; helper: string }> = {
+  es: {
+    title: 'Idioma de la aplicación',
+    helper: 'Es independiente del país de operación. La preferencia se conserva en este dispositivo.'
+  },
+  en: {
+    title: 'Application language',
+    helper: 'This is independent from your operating country. The preference is saved on this device.'
+  },
+  pt: {
+    title: 'Idioma do aplicativo',
+    helper: 'É independente do país de operação. A preferência fica salva neste dispositivo.'
+  }
+};
+
 const LanguageSelector: React.FC = () => {
-  const { language, setLanguage } = useI18n();
+  const { language, setLanguage, t } = useI18n();
+  const copy = COPY[language];
 
   return (
     <section className="labora-card p-4 sm:p-5">
@@ -18,15 +34,15 @@ const LanguageSelector: React.FC = () => {
           <Languages size={18} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="labora-kicker text-[var(--labora-muted)]">Idioma</p>
-          <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">Idioma de la aplicación</h2>
+          <p className="labora-kicker text-[var(--labora-muted)]">{t('common.language')}</p>
+          <h2 className="mt-1 text-base font-extrabold text-[var(--labora-ink)]">{copy.title}</h2>
           <p className="mt-1 text-xs leading-relaxed text-[var(--labora-muted)]">
-            Es independiente del país de operación. La preferencia se conserva en este dispositivo.
+            {copy.helper}
           </p>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2" role="radiogroup" aria-label="Idioma de la aplicación">
+      <div className="mt-4 grid grid-cols-3 gap-2" role="radiogroup" aria-label={copy.title}>
         {OPTIONS.map((option) => {
           const active = language === option.code;
           return (
