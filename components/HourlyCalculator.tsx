@@ -1,16 +1,19 @@
 
 import React, { useState, useMemo } from 'react';
 import { useCountryConfig } from '../modules/country-config/hooks/useCountryConfig';
-import { Bike, Car, Zap, Fuel, Wrench, PiggyBank, AlertCircle, HelpCircle, Settings, TrendingDown } from 'lucide-react';
+import { Bike, Car, Zap, Fuel, Wrench, AlertCircle, HelpCircle, Settings, TrendingDown } from 'lucide-react';
 import { VehicleCostWizard } from '../modules/vehicle-cost/components/VehicleCostWizard';
 import { VehicleCostProfile } from '../modules/vehicle-cost/types';
 import { costEngine } from '../modules/vehicle-cost/services/costEngine';
+import { calculateHourlyOperatingResult } from '../services/hourlyOperatingResult';
 
 export const HourlyCalculator: React.FC = () => {
   const config = useCountryConfig();
   const [grossHour, setGrossHour] = useState(15);
   const [kmHour, setKmHour] = useState(12);
   const [monthlyHours, setMonthlyHours] = useState(120); // Hours worked per month
+  const [commissionPct, setCommissionPct] = useState(0);
+  const [fuelPrice, setFuelPrice] = useState(0);
   
   // Vehicle State
   const [isWizardOpen, setIsWizardOpen] = useState(false);
@@ -31,17 +34,14 @@ export const HourlyCalculator: React.FC = () => {
   const stats = useMemo(() => {
     const monthlyKm = kmHour * monthlyHours;
 
-    // 1. Commission
-    const commission = grossHour * config.default_commission_pct;
-    
-    // 2. Vehicle Costs
+    // Vehicle costs use only values supplied by the user.
     let fuelCost = 0;
     let maintCost = 0;
     let fixedDepreciationHourly = 0; // Allocation of monthly fixed costs to this hour
 
     if (realProfile) {
       // REAL MODE
-      const breakdown = costEngine.calculateCosts(realProfile, config.avg_fuel_price, monthlyKm);
+      const breakdown = costEngine.calculateCosts(realProfile, fuelPrice, monthlyKm);
       
       // Variable costs per km
       fuelCost = kmHour * breakdown.fuelPerKm;
@@ -53,31 +53,25 @@ export const HourlyCalculator: React.FC = () => {
     } else {
       // SIMPLE MODE
       const specs = simpleSpecs[simpleVehicle];
-      fuelCost = (kmHour * specs.efficiency) * config.avg_fuel_price;
+      fuelCost = (kmHour * specs.efficiency) * fuelPrice;
       maintCost = kmHour * specs.maint;
       fixedDepreciationHourly = 0; // Simple mode ignores depreciation
     }
     
-    // 3. Operating Profit (Pre-Tax)
-    const operatingProfit = grossHour - commission - fuelCost - maintCost - fixedDepreciationHourly;
-    
-    // 4. Taxes
-    const taxRate = config.income_tax_brackets[0]?.rate || 0.19;
-    const taxes = Math.max(0, operatingProfit * taxRate);
-
-    // 5. Net
-    const net = operatingProfit - taxes;
+    const result = calculateHourlyOperatingResult({
+      grossIncome: grossHour,
+      commissionPct,
+      fuelCost,
+      maintenanceCost: maintCost,
+      fixedCost: fixedDepreciationHourly
+    });
 
     return {
-      commission,
-      fuelCost,
-      maintCost,
-      fixedDepreciationHourly,
-      taxes,
-      net,
-      operatingProfit
+      ...result,
+      maintCost: result.maintenanceCost,
+      fixedDepreciationHourly: result.fixedCost
     };
-  }, [grossHour, kmHour, monthlyHours, realProfile, simpleVehicle, config]);
+  }, [grossHour, kmHour, monthlyHours, realProfile, simpleVehicle, commissionPct, fuelPrice]);
 
   const format = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: config.currency });
 
@@ -189,15 +183,45 @@ export const HourlyCalculator: React.FC = () => {
               <p className="text-[10px] text-gray-400 mt-1">Usado para distribuir costes fijos (seguro, depreciación).</p>
             </div>
           </div>
+
+          <div className="grid grid-cols-1 gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 md:grid-cols-2">
+            <label className="space-y-1 text-sm font-bold text-gray-700">
+              Comisión aplicada (%)
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.1"
+                value={commissionPct}
+                onChange={e => setCommissionPct(parseFloat(e.target.value) || 0)}
+                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 font-medium outline-none focus:border-[#2D6CDF] focus:ring-2 focus:ring-blue-100"
+              />
+            </label>
+            <label className="space-y-1 text-sm font-bold text-gray-700">
+              Precio combustible ({config.currency}/L)
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={fuelPrice}
+                onChange={e => setFuelPrice(parseFloat(e.target.value) || 0)}
+                disabled={activeVehicleType === 'bicycle'}
+                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 font-medium outline-none focus:border-[#2D6CDF] focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+              />
+            </label>
+            <p className="text-xs leading-relaxed text-blue-800 md:col-span-2">
+              Introduce los valores de tu contrato y tus facturas. Labora+ no aplica tarifas ni impuestos no verificados.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Results Waterfall */}
       <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
-           <span className="font-bold text-gray-700 text-sm">Desglose de Rentabilidad Real</span>
+           <span className="font-bold text-gray-700 text-sm">Desglose operativo por hora</span>
            <div className="flex gap-2">
-             {realProfile && <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Datos Reales</span>}
+             {realProfile && <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Vehículo configurado</span>}
              <span className="text-[10px] font-bold bg-gray-100 border border-gray-200 px-2 py-1 rounded-full text-gray-500 uppercase">Base 1 Hora</span>
            </div>
         </div>
@@ -212,7 +236,7 @@ export const HourlyCalculator: React.FC = () => {
            {/* Deductions */}
            <div className="p-4 space-y-3 bg-gray-50/30">
              <div className="flex justify-between text-red-500 items-center">
-                <span className="flex items-center gap-2 text-xs sm:text-sm"><AlertCircle size={14}/> Comisión Plataforma ({(config.default_commission_pct*100).toFixed(0)}%)</span>
+                <span className="flex items-center gap-2 text-xs sm:text-sm"><AlertCircle size={14}/> Comisión indicada ({commissionPct.toFixed(1)}%)</span>
                 <span className="font-medium">-{format(stats.commission)}</span>
              </div>
              
@@ -234,22 +258,17 @@ export const HourlyCalculator: React.FC = () => {
                   <span className="font-medium">-{format(stats.fixedDepreciationHourly)}</span>
                </div>
              )}
-             
-             <div className="flex justify-between text-blue-500 items-center">
-                <span className="flex items-center gap-2 text-xs sm:text-sm"><PiggyBank size={14}/> Impuestos Est. (IRPF/ISR)</span>
-                <span className="font-medium">-{format(stats.taxes)}</span>
-             </div>
            </div>
 
            {/* Final */}
            <div className="p-6 bg-[#1A1A1A] text-white flex justify-between items-center relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-gray-800 to-black opacity-50"></div>
               <div className="relative z-10">
-                <h3 className="text-lg sm:text-xl font-bold">Beneficio Neto Real</h3>
-                <p className="text-gray-400 text-xs">Limpios en tu bolsillo</p>
+                <h3 className="text-lg sm:text-xl font-bold">Resultado antes de impuestos</h3>
+                <p className="text-gray-400 text-xs">Ingresos menos los costes indicados</p>
               </div>
               <div className="text-right relative z-10">
-                <span className={`text-3xl font-bold ${stats.net > 0 ? 'text-[#2ECC71]' : 'text-red-500'}`}>{format(stats.net)}</span>
+                <span className={`text-3xl font-bold ${stats.resultBeforeTaxes > 0 ? 'text-[#2ECC71]' : 'text-red-500'}`}>{format(stats.resultBeforeTaxes)}</span>
                 <p className="text-gray-400 text-xs">/ hora</p>
               </div>
            </div>
@@ -259,7 +278,7 @@ export const HourlyCalculator: React.FC = () => {
       <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100 flex gap-3">
         <HelpCircle className="text-yellow-600 flex-shrink-0" size={20} />
         <p className="text-xs text-yellow-800 leading-relaxed">
-          <span className="font-bold">Nota:</span> El cálculo "real" incluye la depreciación de tu vehículo (lo que pierde de valor por usarlo) y el seguro prorrateado por horas trabajadas.
+          <span className="font-bold">Nota:</span> Esta es una estimación operativa, no un beneficio neto fiscal. No incluye impuestos, cuotas ni obligaciones locales. Con vehículo configurado sí incluye su depreciación y seguro prorrateados.
           { !realProfile && " Para mayor precisión, configura los datos de tu vehículo con el botón superior."}
         </p>
       </div>
