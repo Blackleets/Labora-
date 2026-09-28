@@ -1,7 +1,13 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { loadRemoteOperationalData, syncOperationalSnapshot } from '../services/remoteOperational';
 import { supabase } from '../services/supabaseClient';
+import {
+  canResumeHydratedCache,
+  markOperationalCacheSubmitted,
+  operationalCacheFingerprint,
+  OperationalCacheConflictError
+} from '../services/operationalCache';
 
 const RemoteSyncBridge: React.FC = () => {
   const {
@@ -16,8 +22,12 @@ const RemoteSyncBridge: React.FC = () => {
     showNotification
   } = useData();
 
-  const hydrationRef = useRef(false);
+  const hydrationRef = useRef<{ userId: string; ready: boolean } | null>(null);
+  const [hydratedUserId, setHydratedUserId] = useState<string | null>(null);
   const syncTimerRef = useRef<number | null>(null);
+  const syncInFlightRef = useRef<Promise<void> | null>(null);
+  const activeUserIdRef = useRef(currentUser?.id);
+  activeUserIdRef.current = currentUser?.id;
   const refreshingRef = useRef(false);
   const lastSyncErrorAtRef = useRef(0);
 
@@ -28,7 +38,9 @@ const RemoteSyncBridge: React.FC = () => {
     lastSyncErrorAtRef.current = now;
     showNotification(
       'error',
-      'No se pudo sincronizar con la nube. Tus cambios siguen en este dispositivo y volveremos a intentarlo.'
+      error instanceof OperationalCacheConflictError
+        ? 'Hay datos locales pendientes. La sincronización se ha pausado para evitar perderlos; no cierres sesión.'
+        : 'No se pudo sincronizar con la nube. Los cambios permanecen en este dispositivo; no cierres sesión.'
     );
   };
 
@@ -44,45 +56,48 @@ const RemoteSyncBridge: React.FC = () => {
   }), [currentUser?.id, users, incomes, expenses, requirements, documents, declarations, payments]);
 
   useEffect(() => {
-    if (!currentUser || hydrationRef.current) return;
+    if (!currentUser) {
+      hydrationRef.current = null;
+      setHydratedUserId(null);
+      return;
+    }
+    if (hydrationRef.current?.userId === currentUser.id && hydrationRef.current.ready) return;
 
     const hydrationKey = `labora_remote_hydrated:${currentUser.id}`;
-    if (sessionStorage.getItem(hydrationKey) === 'true') {
-      hydrationRef.current = true;
+    let receipt: string | null = null;
+    try {
+      receipt = sessionStorage.getItem(hydrationKey);
+      sessionStorage.removeItem(hydrationKey);
+    } catch {
+      // Storage access is optional, but remote writes need verified hydration.
+    }
+    if (canResumeHydratedCache(currentUser.id, receipt)) {
+      hydrationRef.current = { userId: currentUser.id, ready: true };
+      setHydratedUserId(currentUser.id);
       return;
     }
 
     let active = true;
-    hydrationRef.current = true;
 
     const hydrate = async () => {
       try {
-        const before = JSON.stringify({
-          incomes: localStorage.getItem('labora_incomes'),
-          expenses: localStorage.getItem('labora_expenses'),
-          requirements: localStorage.getItem('labora_requirements'),
-          documents: localStorage.getItem('labora_docs'),
-          declarations: localStorage.getItem('labora_declarations'),
-          payments: localStorage.getItem('labora_payments')
-        });
+        const before = operationalCacheFingerprint(currentUser.id);
 
-        await loadRemoteOperationalData(users);
+        const result = await loadRemoteOperationalData(users, currentUser.id, before);
         if (!active) return;
-        sessionStorage.setItem(hydrationKey, 'true');
+        if (!result.cachePersisted) throw new Error('La caché local no está disponible. Sincronización desactivada.');
 
-        const after = JSON.stringify({
-          incomes: localStorage.getItem('labora_incomes'),
-          expenses: localStorage.getItem('labora_expenses'),
-          requirements: localStorage.getItem('labora_requirements'),
-          documents: localStorage.getItem('labora_docs'),
-          declarations: localStorage.getItem('labora_declarations'),
-          payments: localStorage.getItem('labora_payments')
-        });
+        const after = operationalCacheFingerprint(currentUser.id);
 
-        if (before !== after) window.location.reload();
+        if (before !== after) {
+          sessionStorage.setItem(hydrationKey, after);
+          window.location.reload();
+          return;
+        }
+        hydrationRef.current = { userId: currentUser.id, ready: true };
+        setHydratedUserId(currentUser.id);
       } catch (error) {
-        reportSyncError('LABORA_SYNC_HYDRATE_FAILED', error);
-        hydrationRef.current = false;
+        if (active) reportSyncError('LABORA_SYNC_HYDRATE_FAILED', error);
       }
     };
 
@@ -92,30 +107,50 @@ const RemoteSyncBridge: React.FC = () => {
 
   useEffect(() => {
     if (!currentUser) return;
-    const hydrationKey = `labora_remote_hydrated:${currentUser.id}`;
-    if (sessionStorage.getItem(hydrationKey) !== 'true') return;
+    if (hydratedUserId !== currentUser.id) return;
 
     if (syncTimerRef.current) window.clearTimeout(syncTimerRef.current);
     syncTimerRef.current = window.setTimeout(() => {
-      void syncOperationalSnapshot({
-        currentUser,
-        users,
-        incomes,
-        expenses,
-        requirements,
-        documents,
-        declarations,
-        payments
-      }).catch((error) => reportSyncError('LABORA_SYNC_WRITE_FAILED', error));
+      const submittedFingerprint = operationalCacheFingerprint(currentUser.id);
+      const previousSync = syncInFlightRef.current;
+      const sync = (async () => {
+        if (previousSync) await previousSync;
+        if (activeUserIdRef.current !== currentUser.id
+          || operationalCacheFingerprint(currentUser.id) !== submittedFingerprint) return;
+
+        await syncOperationalSnapshot({
+          currentUser,
+          users,
+          incomes,
+          expenses,
+          requirements,
+          documents,
+          declarations,
+          payments
+        });
+        if (activeUserIdRef.current === currentUser.id
+          && operationalCacheFingerprint(currentUser.id) === submittedFingerprint
+          && !markOperationalCacheSubmitted(currentUser.id, submittedFingerprint)) {
+          throw new Error('No se pudo guardar la confirmación local de sincronización.');
+        }
+      })().catch((error) => {
+        if (activeUserIdRef.current === currentUser.id) reportSyncError('LABORA_SYNC_WRITE_FAILED', error);
+      });
+      syncInFlightRef.current = sync;
+      void sync.then(() => {
+        if (syncInFlightRef.current === sync) syncInFlightRef.current = null;
+      });
     }, 700);
 
     return () => {
       if (syncTimerRef.current) window.clearTimeout(syncTimerRef.current);
     };
-  }, [fingerprint, currentUser, users, incomes, expenses, requirements, documents, declarations, payments]);
+  }, [fingerprint, hydratedUserId, currentUser, users, incomes, expenses, requirements, documents, declarations, payments]);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || hydratedUserId !== currentUser.id) return;
+
+    let active = true;
 
     const isAlreadyLocal = (table: string, row: any) => {
       if (!row?.id) return false;
@@ -180,12 +215,30 @@ const RemoteSyncBridge: React.FC = () => {
       if (refreshingRef.current) return;
       if (payload.eventType !== 'DELETE' && isAlreadyLocal(table, payload.new)) return;
       refreshingRef.current = true;
+      let reloading = false;
       try {
-        await loadRemoteOperationalData(users);
+        while (syncInFlightRef.current) await syncInFlightRef.current;
+        if (!active) return;
+        if (payload.eventType !== 'DELETE' && isAlreadyLocal(table, payload.new)) return;
+        const before = operationalCacheFingerprint(currentUser.id);
+        const result = await loadRemoteOperationalData(users, currentUser.id, before);
+        if (!active) return;
+        if (!result.cachePersisted) throw new Error('La caché local no está disponible. Sincronización desactivada.');
+        sessionStorage.setItem(
+          `labora_remote_hydrated:${currentUser.id}`,
+          operationalCacheFingerprint(currentUser.id)
+        );
+        reloading = true;
         window.location.reload();
       } catch (error) {
+        if (!active) return;
         reportSyncError('LABORA_SYNC_REALTIME_REFRESH_FAILED', error);
-        refreshingRef.current = false;
+        if (error instanceof OperationalCacheConflictError) {
+          hydrationRef.current = null;
+          setHydratedUserId(null);
+        }
+      } finally {
+        if (!reloading) refreshingRef.current = false;
       }
     };
 
@@ -195,8 +248,8 @@ const RemoteSyncBridge: React.FC = () => {
     });
     channel.subscribe();
 
-    return () => { void supabase.removeChannel(channel); };
-  }, [currentUser, users, incomes, expenses, requirements, documents, declarations, payments]);
+    return () => { active = false; void supabase.removeChannel(channel); };
+  }, [hydratedUserId, currentUser, users, incomes, expenses, requirements, documents, declarations, payments]);
 
   return null;
 };
