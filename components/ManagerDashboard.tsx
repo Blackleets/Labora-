@@ -23,6 +23,7 @@ import { buildQuarterPackRows, dateInQuarter, downloadCsv, quarterExportFilename
 import { EXPENSE_STATUS_FILTER_OPTIONS, ExpenseStatusFilter, expenseMatches, sortByDateDesc } from '../services/moneyFilters';
 import { formControlFocusClass } from './formA11y';
 import { expenseReviewPercentage, managerWorkQueue, parseDeductiblePercentage } from '../services/managerWorkQueue';
+import { formatWorkspaceMoney } from '../services/workspaceDisplay';
 
 interface ManagerDashboardProps {
   setView?: (view: string) => void;
@@ -38,6 +39,7 @@ const currentQuarterLabel = () => {
 export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) => {
   const {
     currentUser,
+    privacyMode,
     users,
     incomes,
     expenses,
@@ -141,11 +143,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
     (requirement) => requirement.status === 'pending' || requirement.status === 'submitted'
   ).length;
 
-  const formatMoney = (amount: number) => amount.toLocaleString('es-ES', {
-    style: 'currency',
-    currency: selectedCountry.currency || 'EUR',
-    maximumFractionDigits: 0
-  });
+  const formatMoney = (amount: number) => formatWorkspaceMoney(amount, selectedCountry.currency || 'EUR', privacyMode);
 
   const getExpenseStatus = (expense: Expense) => {
     switch (expense.status) {
