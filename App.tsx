@@ -7,6 +7,7 @@ import { OrganizationProvider } from './contexts/OrganizationContext';
 import { useI18n } from './modules/core/i18n';
 import { identityImageStore } from './services/identityImage';
 import { UserRole } from './types';
+import { pendingRequirementCount } from './services/workspaceDisplay';
 
 import Login from './components/Login';
 import { GhibliLightingControl } from './components/GhibliLightingControl';
@@ -62,13 +63,7 @@ const MainLayout: React.FC = () => {
   const isManager = currentUser.role === UserRole.MANAGER || isAdmin;
   const identityImage = identityImageStore.getForUser(currentUser);
   const roleLabel = isAdmin ? 'Administración' : isManager ? t('role.professional') : t('role.worker');
-  const pendingReqCount = requirements.filter((requirement) =>
-    isAdmin
-      ? requirement.status === 'pending'
-      : currentUser.role === UserRole.RIDER
-      ? requirement.riderId === currentUser.id && requirement.status === 'pending'
-      : requirement.managerId === currentUser.id && requirement.status === 'pending'
-  ).length;
+  const pendingReqCount = pendingRequirementCount(currentUser, requirements);
 
   const getViewTitle = () => {
     const titles: Record<string, string> = {
