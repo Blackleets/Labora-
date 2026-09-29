@@ -22,6 +22,7 @@ import { buildQuarterPdfModel, downloadQuarterPdf, quarterPdfFilename } from '..
 import { buildQuarterPackRows, dateInQuarter, downloadCsv, quarterExportFilename, quarterOptionsFor } from '../services/quarterExport';
 import { EXPENSE_STATUS_FILTER_OPTIONS, ExpenseStatusFilter, expenseMatches, sortByDateDesc } from '../services/moneyFilters';
 import { formControlFocusClass } from './formA11y';
+import { expenseReviewPercentage, managerWorkQueue, parseDeductiblePercentage } from '../services/managerWorkQueue';
 
 interface ManagerDashboardProps {
   setView?: (view: string) => void;
@@ -54,6 +55,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   );
   const clientIds = useMemo(() => new Set(clients.map((client) => client.id)), [clients]);
   const quarter = currentQuarterLabel();
+  const workQueue = managerWorkQueue(currentUser?.id, users, expenses, incomes, requirements);
 
   const [selectedClientId, setSelectedClientId] = useState('');
   const [search, setSearch] = useState('');
@@ -61,7 +63,8 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   const [selectedQuarter, setSelectedQuarter] = useState(quarter);
   const [auditStatus, setAuditStatus] = useState<ExpenseStatusFilter>('to_review');
   const [reviewingExpense, setReviewingExpense] = useState<Expense | null>(null);
-  const [reviewPct, setReviewPct] = useState('100');
+  const [reviewPct, setReviewPct] = useState('');
+  const [reviewError, setReviewError] = useState('');
   const [reviewNote, setReviewNote] = useState('');
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [showRequirementModal, setShowRequirementModal] = useState(false);
@@ -130,12 +133,12 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   const pendingAudit = clientExpenses.filter(
     (expense) => expense.status === 'pending_review' || expense.status === 'needs_fix'
   ).length;
-  const pendingRequirements = clientRequirements.filter((requirement) => requirement.status === 'pending').length;
+  const pendingRequirements = clientRequirements.filter((requirement) => requirement.status === 'pending' || requirement.status === 'submitted').length;
   const globalPendingAudit = linkedExpenses.filter(
     (expense) => expense.status === 'pending_review' || expense.status === 'needs_fix'
   ).length;
   const globalPendingRequirements = linkedRequirements.filter(
-    (requirement) => requirement.status === 'pending'
+    (requirement) => requirement.status === 'pending' || requirement.status === 'submitted'
   ).length;
 
   const formatMoney = (amount: number) => amount.toLocaleString('es-ES', {
@@ -181,14 +184,19 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
 
   const openExpenseReview = (expense: Expense) => {
     setReviewingExpense(expense);
-    const existing = expense.deductiblePercentage;
-    setReviewPct(String(existing && existing > 0 ? existing : 100));
+    setReviewPct(expenseReviewPercentage(expense));
+    setReviewError('');
     setReviewNote('');
   };
 
   const submitExpenseReview = (status: 'approved' | 'rejected' | 'needs_fix') => {
     if (!reviewingExpense) return;
-    const pct = Math.max(0, Math.min(100, Number(reviewPct) || 0));
+    const parsedPct = parseDeductiblePercentage(reviewPct);
+    if (status === 'approved' && parsedPct === null) {
+      setReviewError('Indica el porcentaje confirmado, entre 0 y 100. No se calcula automáticamente.');
+      return;
+    }
+    const pct = parsedPct ?? 0;
     const note = reviewNote.trim()
       || (status === 'approved'
         ? `Aprobado al ${pct}% por la gestoría.`
@@ -262,6 +270,45 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
         <PortfolioPulse label="Peticiones" value={globalPendingRequirements ? `${globalPendingRequirements} abiertas` : 'Todo al día'} attention={globalPendingRequirements > 0} />
         <PortfolioPulse label="Periodo" value={quarter} />
       </section>
+
+      {clients.length > 0 && (
+        <section className="labora-card p-4 sm:p-5" aria-labelledby="manager-work-title">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="labora-kicker text-[var(--labora-primary)]">Trabajo pendiente</p>
+              <h2 id="manager-work-title" className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">Qué necesita tu atención</h2>
+              <p className="mt-1 text-xs text-[var(--labora-muted)]">Toda la cartera y todos los trimestres. Primero vencimientos, después respuestas recibidas.</p>
+            </div>
+            <span className="labora-chip text-xs">{workQueue.reduce((sum, item) => sum + item.total, 0)} pendientes</span>
+          </div>
+          {workQueue.length === 0 ? (
+            <p role="status" className="mt-4 text-sm text-[var(--labora-muted)]">Sin revisiones pendientes ni peticiones vencidas en los registros disponibles.</p>
+          ) : (
+            <div className="mt-4 max-h-[360px] space-y-2 overflow-y-auto">
+              {workQueue.map(item => (
+                <div key={item.clientId} className="flex flex-col gap-3 rounded-[14px] border border-[var(--labora-border)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-extrabold text-[var(--labora-ink)]">{item.clientName}</p>
+                    <p className="mt-1 text-xs text-[var(--labora-muted)]">{item.expenses} gastos · {item.incomes} ingresos · {item.submitted} respuestas · {item.overdue} vencidas</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {item.expenses > 0 && <button type="button" className={`labora-chip min-h-10 text-xs ${formControlFocusClass}`} onClick={() => {
+                      setSelectedClientId(item.clientId);
+                      const first = sortByDateDesc(expenses.filter(row => row.userId === item.clientId && (!row.status || row.status === 'pending_review')))[0];
+                      if (first && /^\d{4}-\d{2}-\d{2}$/.test(first.date)) setSelectedQuarter(`${Math.floor((Number(first.date.slice(5, 7)) - 1) / 3) + 1}T ${first.date.slice(0, 4)}`);
+                      setAuditStatus('to_review');
+                      setTab('audit');
+                      document.getElementById('manager-client-workspace')?.scrollIntoView({ block: 'start' });
+                    }}>Revisar gastos</button>}
+                    {item.incomes > 0 && <button type="button" className={`labora-chip min-h-10 text-xs ${formControlFocusClass}`} onClick={() => setView?.('money-incomes')}>Ingresos de la cartera</button>}
+                    {(item.submitted + item.overdue) > 0 && <button type="button" className={`labora-chip min-h-10 text-xs ${formControlFocusClass}`} onClick={() => setView?.('gestor-requirements')}>Abrir peticiones</button>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <FiscalDeadlineCard audience="manager" />
 
@@ -362,7 +409,7 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
             </div>
           </aside>
 
-          <div className="min-w-0 space-y-4">
+          <div id="manager-client-workspace" className="min-w-0 space-y-4">
             {selectedClient && (
               <>
                 <section className="labora-card p-4 sm:p-5">
@@ -608,8 +655,10 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
               )}
               <label className="block space-y-1.5">
                 <span className="text-xs font-extrabold text-[var(--labora-muted)]">% deducible (0–100)</span>
-                <input type="number" min="0" max="100" step="1" value={reviewPct} onChange={(event) => setReviewPct(event.target.value)} className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]" />
+                <input aria-label="Porcentaje deducible confirmado" aria-invalid={Boolean(reviewError)} aria-describedby="manager-review-help" type="number" min="0" max="100" step="0.01" placeholder="Indica el porcentaje confirmado" value={reviewPct} onChange={(event) => { setReviewPct(event.target.value); setReviewError(''); }} className="w-full rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]" />
               </label>
+              <p id="manager-review-help" className="text-xs text-[var(--labora-muted)]">Confirma el porcentaje según el justificante y la normativa aplicable.</p>
+              {reviewError && <p role="alert" className="text-xs text-[var(--labora-clay-deep)]">{reviewError}</p>}
               <label className="block space-y-1.5">
                 <span className="text-xs font-extrabold text-[var(--labora-muted)]">Nota para el autónomo</span>
                 <textarea rows={3} value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} className="w-full resize-none rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] px-3 py-2.5 text-sm outline-none focus:border-[var(--labora-primary-2)]" placeholder="Opcional" />

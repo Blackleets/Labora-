@@ -1,3 +1,21 @@
+# Checkpoint activo — 2026-09-29, continuación Gestoría
+
+Repositorio Blackleets/Labora-. Base main@c5ff7d57 (PR #64 fusionado).
+Rama: feat/manager-priority-queue.
+
+- PR #64: CI web, Edge Functions y Android PASS; GitHub Pages run 36624408479 PASS. Navegador público muestra login; no hay sesión autenticada disponible para UAT.
+- Nuevo trabajo: cola por cliente vinculado, priorizada por peticiones vencidas, respuestas recibidas y revisiones pendientes; acceso a auditoría, ingresos y peticiones reales.
+- La cola incluye todos los trimestres y no cuenta needs_fix como revisión nueva del gestor (espera al trabajador).
+- Peticiones submitted ya cuentan como abiertas en el pulso de cartera.
+- Revisión fiscal: desaparece el 100% preseleccionado; aprobación exige porcentaje explícito 0–100; cero confirmado se conserva; entrada inválida no se recorta silenciosamente.
+- Validación local: TypeScript, 187 pruebas, release:check 30/30, build y diff --check PASS.
+- Próximo paso: CI y despliegue de esta rama, luego UAT autenticada real Trabajador/Gestoría. No fusionar PR #35 ni declarar UAT PASS sin evidencia.
+- Invariantes: Supabase/RLS, secretos solo servidor, sin tasas fiscales inventadas, caché por usuario, borrado atómico y tombstones. Stripe continúa deshabilitado hasta sandbox UAT.
+
+Registro previo (histórico):
+
+---
+
 # Checkpoint activo — 2026-09-29 (Europe/Madrid)
 
 Repositorio: Blackleets/Labora-. Base comprobada: main@aa9b325.
