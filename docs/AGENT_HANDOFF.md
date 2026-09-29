@@ -1,3 +1,45 @@
+# Continuidad activa — 2026-09-29, 23:10 Europe/Madrid
+
+## Identidad y mandato
+Labora+, repositorio Blackleets/Labora-, producto https://blackleets.github.io/Labora-/.
+Mantener el diseño actual; reforzar flujos reales de Trabajador, Gestoría y Admin. Usuario autoriza continuar mejoras y conservar continuidad si se interrumpe el chat.
+Preservar Supabase/RLS, fiscalidad sin datos inventados, privacidad, aislamiento por usuario, borrado atómico y operational_deletion_tombstones. No añadir otro dashboard.
+No guardar secretos ni contraseñas en checkpoints. PR #35 sigue sujeto a UAT dual real; no fusionarlo por inferencia.
+
+## Evidencia confirmada en esta sesión
+- PR #68 fusionado; main resultante fff6c1d6798f44b013a8fd188609634dddb6118c.
+- Head validado 3c864fd93cfc82df9ce385730f7fc4521473bc61: CI run 36630948083 completed/success.
+- Mejora: foco al abrir ambiente y retorno con Cerrar/Escape; pointerdown para cierre exterior; objetivos táctiles mayores y semántica de diálogo.
+- Comprobaciones locales previas del mismo cambio: TypeScript, 193 tests, release:check 30/30, build y diff check PASS.
+- Despliegue de #68 NO verificado todavía. Visual y UAT dual NO ejecutadas.
+- Checkout local puede tener bdf639d (commit equivalente al publicado por connector). Fetch Git por shell falló por proxy; usar GitHub connector para leer versión canónica.
+
+## Plan de ejecución y aceptación
+| Orden | Trabajo | Evidencia necesaria | Estado |
+|---|---|---|---|
+| 1 | Cierre #68 y despliegue | CI PASS, merge confirmado, Pages PASS para SHA y revisión visual | CI/merge hechos; deploy/visual pendientes |
+| 2 | Inventario de pantallas y controles | Ruta, rol, acción, resultado esperado, estado implementado/probado/desplegado | Pendiente |
+| 3 | Trabajador: acceso, gasto/ticket, ingreso, documento, total, mensaje, recarga | Recorrido real; guardado confirmado y totales concordantes | Pendiente UAT |
+| 4 | Gestoría: vínculo, cliente, revisión, petición, respuesta, deducibilidad, exportación | Dos cuentas reales y evidencia de ida/vuelta | Pendiente UAT |
+| 5 | Seguridad entre cuentas, caché, archivos, desvinculación y borrado | Pruebas negativas servidor; sin acceso cruzado ni resurrección | Revisar cobertura y completar evidencia |
+| 6 | Móvil y ambiente | 360/390/430px, teclado, navegación, safe area, reduced motion, persistencia | Pendiente visual |
+| 7 | Rendimiento | Medición antes/después; CSS compilado conserva clases antes de retirar CDN | Pendiente |
+| 8 | IA, Stripe y otras integraciones | Configuración real, manejo de errores y sandbox; sin promesas ficticias | Pendiente/configuración |
+| 9 | UAT final y producción | Sin P0/P1 abiertos; ambos roles PASS; deploy exacto confirmado | Abierto |
+
+Cada hallazgo: problema, evidencia, impacto P0/P1/P2/P3, solución mínima, validación y rollback. No clasificar controles por búsquedas de texto únicamente: trazar handler, servicio y autorización.
+P0: exposición/pérdida de datos o resultados económicos incorrectos. P1: tarea principal bloqueada. P2: claridad/móvil/rendimiento. P3: decoración/opcionales.
+Excluir por ahora: rediseño global, fiscalidad de países no verificada, integraciones ficticias, pagos reales sin sandbox UAT y nuevas dependencias sin necesidad.
+
+## Punto exacto para continuar
+1. Leer este archivo COMPLETO en GitHub y comprobar main/PRs actuales; el histórico inferior no sustituye este checkpoint.
+2. Comprobar el deploy Pages de fff6c1d (o su sucesor) antes de declararlo publicado.
+3. Empezar inventario por App.tsx, Sidebar y módulos de dinero; localizar acciones incompletas y resolver primero P0/P1 con cambio pequeño.
+4. Si navegador solo muestra login, documentar el bloqueo: no inventar sesiones ni UAT PASS.
+5. Actualizar este mismo handoff tras cada cambio sustancial con SHA, PR, CI/deploy y siguiente tarea; no crear otro sistema de memoria.
+
+---
+
 # Checkpoint activo — 2026-09-29 (Europe/Madrid)
 
 Repositorio: Blackleets/Labora-. Base main@3aa41991.
