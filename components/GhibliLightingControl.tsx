@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Sun, Sunrise, Sunset, Moon, Sparkles, Clock, 
   Leaf, Trees, CloudRain, Snowflake, Check, X, 
@@ -28,19 +29,28 @@ export const GhibliLightingControl: React.FC = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node) && !panelRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        document.getElementById('ghibli-lighting-btn')?.focus();
+      }
+    };
     if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
 
@@ -96,6 +106,8 @@ export const GhibliLightingControl: React.FC = () => {
             : 'bg-[color:var(--labora-parchment,#FAF7F2)] hover:bg-[color:var(--labora-surface,#FFFEFB)] border-[color:var(--labora-border,#E5DAC2)] text-[color:var(--labora-ink,#44403c)]'
         }`}
         title="Ajustar luz ambiental"
+        aria-label="Ajustar luz ambiental"
+        aria-controls="ghibli-lighting-panel"
         aria-expanded={isOpen}
       >
         <span className="relative flex items-center justify-center">
@@ -109,7 +121,7 @@ export const GhibliLightingControl: React.FC = () => {
           {title}
         </span>
         
-        <span className="lg:hidden text-stone-800">
+        <span className="hidden sm:inline lg:hidden text-stone-800">
           {timeOfDay === 'dawn' ? 'Amanecer' : timeOfDay === 'midday' ? 'Mediodía' : timeOfDay === 'golden_hour' ? 'Atardecer' : 'Noche'}
         </span>
 
@@ -119,10 +131,13 @@ export const GhibliLightingControl: React.FC = () => {
       </button>
 
       {/* Atmospheric Settings Popover Panel */}
-      {isOpen && (
+      {isOpen && createPortal(
         <div 
+          ref={panelRef}
           id="ghibli-lighting-panel"
-          className="absolute right-0 mt-2 w-[340px] sm:w-[410px] bg-[#FCFAF7] rounded-3xl border border-[#E4D7BE] shadow-[0_12px_40px_-10px_rgba(70,50,30,0.18)] p-5 z-50 text-stone-800 animate-in fade-in zoom-in-95 duration-150"
+          role="dialog"
+          aria-label="Luz ambiental"
+          className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5.5rem)] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto sm:inset-x-auto sm:right-5 sm:w-[410px] bg-[#FCFAF7] rounded-3xl border border-[#E4D7BE] shadow-[0_12px_40px_-10px_rgba(70,50,30,0.18)] p-5 z-50 text-stone-800 animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Panel Header */}
           <div className="flex items-center justify-between pb-3.5 border-b border-[#EAE0CD]">
@@ -164,6 +179,9 @@ export const GhibliLightingControl: React.FC = () => {
             </div>
 
             <button
+              role="switch"
+              aria-label="Adaptar ambiente automáticamente"
+              aria-checked={isAuto}
               onClick={() => setIsAuto(!isAuto)}
               className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                 isAuto ? 'bg-[#2E5A44]' : 'bg-stone-300'
@@ -201,6 +219,7 @@ export const GhibliLightingControl: React.FC = () => {
                 return (
                   <button
                     key={opt.id}
+                    aria-pressed={isSelected}
                     onClick={() => setTimeOfDay(opt.id)}
                     className={`p-2.5 rounded-2xl text-left border transition-all relative flex flex-col justify-between ${
                       isSelected
@@ -245,6 +264,7 @@ export const GhibliLightingControl: React.FC = () => {
                 return (
                   <button
                     key={s.id}
+                    aria-pressed={isSelected}
                     onClick={() => setSeason(s.id)}
                     className={`py-2 px-1.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${
                       isSelected
@@ -317,7 +337,7 @@ export const GhibliLightingControl: React.FC = () => {
           <div className="mt-3 text-[10px] text-stone-400 text-center px-2">
             La luz ambiental adapta tonos según la hora — sin cambiar tu lógica de trabajo.
           </div>
-        </div>
+        </div>, document.body
       )}
     </div>
   );

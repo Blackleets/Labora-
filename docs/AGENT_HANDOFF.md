@@ -1,3 +1,24 @@
+# Checkpoint activo — 2026-09-29 (Europe/Madrid)
+
+Repositorio: Blackleets/Labora-. Base comprobada: main@aa9b325.
+Rama de esta corrección: fix/mobile-seasonal-atmosphere.
+
+## Continuación exacta
+- PR #63 fusionado: avisos móviles sobre navegación inferior.
+- PR #62 fusionado: actividad reciente real del trabajador.
+- PR #61 fusionado: cobertura administrativa por país en lugar del mapa defectuoso.
+- Esta corrección recupera el selector de ambiente en móvil, coloca su panel en un portal fuera de la cabecera y añade nieve ligera, hojas, pétalos, sol y luna dentro del paisaje existente.
+- Respeta reduced-motion y no intercepta controles ni formularios.
+- Baseline: typecheck, 180 tests, 30 comprobaciones estructurales y build pasaron.
+- Pendiente: UAT real autenticada en móvil con Trabajador y Gestoría; no hay evidencia suficiente para declarar la app 100% lista.
+- Stripe sigue deshabilitado hasta sandbox UAT; secretos de IA y protección de contraseñas requieren verificar configuración real.
+- Preservar Supabase/RLS, fiscalidad sin tasas inventadas, caché por usuario, borrado atómico y operational_deletion_tombstones.
+- Próximo paso: comprobar CI de esta rama y el despliegue; verificar selector y flujos duales sobre sesiones autorizadas. No crear cuentas ni inventar UAT PASS.
+
+La información anterior siguiente es histórica; contrastar estados con GitHub antes de actuar.
+
+---
+
 # Labora+ — handoff para el siguiente agente
 
 **Fecha:** 2026-09-27 (Europe/Paris) · anterior 2026-09-20  
