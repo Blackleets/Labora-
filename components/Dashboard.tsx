@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Activity,
   Bell,
   CheckCircle2,
   ChevronRight,
@@ -223,6 +224,18 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     }
   ] as const;
 
+  const recentActivity = [
+    ...incomes
+      .filter((income) => income.userId === currentUser.id)
+      .map((income) => ({ id: `income-${income.id}`, date: income.date, title: 'Ingreso registrado', detail: `${income.platform || 'Ingreso'} · ${formatCurrencyPrecise(income.amount)}`, icon: Wallet, view: 'money-incomes' })),
+    ...expenses
+      .filter((expense) => expense.userId === currentUser.id)
+      .map((expense) => ({ id: `expense-${expense.id}`, date: expense.date, title: 'Gasto registrado', detail: `${expense.merchant || expense.category} · ${formatCurrencyPrecise(expense.amount)}`, icon: ReceiptText, view: 'money' })),
+    ...documents
+      .filter((document) => document.userId === currentUser.id)
+      .map((document) => ({ id: `document-${document.id}`, date: document.date, title: 'Documento guardado', detail: document.name, icon: FileText, view: 'docs' }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
   return (
     <div id="rider-dashboard" className="mx-auto max-w-6xl space-y-8 pb-12">
       <section className="labora-hero p-6 sm:p-8 lg:p-10 xl:p-12">
@@ -392,6 +405,26 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
         </div>
       </section>
 
+      <section className="overflow-hidden rounded-[22px] border border-[var(--labora-border)] bg-[var(--labora-surface)]">
+        <div className="flex items-center justify-between gap-4 border-b border-[var(--labora-border)] px-5 py-4 sm:px-6">
+          <div>
+            <p className="labora-kicker text-[var(--labora-muted)]">Actividad real</p>
+            <h2 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">Lo último en tu espacio</h2>
+          </div>
+          <span className="inline-flex items-center gap-2 text-[10px] font-bold text-[var(--labora-primary)]"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> Actualizado</span>
+        </div>
+        {recentActivity.length ? (
+          <div className="divide-y divide-[var(--labora-border)]/80">
+            {recentActivity.map((item) => {
+              const Icon = item.icon;
+              return <button key={item.id} type="button" onClick={() => setView?.(item.view)} className="grid w-full grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-3 px-5 py-3.5 text-left transition hover:bg-[var(--labora-surface-2)]/65 sm:px-6"><span className="flex h-9 w-9 items-center justify-center rounded-[13px] bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]"><Icon size={16} /></span><span className="min-w-0"><span className="block truncate text-xs font-extrabold text-[var(--labora-ink)]">{item.title}</span><span className="mt-0.5 block truncate text-[11px] text-[var(--labora-muted)]">{item.detail}</span></span><span className="flex items-center gap-2 text-[10px] font-bold text-[var(--labora-muted)]"><time>{new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short' }).format(new Date(item.date))}</time><ChevronRight size={14} /></span></button>;
+            })}
+          </div>
+        ) : (
+          <div className="px-6 py-10 text-center"><ActivityDot /><p className="mt-3 text-sm font-extrabold text-[var(--labora-ink)]">Tu actividad aparecerá aquí</p><p className="mt-1 text-xs text-[var(--labora-muted)]">Registra un ingreso, gasto o documento para comenzar.</p></div>
+        )}
+      </section>
+
       <section>
         <div className="mb-5">
           <p className="labora-kicker text-[var(--labora-muted)]">Este periodo</p>
@@ -444,6 +477,8 @@ const LiveItem = ({ label, value, active = false, attention = false }: { label: 
     <div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-[var(--labora-muted)]">{label}</p><p className="mt-1 truncate text-xs font-extrabold text-[var(--labora-ink)]">{value}</p></div>
   </div>
 );
+
+const ActivityDot = () => <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[var(--labora-moss-soft)] text-[var(--labora-primary)]"><Activity size={19} /></span>;
 
 const Metric = ({ onClick, icon: Icon, label, value, accent = false, compact = false }: any) => (
   <button onClick={onClick} className="labora-card labora-card-interactive p-5 sm:p-6 text-left">

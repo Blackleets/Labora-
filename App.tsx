@@ -73,7 +73,7 @@ const MainLayout: React.FC = () => {
   const getViewTitle = () => {
     const titles: Record<string, string> = {
       dashboard: isManager ? t('nav.summary') : t('nav.home'),
-      admin: 'Administración',
+      admin: 'Centro de control',
       money: isManager ? t('nav.audit') : t('nav.money'),
       'money-incomes': isManager ? `${t('nav.audit')} · ${t('nav.income')}` : t('nav.income'),
       'tax-declarations': t('nav.tax'),
