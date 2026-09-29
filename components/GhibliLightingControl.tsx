@@ -31,6 +31,18 @@ export const GhibliLightingControl: React.FC = () => {
   const popoverRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const closePanel = () => {
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  // Focus the opened panel; keep Tab navigation available for this non-modal popover.
+  useEffect(() => {
+    if (isOpen) panelRef.current?.focus();
+  }, [isOpen]);
+
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -41,15 +53,15 @@ export const GhibliLightingControl: React.FC = () => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsOpen(false);
-        document.getElementById('ghibli-lighting-btn')?.focus();
+        triggerRef.current?.focus();
       }
     };
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('pointerdown', handleClickOutside);
     }
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
@@ -98,16 +110,19 @@ export const GhibliLightingControl: React.FC = () => {
     <div className="relative" ref={popoverRef}>
       {/* Header Trigger Pill */}
       <button
+        ref={triggerRef}
+        type="button"
         id="ghibli-lighting-btn"
         onClick={() => setIsOpen(!isOpen)}
-        className={`labora-icon-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-serif font-semibold flex items-center space-x-2 border transition-all duration-300 shadow-sm active:scale-95 ${
+        className={`labora-icon-btn min-h-[44px] min-w-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-serif font-semibold flex items-center space-x-2 border transition-all duration-300 shadow-sm active:scale-95 ${
           isOpen
             ? 'bg-[color:var(--labora-surface,#FFFEFB)] border-[color:var(--labora-primary,#2E5A44)] text-[color:var(--labora-primary,#245338)] ring-2 ring-[color:var(--labora-primary,#2E5A44)]/15'
             : 'bg-[color:var(--labora-parchment,#FAF7F2)] hover:bg-[color:var(--labora-surface,#FFFEFB)] border-[color:var(--labora-border,#E5DAC2)] text-[color:var(--labora-ink,#44403c)]'
         }`}
         title="Ajustar luz ambiental"
         aria-label="Ajustar luz ambiental"
-        aria-controls="ghibli-lighting-panel"
+        aria-haspopup="dialog"
+        aria-controls={isOpen ? 'ghibli-lighting-panel' : undefined}
         aria-expanded={isOpen}
       >
         <span className="relative flex items-center justify-center">
@@ -136,6 +151,7 @@ export const GhibliLightingControl: React.FC = () => {
           ref={panelRef}
           id="ghibli-lighting-panel"
           role="dialog"
+          tabIndex={-1}
           aria-label="Luz ambiental"
           className="fixed inset-x-3 top-[calc(env(safe-area-inset-top)+5.5rem)] max-h-[calc(100dvh-env(safe-area-inset-top)-7rem)] overflow-y-auto sm:inset-x-auto sm:right-5 sm:w-[410px] bg-[#FCFAF7] rounded-3xl border border-[#E4D7BE] shadow-[0_12px_40px_-10px_rgba(70,50,30,0.18)] p-5 z-50 text-stone-800 animate-in fade-in zoom-in-95 duration-150"
         >
@@ -156,8 +172,9 @@ export const GhibliLightingControl: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setIsOpen(false)}
-              className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-[#F2EDE4] rounded-xl transition-colors"
+              type="button"
+              onClick={closePanel}
+              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-1.5 text-stone-400 hover:text-stone-700 hover:bg-[#F2EDE4] rounded-xl transition-colors"
               aria-label="Cerrar panel de iluminación"
             >
               <X size={16} />
@@ -179,16 +196,17 @@ export const GhibliLightingControl: React.FC = () => {
             </div>
 
             <button
+              type="button"
               role="switch"
               aria-label="Adaptar ambiente automáticamente"
               aria-checked={isAuto}
               onClick={() => setIsAuto(!isAuto)}
-              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-7 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2E5A44] ${
                 isAuto ? 'bg-[#2E5A44]' : 'bg-stone-300'
               }`}
             >
               <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                   isAuto ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
@@ -218,6 +236,7 @@ export const GhibliLightingControl: React.FC = () => {
                 const IconComponent = opt.icon;
                 return (
                   <button
+                    type="button"
                     key={opt.id}
                     aria-pressed={isSelected}
                     onClick={() => setTimeOfDay(opt.id)}
@@ -263,10 +282,11 @@ export const GhibliLightingControl: React.FC = () => {
                 const IconComp = s.icon;
                 return (
                   <button
+                    type="button"
                     key={s.id}
                     aria-pressed={isSelected}
                     onClick={() => setSeason(s.id)}
-                    className={`py-2 px-1.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${
+                    className={`min-h-[44px] py-2 px-1.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${
                       isSelected
                         ? 'bg-white border-[#2E5A44] shadow-sm text-stone-900 font-semibold'
                         : 'bg-[#FAF7F2] hover:bg-white border-[#E7DBC4] text-stone-600'
