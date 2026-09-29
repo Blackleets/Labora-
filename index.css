@@ -1119,3 +1119,15 @@ body.dark .labora-status-danger {
   border-color: color-mix(in srgb, var(--labora-clay) 40%, var(--labora-border));
   color: var(--labora-clay);
 }
+
+/* Sparse seasonal decoration, clipped by the landscape's SVG viewport. */
+@keyframes labora-seasonal-fall {
+  0% { transform: translate(0, -60px); opacity: 0; }
+  12% { opacity: 1; }
+  85% { opacity: 0.8; }
+  100% { transform: translate(35px, 280px); opacity: 0; }
+}
+.labora-seasonal-fall { animation: labora-seasonal-fall 18s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .labora-seasonal-fall { animation: none; }
+}

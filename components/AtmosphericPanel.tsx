@@ -22,6 +22,7 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
   const atmosphere = useGhibliAtmosphere();
   const palette = paletteProp ?? atmosphere.palette;
   const timeOfDay = atmosphere.timeOfDay;
+  const season = atmosphere.season;
   const isNight = timeOfDay === 'night';
   const isGolden = timeOfDay === 'golden_hour';
   const isDawn = timeOfDay === 'dawn';
@@ -199,6 +200,32 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
         opacity={isNight ? 0.08 : 0.14}
         filter={`url(#${gid('blur-soft')})`}
       />
+
+      {/* Decorative seasonal movement stays inside the landscape, away from forms. */}
+      <g className="labora-seasonal-effects" pointerEvents="none">
+        {isNight ? (
+          <g>
+            <circle cx={orbCx} cy={orbCy} r="18" fill="#F6F4DE" opacity="0.8" />
+            <circle cx={orbCx + 8} cy={orbCy - 5} r="17" fill={skyTop} />
+            {[80, 210, 345, 480, 710].map((x, i) => (
+              <circle key={x} cx={x} cy={24 + (i % 3) * 22} r="1.8" fill="#FFFFFF" opacity="0.65" />
+            ))}
+          </g>
+        ) : season === 'summer' ? (
+          <circle className="labora-seasonal-sun" cx={orbCx} cy={orbCy} r="19" fill="#F4CB72" opacity="0.65" />
+        ) : null}
+        {season !== 'summer' && Array.from({ length: season === 'winter' ? 16 : 10 }, (_, i) => (
+          <g key={`${season}-${i}`} transform={`translate(${30 + i * 49}, ${18 + (i % 4) * 37})`}>
+            <g className="labora-seasonal-fall" style={{ animationDelay: `${-i * 1.7}s`, animationDuration: `${14 + (i % 4) * 3}s` }}>
+              {season === 'winter' ? (
+                <circle r={2 + i % 3} fill="#FFFFFF" opacity="0.75" />
+              ) : (
+                <ellipse rx="4" ry="8" transform={`rotate(${i * 37})`} fill={season === 'autumn' ? (i % 2 ? '#BB7543' : '#D49B52') : '#E7B8C5'} opacity="0.65" />
+              )}
+            </g>
+          </g>
+        ))}
+      </g>
 
       {/* Film grain overlay */}
       <rect

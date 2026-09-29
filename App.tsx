@@ -178,7 +178,7 @@ const MainLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden sm:block">
+            <div className="shrink-0">
               <GhibliLightingControl />
             </div>
             <button
