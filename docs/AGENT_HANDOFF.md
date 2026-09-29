@@ -1,3 +1,20 @@
+# Checkpoint activo — 2026-09-29, frontera de secretos
+
+Repo Blackleets/Labora-. Base main@7cf174e9 (PR #65 fusionado).
+Rama: fix/frontend-secret-boundary.
+
+- PR #64 y #65 fusionados; ambas ramas pasaron CI web/Edge/Android. Despliegue Pages de #65: run 36625344253 PASS.
+- Nuevo endurecimiento: Vite ya no carga todas las variables del entorno ni sustituye process.env.API_KEY / process.env.GEMINI_API_KEY en código del navegador.
+- Prueba negativa real: build de un fixture con GEMINI_API_KEY ficticia. Antes del cambio la clave aparecía en el JS; después no aparece. No se inspeccionaron ni publicaron secretos reales y no se demuestra una filtración previa en producción.
+- Validación local: TypeScript, 188 pruebas, release:check 30/30, build y diff --check PASS.
+- UAT dual/visual privada pendiente: navegador disponible en login sin sesión autenticada. No declarar PASS ni fusionar PR #35 por asumir resultados.
+- Próximo trabajo respaldado por código: index.html sigue usando Tailwind CDN en runtime; ManagerDashboard no consume privacyMode y el badge de peticiones de App.tsx todavía omite submitted. Corregir con pruebas específicas antes de afirmar cierre de esos flujos.
+- Mantener RLS, fiscalidad sin datos inventados, secretos solo servidor, borrado atómico, tombstones y Stripe OFF hasta sandbox UAT.
+
+Registro previo (histórico):
+
+---
+
 # Checkpoint activo — 2026-09-29, continuación Gestoría
 
 Repositorio Blackleets/Labora-. Base main@c5ff7d57 (PR #64 fusionado).
