@@ -1,3 +1,14 @@
+# Actualización — integridad de ingresos, 2026-09-29
+
+- PR #69 fusionado: checkpoint y plan accesibles en main. CI run 36632093601 PASS.
+- Rama activa: fix/income-import-validation. Calendario estricto en parser CSV/texto y guardado manual/importado; retención ilegible no se convierte en cero.
+- Validación local: TypeScript, 200 pruebas, release:check 30/30, build, diff check PASS. Siete casos nuevos de calendario/retención.
+- CI de esta rama y despliegue todavía pendientes; no afirmar producción ni UAT PASS.
+- Siguiente: comprobar CI y publicar esta corrección; continuar inventario de gastos/documentos y probar flujos reales con ambos roles.
+- Se mantienen diseño, Supabase/RLS y tombstones. Esta validación de interfaz no sustituye controles del servidor.
+
+---
+
 # Continuidad activa — 2026-09-29, 23:10 Europe/Madrid
 
 ## Identidad y mandato
