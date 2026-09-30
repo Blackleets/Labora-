@@ -130,16 +130,18 @@ export const MoneyHub: React.FC<MoneyHubProps> = ({ initialTab = 'expenses', set
         </div>
       </section>
 
-      <nav className="labora-card overflow-x-auto p-1.5 custom-scrollbar">
-        <div className="flex min-w-max items-center gap-1">
+      <nav aria-label="Secciones de dinero" className="labora-card p-1.5">
+        <div className="grid grid-cols-2 items-center gap-1 sm:flex sm:flex-wrap">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
               <button
+                type="button"
+                aria-pressed={active}
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-[12px] px-3.5 text-xs font-extrabold transition ${
+                className={`inline-flex min-h-[44px] min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[12px] px-3.5 text-xs font-extrabold transition ${
                   active
                     ? 'bg-[var(--labora-primary)] text-white shadow-sm'
                     : 'text-[var(--labora-muted)] hover:bg-[var(--labora-surface-2)] hover:text-[var(--labora-ink)]'
