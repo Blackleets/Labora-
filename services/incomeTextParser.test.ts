@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseIncomeTextLocally } from './incomeTextParser';
+import { isValidIncomeDate, parseIncomeTextLocally } from './incomeTextParser';
 
 describe('parseIncomeTextLocally', () => {
   it('parses CSV with header', () => {
@@ -34,5 +34,24 @@ uber eats 2026-09-11 55.00`);
 
   it('does not invent amounts without date', () => {
     expect(parseIncomeTextLocally('Glovo 100')).toEqual([]);
+  });
+});
+
+
+describe('income calendar and retention integrity', () => {
+  it.each(['2026-02-31', '2026-02-29', '2026-04-31', '2026-00-10', '0000-01-01'])('rejects impossible date %s', (date) => {
+    expect(isValidIncomeDate(date)).toBe(false);
+    expect(parseIncomeTextLocally(`Glovo;${date};100;0`)).toEqual([]);
+  });
+  it('rejects impossible European dates and keeps real leap days', () => {
+    expect(parseIncomeTextLocally('Glovo 31/02/2026 100')).toEqual([]);
+    expect(parseIncomeTextLocally('Glovo 29/02/2024 100')[0].date).toBe('2024-02-29');
+    expect(isValidIncomeDate('1900-02-29')).toBe(false);
+    expect(isValidIncomeDate('2000-02-29')).toBe(true);
+  });
+  it('does not turn an unreadable retention into zero', () => {
+    expect(parseIncomeTextLocally('Glovo;2026-09-10;100;ilegible')).toEqual([]);
+    expect(parseIncomeTextLocally('Glovo;2026-09-10;100;0')[0].retention).toBe(0);
+    expect(parseIncomeTextLocally('Glovo;2026-09-10;100')[0].retention).toBe(0);
   });
 });

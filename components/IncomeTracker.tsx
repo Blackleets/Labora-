@@ -13,7 +13,7 @@ import {
 import { useData } from '../contexts/DataContext';
 import { useCountry } from '../contexts/CountryContext';
 import { extractIncomeFromDocument, extractIncomeFromText, getRetentionExplanation } from '../services/geminiService';
-import { parseIncomeTextLocally } from '../services/incomeTextParser';
+import { isValidIncomeDate, parseIncomeTextLocally } from '../services/incomeTextParser';
 import { reviewRemoteIncome } from '../services/remoteOperational';
 import { canOwnerDeleteRow, incomeDeleteConfirmMessage } from '../services/deleteEligibility';
 import { INCOME_REVIEW_FILTER_OPTIONS, IncomeReviewFilter, hasActiveIncomeFilters, incomeMatches, sortByDateDesc, uniqueSorted } from '../services/moneyFilters';
@@ -189,7 +189,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
 
     const hasInvalidRow = pendingImports.some((item) =>
       !item.platform.trim()
-      || !/^\d{4}-\d{2}-\d{2}$/.test(item.date)
+      || !isValidIncomeDate(item.date)
       || !Number.isFinite(item.amount)
       || item.amount <= 0
       || !Number.isFinite(item.retention)
@@ -330,7 +330,7 @@ const IncomeTracker: React.FC<IncomeTrackerProps> = ({ startDate, endDate }) => 
     const numericAmount = Number(amount);
     const numericRetention = Number(retention || 0);
 
-    if (!platform.trim() || !date || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+    if (!platform.trim() || !isValidIncomeDate(date) || !Number.isFinite(numericAmount) || numericAmount <= 0) {
       setFormError('Completa plataforma, fecha e importe.');
       showNotification('error', 'Completa plataforma, fecha e importe.');
       return;

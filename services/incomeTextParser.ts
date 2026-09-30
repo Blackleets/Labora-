@@ -42,9 +42,19 @@ const parseEuropeanNumber = (raw: string): number | null => {
   return Number.isFinite(value) ? value : null;
 };
 
+/** Validate a calendar date without accepting JavaScript date rollover. */
+export const isValidIncomeDate = (value: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  if (year < 1 || month < 1 || month > 12 || day < 1) return false;
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= days[month - 1];
+};
+
 const parseDateToken = (raw: string): string | null => {
   const t = raw.trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return isValidIncomeDate(t) ? t : null;
   const m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
   if (!m) return null;
   const d = Number(m[1]);
@@ -52,7 +62,8 @@ const parseDateToken = (raw: string): string | null => {
   let y = Number(m[3]);
   if (y < 100) y += 2000;
   if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
-  return `${String(y).padStart(4, '0')}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const date = `${String(y).padStart(4, '0')}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return isValidIncomeDate(date) ? date : null;
 };
 
 const detectDelimiter = (line: string): string => {
@@ -121,8 +132,8 @@ export const parseIncomeTextLocally = (raw: string): ParsedIncomeRow[] => {
       const platform = normalizePlatform(cells[0]);
       const date = parseDateToken(cells[1]);
       const amount = parseEuropeanNumber(cells[2]);
-      const retention = cells[3] ? parseEuropeanNumber(cells[3]) ?? 0 : 0;
-      if (platform && date && amount !== null && amount > 0 && retention >= 0) {
+      const retention = cells[3] ? parseEuropeanNumber(cells[3]) : 0;
+      if (platform && date && amount !== null && amount > 0 && retention !== null && retention >= 0) {
         rows.push({ platform, amount, date, retention });
         continue;
       }
@@ -136,8 +147,8 @@ export const parseIncomeTextLocally = (raw: string): ParsedIncomeRow[] => {
       const platform = normalizePlatform(free[1]);
       const date = parseDateToken(free[2]);
       const amount = parseEuropeanNumber(free[3]);
-      const retention = free[4] ? parseEuropeanNumber(free[4]) ?? 0 : 0;
-      if (platform && date && amount !== null && amount > 0 && retention >= 0) {
+      const retention = free[4] ? parseEuropeanNumber(free[4]) : 0;
+      if (platform && date && amount !== null && amount > 0 && retention !== null && retention >= 0) {
         rows.push({ platform, amount, date, retention });
       }
     }
