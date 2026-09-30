@@ -1,3 +1,20 @@
+# Trabajo activo — ficha administrativa, 2026-10-01 (Europe/Paris)
+
+- Solicitud de Lewis: seleccionar un usuario y ver su ficha dentro de Labora+, conservar menú/diseño y volver al directorio con búsqueda/filtros.
+- Base main@04ec42d34af9cc4b5c33ea37237ea0a0a99523e4; rama feat/admin-user-record.
+- Diagnóstico: AdminDashboard mostraba flechas sin handlers; Usuarios visibles abría PeopleHub (solo cartera vinculada). Admin usa ahora el directorio protegido; Gestoría conserva PeopleHub y su cartera.
+- Ficha: perfil/vínculo, ingresos, gastos, documentos, peticiones, fiscalidad, actividad y clientes vinculados; 25 filas por página y conteos reales. Clientes vinculados abren su propia ficha. No se calculan nuevos impuestos ni totales parciales presentados como globales.
+- Backend admin-overview añade action=user-detail: auth.getUser + rol actual en profiles antes de cualquier lectura de destino, UUID/sección/página validados, consultas acotadas al usuario. No modifica RLS, grants, tombstones ni estados fiscales.
+- Mensajes se consultan mediante el cliente del actor (RLS solo participantes). Archivos: metadata administrativa; lectura y URL firmada de 60 s mediante cliente del actor y RLS de documentos/Storage. No se firma con service_role ni se devuelven rutas privadas en la ficha.
+- Interfaz: botones de fila accesibles, foco en ficha y retorno, paginación, vacío/error/reintento; respuestas antiguas invalidadas al cambiar usuario, sección o actor; privacidad de importes y moneda del perfil elegido.
+- Baseline: 200 tests + TypeScript PASS. Cambio: 225 tests (25 nuevos), TypeScript, build, release:check 30/30 y diff check PASS.
+- Deno local bloqueado por conexión a registry.npmjs.org; CI ahora incluye deno check de admin-overview (incluye helper importado). CI y despliegue pendientes al guardar este checkpoint: verificar PR/head exactos antes de afirmar publicado.
+- Visual autenticada NO ejecutada. Prueba aislada de layout intentada con datos QA temporales fuera del repo, pero navegador devuelve ERR_BLOCKED_BY_CLIENT para localhost. No se añadieron fixtures ni accesos de prueba a producción.
+- Próximo: CI verde; desplegar admin-overview con ambos archivos y verify_jwt=true; comprobar versión y rechazo sin sesión; merge y Pages del SHA exacto. Después abrir Administración → Usuarios → cuenta, recorrer pestañas y retorno en desktop/móvil con sesión real. PR #35 conserva gate de UAT dual y no se fusiona por esta mejora.
+- Rollback: revert del PR frontend/backend y redeploy de admin-overview v2 guardado en el histórico Git de la base. No aplicar migraciones ni relajar acceso para conseguir una captura.
+
+---
+
 # Continuidad activa — 2026-09-30 (Europe/Paris)
 
 ## Identidad y mandato
