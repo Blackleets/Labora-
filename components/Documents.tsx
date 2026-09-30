@@ -195,6 +195,10 @@ export const Documents: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file || !currentUser) return;
 
+    // Replacing an attachment invalidates the previous prepared file immediately.
+    setPendingUpload(null);
+    setFormError('');
+
     if (!ALLOWED_TYPES.has(file.type)) {
       showNotification('error', 'Formato no admitido. Usa PDF, JPG, PNG o WebP.');
       event.target.value = '';
@@ -245,7 +249,7 @@ export const Documents: React.FC = () => {
 
   const handleSaveDocument = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!currentUser || isManager) return;
+    if (!currentUser || isManager || isReadingFile) return;
     if (!docName.trim() || !pendingUpload) {
       setFormError('Selecciona un archivo y confirma su nombre.');
       showNotification('error', 'Selecciona un archivo y confirma su nombre.');
@@ -260,7 +264,7 @@ export const Documents: React.FC = () => {
       return;
     }
 
-    addDocument({
+    const savedDocument = addDocument({
       name: docName.trim(),
       type: docType,
       date: new Date().toISOString().split('T')[0],
@@ -269,6 +273,11 @@ export const Documents: React.FC = () => {
       sizeBytes: pendingUpload.sizeBytes,
       contentHash: pendingUpload.contentHash
     });
+
+    if (!savedDocument) {
+      setFormError('No se pudo guardar el documento. Conservamos el archivo para que puedas reintentarlo.');
+      return;
+    }
 
     setDocName('');
     setPendingUpload(null);
@@ -490,7 +499,7 @@ export const Documents: React.FC = () => {
 
               <div className="flex gap-2 pt-1">
                 <button type="button" onClick={() => { setFormError(''); setIsUploadOpen(false); }} className="flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] py-2.5 text-xs font-extrabold text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]">Cancelar</button>
-                <button type="submit" disabled={!pendingUpload || !docName.trim()} className="flex-1 rounded-[13px] bg-[var(--labora-primary)] py-2.5 text-xs font-extrabold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-40">Guardar</button>
+                <button type="submit" disabled={isReadingFile || !pendingUpload || !docName.trim()} className="flex-1 rounded-[13px] bg-[var(--labora-primary)] py-2.5 text-xs font-extrabold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-40">Guardar</button>
               </div>
             </form>
           </div>
