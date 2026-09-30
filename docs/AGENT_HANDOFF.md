@@ -1,79 +1,50 @@
-# Actualización — integridad de ingresos, 2026-09-29
-
-- PR #69 fusionado: checkpoint y plan accesibles en main. CI run 36632093601 PASS.
-- Rama activa: fix/income-import-validation. Calendario estricto en parser CSV/texto y guardado manual/importado; retención ilegible no se convierte en cero.
-- Validación local: TypeScript, 200 pruebas, release:check 30/30, build, diff check PASS. Siete casos nuevos de calendario/retención.
-- CI de esta rama y despliegue todavía pendientes; no afirmar producción ni UAT PASS.
-- Siguiente: comprobar CI y publicar esta corrección; continuar inventario de gastos/documentos y probar flujos reales con ambos roles.
-- Se mantienen diseño, Supabase/RLS y tombstones. Esta validación de interfaz no sustituye controles del servidor.
-
----
-
-# Continuidad activa — 2026-09-29, 23:10 Europe/Madrid
+# Continuidad activa — 2026-09-30 (Europe/Paris)
 
 ## Identidad y mandato
 Labora+, repositorio Blackleets/Labora-, producto https://blackleets.github.io/Labora-/.
-Mantener el diseño actual; reforzar flujos reales de Trabajador, Gestoría y Admin. Usuario autoriza continuar mejoras y conservar continuidad si se interrumpe el chat.
-Preservar Supabase/RLS, fiscalidad sin datos inventados, privacidad, aislamiento por usuario, borrado atómico y operational_deletion_tombstones. No añadir otro dashboard.
-No guardar secretos ni contraseñas en checkpoints. PR #35 sigue sujeto a UAT dual real; no fusionarlo por inferencia.
+Mantener el diseño actual y reforzar los flujos reales de Trabajador, Gestoría y Admin.
+Preservar Supabase/RLS, aislamiento por usuario, privacidad, fiscalidad sin datos inventados, borrado atómico y operational_deletion_tombstones.
+No añadir otro dashboard ni guardar secretos, contraseñas o sesiones en checkpoints.
 
-## Evidencia confirmada en esta sesión
-- PR #68 fusionado; main resultante fff6c1d6798f44b013a8fd188609634dddb6118c.
-- Head validado 3c864fd93cfc82df9ce385730f7fc4521473bc61: CI run 36630948083 completed/success.
-- Mejora: foco al abrir ambiente y retorno con Cerrar/Escape; pointerdown para cierre exterior; objetivos táctiles mayores y semántica de diálogo.
-- Comprobaciones locales previas del mismo cambio: TypeScript, 193 tests, release:check 30/30, build y diff check PASS.
-- Despliegue de #68 NO verificado todavía. Visual y UAT dual NO ejecutadas.
-- Checkout local puede tener bdf639d (commit equivalente al publicado por connector). Fetch Git por shell falló por proxy; usar GitHub connector para leer versión canónica.
+## Baseline y cierre verificados
+- PRs #70 (calendario/retención de ingresos) y #71 (adjunto reemplazado y conservación del formulario ante error) ya fusionados.
+- Baseline main@13c99cae868054197ad68d3f3f8b3f6b4be25b44: CI 36682271080 y Pages 36682271065 completed/success.
+- PR #72 revisado y fusionado por squash. Head 2169291e8c484cf2e2d373d81bd917db3500313d: CI 36682248880 success en build, Edge Functions y Android; sin hilos de revisión.
+- Main resultante e7b8793f3fa14ca6272fb504801c73dd27ed047d. Único cambio de producto de #72: modules/core/hubs/MoneyHub.tsx, cinco pestañas en grid de dos columnas móvil, controles con min-height 44px y aria-pressed; distribución flexible desde sm. Handlers y alcance por rol conservados.
+- Pages 36778359154 completed/success para ese SHA: corrección publicada.
+- CI main 36778359099: build (typecheck, tests, release:check, build) y edge-functions success; Android aún in_progress al tomar este checkpoint. Consultar el run antes de afirmar CI global main PASS.
+- Inspección visual pública: login carga en https://blackleets.github.io/Labora-/. Este navegador no tiene sesión autenticada; MoneyHub visual y UAT dual NO ejecutados.
+- No afirmar que el espacio vacío bajo la navegación móvil está resuelto: requiere reproducir el viewport autenticado.
+- Supabase Security Advisor leído en live: único aviso devuelto, Leaked Password Protection Disabled. No se modificó configuración Auth. Referencia: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection.
+- Edge Functions activas en live: labora-ai v2, checkout v1, billing portal v1, stripe-webhook v1, delete-account v1 y admin-overview v2. Su estado ACTIVE NO demuestra secretos configurados ni éxito del recorrido funcional.
+- PR #35 sigue open/draft, feat/labora-approved-reference-ui. Gate explícito de su descripción: UAT real Rider + Gestoría antes de fusionar. No se fusionó.
 
-## Plan de ejecución y aceptación
-| Orden | Trabajo | Evidencia necesaria | Estado |
+## Qué falta y orden de aceptación
+| Prioridad | Trabajo | Evidencia mínima | Estado |
 |---|---|---|---|
-| 1 | Cierre #68 y despliegue | CI PASS, merge confirmado, Pages PASS para SHA y revisión visual | CI/merge hechos; deploy/visual pendientes |
-| 2 | Inventario de pantallas y controles | Ruta, rol, acción, resultado esperado, estado implementado/probado/desplegado | Pendiente |
-| 3 | Trabajador: acceso, gasto/ticket, ingreso, documento, total, mensaje, recarga | Recorrido real; guardado confirmado y totales concordantes | Pendiente UAT |
-| 4 | Gestoría: vínculo, cliente, revisión, petición, respuesta, deducibilidad, exportación | Dos cuentas reales y evidencia de ida/vuelta | Pendiente UAT |
-| 5 | Seguridad entre cuentas, caché, archivos, desvinculación y borrado | Pruebas negativas servidor; sin acceso cruzado ni resurrección | Revisar cobertura y completar evidencia |
-| 6 | Móvil y ambiente | 360/390/430px, teclado, navegación, safe area, reduced motion, persistencia | Pendiente visual |
-| 7 | Rendimiento | Medición antes/después; CSS compilado conserva clases antes de retirar CDN | Pendiente |
-| 8 | IA, Stripe y otras integraciones | Configuración real, manejo de errores y sandbox; sin promesas ficticias | Pendiente/configuración |
-| 9 | UAT final y producción | Sin P0/P1 abiertos; ambos roles PASS; deploy exacto confirmado | Abierto |
+| 1 | Recorrido real Trabajador → Gestoría | Login/roles; vínculo; gasto/ticket, ingreso y documento; recarga; revisión de importes/deducibilidad explícita; petición y respuesta; mensajes; exportación CSV/PDF del trimestre | UAT pendiente |
+| 1 | Aislamiento y borrado en servidor | Cuenta ajena sin acceso; cambio de sesión sin caché cruzada; desvínculo retira acceso; documento/liquidación e ingresos asociados borrados atómicamente; pestaña antigua no resucita filas | Cobertura automatizada existente; evidencia live pendiente |
+| 2 | Reproducción móvil | 360/390/430px; todas las pestañas visibles y accionables; espacio vacío, teclado, modales, navegación inferior y safe area; ambiente y reduced-motion | #72 publicado; visual autenticada pendiente |
+| 2 | IA/OCR real | Confirmar configuración solo servidor y probar un justificante conocido; error claro cuando falla; entrada manual conservada | Función ACTIVE; secreto/resultado sin verificar |
+| 2 | Seguridad Auth | Habilitar y verificar protección de contraseñas filtradas mediante configuración soportada | Aviso live confirmado; pendiente |
+| 3 | Cobro Pro | Configuración Stripe sandbox, Price IDs, checkout + webhook + portal, estado de suscripción coherente | Billing OFF hasta UAT sandbox |
+| 3 | Rendimiento | Medir antes/después; sustituir Tailwind CDN por CSS compilado solo tras demostrar conservación visual de clases | Pendiente |
+| 3 | Publicación Android | Play Console, firma, Data safety y capturas; debug APK/CI no equivalen a Play-ready | Pendiente externo |
 
-Cada hallazgo: problema, evidencia, impacto P0/P1/P2/P3, solución mínima, validación y rollback. No clasificar controles por búsquedas de texto únicamente: trazar handler, servicio y autorización.
-P0: exposición/pérdida de datos o resultados económicos incorrectos. P1: tarea principal bloqueada. P2: claridad/móvil/rendimiento. P3: decoración/opcionales.
-Excluir por ahora: rediseño global, fiscalidad de países no verificada, integraciones ficticias, pagos reales sin sandbox UAT y nuevas dependencias sin necesidad.
+No cerrar el gate #35 porque existan tests o checklist. La prueba autenticada de dos roles y la evidencia negativa de permisos son necesarias.
+Banca PSD2, OAuth de plataformas y canales push/email/WhatsApp permanecen dependientes de integración real; no fingir conexiones ni ampliar fiscalidad internacional con tasas supuestas.
 
 ## Punto exacto para continuar
-1. Leer este archivo COMPLETO en GitHub y comprobar main/PRs actuales; el histórico inferior no sustituye este checkpoint.
-2. Comprobar el deploy Pages de fff6c1d (o su sucesor) antes de declararlo publicado.
-3. Empezar inventario por App.tsx, Sidebar y módulos de dinero; localizar acciones incompletas y resolver primero P0/P1 con cambio pequeño.
-4. Si navegador solo muestra login, documentar el bloqueo: no inventar sesiones ni UAT PASS.
-5. Actualizar este mismo handoff tras cada cambio sustancial con SHA, PR, CI/deploy y siguiente tarea; no crear otro sistema de memoria.
+1. Leer este checkpoint y HERMES_HANDOFF.md (histórico de arquitectura), verificar main/PRs/runs actuales.
+2. Consultar CI 36778359099; Pages del cambio #72 ya fue verificado.
+3. Abrir producto y ejecutar docs/UAT_DUAL_ACCOUNT.md con dos sesiones reales. No pedir ni guardar contraseñas en chat o repo; usar el mecanismo seguro de autenticación disponible.
+4. Reproducir el espacio vacío móvil y recorrer cada handler antes de corregir. MoneyHub enlaza con ExpenseTracker, IncomeTracker, TaxOverview, Documents y BankingConnect; el último no aparece para Gestoría/Admin.
+5. En Documents.tsx revisar también cancelación/cierre durante lectura asíncrona de archivo y cambio de sesión; hay awaits en handleFileSelect y Cerrar/Cancelar actualmente solo cierran el modal. Esto es una superficie de auditoría, no una reproducción ni un bug corregido.
+6. Resolver primero pérdidas/exposición de datos o tareas principales bloqueadas mediante PR pequeño. Mantener diseño y contratos; rollback por revert del cambio.
+7. Actualizar este mismo handoff con SHA, PR, validación, despliegue y siguiente tarea tras cada avance sustancial.
 
----
-
-# Checkpoint activo — 2026-09-29 (Europe/Madrid)
-
-Repositorio: Blackleets/Labora-. Base main@3aa41991.
-Rama de cierre: fix/manager-privacy-and-request-badges.
-Producto: https://blackleets.github.io/Labora-/
-Supabase: gggtriyvbusbpqohoukv.
-
-## Trabajo confirmado
-- PR #63: avisos móviles sobre la navegación inferior.
-- PR #64 fusionado: selector de ambiente visible en móvil, panel en portal, nieve/hojas/pétalos y sol/luna dentro del paisaje; respeta reduced-motion. CI web/Edge/Android PASS y Pages PASS.
-- PR #65 fusionado: cola de trabajo real de Gestoría por cliente vinculado y todos los trimestres, priorizada por vencimientos/respuestas/revisiones. Deducibilidad explícita 0–100 sin 100% por defecto, conserva cero revisado. CI web/Edge/Android PASS y Pages run 36625344253 PASS.
-- PR #66 fusionado: Vite deja de sustituir variables de navegador por GEMINI_API_KEY. Prueba negativa de build con clave ficticia falla antes y pasa después. CI web/Edge/Android PASS. No implica que se haya filtrado una clave real en producción.
-- Cierre actual: ManagerDashboard respeta privacyMode al mostrar importes; navegación incluye submitted para gestor/admin y solo pendientes propias para trabajador. Cinco pruebas específicas de roles y privacidad.
-- Validación local conjunta: TypeScript, 193 pruebas, release:check 30/30, build y git diff --check PASS.
-
-## Cierre pendiente y siguiente trabajo
-- Comprobar CI/deploy de la rama actual. Usar SHA exacta y no declarar el despliegue sin run PASS.
-- UAT visual/dual real sin completar: el navegador público muestra login, no hay sesión autenticada disponible. No declarar UAT PASS ni fusionar PR #35 por asumir resultados.
-- index.html todavía usa Tailwind CDN en runtime (advertencia observada en navegador). Próxima mejora de rendimiento: compilar CSS local conservando todas las clases y verificar visualmente antes de publicar.
-- Stripe OFF hasta sandbox UAT; verificar secretos IA y protección de contraseñas en entorno real.
-- Preservar RLS, fiscalidad sin tasas inventadas, secretos solo servidor, caché por usuario, borrado atómico y operational_deletion_tombstones.
-
-El registro de 2026-09-27 siguiente es histórico; contrastar sus estados con este checkpoint y GitHub antes de actuar.
+## Registro histórico
+Las notas inferiores son históricas; los estados de rama, despliegue y siguiente tarea se sustituyen por el checkpoint superior.
 
 ---
 
