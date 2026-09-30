@@ -59,6 +59,7 @@ jobs:
           deno check --node-modules-dir=auto supabase/functions/stripe-webhook/index.ts
           deno check --node-modules-dir=auto supabase/functions/labora-ai/index.ts
           deno check --node-modules-dir=auto supabase/functions/delete-account/index.ts
+          deno check --node-modules-dir=auto supabase/functions/admin-overview/index.ts
 
   android:
     runs-on: ubuntu-latest

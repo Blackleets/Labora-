@@ -76,7 +76,7 @@ const MainLayout: React.FC = () => {
       operations: t('nav.operations'),
       integrations: t('nav.platforms'),
       automation: t('nav.assistant'),
-      people: t('nav.clients'),
+      people: isAdmin ? 'Usuarios' : t('nav.clients'),
       messages: t('nav.messages'),
       settings: t('nav.settings'),
       profile: t('nav.profile'),
@@ -97,7 +97,7 @@ const MainLayout: React.FC = () => {
       case 'operations': return <OperationsHub />;
       case 'integrations': return <IntegrationCatalog />;
       case 'automation': return <AutomationHub />;
-      case 'people': return <PeopleHub />;
+      case 'people': return isAdmin ? <AdminDashboard initialTab="users" /> : <PeopleHub />;
       case 'messages': return <MessagesHub />;
       case 'settings': return <SettingsHub />;
       case 'profile': return <Profile />;

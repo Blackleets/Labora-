@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
+import { loadUserDetail, parseDetailRequest } from './userDetail.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -53,6 +54,26 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (actorError) return json({ error: 'Unable to verify administrator role.' }, 500);
   if (actor?.role !== 'admin') return json({ error: 'Administrator access required.' }, 403);
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Invalid body');
+  } catch {
+    return json({ error: 'Invalid request body.' }, 400);
+  }
+  if (body.action === 'user-detail') {
+    let detailRequest;
+    try { detailRequest = parseDetailRequest(body); }
+    catch { return json({ error: 'Invalid user detail request.' }, 400); }
+    try {
+      const detail = await loadUserDetail(admin, userClient, detailRequest);
+      return detail ? json(detail) : json({ error: 'User not found.' }, 404);
+    } catch {
+      return json({ error: 'Unable to load user details.' }, 500);
+    }
+  }
+  if (body.action != null) return json({ error: 'Unsupported action.' }, 400);
 
   const [profiles, authUsers, documents, incomes, expenses, requirements, declarations] = await Promise.all([
     admin.from('profiles').select('id,name,email,role,country_code,manager_id'),
