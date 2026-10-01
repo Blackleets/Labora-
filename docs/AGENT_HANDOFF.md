@@ -1,3 +1,16 @@
+# Plan activo de lanzamiento — 2026-10-01 (Europe/Madrid)
+
+- Lewis solicitó «modo plan extremo»: evaluar qué falta para tener Labora+ lista. Este turno es planificación; no implementa ni publica cambios de producto.
+- Plan ejecutable: docs/LAUNCH_PLAN.md, rama docs/labora-launch-plan. Secuencia L01-L12, criterios y evidencias por slice; beta web, cobro y Android como gates distintos. No confundir documento/CI con aceptación.
+- Baseline actual verificada: main@cc87dc34f80108b105385f886d9f90cbef8c1923; PR #75 fusionado/publicado; CI 36907456997 y Pages 36907457045 completed/success. Login antes/después confirma eliminación del velo gris. Inicio autenticado móvil pendiente.
+- Supabase leído hoy: admin-overview v3, labora-ai v2, checkout/portal/webhook/delete-account v1 ACTIVE. Único Security Advisor WARN: Leaked Password Protection Disabled; no modificado. Secret/configuración de proveedores y resultados funcionales siguen sin confirmar.
+- PR #35 sigue open/draft con gate UAT real Rider + Gestoría. Revisar divergencia con main después de aceptación; no fusionar mejoras ya incorporadas ni descartar hardening.
+- Hallazgos de código: addDocument muestra «Documento guardado» al insertar estado local; RemoteSyncBridge persiste después (700 ms) y puede fallar. Priorizar estado visible de persistencia + reintento. No se encontró flujo de recuperación de contraseña. Documents conserva la superficie de auditoría async ya documentada; no afirmar incidente de datos sin reproducción.
+- Siguiente trabajo propuesto: L01, reproducir documento/red lenta-error/cancelación/reemplazo/recarga/cambio de sesión, verificar BD + Storage, luego PR mínimo. L02 recuperación de cuenta sobre contrato separado. Requiere consultar docs vigentes al implementar Auth/Supabase.
+- Invariantes: diseño actual, datos reales, RLS, aislamiento, estados fiscales y tombstones. Pruebas de dos roles + cuenta ajena, evidencia redactada y rollback. Secrets nunca en chat/repo. Codex puede ejecutar UAT si dispone de sesiones seguras; no delegar automáticamente todo al fundador.
+
+---
+
 # Continuidad activa — sombra de Inicio móvil, 2026-10-01 (Europe/Madrid)
 
 - Solicitud de Lewis: corregir la franja/sombra visible en Inicio móvil y seguir mejorando la app con el diseño actual.
