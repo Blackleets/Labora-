@@ -10,13 +10,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('./supabaseClient', () => ({
   supabase: {
+    auth: { getUser: async () => ({ data: { user: { id: 'rider-1' } }, error: null }) },
     from: (table: string) => {
       mocks.requestedTables.push(table);
       return {
         select: () => table === 'expenses'
           ? { eq: async () => ({ data: [{ id: 'remote-expense' }], error: null }) }
           : Promise.resolve({ data: [], error: null }),
-        upsert: table === 'payments' ? mocks.paymentsUpsert : vi.fn(),
+        upsert: (rows: unknown) => ({ select: () => table === 'payments' ? mocks.paymentsUpsert(rows) : Promise.resolve({ data: [], error: null }) }),
         delete: mocks.deleted
       };
     }
@@ -26,7 +27,7 @@ vi.mock('./supabaseClient', () => ({
 describe('syncOperationalSnapshot safety', () => {
   beforeEach(() => {
     mocks.deleted.mockClear();
-    mocks.paymentsUpsert.mockReset().mockResolvedValue({ error: null });
+    mocks.paymentsUpsert.mockReset().mockResolvedValue({ data: [{ id: 'payment-1' }], error: null });
     mocks.requestedTables.length = 0;
   });
 

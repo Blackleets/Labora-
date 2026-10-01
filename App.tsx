@@ -14,6 +14,7 @@ import { GhibliLightingControl } from './components/GhibliLightingControl';
 import Logo from './components/Logo';
 import Onboarding from './components/Onboarding';
 import RemoteSyncBridge from './components/RemoteSyncBridge';
+import OperationalSyncBanner from './components/OperationalSyncBanner';
 import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
 import { BubbleSessionBridge } from './components/orders/BubbleSessionBridge';
@@ -208,6 +209,7 @@ const MainLayout: React.FC = () => {
 
         <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-7 md:px-8 md:py-10">
           <div className="mx-auto min-h-full max-w-7xl min-w-0">
+            <OperationalSyncBanner />
             <React.Suspense fallback={<ViewLoading />}>
               {renderView()}
             </React.Suspense>
