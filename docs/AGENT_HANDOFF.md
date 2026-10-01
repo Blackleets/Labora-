@@ -1,3 +1,19 @@
+# Continuidad activa — guardado operativo confirmado, 2026-10-01 (UTC)
+
+- Mandato de Lewis: ejecutar el primer bloque del plan de salida (PR #76, borrador), empezando por sincronización fiable y cancelación de documentos.
+- Base main@cc87dc34f80108b105385f886d9f90cbef8c1923; rama fix/reliable-operational-save. PR #75 (sombra móvil) ya fusionado: CI 36907163136 y 36907456997 success; Pages 36907457045 success. Sustituye los pendientes de entrega del checkpoint anterior, sin afirmar visual de Inicio autenticado.
+- El expediente muestra checking/pending/syncing/synced/error/blocked. El botón Reintentar vuelve a intentar la hidratación/escritura; las notificaciones de mutaciones locales ya no anuncian guardado remoto. Solo la respuesta de todas las escrituras y su recibo local permiten confirmar el snapshot actual del actor actual.
+- Escrituras propias en expenses/documents/incomes/payments solicitan IDs guardados mediante select('id') y rechazan confirmaciones incompletas. auth.getUser verifica el actor antes y después del lote. Las RPCs existentes, roles, RLS, Storage, grants, tombstones y estados fiscales se conservan. Sin migraciones ni despliegue de Edge Functions.
+- Documents aborta/invalida lecturas al cancelar, cerrar, desmontarse, cambiar de archivo o de cuenta/rol. Un resultado antiguo no prepara un archivo nuevo ni borra el indicador de lectura de otro. Ante fallo local de Guardar, archivo, nombre y formulario se conservan.
+- Cerrar sesión desde Sidebar/Ajustes avisa si hay cambios operativos pendientes; beforeunload solicita el aviso del navegador. No garantiza recuperación ante cierre forzado del sistema ni durabilidad offline de archivos que excedan la cuota de localStorage. Mantener sesión y reintentar antes de salir.
+- Los lotes no son una transacción global: un fallo puede dejar escrituras parciales. El reintento mantiene IDs y rutas de archivo deterministas; no se confirma el lote fallido. El estado se limita al expediente operativo, no acredita mensajería/pedidos/perfil ni proveedores IA/Stripe.
+- Validación local: 260 tests / 41 archivos PASS (35 nuevos); TypeScript PASS; release:check 30/30 PASS; build PASS (aviso existente de chunk >500KB); diff check PASS. Pruebas negativas cubren escritura lenta/rechazada, fila ausente, fallo Storage/recibo, cambio de actor/revisión/pestaña, reintento tras fallo parcial y handlers/effects de Documents/RemoteSyncBridge.
+- Las pruebas de componentes usan un harness de hooks en Node; NO equivalen a React DOM, visual móvil ni UAT autenticada. Pendiente ejecutar UAT dual + cuenta ajena real, documento grande/cuota, recarga/descarga, reintento de red y móvil físico. PR #35 conserva su gate explícito.
+- CI/merge/Pages pendientes al guardar este checkpoint. Consultar el PR de esta rama y sus SHAs/runs para evidencia final. Rollback: revert del PR; no requiere cambios de backend.
+- Siguiente bloque funcional del plan: recuperación real de contraseña (L02), sin marcar L01 aceptado en live hasta el recorrido anterior. Billing permanece OFF y Android no se considera listo para Play.
+
+---
+
 # Continuidad activa — sombra de Inicio móvil, 2026-10-01 (Europe/Madrid)
 
 - Solicitud de Lewis: corregir la franja/sombra visible en Inicio móvil y seguir mejorando la app con el diseño actual.

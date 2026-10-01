@@ -398,8 +398,18 @@ export const deleteRemoteDocument = async (documentId: string) => {
   }
 };
 
+const assertSavedRows = (rows: Array<{ id: string }> | null, expectedIds: string[]) => {
+  const savedIds = new Set((rows || []).map(row => row.id));
+  if (expectedIds.some(id => !savedIds.has(id))) throw new Error('No se pudo confirmar el guardado de todos los registros.');
+};
+
 export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => {
   const { currentUser, users, incomes, expenses, requirements, documents, declarations, payments } = snapshot;
+  const assertActor = async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || data.user?.id !== currentUser.id) throw new Error('La sesión cambió. No se confirmó la sincronización.');
+  };
+  await assertActor();
   const linkedIds = new Set(users.filter((user) => user.managerId === currentUser.id).map((user) => user.id));
   const isManager = currentUser.role === UserRole.MANAGER || currentUser.role === UserRole.ADMIN;
 
@@ -441,19 +451,22 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       };
 
       if (remoteExpenseIdSet.has(item.id)) {
-        const { error } = await supabase
+        const { data: saved, error } = await supabase
           .from('expenses')
           .update(rawExpense)
           .eq('id', item.id)
-          .eq('user_id', currentUser.id);
+          .eq('user_id', currentUser.id)
+          .select('id');
         if (error) throw error;
+        assertSavedRows(saved, [item.id]);
       } else {
-        const { error } = await supabase.from('expenses').insert({
+        const { data: saved, error } = await supabase.from('expenses').insert({
           id: item.id,
           user_id: item.userId,
           ...rawExpense
-        });
+        }).select('id');
         if (error) throw error;
+        assertSavedRows(saved, [item.id]);
       }
     }
 
@@ -477,8 +490,9 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       });
     }
     if (ownDocuments.length) {
-      const { error } = await supabase.from('documents').upsert(ownDocuments);
+      const { data: saved, error } = await supabase.from('documents').upsert(ownDocuments).select('id');
       if (error) throw error;
+      assertSavedRows(saved, ownDocuments.map(item => item.id));
     }
 
     const ownIncomes = incomes.filter((item) => item.userId === currentUser.id).map((item) => ({
@@ -498,8 +512,9 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       source_hash: item.sourceHash || null
     }));
     if (ownIncomes.length) {
-      const { error } = await supabase.from('incomes').upsert(ownIncomes);
+      const { data: saved, error } = await supabase.from('incomes').upsert(ownIncomes).select('id');
       if (error) throw error;
+      assertSavedRows(saved, ownIncomes.map(item => item.id));
     }
 
     const ownPayments = payments.map((item) => ({
@@ -513,8 +528,9 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       domain: item.domain || null
     }));
     if (ownPayments.length) {
-      const { error } = await supabase.from('payments').upsert(ownPayments);
+      const { data: saved, error } = await supabase.from('payments').upsert(ownPayments).select('id');
       if (error) throw error;
+      assertSavedRows(saved, ownPayments.map(item => item.id));
     }
   } else {
     for (const expense of expenses.filter((item) => linkedIds.has(item.userId))) {
@@ -644,4 +660,5 @@ export const syncOperationalSnapshot = async (snapshot: OperationalSnapshot) => 
       }
     }
   }
+  await assertActor();
 };

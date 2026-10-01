@@ -1,4 +1,4 @@
-import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   Document,
   Expense,
@@ -23,9 +23,16 @@ import { canOwnerDeleteRow } from '../services/deleteEligibility';
 import { clearOperationalCacheSubmission } from '../services/operationalCache';
 import { safeStorageGet, safeStorageReadJson, safeStorageRemove, safeStorageSet, safeStorageSetJson } from '../services/safeStorage';
 
+import { hasPendingSessionChanges, OperationalSyncState } from '../services/operationalSync';
+
 type DeleteOptions = { quiet?: boolean };
 
 interface DataContextType {
+  operationalSync: OperationalSyncState;
+  setOperationalSync: (state: OperationalSyncState) => void;
+  operationalSyncAttempt: number;
+  retryOperationalSync: () => void;
+  confirmSessionExit: () => boolean;
   currentUser: User | null;
   users: User[];
   incomes: Income[];
@@ -193,6 +200,14 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [hasOnboarded, setHasOnboarded] = useState(() => safeStorageGet(STORAGE.onboarded) === 'true');
   const [privacyMode, setPrivacyMode] = useState(() => safeStorageGet(STORAGE.privacy) === 'true');
   const [darkMode, setDarkMode] = useState(() => safeStorageGet(STORAGE.darkMode) === 'true');
+  const [operationalSync, updateOperationalSync] = useState<OperationalSyncState>(null);
+  const [pendingOperationalUserId, setPendingOperationalUserId] = useState<string | null>(null);
+  const setOperationalSync = useCallback((state: OperationalSyncState) => {
+    updateOperationalSync(state);
+    if (state?.phase === 'synced') setPendingOperationalUserId(previous => previous === state.userId ? null : previous);
+  }, []);
+  const [operationalSyncAttempt, setOperationalSyncAttempt] = useState(0);
+  const retryOperationalSync = useCallback(() => setOperationalSyncAttempt(value => value + 1), []);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
@@ -234,6 +249,23 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       setNotifications((previous) => previous.filter((notification) => notification.id !== id));
     }, 3500);
   };
+
+  const notifyPending = (message: string) => {
+    if (!currentUser) return;
+    setPendingOperationalUserId(currentUser.id);
+    setOperationalSync({ userId: currentUser.id, phase: 'pending' });
+    showNotification('info', `${message} Pendiente de confirmar en la nube.`);
+  };
+
+  const confirmSessionExit = () => !hasPendingSessionChanges(currentUser?.id, pendingOperationalUserId)
+    || window.confirm('Hay cambios sin confirmar en la nube. Cerrar sesión descartará los cambios locales pendientes. ¿Quieres cerrar sesión de todas formas?');
+
+  useEffect(() => {
+    if (!hasPendingSessionChanges(currentUser?.id, pendingOperationalUserId)) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [currentUser?.id, pendingOperationalUserId, operationalSync]);
 
   const dismissNotification = (id: string) => {
     setNotifications((previous) => previous.filter((notification) => notification.id !== id));
@@ -341,7 +373,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       needsReview: income.needsReview ?? false
     };
     setIncomes((previous) => [newIncome, ...previous]);
-    showNotification('success', 'Ingreso registrado.');
+    notifyPending('Ingreso registrado.');
   };
 
   const addIncomes = (items: Omit<Income, 'id' | 'userId'>[]): Income[] => {
@@ -354,7 +386,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       needsReview: income.needsReview ?? true
     }));
     setIncomes((previous) => [...newItems, ...previous]);
-    showNotification('success', `${newItems.length} ingresos importados.`);
+    notifyPending(`${newItems.length} ingresos preparados.`);
     return newItems;
   };
 
@@ -373,7 +405,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       ocrNeedsReview: expense.ocrNeedsReview ?? true
     };
     setExpenses((previous) => [newExpense, ...previous]);
-    showNotification('success', 'Gasto registrado.');
+    notifyPending('Gasto registrado.');
   };
 
   const addExpenses = (items: Omit<Expense, 'id' | 'userId'>[]) => {
@@ -389,12 +421,12 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       ocrNeedsReview: expense.ocrNeedsReview ?? true
     }));
     setExpenses((previous) => [...newItems, ...previous]);
-    showNotification('success', `${newItems.length} gastos importados.`);
+    notifyPending(`${newItems.length} gastos preparados.`);
   };
 
   const updateExpense = (expense: Expense) => {
     setExpenses((previous) => previous.map((item) => item.id === expense.id ? expense : item));
-    showNotification('success', 'Gasto actualizado.');
+    notifyPending('Gasto actualizado.');
   };
 
   const hasAuthSession = async () => {
@@ -488,14 +520,14 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
           }
         : expense
     ));
-    showNotification('success', 'Estado de auditoría actualizado.');
+    notifyPending('Estado de auditoría actualizado.');
   };
 
   const addDocument = (doc: Omit<Document, 'id' | 'userId'>) => {
     if (!currentUser) return undefined;
     const newDocument: Document = { ...doc, id: createId('document'), userId: currentUser.id };
     setDocuments((previous) => [newDocument, ...previous]);
-    showNotification('success', 'Documento guardado.');
+    notifyPending('Documento preparado.');
     return newDocument;
   };
 
@@ -515,7 +547,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       createdAt: new Date().toISOString().split('T')[0]
     };
     setRequirements((previous) => [newRequirement, ...previous]);
-    showNotification('success', 'Petición enviada.');
+    notifyPending('Petición preparada.');
   };
 
   const submitRequirement = (
@@ -535,7 +567,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
           }
         : requirement
     ));
-    showNotification('success', 'Respuesta enviada a tu gestoría.');
+    notifyPending('Respuesta preparada para tu gestoría.');
   };
 
   const reviewRequirement = (
@@ -555,7 +587,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
           }
         : requirement
     ));
-    showNotification('success', 'Petición revisada.');
+    notifyPending('Petición revisada.');
   };
 
   const calculateQuarterlyTaxes = (userId: string, quarter: string) => {
@@ -668,7 +700,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
         ? previous.map((item) => item.id === draft.id ? draft : item)
         : [draft, ...previous];
     });
-    showNotification('success', 'Borrador fiscal guardado para revisión.');
+    notifyPending('Borrador fiscal preparado para revisión.');
   };
 
   const reviewTaxDeclaration = (declarationId: string, note?: string) => {
@@ -695,7 +727,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
           }
         : item
     ));
-    showNotification('success', 'Modelo marcado como revisado por la gestoría.');
+    notifyPending('Modelo marcado como revisado por la gestoría.');
   };
 
   const fileTaxDeclaration = (declarationId: string, filingRef: string, evidenceUrl?: string) => {
@@ -728,7 +760,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
           }
         : item
     ));
-    showNotification('success', 'Presentación registrada con referencia.');
+    notifyPending('Presentación registrada con referencia.');
   };
 
   const getFiscalSummary = (userId: string): FiscalSummary => {
@@ -814,13 +846,14 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
       if (Array.isArray(payload.requirements)) setRequirements(payload.requirements);
       if (Array.isArray(payload.declarations)) setDeclarations(payload.declarations);
       if (payload.vehicle) setVehicle(payload.vehicle);
-      showNotification('success', 'Datos importados.');
+      notifyPending('Datos importados.');
     } catch {
       showNotification('error', 'El archivo no contiene un backup válido de Labora+.');
     }
   };
 
   const value = useMemo<DataContextType>(() => ({
+    operationalSync, setOperationalSync, operationalSyncAttempt, retryOperationalSync, confirmSessionExit,
     currentUser,
     users,
     incomes,
@@ -870,6 +903,7 @@ export const DataProvider: React.FC<PropsWithChildren> = ({ children }) => {
     exportData,
     importData
   }), [
+    operationalSync, operationalSyncAttempt, retryOperationalSync, pendingOperationalUserId,
     currentUser,
     users,
     incomes,

@@ -41,7 +41,7 @@ type NavItem = {
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpen, setIsMobileMenuOpen }) => {
-  const { currentUser, logout, requirements } = useData();
+  const { currentUser, logout, confirmSessionExit, requirements } = useData();
   const { palette } = useGhibliAtmosphere();
   const { t } = useI18n();
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
@@ -110,6 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isMobileMenuOpe
   };
 
   const handleLogout = async () => {
+    if (!confirmSessionExit()) return;
     try {
       await signOutRemote();
     } finally {

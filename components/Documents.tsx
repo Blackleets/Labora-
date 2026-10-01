@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Calendar,
   CheckCircle2,
@@ -23,6 +23,7 @@ import {
   linkedIncomesForDocument
 } from '../services/deleteEligibility';
 import { Document as UserDocument, UserRole } from '../types';
+import { prepareDocumentFile, PreparedDocumentFile } from '../services/documentPreparation';
 
 type DisplayItem = {
   id: string;
@@ -39,16 +40,7 @@ type DisplayItem = {
   badge?: { label: string; tone: 'green' | 'amber' | 'stone' };
 };
 
-type PendingUpload = {
-  name: string;
-  dataUrl: string;
-  mimeType: string;
-  sizeBytes: number;
-  contentHash: string;
-};
-
-const ALLOWED_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
-const MAX_FILE_BYTES = 15 * 1024 * 1024;
+type PendingUpload = PreparedDocumentFile & { userId: string };
 
 const bytesLabel = (value?: number) => {
   if (value == null) return 'Tamaño no disponible';
@@ -56,20 +48,6 @@ const bytesLabel = (value?: number) => {
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(0)} KB`;
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 };
-
-const hashBuffer = async (buffer: ArrayBuffer) => {
-  const digest = await crypto.subtle.digest('SHA-256', buffer);
-  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
-};
-
-const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => typeof reader.result === 'string'
-    ? resolve(reader.result)
-    : reject(new Error('No se pudo leer el archivo.'));
-  reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo.'));
-  reader.readAsDataURL(file);
-});
 
 const fileTypeFor = (mimeType?: string, name?: string): DisplayItem['fileType'] => {
   if (mimeType === 'application/pdf' || name?.toLowerCase().endsWith('.pdf')) return 'PDF';
@@ -103,6 +81,26 @@ export const Documents: React.FC = () => {
   const [preview, setPreview] = useState<DisplayItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fileReadRef = useRef<AbortController | null>(null);
+  const actorRef = useRef(currentUser?.id);
+  actorRef.current = currentUser?.id;
+  const documentsRef = useRef(documents);
+  documentsRef.current = documents;
+  const closeUpload = () => {
+    fileReadRef.current?.abort();
+    fileReadRef.current = null;
+    setPendingUpload(null);
+    setIsReadingFile(false);
+    setDocName('');
+    setDocType('Factura');
+    setFormError('');
+    setIsUploadOpen(false);
+  };
+  useEffect(() => {
+    closeUpload();
+    return () => { fileReadRef.current?.abort(); fileReadRef.current = null; };
+  }, [currentUser?.id, currentUser?.role]);
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
   const linkedIds = useMemo(() => new Set(
@@ -193,63 +191,36 @@ export const Documents: React.FC = () => {
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !currentUser) return;
-
-    // Replacing an attachment invalidates the previous prepared file immediately.
+    event.target.value = '';
+    if (!file || !currentUser || isManager || !isUploadOpen) return;
+    fileReadRef.current?.abort();
+    const controller = new AbortController();
+    fileReadRef.current = controller;
+    const userId = currentUser.id;
+    const isCurrent = () => !controller.signal.aborted && fileReadRef.current === controller && actorRef.current === userId;
     setPendingUpload(null);
     setFormError('');
-
-    if (!ALLOWED_TYPES.has(file.type)) {
-      showNotification('error', 'Formato no admitido. Usa PDF, JPG, PNG o WebP.');
-      event.target.value = '';
-      return;
-    }
-    if (file.size > MAX_FILE_BYTES) {
-      showNotification('error', 'El archivo supera el límite de 15 MB.');
-      event.target.value = '';
-      return;
-    }
-
     setIsReadingFile(true);
     try {
-      const buffer = await file.arrayBuffer();
-      const contentHash = await hashBuffer(buffer);
-      const duplicate = documents.some(
-        (document) => document.userId === currentUser.id && document.contentHash === contentHash
-      );
-      if (duplicate) {
-        setPendingUpload(null);
-        showNotification('error', 'Este archivo ya existe en tu expediente.');
-        return;
-      }
-
-      const dataUrl = await readFileAsDataUrl(file);
-      setPendingUpload({
-        name: file.name,
-        dataUrl,
-        mimeType: file.type,
-        sizeBytes: file.size,
-        contentHash
-      });
-      if (!docName.trim()) setDocName(file.name);
-      showNotification(
-        'success',
-        file.type === 'application/pdf'
-          ? 'PDF preparado. Se conservarán todas sus páginas.'
-          : 'Archivo preparado.'
-      );
+      const prepared = await prepareDocumentFile(file, controller.signal, hash => documentsRef.current.some(document => document.userId === userId && document.contentHash === hash));
+      if (!isCurrent() || !prepared) return;
+      setPendingUpload({ ...prepared, userId });
+      setDocName(previous => previous.trim() ? previous : prepared.name);
+      showNotification('info', 'Archivo preparado. Confirma su nombre y pulsa Guardar.');
     } catch (error) {
-      console.error(error);
-      showNotification('error', 'No se pudo preparar el archivo.');
+      if (!isCurrent()) return;
+      const message = error instanceof Error ? error.message : 'No se pudo preparar el archivo.';
+      setFormError(message);
+      showNotification('error', message);
     } finally {
-      setIsReadingFile(false);
-      event.target.value = '';
+      if (isCurrent()) { setIsReadingFile(false); fileReadRef.current = null; }
     }
   };
 
   const handleSaveDocument = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!currentUser || isManager || isReadingFile) return;
+    if (!currentUser || isManager || isReadingFile || !isUploadOpen) return;
+    if (pendingUpload && pendingUpload.userId !== currentUser.id) { closeUpload(); return; }
     if (!docName.trim() || !pendingUpload) {
       setFormError('Selecciona un archivo y confirma su nombre.');
       showNotification('error', 'Selecciona un archivo y confirma su nombre.');
@@ -279,9 +250,7 @@ export const Documents: React.FC = () => {
       return;
     }
 
-    setDocName('');
-    setPendingUpload(null);
-    setIsUploadOpen(false);
+    closeUpload();
   };
 
   const handleDownload = (item: DisplayItem) => {
@@ -471,7 +440,7 @@ export const Documents: React.FC = () => {
           <div className="w-full max-w-lg rounded-t-[26px] border border-[var(--labora-border)] bg-[var(--labora-parchment)] p-5 shadow-2xl sm:rounded-[26px]">
             <div className="flex items-start justify-between gap-3">
               <div><p className="labora-kicker text-[var(--labora-primary-2)]">Archivo privado</p><h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">Subir documento</h3><p className="mt-1 text-xs text-[var(--labora-muted)]">PDF, JPG, PNG o WebP · máximo 15 MB.</p></div>
-              <button type="button" onClick={() => { setFormError(''); setIsUploadOpen(false); }} className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-2 text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label="Cerrar"><X size={17} aria-hidden /></button>
+              <button type="button" onClick={closeUpload} className="rounded-xl border border-[var(--labora-border)] bg-[var(--labora-surface)] p-2 text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]" aria-label="Cerrar"><X size={17} aria-hidden /></button>
             </div>
 
             <form onSubmit={handleSaveDocument} className="mt-5 space-y-4" noValidate>
@@ -498,7 +467,7 @@ export const Documents: React.FC = () => {
               ) : null}
 
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={() => { setFormError(''); setIsUploadOpen(false); }} className="flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] py-2.5 text-xs font-extrabold text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]">Cancelar</button>
+                <button type="button" onClick={closeUpload} className="flex-1 rounded-[13px] border border-[var(--labora-border)] bg-[var(--labora-surface)] py-2.5 text-xs font-extrabold text-[var(--labora-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)]">Cancelar</button>
                 <button type="submit" disabled={isReadingFile || !pendingUpload || !docName.trim()} className="flex-1 rounded-[13px] bg-[var(--labora-primary)] py-2.5 text-xs font-extrabold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--labora-primary)] disabled:opacity-40">Guardar</button>
               </div>
             </form>

@@ -9,9 +9,11 @@ import {
   OperationalCacheConflictError
 } from '../services/operationalCache';
 
+import { confirmOperationalSync, OperationalCacheUnavailableError, OperationalSyncPhase } from '../services/operationalSync';
+
 const RemoteSyncBridge: React.FC = () => {
   const {
-    currentUser,
+    currentUser, setOperationalSync, operationalSyncAttempt,
     users,
     incomes,
     expenses,
@@ -29,18 +31,21 @@ const RemoteSyncBridge: React.FC = () => {
   const activeUserIdRef = useRef(currentUser?.id);
   activeUserIdRef.current = currentUser?.id;
   const refreshingRef = useRef(false);
-  const lastSyncErrorAtRef = useRef(0);
+  const lastSyncErrorAtRef = useRef<number | null>(null);
 
   const reportSyncError = (code: string, error: unknown) => {
     console.error(`[${code}]`, error);
     const now = Date.now();
-    if (now - lastSyncErrorAtRef.current < 60_000) return;
+    setOperationalSync({ userId: currentUser.id, phase: error instanceof OperationalCacheConflictError || error instanceof OperationalCacheUnavailableError ? 'blocked' : 'error' });
+    if (lastSyncErrorAtRef.current !== null && now - lastSyncErrorAtRef.current < 60_000) return;
     lastSyncErrorAtRef.current = now;
     showNotification(
       'error',
       error instanceof OperationalCacheConflictError
         ? 'Hay datos locales pendientes. La sincronización se ha pausado para evitar perderlos; no cierres sesión.'
-        : 'No se pudo sincronizar con la nube. Los cambios permanecen en este dispositivo; no cierres sesión.'
+        : error instanceof OperationalCacheUnavailableError
+          ? 'No se pudo comprobar la copia local. Mantén esta sesión abierta y reintenta.'
+          : 'No se pudo sincronizar con la nube. Mantén esta sesión abierta y reintenta.'
     );
   };
 
@@ -72,11 +77,13 @@ const RemoteSyncBridge: React.FC = () => {
       // Storage access is optional, but remote writes need verified hydration.
     }
     if (canResumeHydratedCache(currentUser.id, receipt)) {
+      setOperationalSync({ userId: currentUser.id, phase: 'pending' });
       hydrationRef.current = { userId: currentUser.id, ready: true };
       setHydratedUserId(currentUser.id);
       return;
     }
 
+    setOperationalSync({ userId: currentUser.id, phase: 'checking' });
     let active = true;
 
     const hydrate = async () => {
@@ -96,6 +103,7 @@ const RemoteSyncBridge: React.FC = () => {
         }
         hydrationRef.current = { userId: currentUser.id, ready: true };
         setHydratedUserId(currentUser.id);
+        setOperationalSync({ userId: currentUser.id, phase: 'pending' });
       } catch (error) {
         if (active) reportSyncError('LABORA_SYNC_HYDRATE_FAILED', error);
       }
@@ -103,38 +111,33 @@ const RemoteSyncBridge: React.FC = () => {
 
     void hydrate();
     return () => { active = false; };
-  }, [currentUser, users]);
+  }, [currentUser, users, operationalSyncAttempt, setOperationalSync]);
 
   useEffect(() => {
     if (!currentUser) return;
     if (hydratedUserId !== currentUser.id) return;
 
+    let active = true;
+    const userId = currentUser.id;
+    const onPhase = (phase: OperationalSyncPhase) => {
+      if (active && activeUserIdRef.current === userId) setOperationalSync({ userId, phase });
+    };
+    onPhase('pending');
     if (syncTimerRef.current) window.clearTimeout(syncTimerRef.current);
     syncTimerRef.current = window.setTimeout(() => {
-      const submittedFingerprint = operationalCacheFingerprint(currentUser.id);
+      const submittedFingerprint = operationalCacheFingerprint(userId);
       const previousSync = syncInFlightRef.current;
       const sync = (async () => {
         if (previousSync) await previousSync;
-        if (activeUserIdRef.current !== currentUser.id
-          || operationalCacheFingerprint(currentUser.id) !== submittedFingerprint) return;
-
-        await syncOperationalSnapshot({
-          currentUser,
-          users,
-          incomes,
-          expenses,
-          requirements,
-          documents,
-          declarations,
-          payments
+        await confirmOperationalSync({
+          isCurrent: () => active && activeUserIdRef.current === userId,
+          cacheMatches: () => operationalCacheFingerprint(userId) === submittedFingerprint,
+          sync: () => syncOperationalSnapshot({ currentUser, users, incomes, expenses, requirements, documents, declarations, payments }),
+          markSubmitted: () => markOperationalCacheSubmitted(userId, submittedFingerprint),
+          onPhase
         });
-        if (activeUserIdRef.current === currentUser.id
-          && operationalCacheFingerprint(currentUser.id) === submittedFingerprint
-          && !markOperationalCacheSubmitted(currentUser.id, submittedFingerprint)) {
-          throw new Error('No se pudo guardar la confirmación local de sincronización.');
-        }
       })().catch((error) => {
-        if (activeUserIdRef.current === currentUser.id) reportSyncError('LABORA_SYNC_WRITE_FAILED', error);
+        if (active && activeUserIdRef.current === userId) reportSyncError('LABORA_SYNC_WRITE_FAILED', error);
       });
       syncInFlightRef.current = sync;
       void sync.then(() => {
@@ -143,9 +146,10 @@ const RemoteSyncBridge: React.FC = () => {
     }, 700);
 
     return () => {
+      active = false;
       if (syncTimerRef.current) window.clearTimeout(syncTimerRef.current);
     };
-  }, [fingerprint, hydratedUserId, currentUser, users, incomes, expenses, requirements, documents, declarations, payments]);
+  }, [fingerprint, hydratedUserId, currentUser, users, incomes, expenses, requirements, documents, declarations, payments, operationalSyncAttempt, setOperationalSync]);
 
   useEffect(() => {
     if (!currentUser || hydratedUserId !== currentUser.id) return;

@@ -206,7 +206,6 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
       status: 'pending_review'
     });
 
-    showNotification('success', 'Repostaje guardado y enviado a revisión.');
     onClose();
   };
 

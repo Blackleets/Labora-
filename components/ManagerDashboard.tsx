@@ -206,11 +206,6 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
       note,
       status === 'approved' ? pct : status === 'rejected' ? 0 : reviewingExpense.deductiblePercentage
     );
-    if (status === 'needs_fix') {
-      showNotification('info', 'El gasto se ha marcado para corrección.');
-    } else if (status === 'approved') {
-      showNotification('success', `Gasto aprobado al ${pct}%.`);
-    }
     setReviewingExpense(null);
   };
 

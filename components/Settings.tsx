@@ -42,7 +42,7 @@ const Settings: React.FC = () => {
   const {
     currentUser,
     users,
-    logout,
+    logout, confirmSessionExit,
     darkMode,
     toggleDarkMode,
     privacyMode,
@@ -206,6 +206,7 @@ const Settings: React.FC = () => {
   };
 
   const handleLogout = async () => {
+    if (!confirmSessionExit()) return;
     try {
       await signOutRemote();
     } finally {
