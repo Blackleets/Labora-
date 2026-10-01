@@ -14,7 +14,6 @@ import {
   X
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import AtmosphericPanel from './AtmosphericPanel';
 import { useCountry } from '../contexts/CountryContext';
 import { Expense, UserRole } from '../types';
 import { FiscalDeadlineCard } from './FiscalDeadlineCard';
@@ -221,10 +220,6 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
   return (
     <div id="manager-dashboard" className="mx-auto max-w-7xl space-y-6 pb-8">
       <section className="labora-hero p-5 sm:p-7">
-        <AtmosphericPanel
-          variant="hero"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] w-full opacity-[0.45]"
-        />
         <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-end">
           <div>
             <span className="labora-chip labora-kicker text-[var(--labora-primary)]">Gestoría · {quarter}</span>
