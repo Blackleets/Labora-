@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { recoveryEntry, shouldDetectAuthUrl } from './passwordRecoveryRoute';
 
 // The publishable key is designed for browser use. Security is enforced by Supabase Auth + RLS.
 export const SUPABASE_URL = 'https://gggtriyvbusbpqohoukv.supabase.co';
@@ -8,6 +9,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: recoveryEntry ? false : shouldDetectAuthUrl
   }
 });

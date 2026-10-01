@@ -33,14 +33,14 @@ export const createHookHarness = (path: string, modules: Record<string, unknown>
   };
   const output = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.React } }).outputText;
   const exports: any = {};
-  vm.runInNewContext(output, { exports, AbortController, DOMException, console, ...globals, require: (name: string) => {
+  vm.runInNewContext(output, { exports, AbortController, DOMException, Error, console, ...globals, require: (name: string) => {
     if (name === 'react') return { default: runtime, ...runtime };
     if (!(name in modules)) throw new Error(`Missing test dependency: ${name}`);
     return modules[name];
   } });
   const component = exports.default || exports.Documents;
   return {
-    render: () => { cursor = 0; effects = []; const tree = component({}); const pending = effects; effects = []; pending.forEach(fn => fn()); return tree; },
+    render: (props: Record<string, unknown> = {}) => { cursor = 0; effects = []; const tree = component(props); const pending = effects; effects = []; pending.forEach(fn => fn()); return tree; },
     unmount: () => slots.forEach(slot => slot?.cleanup?.())
   };
 };

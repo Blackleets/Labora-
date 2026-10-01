@@ -25,12 +25,13 @@ import CountrySelector from './CountrySelector';
 import IdentityImagePicker from './IdentityImagePicker';
 import IntroAnimation from './IntroAnimation';
 import Logo from './Logo';
+import PasswordRecoveryForm from './PasswordRecoveryForm';
 import { withBaseUrl } from './brandMarks';
 
 const Login: React.FC = () => {
   const { palette } = useGhibliAtmosphere();
   const { selectedCountry } = useCountry();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'recover'>('login');
   const [registerStep, setRegisterStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -189,8 +190,10 @@ const Login: React.FC = () => {
     }
   };
 
-  const switchMode = (nextMode: 'login' | 'register') => {
+  const switchMode = (nextMode: 'login' | 'register' | 'recover') => {
+    if (loading) return;
     setMode(nextMode);
+    setPassword('');
     setRegisterStep(1);
     resetFeedback();
   };
@@ -353,7 +356,7 @@ const Login: React.FC = () => {
             </div>
 
             <div className="p-8 sm:p-10">
-              {mode === 'login' ? (
+              {mode === 'recover' ? <PasswordRecoveryForm mode="request" onBack={() => switchMode('login')} /> : mode === 'login' ? (
                 <>
                   <h2 className="labora-title text-[var(--labora-ink)]">Bienvenido de nuevo</h2>
                   <p className="labora-body mt-3 text-[15px] leading-[1.65]">
@@ -415,6 +418,7 @@ const Login: React.FC = () => {
                       {loading ? <Loader2 size={17} className="animate-spin" /> : <>Entrar <ArrowRight size={17} /></>}
                     </button>
                   </form>
+                  <button type="button" onClick={() => switchMode('recover')} className="mt-4 min-h-[44px] rounded-xl px-2 text-sm font-semibold text-[var(--labora-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">¿Olvidaste tu contraseña?</button>
                 </>
               ) : (
                 <>

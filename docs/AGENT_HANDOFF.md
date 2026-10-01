@@ -1,3 +1,19 @@
+# Continuidad activa — recuperación de contraseña, 2026-10-02 (Europe/Madrid)
+
+- Lewis pide arreglar los pendientes manteniendo el diseño. Base main@3ed8f3f81e37e7d90dbf61d2e84c56e1befc4cfd; rama fix/password-recovery.
+- Cierre anterior: PR #77 fusionado; CI head 36915623995 y main 36916027784 success; Pages 36916027913 success para main anterior. Sustituye los pendientes de entrega del checkpoint inferior.
+- Login añade ¿Olvidaste tu contraseña?, solicitud por correo, confirmación genérica sin enumerar cuentas y reintento. Se conservan tarjeta, paleta, logo y pantalla de acceso. Nueva contraseña: dos campos, mínimo local de 8 caracteres, coincidencia, requisitos adicionales del servidor, estados de carga/error/éxito y foco de encabezado.
+- Root PasswordRecoveryGate se monta antes de DataProvider y los bridges. Los callbacks de recuperación no se consumen por el cliente global: un cliente Supabase aislado, persistSession=false/autoRefreshToken=false, verifica la sesión del enlace y el actor mediante getUser. updateUser se ejecuta en esa sesión, evitando actualizar otra cuenta abierta en una pestaña distinta. Signup y login normales conservan su callback.
+- Credenciales de la URL se eliminan al consumir el enlace; no se guardan contraseñas ni tokens nuevos en storage. Solo queda #password-recovery (sin secretos). Recargar esa pantalla exige solicitar otro enlace. Salir cierra sesiones locales confirmadas, limpia el perfil local y vuelve a Login; un error de signOut mantiene el gate y ofrece reintento. No declara revocación instantánea de JWTs existentes.
+- Android solicita retorno a la web HTTPS canónica https://blackleets.github.io/Labora-/; el cambio NO incorpora deep links nativos. Tras cambiar la contraseña en el navegador, se entra con ella en el APK.
+- Verificación live de lectura: GET /auth/v1/settings HTTP 200, proveedor email activo y confirmación de email requerida. No se envió correo ni se cambió ninguna contraseña real. Allowlist/Site URL, SMTP/plantilla/entrega real NO verificadas; el conector disponible no expone esas opciones. Antes de aceptar el flujo completo, ejecutar docs/PASSWORD_RECOVERY_UAT.md.
+- Security Advisor live mantiene el aviso Leaked Password Protection Disabled; no se cambió la configuración. Remediación: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection.
+- Validación local: 297 tests / 46 archivos PASS (37 nuevos), TypeScript PASS, release:check 30/30 PASS, build PASS (aviso previo de chunk >500KB), diff check PASS. Pruebas negativas: enlace incompleto/vencido, tokens no persistidos, URL limpia, doble inicialización, sesión ajena, actor cambiado, fallo de envío/update/signOut, reintento y formulario desmontado. Harness Node NO acredita visual React DOM ni UAT real.
+- Sin cambios de esquema, RLS, grants, Storage, fiscalidad, tombstones ni Edge Functions. Rollback: revert del PR frontend.
+- CI/merge/Pages y revisión visual pública pendientes al guardar checkpoint: el cierre del PR de esta rama contendrá SHAs/runs y resultados finales. UAT dual, móvil físico, firma/AAB y Play Console siguen pendientes; PR #35 conserva su gate. Billing OFF.
+
+---
+
 # Continuidad activa — guardado operativo confirmado, 2026-10-01 (UTC)
 
 - Mandato de Lewis: ejecutar el primer bloque del plan de salida (PR #76, borrador), empezando por sincronización fiable y cancelación de documentos.

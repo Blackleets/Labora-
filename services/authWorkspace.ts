@@ -257,8 +257,9 @@ export const signUpRemote = async (
   return { user: data.user, session: data.session };
 };
 
-export const signOutRemote = async () => {
-  await supabase.auth.signOut();
+export const signOutRemote = async (scope: 'global' | 'local' = 'global') => {
+  const { error } = await supabase.auth.signOut({ scope });
+  if (error) throw error;
   localStorage.removeItem(LOCAL.users);
   localStorage.removeItem(LOCAL.currentUser);
   localStorage.removeItem(LOCAL.onboarded);
