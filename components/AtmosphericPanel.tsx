@@ -10,7 +10,7 @@ interface AtmosphericPanelProps {
 }
 
 /**
- * Editorial atmospheric panel — soft gradients, film grain, distant
+ * Editorial atmospheric panel — soft gradients, distant
  * abstract landforms and light orbs. Adult / private-banking calm.
  * No cartoon paths, fences, flowers, birds, or clipart meadow.
  */
@@ -105,14 +105,6 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
         </filter>
         <filter id={gid('blur-land')} x="-8%" y="-8%" width="116%" height="116%">
           <feGaussianBlur stdDeviation="4.5" />
-        </filter>
-        <filter id={gid('grain')}>
-          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" result="n" />
-          <feColorMatrix type="saturate" values="0" in="n" result="g" />
-          <feComponentTransfer in="g" result="g2">
-            <feFuncA type="linear" slope="0.045" />
-          </feComponentTransfer>
-          <feBlend in="SourceGraphic" in2="g2" mode="overlay" />
         </filter>
       </defs>
 
@@ -226,17 +218,6 @@ const AtmosphericPanel: React.FC<AtmosphericPanelProps> = ({
           </g>
         ))}
       </g>
-
-      {/* Film grain overlay */}
-      <rect
-        x="0"
-        y="0"
-        width="100%"
-        height="100%"
-        filter={`url(#${gid('grain')})`}
-        opacity="0.55"
-        style={{ mixBlendMode: 'multiply' as any }}
-      />
     </svg>
   );
 };

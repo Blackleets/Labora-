@@ -1,3 +1,18 @@
+# Continuidad activa — sombra de Inicio móvil, 2026-10-01 (Europe/Madrid)
+
+- Solicitud de Lewis: corregir la franja/sombra visible en Inicio móvil y seguir mejorando la app con el diseño actual.
+- Base main@c7cce00fb9c284f88d0ea3fc773d05e7e9f8fcf8; rama fix/mobile-home-atmosphere.
+- Diagnóstico respaldado por captura y código: AtmosphericPanel ocupaba solo el 55% inferior del hero Rider (52% Gestoría), con un borde superior duro. Su rectángulo de grain no declaraba fill (negro por defecto) y feBlend conservaba SourceGraphic, generando un velo oscuro con opacity 0.55 y multiply.
+- Corrección: los dos heroes conservan su fondo CSS continuo .labora-hero, tema y contenido; se elimina el SVG parcial superpuesto. AtmosphericPanel conserva paisaje/luces/estaciones en Login y elimina el grain SVG negro redundante; Login ya tiene textura CSS labora-film-grain.
+- Cambio solo decorativo, sin modificar datos, navegación, cálculos, RLS ni autenticación. Rollback por revert del PR.
+- Validación local: 225 pruebas / 36 archivos PASS; TypeScript PASS; release:check 30/30 PASS; build PASS (aviso previo de chunk >500KB); diff check PASS. Sin pruebas que repliquen el cambio decorativo.
+- Este navegador abre Login, sin sesión autenticada; la revisión real de Inicio a 360/390/430px y en el móvil de Lewis sigue pendiente. No afirmar UAT móvil PASS por checks de código.
+- CI/merge/Pages: pendientes al guardar el checkpoint; consultar el PR asociado y su SHA exacto para evidencia final.
+- Cierre anterior verificado: PR #74 fusionado, ficha administrativa en main@c7cce00fb9c284f88d0ea3fc773d05e7e9f8fcf8; CI feature 36784348965 y Pages 36784684822 success. admin-overview v3 ACTIVE con verify_jwt=true y respuesta anónima 401 sin datos. El checkpoint inferior era previo al despliegue y sus pendientes de entrega quedan sustituidos por este registro.
+- Próxima aceptación: visual móvil autenticada (Inicio + Gestoría + ficha admin), recorrido UAT dual real y auditoría de cancelación asíncrona de Documents.tsx. PR #35 conserva su gate de UAT dual y no se fusiona por esta corrección.
+
+---
+
 # Trabajo activo — ficha administrativa, 2026-10-01 (Europe/Paris)
 
 - Solicitud de Lewis: seleccionar un usuario y ver su ficha dentro de Labora+, conservar menú/diseño y volver al directorio con búsqueda/filtros.

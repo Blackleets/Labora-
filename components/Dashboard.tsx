@@ -20,7 +20,6 @@ import {
 import { useCountry } from '../contexts/CountryContext';
 import { useData } from '../contexts/DataContext';
 import { GasStationCaptureModal } from './GasStationCaptureModal';
-import AtmosphericPanel from './AtmosphericPanel';
 import { finishWorkSession, getActiveWorkSession, listRecentWorkSessions, startWorkSession } from '../services/workSessionService';
 import { WorkSession } from '../types';
 import { FiscalDeadlineCard } from './FiscalDeadlineCard';
@@ -239,10 +238,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
   return (
     <div id="rider-dashboard" className="mx-auto max-w-6xl space-y-8 pb-12">
       <section className="labora-hero p-6 sm:p-8 lg:p-10 xl:p-12">
-        <AtmosphericPanel
-          variant="hero"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] w-full opacity-[0.55]"
-        />
         <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
