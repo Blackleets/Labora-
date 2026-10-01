@@ -10,6 +10,7 @@ import { UserRole } from './types';
 import { pendingRequirementCount } from './services/workspaceDisplay';
 
 import Login from './components/Login';
+import PasswordRecoveryGate from './components/PasswordRecoveryGate';
 import { GhibliLightingControl } from './components/GhibliLightingControl';
 import Logo from './components/Logo';
 import Onboarding from './components/Onboarding';
@@ -254,6 +255,7 @@ const MainLayout: React.FC = () => {
 };
 
 const App: React.FC = () => (
+  <PasswordRecoveryGate>
   <OrganizationProvider>
     <DataProvider>
       <CountryProvider>
@@ -265,6 +267,7 @@ const App: React.FC = () => (
       </CountryProvider>
     </DataProvider>
   </OrganizationProvider>
+  </PasswordRecoveryGate>
 );
 
 export default App;
