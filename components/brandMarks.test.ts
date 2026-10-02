@@ -13,7 +13,7 @@ import {
 } from './brandMarks';
 
 describe('brandMarks', () => {
-  it('prefers curated Uber (white glyph) even when a local geometric mark exists', () => {
+  it('prefers curated Uber (white glyph) even when a local mark exists', () => {
     expect(isDarkGlyphBrand('uber')).toBe(true);
     const curated = getCuratedBrandMarkUrl('uber');
     expect(curated).toBe('https://cdn.simpleicons.org/uber/FFFFFF');

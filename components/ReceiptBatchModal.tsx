@@ -1,3 +1,4 @@
+import { MerchantBrandPreview } from './MerchantLogo';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { analyzeReceipt } from '../services/geminiService';
@@ -213,6 +214,7 @@ export const ReceiptBatchModal: React.FC<ReceiptBatchModalProps> = ({ files, exi
                     <div>
                       <label htmlFor={`labora-batch-merchant-${item.key}`} className="text-[10px] font-extrabold text-[var(--labora-muted)]">Comercio</label>
                       <input id={`labora-batch-merchant-${item.key}`} value={item.draft.merchant} onChange={(event) => patchDraft(item.key, { merchant: event.target.value })} className={inputClass} />
+                      <MerchantBrandPreview merchant={item.draft.merchant} />
                     </div>
                   </div>
                   <div className="mt-1.5 flex items-center justify-between gap-2">

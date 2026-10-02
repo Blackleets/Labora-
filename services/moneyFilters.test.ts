@@ -41,6 +41,22 @@ describe('moneyFilters', () => {
     expect(expenseMatches(e({}), { userId: 'u2' })).toBe(false);
   });
 
+  it('merchant filtering intersects client, status, category and search without mutating the receipt', () => {
+    const receipt = e({ merchant: 'CEPSA Almería', notes: 'BP en la nota', status: 'approved' });
+    const before = JSON.stringify(receipt);
+    expect(expenseMatches(receipt, { merchant: 'brand:moeve', userId: 'u1', category: 'Gasolina', status: 'approved', query: 'almeria' })).toBe(true);
+    expect(expenseMatches(receipt, { merchant: 'brand:bp' })).toBe(false);
+    expect(expenseMatches(receipt, { merchant: 'brand:moeve', userId: 'u2' })).toBe(false);
+    expect(expenseMatches(receipt, { merchant: 'brand:moeve', category: 'Comida' })).toBe(false);
+    expect(expenseMatches(receipt, { merchant: 'brand:moeve', status: 'pending_review' })).toBe(false);
+    expect(expenseMatches(receipt, { merchant: 'brand:moeve', query: 'madrid' })).toBe(false);
+    expect(JSON.stringify(receipt)).toBe(before);
+    expect(hasActiveExpenseFilters({ merchant: 'brand:moeve' })).toBe(true);
+    expect(expenseMatches(e({}), { merchant: 'missing' })).toBe(true);
+    expect(expenseMatches(e({ merchant: 'Bar José' }), { merchant: 'missing' })).toBe(false);
+    expect(expenseMatches(e({ merchant: 'Bar José' }), { merchant: 'merchant:bar jose' })).toBe(true);
+  });
+
   it('income filters', () => {
     expect(incomeMatches(i({}), { platform: 'Uber Eats' })).toBe(false);
     expect(incomeMatches(i({ needsReview: true }), { review: 'needs_review' })).toBe(true);

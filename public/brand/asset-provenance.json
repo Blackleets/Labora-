@@ -1,0 +1,217 @@
+{
+  "retrievedOn": "2026-10-02",
+  "usage": "Merchant/platform identification only; no endorsement or fiscal validation. Official assets are unchanged; Simple Icons shapes are tinted with upstream brand hex.",
+  "assets": [
+    {
+      "path": "public/brand/merchants/repsol.svg",
+      "source": "https://www.repsol.es/content/dam/global/logotipos/repsol/logo-repsol.svg",
+      "kind": "official-site",
+      "sha256": "923f03aa994033f1aa044a7b19ec8a094933ebc1eda4efff0fb92b05a551e251",
+      "bytes": 23814
+    },
+    {
+      "path": "public/brand/merchants/moeve.svg",
+      "source": "https://www.moeve.es/recursos_alt/images/favicon/favicon.svg",
+      "kind": "official-site",
+      "sha256": "8eb99bbfa9ef2dfc8e93dbb324fd76e1ef02e5e819865aee263b9554bdf2b83a",
+      "bytes": 670
+    },
+    {
+      "path": "public/brand/merchants/cepsa.svg",
+      "source": "https://www.moeve.es/recursos_comercial/images/cepsa-logo.svg",
+      "kind": "official-site",
+      "sha256": "110bbd05d67521a253edd1468cce81ca7d58a7e224e3f8a03e450ab8eb60a014",
+      "bytes": 2238
+    },
+    {
+      "path": "public/brand/merchants/galp.png",
+      "source": "https://www.galp.com/es/img/Galp_favicon.png",
+      "kind": "official-site",
+      "sha256": "28b9a0e8bf6223e0dbaa6c76f14711599d12df9357a5261f8e2b9903387a7279",
+      "bytes": 18233
+    },
+    {
+      "path": "public/brand/merchants/petroprix.svg",
+      "source": "https://petroprix.com/wp-content/uploads/2022/04/ç.svg",
+      "kind": "official-site",
+      "sha256": "5ac4ca334594f870f18fcc5e7b225c0085c9ee4b422ffda571276b01baed9a6e",
+      "bytes": 1160
+    },
+    {
+      "path": "public/brand/merchants/plenergy.png",
+      "source": "https://plenergy.es/wp-content/uploads/2025/04/LogoPlenergyP-300x60.png",
+      "kind": "official-site",
+      "sha256": "b82e0f64bb9552a5238697b40a05d5dd5ecd7937ffad8c75533901da8f5cddb3",
+      "bytes": 7914
+    },
+    {
+      "path": "public/brand/merchants/plenoil.svg",
+      "source": "https://plenergy.es/wp-content/uploads/2022/11/Plenoil-logo-2022-1.svg",
+      "kind": "official-site",
+      "sha256": "24fe2477c0d725752bacff95d08929fd4acf7b028f9e029133de0b4ce5ef1253",
+      "bytes": 4671
+    },
+    {
+      "path": "public/brand/platforms/cabify.svg",
+      "source": "https://cabify.com/static/lo_cabify_primary.svg",
+      "kind": "official-site",
+      "sha256": "e885d38a81b9051d40cf0abe3a632af3714f05acf8cb1360bf8c638d911e3e75",
+      "bytes": 2450
+    },
+    {
+      "path": "public/brand/platforms/bolt.svg",
+      "source": "https://assets.homepage.bolt.eu/1.22.161/public/common-assets/bolt-logo-white.svg",
+      "kind": "official-site",
+      "sha256": "ca5685e65d79ff8800ce377b708087473e58050626a01d8d32e14656dc94b0fb",
+      "bytes": 1996
+    },
+    {
+      "path": "public/brand/merchants/shell.svg",
+      "source": "https://en.wikipedia.org/wiki/File:Shell_logo.svg",
+      "kind": "simple-icons",
+      "package": "simple-icons@16.33.0",
+      "slug": "shell",
+      "hex": "FFD500",
+      "upstreamSha256": "d3a4b69b3437e4e94ac7a974c2d3b9780a57cdbf82ff57e2f2558fb38d03d7cf",
+      "sha256": "74d0d53e99966a32ef469d9034feed18a516aa26645860c9146d13dc32f036b7",
+      "bytes": 1060
+    },
+    {
+      "path": "public/brand/merchants/carrefour.svg",
+      "source": "https://en.wikipedia.org/wiki/File:Carrefour_logo_no_tag.svg",
+      "kind": "simple-icons",
+      "package": "simple-icons@16.33.0",
+      "slug": "carrefour",
+      "hex": "004E9F",
+      "upstreamSha256": "e45ceec22b7f77b85907eca62eae5e06b680d13f280953a77f723a2f7a599313",
+      "sha256": "5e2c36ae5bc236a35377ccd8eb2439c3591ced6d231caca9e6c59bfb21c95b89",
+      "bytes": 1083
+    },
+    {
+      "path": "public/brand/merchants/auchan.svg",
+      "source": "https://www.auchan.fr",
+      "kind": "simple-icons",
+      "package": "simple-icons@16.33.0",
+      "slug": "auchan",
+      "hex": "D6180B",
+      "upstreamSha256": "ac5f21d642b7f7421b5bbc3e312cafe199a725cd1675ae66d0eeb3bfbd312a82",
+      "sha256": "1c03308e4dffdcc911f497d90ca9c79a2f145994e59eff507d67259a2348e8f0",
+      "bytes": 1712
+    },
+    {
+      "path": "public/brand/merchants/mcdonalds.svg",
+      "source": "https://www.mcdonalds.com/gb/en-gb/newsroom.html",
+      "kind": "simple-icons",
+      "package": "simple-icons@16.33.0",
+      "slug": "mcdonalds",
+      "hex": "FBC817",
+      "upstreamSha256": "35c203615d2d5d61184ea1f4ded91ebbf329a59e7e2d52e0a640f3b8fd8b740a",
+      "sha256": "4d8c4362f7ec6eeda6f3d0092ffd750b350939a29206773be5d195bad8f83ae2",
+      "bytes": 417
+    },
+    {
+      "path": "public/brand/merchants/burgerking.svg",
+      "source": "https://www.bk.com",
+      "kind": "simple-icons",
+      "package": "simple-icons@16.33.0",
+      "slug": "burgerking",
+      "hex": "D62300",
+      "upstreamSha256": "f5eaca1a07de55966d05662d77f4e038cb04511d3369b8578f764fc6d66fc102",
+      "sha256": "ac22ecc1c3cc9f90c45717eaaa819787c3709cc2ff02d37de6d1af6d017c3709",
+      "bytes": 4370
+    },
+    {
+      "path": "public/brand/merchants/kfc.svg",
+      "source": "https://global.kfc.com/asset-library/",
+      "kind": "simple-icons",
+      "package": "simple-icons@16.33.0",
+      "slug": "kfc",
+      "hex": "F40027",
+      "upstreamSha256": "40633083f981957fcb5ee91642785474c188e4c6468143c5e5d240448e3f4b9e",
+      "sha256": "1bf88da1c178143e6ffd30231f12c18099f650c2ac18c9c71b7047cffc367697",
+      "bytes": 1711
+    },
+    {
+      "path": "public/brand/merchants/starbucks.svg",
+      "source": "https://starbucks.com",
+      "kind": "simple-icons",
+      "package": "simple-icons@16.33.0",
+      "slug": "starbucks",
+      "hex": "006241",
+      "upstreamSha256": "b12ac9042b77a04d88f28e5be655719dd1e321b0b700ea5a280df4e1ca8c23c8",
+      "sha256": "e8a397a07e93c0a4167c84707e4b6a825b3ec652cb6e7a0d463f3bdb95269a85",
+      "bytes": 7723
+    },
+    {
+      "path": "public/brand/merchants/tacobell.svg",
+      "source": "https://www.tacobell.com",
+      "kind": "simple-icons",
+      "package": "simple-icons@16.33.0",
+      "slug": "tacobell",
+      "hex": "38096C",
+      "upstreamSha256": "096be713731f9d112f54feb7da35300632181a8d5e9bbb6582b6bdd74f8e8a2c",
+      "sha256": "2efd69221b0e07c14fabef7799623a697051debc56f02b1281fae1be40e6797a",
+      "bytes": 2259
+    },
+    {
+      "path": "public/brand/merchants/ballenoil.png",
+      "kind": "official-app-icon",
+      "source": "https://play.google.com/store/apps/details?id=ballenoil.com.ballenoil",
+      "assetUrl": "https://play-lh.googleusercontent.com/v5TzEX9zN7GOrCT2PfkJ0D7bnkC-o84YocavjDWoO_i0FTOoTHEi_1iByHfNT4zkqz6-bSw17c6_ySQ2FQboiw=w240-h480",
+      "sha256": "63aa6ce04d5209669fded917a9e57ca113a7a581c0cfdd674a782672e06bf4fd",
+      "bytes": 21493
+    },
+    {
+      "path": "public/brand/platforms/glovo.svg",
+      "kind": "simple-icons",
+      "source": "https://about.glovoapp.com/press",
+      "package": "simple-icons@16.33.0",
+      "slug": "glovo",
+      "hex": "F2CC38",
+      "upstreamSha256": "3d238b6ecfe6241e1463b1322cad0e496f76634d216ec68bcfc41dd6df424ad5",
+      "sha256": "518505ebc8e7b890202e28fc81116710f7380fd0373646d2e9bc0b910d69ab72",
+      "bytes": 640
+    },
+    {
+      "path": "public/brand/platforms/uber.svg",
+      "kind": "simple-icons",
+      "source": "https://assets.uber.com/d/k4nuxdZ8MC7E/logos/collection/151",
+      "package": "simple-icons@16.33.0",
+      "slug": "uber",
+      "hex": "000000",
+      "upstreamSha256": "8e580232236d43c715637618ce31621f2afc802a22af9b12706dc153c6a52002",
+      "sha256": "29eaa0ec30571c0694e7e42ab34816adb5955e414248c240b2b82dee3d8b75ca",
+      "bytes": 948
+    },
+    {
+      "path": "public/brand/platforms/uber_eats.svg",
+      "kind": "simple-icons",
+      "source": "https://assets.uber.com/d/k4nuxdZ8MC7E/logos/collection/150",
+      "package": "simple-icons@16.33.0",
+      "slug": "ubereats",
+      "hex": "06C167",
+      "upstreamSha256": "3c4f80f4eab7ed6d571202ddf4d2e8608c16781d4b77bd4e9e81f9117e0be11c",
+      "sha256": "b0e0cbe54184ebb7a714e110d4aaaa2d648a35e5671c995549703d0132749ca8",
+      "bytes": 2338
+    },
+    {
+      "path": "public/brand/platforms/just_eat.svg",
+      "kind": "simple-icons",
+      "source": "https://brand-box.marketing.just-eat.com",
+      "package": "simple-icons@16.33.0",
+      "slug": "justeat",
+      "hex": "FF8000",
+      "upstreamSha256": "71efdbdca0954b11b9542719c95a731d78a668369af803e6a9e7ccb9d72f37fc",
+      "sha256": "198b084ca91cace34cbfcf3bb934b9c9360086fa5144e6e886df51aaca3f5f56",
+      "bytes": 1912
+    },
+    {
+      "path": "public/brand/merchants/bp.png",
+      "kind": "official-app-icon",
+      "source": "https://www.bpme.co.nz/",
+      "assetUrl": "https://www.bpme.co.nz/favicon-196x196.png",
+      "sha256": "8ebfe33b266f0336b200ae1bac72bd26a9bc1407bbfdcc569c13eeed665464ee",
+      "bytes": 26372
+    }
+  ]
+}

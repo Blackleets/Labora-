@@ -24,7 +24,7 @@ const controlClass = `min-h-10 w-full rounded-[12px] border border-[var(--labora
 
 /** Barra de búsqueda + filtros para listas de dinero. Solo filtra lo ya cargado. */
 export const MoneyFilterBar: React.FC<MoneyFilterBarProps> = ({ idPrefix, query, onQueryChange, placeholder, selects, active, onClear }) => (
-  <div className="grid gap-2 border-b border-[var(--labora-border)] px-4 py-3 sm:grid-cols-[minmax(0,1.4fr)_repeat(auto-fit,minmax(140px,1fr))]" role="search">
+  <div className="grid gap-2 border-b border-[var(--labora-border)] px-4 py-3 sm:grid-cols-2 xl:grid-cols-3" role="search">
     <div className="relative">
       <label htmlFor={`${idPrefix}-q`} className="sr-only">Buscar</label>
       <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--labora-muted)]" aria-hidden />

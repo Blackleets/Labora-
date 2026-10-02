@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 
-export const createHookHarness = (path: string, modules: Record<string, unknown>, globals: Record<string, unknown> = {}) => {
+export const createHookHarness = (path: string, modules: Record<string, unknown>, globals: Record<string, unknown> = {}, exportName = 'default') => {
   let cursor = 0;
   const slots: any[] = [];
   let effects: Array<() => void> = [];
@@ -38,7 +38,7 @@ export const createHookHarness = (path: string, modules: Record<string, unknown>
     if (!(name in modules)) throw new Error(`Missing test dependency: ${name}`);
     return modules[name];
   } });
-  const component = exports.default || exports.Documents;
+  const component = exports[exportName] || exports.default || exports.Documents;
   return {
     render: (props: Record<string, unknown> = {}) => { cursor = 0; effects = []; const tree = component(props); const pending = effects; effects = []; pending.forEach(fn => fn()); return tree; },
     unmount: () => slots.forEach(slot => slot?.cleanup?.())

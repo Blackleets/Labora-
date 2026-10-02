@@ -33,6 +33,8 @@ import { canOwnerDeleteRow, expenseDeleteConfirmMessage } from '../services/dele
 import { EXPENSE_STATUS_FILTER_OPTIONS, ExpenseStatusFilter, expenseMatches, hasActiveExpenseFilters, sortByDateDesc, uniqueSorted } from '../services/moneyFilters';
 import { MoneyFilterBar } from './MoneyFilterBar';
 import { ReceiptBatchModal } from './ReceiptBatchModal';
+import MerchantLogo, { MerchantBrandPreview } from './MerchantLogo';
+import { merchantFilterOptions } from '../services/merchantBrands';
 
 interface ExpenseTrackerProps {
   startDate: string;
@@ -75,6 +77,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState<ExpenseStatusFilter>('all');
   const [filterClient, setFilterClient] = useState('');
+  const [filterMerchant, setFilterMerchant] = useState('');
 
   const isManager = currentUser?.role === UserRole.MANAGER || currentUser?.role === UserRole.ADMIN;
 
@@ -90,12 +93,13 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
     return true;
   }), [expenses, startDate, endDate, currentUser, isManager]);
 
-  const expenseFilters = { query: filterQuery, category: filterCategory, status: filterStatus, userId: filterClient };
+  const expenseFilters = { query: filterQuery, category: filterCategory, status: filterStatus, userId: filterClient, merchant: filterMerchant };
   const filtersActive = hasActiveExpenseFilters(expenseFilters);
   const filteredExpenses = useMemo(
-    () => sortByDateDesc(scopedExpenses.filter((expense) => expenseMatches(expense, { query: filterQuery, category: filterCategory, status: filterStatus, userId: filterClient }))),
-    [scopedExpenses, filterQuery, filterCategory, filterStatus, filterClient]
+    () => sortByDateDesc(scopedExpenses.filter((expense) => expenseMatches(expense, { query: filterQuery, category: filterCategory, status: filterStatus, userId: filterClient, merchant: filterMerchant }))),
+    [scopedExpenses, filterQuery, filterCategory, filterStatus, filterClient, filterMerchant]
   );
+  const merchantOptions = useMemo(() => merchantFilterOptions(scopedExpenses), [scopedExpenses]);
   const categoryOptions = useMemo(
     () => uniqueSorted([...Object.values(ExpenseCategory), ...scopedExpenses.map((expense) => String(expense.category))]),
     [scopedExpenses]
@@ -111,6 +115,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
     setFilterCategory('');
     setFilterStatus('all');
     setFilterClient('');
+    setFilterMerchant('');
   };
 
   const formatCurrency = (amount: number) => {
@@ -433,6 +438,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
               ...(isManager && clientOptions.length > 1
                 ? [{ id: 'client', label: 'Cliente', value: filterClient, onChange: setFilterClient, options: [{ value: '', label: 'Todos los clientes' }, ...clientOptions] }]
                 : []),
+              { id: 'merchant', label: 'Comercio', value: filterMerchant, onChange: setFilterMerchant, options: [{ value: '', label: 'Todos los comercios' }, ...merchantOptions] },
               { id: 'category', label: 'Categoría', value: filterCategory, onChange: setFilterCategory, options: [{ value: '', label: 'Todas las categorías' }, ...categoryOptions.map((category) => ({ value: category, label: category }))] },
               { id: 'status', label: 'Estado', value: filterStatus, onChange: (value: string) => setFilterStatus(value as ExpenseStatusFilter), options: EXPENSE_STATUS_FILTER_OPTIONS }
             ]}
@@ -450,9 +456,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
                 className="min-w-0 cursor-pointer p-4 transition hover:bg-[var(--labora-parchment)]"
               >
                 <div className="grid min-w-0 grid-cols-[42px_minmax(0,1fr)] items-start gap-3">
-                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-[var(--labora-surface-2)] text-[var(--labora-muted)]">
-                    {getCategoryIcon(String(expense.category))}
-                  </div>
+                  <MerchantLogo merchant={expense.merchant} fallback={getCategoryIcon(String(expense.category))} />
 
                   <div className="min-w-0">
                     <div className="flex min-w-0 items-start justify-between gap-2">
@@ -545,6 +549,8 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
 
               <Field label="Proveedor / comercio" htmlFor="labora-expense-merchant"><input id="labora-expense-merchant" value={selectedExpense.merchant || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, merchant: event.target.value })} className="field-input" placeholder="Nombre visible en el justificante" /></Field>
 
+              <MerchantBrandPreview merchant={selectedExpense.merchant} />
+
               <Field label="Categoría" htmlFor="labora-expense-category"><select id="labora-expense-category" value={String(selectedExpense.category)} onChange={(event) => { setSelectedExpense({ ...selectedExpense, category: event.target.value }); if (formError) setFormError(''); }} className="field-input" aria-invalid={formError ? true : undefined} aria-describedby={formError ? 'labora-expense-form-error' : undefined}>{Object.values(ExpenseCategory).map((category) => <option key={category} value={category}>{category}</option>)}</select></Field>
 
               <Field label="Descripción" htmlFor="labora-expense-notes"><textarea id="labora-expense-notes" rows={3} value={selectedExpense.notes || ''} onChange={(event) => setSelectedExpense({ ...selectedExpense, notes: event.target.value })} placeholder="Concepto o nota…" className="field-input resize-none" /></Field>
@@ -588,6 +594,7 @@ const ExpenseTracker: React.FC<ExpenseTrackerProps> = ({ startDate, endDate }) =
             <div className="flex items-center justify-between gap-3 border-b border-[var(--labora-border)] px-5 py-4">
               <div>
                 <p className="labora-kicker text-[var(--labora-primary-2)]">Auditoría</p>
+                <MerchantBrandPreview merchant={reviewingExpense.merchant} />
                 <h3 className="mt-1 text-lg font-extrabold text-[var(--labora-ink)]">{reviewingExpense.merchant || reviewingExpense.category}</h3>
                 <p className="mt-1 text-xs text-[var(--labora-muted)]">{clientName(reviewingExpense.userId)} · {formatCurrency(reviewingExpense.amount)} · {formatDate(reviewingExpense.date)}</p>
               </div>

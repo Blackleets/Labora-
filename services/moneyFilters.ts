@@ -1,5 +1,6 @@
 /** Filtros puros para listas de gastos e ingresos (búsqueda, categoría, estado, cliente). */
 import type { Expense, Income } from '../types';
+import { merchantFilterKey } from './merchantBrands';
 
 export type ExpenseStatusFilter = 'all' | 'to_review' | 'pending_review' | 'needs_fix' | 'approved' | 'rejected';
 export type IncomeReviewFilter = 'all' | 'needs_review' | 'reviewed';
@@ -21,6 +22,7 @@ export const INCOME_REVIEW_FILTER_OPTIONS: Array<{ value: IncomeReviewFilter; la
 
 export interface ExpenseFilterOptions {
   query?: string;
+  merchant?: string;
   category?: string;
   status?: ExpenseStatusFilter;
   userId?: string;
@@ -49,6 +51,7 @@ const effectiveStatus = (expense: Expense) => expense.status || 'pending_review'
 
 export const expenseMatches = (expense: Expense, options: ExpenseFilterOptions) => {
   if (options.userId && expense.userId !== options.userId) return false;
+  if (options.merchant && merchantFilterKey(expense.merchant) !== options.merchant) return false;
   if (options.category && String(expense.category) !== options.category) return false;
   const status = options.status || 'all';
   if (status === 'to_review') {
@@ -89,7 +92,7 @@ export const uniqueSorted = (values: Array<string | undefined | null>) =>
     .sort((a, b) => a.localeCompare(b, 'es'));
 
 export const hasActiveExpenseFilters = (options: ExpenseFilterOptions) =>
-  Boolean(options.query?.trim() || options.category || (options.status && options.status !== 'all') || options.userId);
+  Boolean(options.query?.trim() || options.merchant || options.category || (options.status && options.status !== 'all') || options.userId);
 
 export const hasActiveIncomeFilters = (options: IncomeFilterOptions) =>
   Boolean(options.query?.trim() || options.platform || (options.review && options.review !== 'all') || options.userId);

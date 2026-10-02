@@ -1,3 +1,18 @@
+# Continuidad activa — logos de comercios y filtro, 2026-10-02 (UTC)
+
+- Lewis autoriza continuar y dejar listo el proyecto, preguntando específicamente por el área de logos. Rama feat/merchant-brand-logos; base main@899d6ca8f64f71d2091f77f4985c5ef6a947b0af. Se conserva el diseño y el gate de aceptación real.
+- Cierre anterior verificado: PR #79 fusionado; CI head 37072352211 success, main 37072705440 success, Pages 37072705445 success en el SHA base. Login público conserva geometría/estilos en ocho controles comparados; el compilador Tailwind externo se eliminó. Sustituye los pendientes del checkpoint inferior.
+- Diagnóstico: plataformas ya tenían resolver; gastos/repostajes solo mostraban iconos de categoría. Se integran 17 marcas locales en lista, edición, lotes, repostaje y revisión de Gestoría. Filtro Comercio se combina con búsqueda/categoría/estado/cliente, tomando opciones solo del alcance de rol/fechas ya cargado.
+- Reconocimiento por palabras completas; conflictos entre marcas quedan sin identificar. Cepsa/Moeve y Plenoil/Plenergy comparten filtro pero mantienen su imagen histórica. Comercios desconocidos conservan su nombre e icono. No se hacen peticiones de logos con nombres de tickets.
+- Repostaje conserva el nombre completo de OCR, sin sustituirlo por una marca predefinida. IVA/deducibilidad/estado y confirmación del usuario se mantienen. No hay migraciones, cambios de RLS/Storage, permisos, tombstones, proveedores IA ni billing.
+- Glovo/Uber/Uber Eats/Just Eat/Cabify/Bolt sustituyen los respaldos geométricos por activos verificables. Bolt Food elimina el pictograma inventado y conserva favicon/iniciales. Resolver reinicia errores por identidad React; fallback de imágenes de comercio conserva categoría/iniciales.
+- Procedencia versionada en public/brand/asset-provenance.json: fuentes oficiales o Simple Icons 16.33.0, SHA-256, tintado upstream; BP/Ballenoil son iconos publicados por apps oficiales. Galería merchant-logos-preview.html sin datos de cuentas. docs/MERCHANT_BRANDS.md registra funcionamiento, límites y UAT.
+- Validación local: suite completa PASS (367 tests / 50 archivos, 70 nuevos), TypeScript PASS, build PASS (aviso preexistente de chunk >500KB), styles:check PASS, release:check 30/30 PASS, diff check PASS. Harness Node verifica nombres/fiscalidad y fallback, no equivale a OCR real ni React DOM.
+- CI/merge/Pages y galería pública pendientes al guardar checkpoint; registrar cierre con SHAs/runs en el PR de esta rama. Rollback: revert del PR frontend.
+- Para aceptar la salida faltan UAT real Trabajador/Gestoría/cuenta ajena con recarga/descarga/desvínculo/borrado; entrega de recuperación/allowlist/SMTP; OCR real; Samsung físico. Firma/AAB y Play Console pendientes. Billing OFF, Stripe sandbox pendiente. PR #35 mantiene gate y no se fusiona por este cambio.
+
+---
+
 # Continuidad activa — estilos empaquetados para web y Android, 2026-10-02 (UTC)
 
 - Mandato: seguir mejorando y aclarar los bloqueos de lanzamiento manteniendo el diseño. Base origin/main@63f751750c0a870ab90e1d27f6cf256c5cbad1fb; rama fix/bundled-app-styles.
