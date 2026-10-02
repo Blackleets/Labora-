@@ -11,7 +11,7 @@ La marca se deriva del campo `merchant` para presentación y filtrado, sin alter
 
 ## Procedencia
 
-`public/brand/asset-provenance.json` registra fuente, tipo, hash SHA-256 y versión de Simple Icons cuando corresponde. Activos oficiales copiados sin modificar; BP y Ballenoil usan iconos publicados por sus aplicaciones oficiales. Simple Icons 16.33.0 conserva geometría upstream y su color de marca (CC0; las marcas pertenecen a sus titulares). No implica asociación ni aprobación.
+`public/brand/asset-provenance.json` registra fuente, tipo, hash SHA-256 y versión de Simple Icons cuando corresponde. Activos oficiales copiados sin modificar; Cepsa conserva el logo rojo histórico de su web Autogas (el endpoint de Moeve llamado cepsa-logo.svg ahora devuelve Moeve y se descartó tras revisión visual); BP y Ballenoil usan iconos publicados por sus aplicaciones oficiales. Simple Icons 16.33.0 conserva geometría upstream y su color de marca (CC0; las marcas pertenecen a sus titulares). No implica asociación ni aprobación.
 
 La galería pública `merchant-logos-preview.html` permite revisar estos archivos sin entrar en una cuenta. Es un catálogo sin tickets ni datos de usuarios; no acredita el recorrido real autenticado.
 

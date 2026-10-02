@@ -11,7 +11,7 @@ export interface MerchantBrand {
 
 export const MERCHANT_BRANDS: readonly MerchantBrand[] = [
   { id: 'repsol', name: 'Repsol', group: 'repsol', groupName: 'Repsol', aliases: ['repsol'], asset: 'repsol.svg', kind: 'fuel' },
-  { id: 'cepsa', name: 'Cepsa', group: 'moeve', groupName: 'Moeve / Cepsa', aliases: ['cepsa'], asset: 'cepsa.svg', kind: 'fuel' },
+  { id: 'cepsa', name: 'Cepsa', group: 'moeve', groupName: 'Moeve / Cepsa', aliases: ['cepsa'], asset: 'cepsa.png', kind: 'fuel' },
   { id: 'moeve', name: 'Moeve', group: 'moeve', groupName: 'Moeve / Cepsa', aliases: ['moeve'], asset: 'moeve.svg', kind: 'fuel' },
   { id: 'bp', name: 'BP', group: 'bp', groupName: 'BP', aliases: ['bp', 'british petroleum'], asset: 'bp.png', kind: 'fuel' },
   { id: 'shell', name: 'Shell', group: 'shell', groupName: 'Shell', aliases: ['shell'], asset: 'shell.svg', kind: 'fuel' },

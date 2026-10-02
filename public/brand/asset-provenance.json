@@ -17,11 +17,13 @@
       "bytes": 670
     },
     {
-      "path": "public/brand/merchants/cepsa.svg",
-      "source": "https://www.moeve.es/recursos_comercial/images/cepsa-logo.svg",
-      "kind": "official-site",
-      "sha256": "110bbd05d67521a253edd1468cce81ca7d58a7e224e3f8a03e450ab8eb60a014",
-      "bytes": 2238
+      "path": "public/brand/merchants/cepsa.png",
+      "source": "https://www.cepsa.com/promo/autogas/",
+      "kind": "official-site-legacy",
+      "sha256": "f7f5431826302dc9bb7784e876cef5e562bc81c8dec8d9883704ceb77edce0ed",
+      "bytes": 5892,
+      "assetUrl": "https://www.cepsa.com/promo/autogas/images/logo.png",
+      "note": "Historical CEPSA red logo, visually checked. The Moeve URL named cepsa-logo.svg now returns a blue Moeve wordmark and must not be used for this legacy identity."
     },
     {
       "path": "public/brand/merchants/galp.png",
