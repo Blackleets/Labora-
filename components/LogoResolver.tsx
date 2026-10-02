@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   BrandMarkSvg,
   getInlineBrandIcon
@@ -22,12 +22,12 @@ export interface LogoResolverProps {
 
 /**
  * Fallback chain (fail-closed, never blank):
- * inline Simple Icons → curated CDN → local geometric SVG → Google favicon → letter avatar.
+ * inline Simple Icons → curated CDN → verified local SVG → Google favicon → letter avatar.
  * Clearbit omitted (API dead → empty image that never fires onError).
  */
 type LoadStep = 'inline' | 'curated' | 'local' | 'favicon' | 'placeholder';
 
-const LogoResolver: React.FC<LogoResolverProps> = ({
+const LogoImage: React.FC<LogoResolverProps> = ({
   id,
   name,
   domain,
@@ -53,10 +53,6 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
   }, [inlineIcon, curatedUrl, localUrl, faviconUrl]);
 
   const [step, setStep] = useState<LoadStep>(initialStep);
-
-  useEffect(() => {
-    setStep(initialStep);
-  }, [initialStep]);
 
   const advance = () => {
     setStep((current) => {
@@ -86,7 +82,7 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
   const accent = getPlatformLetterAccent(id, category);
 
   const chipBg =
-    darkGlyph && (step === 'inline' || step === 'curated')
+    (darkGlyph && (step === 'inline' || step === 'curated')) || (id === 'bolt' && step === 'local')
       ? 'border border-[#1A1A1A] bg-[#0A0A0A] shadow-[0_1px_2px_rgba(0,0,0,0.2)]'
       : 'border border-[color:var(--labora-border,#E3DCD2)] bg-[color:var(--labora-surface,#FFFEFB)] shadow-[0_1px_2px_rgba(46,90,68,0.04)]';
 
@@ -163,5 +159,8 @@ const LogoResolver: React.FC<LogoResolverProps> = ({
     </div>
   );
 };
+
+const LogoResolver: React.FC<LogoResolverProps> = (props) =>
+  <LogoImage key={`${props.id}:${props.domain || ''}`} {...props} />;
 
 export default LogoResolver;

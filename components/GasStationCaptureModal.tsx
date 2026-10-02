@@ -14,6 +14,7 @@ import { useData } from '../contexts/DataContext';
 import { useCountry } from '../contexts/CountryContext';
 import { ExpenseCategory } from '../types';
 import { GAS_STATION_PRESETS } from '../data/gasStations';
+import { MerchantBrandPreview } from './MerchantLogo';
 import { analyzeReceipt, ReceiptAnalysis } from '../services/geminiService';
 
 interface GasStationCaptureModalProps {
@@ -114,15 +115,9 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
         if (analysis.amount > 0) setTotalAmount(analysis.amount.toFixed(2));
         if (analysis.date) setDate(analysis.date);
         if (analysis.merchantName) {
-          const upper = analysis.merchantName.toUpperCase();
-          const known = GAS_STATION_PRESETS.find((preset) => upper.includes(preset.name.toUpperCase()));
-          if (known) {
-            setSelectedStation(known.name);
-            setCustomStation('');
-          } else {
-            setSelectedStation('Otro');
-            setCustomStation(analysis.merchantName);
-          }
+          // Keep the issuer/location exactly as read. Branding is presentation-only.
+          setSelectedStation('Otro');
+          setCustomStation(analysis.merchantName);
         }
 
         const pct = Math.round(analysis.confidence * 100);
@@ -295,6 +290,7 @@ export const GasStationCaptureModal: React.FC<GasStationCaptureModalProps> = ({ 
                   <option value="Otro">Otra</option>
                 </select>
                 {selectedStation === 'Otro' && <input value={customStation} onChange={(event) => setCustomStation(event.target.value)} placeholder="Nombre que aparece en el ticket" className="field-input mt-2" />}
+                <MerchantBrandPreview merchant={merchant} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">

@@ -76,7 +76,7 @@
       { id: 'just_eat', name: 'Just Eat', cat: 'Delivery', domain: 'just-eat.com', slug: 'justeat', hex: 'FF8000', selectable: true },
       { id: 'deliveroo', name: 'Deliveroo', cat: 'Delivery', domain: 'deliveroo.co.uk', slug: 'deliveroo', hex: '00CCBC', selectable: true },
       { id: 'cabify', name: 'Cabify', cat: 'Movilidad', domain: 'cabify.com', selectable: true },
-      { id: 'bolt', name: 'Bolt', cat: 'Movilidad', domain: 'bolt.eu', selectable: true },
+      { id: 'bolt', name: 'Bolt', cat: 'Movilidad', domain: 'bolt.eu', dark: true, selectable: true },
       { id: 'stuart', name: 'Stuart', cat: 'Delivery', domain: 'stuart.com', selectable: true },
       { id: 'paypal', name: 'PayPal', cat: 'Pagos', domain: 'paypal.com', slug: 'paypal', hex: '002991' },
       { id: 'stripe', name: 'Stripe', cat: 'Pagos', domain: 'stripe.com', slug: 'stripe', hex: '635BFF' },
@@ -107,7 +107,7 @@
       const urls = [];
       // Prefer curated Simple Icons CDN (white glyph for dark brands)
       if (item.slug) urls.push(`https://cdn.simpleicons.org/${item.slug}/${item.hex || '111111'}`);
-      // Local geometric only as secondary fallback
+      // Verified local brand assets as secondary fallback
       if (['glovo','uber','uber_eats','just_eat','cabify','bolt'].includes(item.id)) {
         urls.push(`${base}brand/platforms/${item.id}.svg`);
       }

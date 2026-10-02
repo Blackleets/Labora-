@@ -1,6 +1,6 @@
 /**
  * Curated brand marks for Plataformas / integrations.
- * Prefer inline Simple Icons (see brandIcons.tsx), then CDN, then local geometric SVG,
+ * Prefer inline Simple Icons (see brandIcons.tsx), then CDN, then verified local SVG,
  * then Google favicon, then colored letter avatar. Never blank white tiles.
  * Clearbit Logo API is discontinued — do not use it.
  */
@@ -42,15 +42,14 @@ const BRAND_MARKS: Record<string, BrandMark> = {
   xero: { slug: 'xero', hex: '13B5EA' }
 };
 
-/** Local geometric SVG fallbacks (abstract marks) — secondary only. */
+/** Local verified brand assets — secondary to inline marks. */
 const LOCAL_PLATFORM_MARKS = new Set([
   'glovo',
   'uber',
   'uber_eats',
   'just_eat',
   'cabify',
-  'bolt',
-  'bolt_food'
+  'bolt'
 ]);
 
 /** Category accent for letter avatars (never blank white). */
@@ -109,8 +108,8 @@ export const withBaseUrl = (path: string): string => {
 export const isDarkGlyphBrand = (id: string): boolean => Boolean(BRAND_MARKS[id]?.darkGlyph);
 
 /**
- * Curated Simple Icons CDN URL. Always prefer this (or inline) over local geometric
- * SVGs. darkGlyph brands get white (#FFFFFF) glyph for a dark chip.
+ * Curated Simple Icons CDN URL. Always prefer this (or inline) over local
+ * assets. darkGlyph brands get white (#FFFFFF) glyph for a dark chip.
  */
 export const getCuratedBrandMarkUrl = (id: string): string | undefined => {
   const mark = BRAND_MARKS[id];
