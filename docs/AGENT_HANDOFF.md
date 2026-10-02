@@ -1,3 +1,18 @@
+# Continuidad activa — estilos empaquetados para web y Android, 2026-10-02 (UTC)
+
+- Mandato: seguir mejorando y aclarar los bloqueos de lanzamiento manteniendo el diseño. Base origin/main@63f751750c0a870ab90e1d27f6cf256c5cbad1fb; rama fix/bundled-app-styles.
+- Cierre anterior verificado en PR #78: recuperación fusionada; CI head 36936042462, CI main 36936386301 y Pages 36936386265 success. Sustituye los pendientes de entrega del checkpoint inferior.
+- Problema respaldado por index.html y DOM live: Tailwind Play CDN compila los estilos en el navegador mediante una descarga externa. El APK empaquetaba los estilos propios, pero dependía de ese compilador para distribución/utilidades.
+- Se usa Tailwind 3.4.17 + PostCSS/autoprefixer en build. Tema exacto extraído de la configuración previa: paleta ghibli, CSS variables y familias tipográficas preservadas. Las directivas se colocan tras los estilos propios, como el STYLE que el CDN añadía al final de head, para conservar la cascada. No hay rediseño.
+- scripts/check-built-styles.mjs inspecciona HTML y CSS compilados: sin compilador CDN/directivas pendientes, stylesheet local presente, 20 clases críticas y breakpoints de 640/768/1024px. CI web, CI Android tras cap sync y Pages ejecutan el gate sobre el paquete final; funciona con base / y /Labora-/.
+- Dependencias solo de build; PostCSS conserva la versión 8.5.28 del lockfile base. No cambia Auth, RLS, Storage, contratos, fiscalidad, tombstones ni billing. Google Fonts y Leaflet siguen usando recursos externos; este cambio NO acredita funcionamiento offline completo ni persistencia offline.
+- Baseline y validación: TypeScript PASS; 297 tests/46 archivos PASS antes y después; release:check 30/30 PASS; build PASS (chunk >500KB preexistente); styles:check PASS para web/base Pages y assets copiados a Android; diff check PASS. CI Android remota por comprobar al crear PR.
+- Navegador live sin sesión, Login revisado antes del cambio. Preview localhost bloqueado con ERR_BLOCKED_BY_CLIENT: NO afirmar visual postcambio ni móvil autenticado a partir de checks CSS. Revisar Login tras despliegue y registrar cierre en el PR. Rollback: revert de este PR.
+- Publicación autorizada explícitamente por Lewis ("sí autorizo", 2026-10-03 Europe/Paris) tras el bloqueo automático previo. git push no dispone de credenciales en terminal; se usará el conector GitHub autenticado para subir exactamente esta rama. CI/merge/Pages siguen pendientes al crear el PR. El gate también rechaza un artefacto sin CSS y uno con compilador externo.
+- Próximo bloqueo de aceptación: UAT real Trabajador + Gestoría + cuenta ajena, recarga/descarga, desvínculo/borrado sin resurrección; entrega y allowlist del correo de recuperación; Samsung físico. PR #35 conserva gate real y no se fusiona por mejoras técnicas. Advisor Auth/IA-OCR y Stripe sandbox siguen sin aceptación; billing OFF; firma/AAB y Play Console pendientes.
+
+---
+
 # Continuidad activa — recuperación de contraseña, 2026-10-02 (Europe/Madrid)
 
 - Lewis pide arreglar los pendientes manteniendo el diseño. Base main@3ed8f3f81e37e7d90dbf61d2e84c56e1befc4cfd; rama fix/password-recovery.

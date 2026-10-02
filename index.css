@@ -1131,3 +1131,9 @@ body.dark .labora-status-danger {
 @media (prefers-reduced-motion: reduce) {
   .labora-seasonal-fall { animation: none; }
 }
+
+/* The former Play CDN appended these rules after the app styles. Preserve that
+   cascade so compiling locally does not change existing screen overrides. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
