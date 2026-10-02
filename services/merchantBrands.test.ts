@@ -26,6 +26,7 @@ import { GAS_STATION_PRESETS } from '../data/gasStations';
   it('groups legacy/current names but keeps the historically matching image', () => {
     expect(merchantFilterKey('CEPSA Sevilla')).toBe(merchantFilterKey('MOEVE Sevilla'));
     expect(resolveMerchantBrand('CEPSA (Moeve)')?.id).toBe('cepsa');
+    expect(resolveMerchantBrand('MOEVE (antes Cepsa)')?.id).toBe('moeve');
     expect(resolveMerchantBrand('MOEVE Sevilla')?.id).toBe('moeve');
     expect(merchantFilterKey('PLENOIL Madrid')).toBe(merchantFilterKey('PLENERGY Córdoba'));
     expect(resolveMerchantBrand('Plenoil')?.asset).toBe('plenoil.svg');

@@ -3,7 +3,7 @@
 La marca se deriva del campo `merchant` para presentación y filtrado, sin alterar el nombre guardado, categoría, IVA, deducibilidad ni estado de revisión. La captura de repostaje conserva el comercio completo leído por OCR, incluida la ubicación/razón social; el usuario debe confirmarlo.
 
 - 17 identidades locales: Repsol, Cepsa, Moeve, BP, Shell, Galp, Petroprix, Plenoil, Plenergy, Ballenoil, Carrefour, Alcampo/Auchan, McDonald's, Burger King, KFC, Starbucks y Taco Bell.
-- Moeve/Cepsa y Plenergy/Plenoil comparten filtro, conservando su imagen histórica según el nombre. Sucursales de una marca se agrupan; comercios desconocidos conservan agrupación por su nombre. Sin comercio tiene una opción explícita.
+- Moeve/Cepsa y Plenergy/Plenoil comparten filtro, conservando la imagen de la primera marca nombrada en el comercio. Sucursales de una marca se agrupan; comercios desconocidos conservan agrupación por su nombre. Sin comercio tiene una opción explícita.
 - Coincidencias por palabras completas con normalización de acentos/puntuación. Marcas de familias distintas en el mismo nombre son ambiguas y no se identifican. No se consulta ninguna API de logos con nombres de tickets. No se infiere marca desde notas ni categoría.
 - Filtros combinables con búsqueda, cliente, fecha, categoría y estado; opciones construidas exclusivamente desde gastos ya cargados y acotados al rol/fechas. No amplían acceso a datos.
 - Imágenes incluidas en web, Pages y Android. Ante error se conserva el icono de categoría o unas iniciales; una identidad nueva reinicia el estado de imagen por clave React.

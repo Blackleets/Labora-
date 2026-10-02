@@ -35,9 +35,13 @@ const words = (value: string) => normalize(value).replace(/[^\p{L}\p{N}]+/gu, ' 
 /** Whole words only; conflicting brands remain unidentified. No network lookup. */
 export const resolveMerchantBrand = (merchant?: string | null): MerchantBrand | undefined => {
   const text = ` ${words(merchant || '')} `;
-  const matches = MERCHANT_BRANDS.filter((brand) => brand.aliases.some((alias) => text.includes(` ${words(alias)} `)));
-  if (new Set(matches.map((brand) => brand.group)).size !== 1) return undefined;
-  return matches[0];
+  const matches = MERCHANT_BRANDS.flatMap((brand) => {
+    const positions = brand.aliases.map((alias) => text.indexOf(` ${words(alias)} `)).filter((index) => index >= 0);
+    return positions.length ? [{ brand, position: Math.min(...positions) }] : [];
+  });
+  if (new Set(matches.map(({ brand }) => brand.group)).size !== 1) return undefined;
+  // Within one family, show the first brand actually named on the receipt.
+  return matches.sort((a, b) => a.position - b.position)[0]?.brand;
 };
 
 export const merchantFilterKey = (merchant?: string | null): string => {
