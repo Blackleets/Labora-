@@ -9,6 +9,7 @@ App id: `app.labora.plus` · Sync: Vite `dist/` → `npm run cap:sync`
 - Capacitor Android project (`android/`)
 - Debug/local build path via Android Studio
 - Same product honesty as web: banking fail-closed, billing gated, no fake platform OAuth
+- Generated CSV/PDF Save As via Android system picker (play and labs), with cancellation/errors and 10 MiB cap. Physical acceptance: `docs/ANDROID_EXPORT_UAT.md`. Requires an updated APK containing LaboraFileExport; web deployment does not update installed APKs.
 
 ## Remaining Play gates (honest)
 

@@ -3,9 +3,10 @@ import ExpenseTracker from './ExpenseTracker';
 import IncomeTracker from './IncomeTracker';
 import { Wallet, Receipt, Filter, X, Calendar, Download } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import { exportFile, exportWithFeedback } from '../services/fileExport';
 
 const Movements: React.FC = () => {
-  const { incomes, expenses } = useData();
+  const { incomes, expenses, showNotification } = useData();
   const [activeTab, setActiveTab] = useState<'incomes' | 'expenses'>('expenses');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -34,14 +35,11 @@ const Movements: React.FC = () => {
       }
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Labora_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    return exportWithFeedback(() => exportFile(
+      `Labora_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`,
+      new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+    ), showNotification);
   };
 
   const hasFilters = startDate || endDate;

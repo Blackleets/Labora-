@@ -1,3 +1,4 @@
+import { exportWithFeedback } from '../services/fileExport';
 import React, { useMemo, useState } from 'react';
 import {
   Bell,
@@ -107,19 +108,17 @@ export const ManagerDashboard: React.FC<ManagerDashboardProps> = ({ setView }) =
       clientAllIncomes,
       new Date()
     );
-    downloadCsv(quarterExportFilename('trimestre', selectedQuarter, selectedClient.name), rows);
-    showNotification('success', `Exportación ${selectedQuarter} de ${selectedClient.name} descargada.`);
+    return exportWithFeedback(() => downloadCsv(quarterExportFilename('trimestre', selectedQuarter, selectedClient.name), rows), showNotification);
   };
   const [pdfBusy, setPdfBusy] = useState(false);
   const exportClientQuarterPdf = async () => {
     if (!selectedClient) return;
     setPdfBusy(true);
     try {
-      const model = buildQuarterPdfModel({ name: selectedClient.name, nif: selectedClient.nif, email: selectedClient.email }, selectedQuarter, clientAllExpenses, clientAllIncomes, new Date());
-      await downloadQuarterPdf(model, quarterPdfFilename(selectedQuarter, selectedClient.name));
-      showNotification('success', `PDF ${selectedQuarter} de ${selectedClient.name} descargado.`);
-    } catch (error) {
-      showNotification('error', error instanceof Error ? `No se pudo generar el PDF: ${error.message}` : 'No se pudo generar el PDF.');
+      await exportWithFeedback(async () => {
+        const model = buildQuarterPdfModel({ name: selectedClient.name, nif: selectedClient.nif, email: selectedClient.email }, selectedQuarter, clientAllExpenses, clientAllIncomes, new Date());
+        return downloadQuarterPdf(model, quarterPdfFilename(selectedQuarter, selectedClient.name));
+      }, showNotification);
     } finally {
       setPdfBusy(false);
     }

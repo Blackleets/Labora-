@@ -1,3 +1,4 @@
+import { exportWithFeedback } from '../services/fileExport';
 import React, { useMemo, useState } from 'react';
 import {
   Download,
@@ -144,8 +145,7 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
   };
 
   const exportExpenses = () => {
-    downloadCsv(quarterExportFilename('gastos', selectedQuarter, effectiveUser?.name), buildExpenseRows(userExpenses, selectedQuarter));
-    showNotification('success', 'Archivo de gastos descargado.');
+    return exportWithFeedback(() => downloadCsv(quarterExportFilename('gastos', selectedQuarter, effectiveUser?.name), buildExpenseRows(userExpenses, selectedQuarter)), showNotification);
   };
 
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -153,19 +153,17 @@ export const TaxDeclarationsViewer: React.FC<TaxDeclarationsViewerProps> = ({ us
     if (!effectiveUser) return;
     setPdfBusy(true);
     try {
-      const model = buildQuarterPdfModel({ name: effectiveUser.name, nif: effectiveUser.nif, email: effectiveUser.email }, selectedQuarter, userExpenses, userIncomes, new Date());
-      await downloadQuarterPdf(model, quarterPdfFilename(selectedQuarter, effectiveUser.name));
-      showNotification('success', `PDF del ${selectedQuarter} descargado.`);
-    } catch (error) {
-      showNotification('error', error instanceof Error ? `No se pudo generar el PDF: ${error.message}` : 'No se pudo generar el PDF.');
+      await exportWithFeedback(async () => {
+        const model = buildQuarterPdfModel({ name: effectiveUser.name, nif: effectiveUser.nif, email: effectiveUser.email }, selectedQuarter, userExpenses, userIncomes, new Date());
+        return downloadQuarterPdf(model, quarterPdfFilename(selectedQuarter, effectiveUser.name));
+      }, showNotification);
     } finally {
       setPdfBusy(false);
     }
   };
 
   const exportIncomes = () => {
-    downloadCsv(quarterExportFilename('ingresos', selectedQuarter, effectiveUser?.name), buildIncomeRows(userIncomes, selectedQuarter));
-    showNotification('success', 'Archivo de ingresos descargado.');
+    return exportWithFeedback(() => downloadCsv(quarterExportFilename('ingresos', selectedQuarter, effectiveUser?.name), buildIncomeRows(userIncomes, selectedQuarter)), showNotification);
   };
 
   if (!effectiveUserId || !effectiveUser) {

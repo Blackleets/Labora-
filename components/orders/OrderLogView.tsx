@@ -1,3 +1,4 @@
+import { exportWithFeedback } from '../../services/fileExport';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRightLeft, CalendarDays, Clock3, Download, FileUp, Loader2, Lock, Pencil, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
@@ -305,8 +306,7 @@ export const OrderLogView: React.FC<{ setView?: (view: string) => void }> = ({ s
   };
 
   const exportMonth = () => {
-    downloadCsv(`labora_pedidos_${month}.csv`, orderCsvRows(monthOrders, liveIncomeIds));
-    showNotification('success', `Pedidos de ${month} descargados.`);
+    return exportWithFeedback(() => downloadCsv(`labora_pedidos_${month}.csv`, orderCsvRows(monthOrders, liveIncomeIds)), showNotification);
   };
 
   const elapsed = activeSession ? Math.max(0, Math.floor((nowMs - new Date(activeSession.startedAt).getTime()) / 60_000)) : 0;
