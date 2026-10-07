@@ -4,6 +4,7 @@
  * jsPDF se carga bajo demanda para no engordar el bundle inicial.
  */
 import type { Expense, Income } from '../types';
+import { exportFile } from './fileExport';
 import {
   type CsvRow,
   type QuarterClientInfo,
@@ -154,8 +155,8 @@ export const renderQuarterPdf = async (model: QuarterPdfModel) => {
   return doc;
 };
 
-/** Genera el PDF y lo descarga en el navegador. */
+/** Generates identical PDF bytes for web and native Save As. */
 export const downloadQuarterPdf = async (model: QuarterPdfModel, filename: string) => {
   const doc = await renderQuarterPdf(model);
-  doc.save(filename);
+  return exportFile(filename, doc.output('blob'));
 };

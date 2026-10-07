@@ -4,6 +4,7 @@
  * Formato: CSV con separador «;» y BOM UTF-8 (Excel/LibreOffice en español).
  */
 import type { Expense, Income } from '../types';
+import { exportFile } from './fileExport';
 
 export type CsvCell = string | number | null | undefined;
 export type CsvRow = CsvCell[];
@@ -237,15 +238,7 @@ const slug = (value: string) => value
 export const quarterExportFilename = (kind: 'trimestre' | 'gastos' | 'ingresos', quarter: string, clientName?: string) =>
   `labora_${kind}_${quarter.replace(/\s+/g, '_')}${clientName ? `_${slug(clientName)}` : ''}.csv`;
 
-/** Descarga en navegador (efecto secundario; fuera de los tests puros). */
-export const downloadCsv = (filename: string, rows: CsvRow[]) => {
-  const blob = new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+/** Browser download or Android Save As. Callers must await the result. */
+export const downloadCsv = async (filename: string, rows: CsvRow[]) => {
+  return exportFile(filename, new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }));
 };

@@ -1,3 +1,17 @@
+# Continuidad activa — exportaciones Android, 2026-10-07 (Europe/Madrid)
+
+- Lewis pide continuar el cierre autónomo. Se recuperó GitHub tras limpieza del workspace. Base main@5535ef424cd8a002131978e1202074080b298c12, rama fix/android-file-exports. Conserva diseño, RLS, fiscalidad, tombstones y billing OFF.
+- Cierre anterior verificado: #80/#81 fusionados. Pages 37076929652 success sobre el SHA base; Login público cargó hoy, sin sesión disponible. PR #35 sigue draft y no se fusiona sin UAT real.
+- Pendiente Android respaldado por código: CSV usaba anchor.download Blob, PDF doc.save, sin puente nativo de exportación. LaboraFileExport ahora usa ACTION_CREATE_DOCUMENT en play/labs, valida CSV/PDF/nombre/Base64/tamaño (10 MiB), conserva bytes solo en memoria y confirma únicamente tras escribir/cerrar el stream. Cancelar no produce éxito; fallo/recreación/plugin ausente ofrece error/reintento. No pide permisos amplios ni persiste acceso a carpetas.
+- CSV/PDF trimestral, pedidos, km/jornadas y Movements comparten exportación y feedback. Web dice «Descarga solicitada al navegador»; no presume guardar. PDF/CSV mantienen formatos y alcance por cliente/periodo. Descargas de adjuntos en Documents no se modifican ni se aceptan por este PR.
+- Base comprobada: 367 tests + TypeScript PASS. Cambio: 387 tests/51 archivos PASS, TypeScript PASS, release:check 30/30 PASS, build/styles:check/cap sync/estilos del paquete Android PASS. Hay 9 pruebas JVM nuevas; ejecución nativa/CI completa por verificar al publicar. No Android SDK/Java 21 local: usar CI remota existente para compilar ambas variantes.
+- Suite nueva prueba bytes UTF-8/BOM/PDF reales, espera de respuesta, cancelación, fallos, formatos/tamaño, APK anterior y descarga web. JVM prueba tamaños/validación y stream cerrado, write/close fallidos. No equivale a SAF físico ni UAT autenticada.
+- Plan de aceptación específico: docs/ANDROID_EXPORT_UAT.md. Actualizar cierre de PR con SHA/CI/Pages/APKs al finalizar. Rollback: revert de este PR web/nativo y recompilar APK anterior; sin migración/backend.
+- Security Advisor leído hoy: único WARN Leaked Password Protection Disabled. No se cambió Auth. https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection . Entrega/allowlist SMTP de recuperación y OCR real pendientes.
+- Siguiente cierre obligatorio: UAT real Trabajador↔Gestoría + cuenta ajena, recarga/descarga/desvinculación/borrado; correo real de recuperación; Samsung físico (incluido selector/teclado). Firma/AAB/Play Console pendientes. No declarar app Play-ready ni beta general aceptada desde CI.
+
+---
+
 # Continuidad activa — logos de comercios y filtro, 2026-10-02 (UTC)
 
 - Lewis autoriza continuar y dejar listo el proyecto, preguntando específicamente por el área de logos. Rama feat/merchant-brand-logos; base main@899d6ca8f64f71d2091f77f4985c5ef6a947b0af. Se conserva el diseño y el gate de aceptación real.

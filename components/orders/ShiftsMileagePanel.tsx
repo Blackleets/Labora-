@@ -1,3 +1,4 @@
+import { exportWithFeedback } from '../../services/fileExport';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Car, Download, History, Loader2, Pencil } from 'lucide-react';
 import type { WorkSession } from '../../types';
@@ -123,13 +124,11 @@ export const ShiftsMileagePanel: React.FC<ShiftsMileagePanelProps> = ({ sessions
   };
 
   const exportYear = () => {
-    downloadCsv(`labora_km_${year}.csv`, mileageCsvRows(months, vehicleCostPerKm));
-    notify('success', `Registro de km de ${year} descargado.`);
+    return exportWithFeedback(() => downloadCsv(`labora_km_${year}.csv`, mileageCsvRows(months, vehicleCostPerKm)), notify);
   };
   const exportShifts = () => {
     if (!yearData) return;
-    downloadCsv(`labora_jornadas_${year}.csv`, shiftCsvRows(shiftRows(yearData.sessions, yearData.orders, nowMs)));
-    notify('success', `Jornadas de ${year} descargadas.`);
+    return exportWithFeedback(() => downloadCsv(`labora_jornadas_${year}.csv`, shiftCsvRows(shiftRows(yearData.sessions, yearData.orders, nowMs))), notify);
   };
 
   return (
